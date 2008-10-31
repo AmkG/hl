@@ -1,0 +1,14 @@
+
+hl is yet another Lisplike language.
+
+It has the following major design goals:
+
+1.  Make it easy to interoperate diverse libraries
+    written by diverse programmers with diverse
+    styles.
+2.  Make it easy to use an actor model, as well as
+    allow other concurrent, multi-agent cooperating
+    models possible.
+3.  Provide a virtual machine appropriate for
+    functional programming.
+
