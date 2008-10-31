@@ -37,6 +37,13 @@ int main (void) {
 	assert( !is_nil(w) );
 	assert( !is_t(x) );
 
+	Object::ref n = Object::to_ref(1);
+
+	assert( !(w == n));
+	assert( !(x == n));
+	assert( w != n);
+	assert( x != n);
+
 	assert( !is_a<int>(w) );
 	assert( !is_a<Generic*>(w) );
 	assert( !is_a<SharedVar*>(w) );
