@@ -32,14 +32,14 @@ Declare
 	typedef unsigned char tag_type;
 
 	template<typename T> static inline ref to_ref(T);
-	template<typename T> static inline bool is_a(ref);
-	template<typename T> static inline T as_a(ref);
+	template<typename T> static inline bool _is_a(ref);
+	template<typename T> static inline T _as_a(ref);
 
 	static inline ref t(void);
-	static inline bool is_t(ref);
+	static inline bool _is_t(ref);
 
 	static inline ref nil(void);
-	static inline bool is_nil(ref);
+	static inline bool _is_nil(ref);
 
 	static inline ref from_a_scaled_int(int);
 	static inline int to_a_scaled_int(ref);
@@ -129,14 +129,14 @@ The tagged pointer type
 		}
 
 		template<typename T> friend ref to_ref(T);
-		template<typename T> friend bool is_a(ref);
-		template<typename T> friend T as_a(ref);
+		template<typename T> friend bool _is_a(ref);
+		template<typename T> friend T _as_a(ref);
 
 		friend int to_a_scaled_int(ref);
 		friend ref from_a_scaled_int(int);
 
 		friend ref t(void);
-		friend bool is_t(ref);
+		friend bool _is_t(ref);
 	};
 
 /*-----------------------------------------------------------------------------
@@ -184,20 +184,20 @@ Tagged pointer factories
 Tagged pointer checking
 -----------------------------------------------------------------------------*/
 
-	static inline bool is_nil(ref obj) {
+	static inline bool _is_nil(ref obj) {
 		return !obj;
 	}
-	static inline bool is_t(ref obj) {
+	static inline bool _is_t(ref obj) {
 		return obj.dat == t_value;
 	}
 
 	template<typename T>
-	static inline bool is_a(ref obj) {
+	static inline bool _is_a(ref obj) {
 		if(tag_traits<T>::tag != 0x0) {
 			return (obj.dat & tag_mask) == tag_traits<T>::tag;
 		} else {
 			return (obj.dat & tag_mask) == tag_traits<T>::tag
-				&& !is_nil(obj) && !is_t(obj);
+				&& !_is_nil(obj) && !_is_t(obj);
 		}
 	}
 
@@ -206,9 +206,9 @@ Tagged pointer referencing
 -----------------------------------------------------------------------------*/
 
 	template<typename T>
-	static inline T as_a(ref obj) {
+	static inline T _as_a(ref obj) {
 		#ifdef DEBUG
-			if(!is_a<T>(obj)) {
+			if(!_is_a<T>(obj)) {
 				throw_TypeError(obj,
 					"incorrect type for pointer"
 				);
@@ -230,9 +230,9 @@ Tagged pointer referencing
 	}
 
 	template<>
-	static inline int as_a<int>(ref obj) {
+	static inline int _as_a<int>(ref obj) {
 		#ifdef DEBUG
-			if(!is_a<int>(obj)) {
+			if(!_is_a<int>(obj)) {
 				throw_TypeError(obj,
 					"incorrect type for small integer"
 				);
@@ -279,17 +279,17 @@ Reflectors outside of the namespace
 
 template<typename T>
 static inline bool is_a(Object::ref obj) {
-	return Object::is_a<T>(obj);
+	return Object::_is_a<T>(obj);
 }
 template<typename T>
 static inline T as_a(Object::ref obj) {
-	return Object::as_a<T>(obj);
+	return Object::_as_a<T>(obj);
 }
 static inline bool is_nil(Object::ref obj) {
-	return Object::is_nil(obj);
+	return Object::_is_nil(obj);
 }
 static inline bool is_t(Object::ref obj) {
-	return Object::is_t(obj);
+	return Object::_is_t(obj);
 }
 
 
