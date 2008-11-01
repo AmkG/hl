@@ -1,0 +1,95 @@
+List of a few basic things to implement (it may change):
+
+Macros are callable objects tagged with 'mac stored in global variables
+Functions, continuations, tables, cons cells, strings are callable
+
+-- forms
+
+if
+fn -- destructuring, optional and rest args
+set
+apply
+quote
+
+-- macros
+
+quasiquote (unquote, splice)
+
+-- functions
+
+err
+cons
+car 
+cdr
+is
++  -- on numbers, lists, strings
+-
+*
+/
+mod
+expt
+sqrt
+> -- on numbers, strings
+< -- on numbers, strings
+len -- on lists, strings, tables
+annotate
+type
+rep
+uniq
+ccc
+infile
+outfile
+inside
+close
+stdout
+stdin
+stderr
+call-w/stdin
+call-w/stdout
+readc
+readb
+peekc
+writec
+writeb
+write
+disp
+read
+coerce
+open-socket 
+socket-accept
+new-thread
+kill-thread
+break-thread
+sleep
+system
+pipe-from
+table
+maptable
+protect
+rand
+dir
+file-exists
+dir-exists
+rmfile
+macex
+macex1
+eval
+on-err
+details
+scar
+scdr
+sref -- on tables, strings, lists
+bound
+newstring
+trunc
+exact
+msec
+current-process-milliseconds
+current-gc-milliseconds
+seconds
+client-ip
+atomic-invoke
+dead
+ssyntax
+ssexpand
+quit
