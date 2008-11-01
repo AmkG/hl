@@ -12,3 +12,141 @@ It has the following major design goals:
 3.  Provide a virtual machine appropriate for
     functional programming.
 
+The primary design goal for hl is to allow the interoperability
+of diverse libraries written by diverse people in diverse styles,
+and to allow them to use and provide diverse syntaxes.  Part of
+this goal is to provide a package system that can adapt to
+change.
+
+A problem with most current package systems is the assumption
+that a package or library will only ever present one interface.
+Most package systems have a single "export" keyword, or a list of
+exports, and the package will always, always export the listed
+functions, macros, and/or variables.  Now suppose that tomorrow
+the library is expanded, so that it will have a new function for
+export.  Unfortunately, the new function to export conflicts with
+a function already in your application.  You cannot easily
+upgrade to the new library, even though it may have a bugfix you
+need and you are not going to use the new functionality anyway.
+
+The planned approach in hl's package system is to separate the
+interface from the implementation.  The package contains the
+implementation.  It can provide several interfaces.  When a
+library writer publishes an interface to the library, he or she
+makes an implicit promise not to change that interface; instead,
+if the library's functionality is to be extended, a new version
+of the interface is defined which includes the old interface and
+adds the new functionality.  Users of the old interface will not
+need to change their code, while still be able to take advantage
+of bugfixes in the new version of the implementation.
+
+To implement the package system, we add the concept of a context.
+A context is a process-local object used in the reading of a
+sequence of expressions, say in a loaded file.  The context
+specifies what syntaxes are to be understood for each expression,
+and if it detects certain expressions (called "context
+metacommands"), it will change its state so that future
+expressions will be interpreted differently.  For example, it may
+detect a (in-pkg foo) expression, which will cause it to
+transform any symbols into the package foo, i.e. it reads in
+'function and transforms it to the packaged symbol <foo>function.
+Syntaxes and similar extensions are also kept track of by the
+context.
+
+Importantly, the context dies when its source of input is gone,
+i.e. at end-of-file.  When a new file is loaded, a new context
+(with only the default state) is created for that file.  This
+means that syntaxes defined and used in one file do not affect
+another file, unless that file specifically asks for that syntax
+by specifying a context metacommand.
+
+By using contexts, each package can use any library and
+combination of libraries without fear that these libraries will
+conflict in their usage of the global readtable.
+
+Another difference in design is a rethought basic library,
+particularly for traversal of data structures.  Admittedly my
+design is vaguely similar to Rich Hickey's Clojure (I claim to
+not having been influenced by it, and claim to having thought of
+this independently), in that I define a set of basic functions
+that traverse data structures.  At its most basic, a sequence
+type must provide (scanner ...) and (unscan ...) functions, which
+convert a sequence to a cons-like object, and convert from a
+cons-like object back to the sequence type.  A cons-like object
+(called a "scanner" type) is any object type that overloads
+(car ...) and (cdr ...).  Because of the relatively loose
+definition of "scanner", the object type can be a true cons cell,
+or a lazy cons cell.
+
+However, the conversion is probably going to be prohibitively
+expensive.  For this reason, the sequence type may *optionally*
+provide overloads for (base-each ...) and (base-collect-on ....)
+functions.  These are provided with the sequence and a body
+function.  For (base-each ...), it must call the body function
+(in a continuable way) with each value in the sequence.  For
+(base-collect-on ...), it calls the body function with a collect
+function which will be called by the body function to collect
+values into a new sequence.  When the body function ends, the
+(base-collect-on ...) method then returns the new sequence.  A
+rough implementation of (map ...) would then be:
+
+    (def map (f xs)
+      (base-collect-on xs
+        (fn (collect)
+                        ; the number specifies the number of
+                        ; values to skip
+          (base-each xs 0
+            (fn (x)
+              (collect (f xs))
+              ; return t to specify that we want to
+              ; continue iterating
+              t)))))
+
+or by using some convenience macros:
+
+    (def map (f xs)
+      (w/collect-on xs
+        (each x xs
+          (collect (f x)))))
+
+The basic library then uses base-each and base-collect-on
+consistently, so that they will automatically work with any type
+that provides the correct interface.
+
+Note that it is important that *any* type that correctly
+overloads (scanner ...) and (unscan ...), and optionally
+overloads (base-each ....) and (base-collect-on ...), are
+sequences.  **This includes user-defined types.**
+
+In addition, the language will support CLOS-style multimethods,
+but without actual inheritance or the rest of the CLOS.
+Multimethods simply dispatch by any number of parameter types.
+This is, in my opinion, better for extending libraries; Clojure's
+multimethods, while simpler to implement and quite general, have
+an inherent limiting factor: the dispatching function which
+creates the key.  If you would like to extend a function such
+that it may have an optional argument, but the dispatching
+function does not expect an optional argument, you simply cannot
+extend it in that way without modifying the original code; if
+that code is in a library, you must either convince the library
+writer, or fork the library.  Also, the dispatching function can
+only provide a single key.  This means that you cannot do
+subspecializations on multiple types while having a fallback on
+another type, i.e. you cannot provide a method for
+(collide ship ship) while providing a fallback for
+(collide ship <anything>).  Clojure's multimethods are simple
+enough to also include in a library.
+
+Finally, a tertiary goal is to create a virtual machine with an
+Erlang-like execution model, i.e. multiple actor processes
+capable of sending messages to each other.  In addition to the
+basic Erlang model, we use a multiparadigm execution system: you
+can use mutation (which is automatically confined to the process)
+or you can use functional programming (which is supported by a
+tail-call-optimization guarantee).  Erlang's VM does not support
+mutation of data structures even within a process; Java's VM does
+not support tail-call-optimization and the actor model.  It may
+be possible to use Parrot's VM, but I am not aware if it has good
+support for the actor model.
+
+
