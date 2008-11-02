@@ -43,7 +43,7 @@ public:
 	}
 
 	/*broken hearts for GC*/
-	virtual void break_heart(Object::ref) =0;
+	virtual void break_heart(Generic*) =0;
 
 	/*dtor*/
 	virtual ~Generic() { }
@@ -62,7 +62,7 @@ public:
 		/*already broken - don't break too much!*/
 		throw_OverBrokenHeart(to);
 	}
-	BrokenHeart(Object::ref nto) : to(nto) { }
+	BrokenHeart(Generic* nto) : to(nto) { }
 };
 
 template<class T>
@@ -71,7 +71,7 @@ public:
 	virtual bool real_size(void) const {
 		return sizeof(T);
 	}
-	explicit BrokenHeartFor<T>(Object::ref x) : BrokenHeart(x) { }
+	explicit BrokenHeartFor<T>(Generic* x) : BrokenHeart(x) { }
 };
 
 template<class T>
@@ -82,7 +82,7 @@ public:
 	virtual bool real_size(void) const {
 		return sizeof(T) + sz * sizeof(Object::ref);
 	}
-	BrokenHeartForVariadic<T>(Object::ref x, size_t nsz)
+	BrokenHeartForVariadic<T>(Generic* x, size_t nsz)
 		: BrokenHeart(x), sz(nsz) { }
 };
 
@@ -105,6 +105,8 @@ public:
 
 /*This class implements a variable-size object by informing the
 memory system to reserve extra space.
+Note that classes which derive from this should provide
+a factory function!
 */
 template<class T>
 class GenericDerivedVariadic : public Generic {
