@@ -59,7 +59,7 @@ void throw_OverBrokenHeart(Generic*);
 class BrokenHeart : public Generic {
 public:
 	Generic* to;
-	virtual bool break_heart(Generic* to) {
+	virtual void break_heart(Generic* to) {
 		/*already broken - don't break too much!*/
 		throw_OverBrokenHeart(to);
 	}
