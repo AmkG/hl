@@ -4,7 +4,7 @@
 Defines a set of types for use on the hl-side.
 */
 
-#include<set>
+#include<cstring>
 #include"objects.hpp"
 
 class GenericTraverser {
