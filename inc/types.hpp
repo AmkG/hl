@@ -13,25 +13,6 @@ public:
 };
 
 /*-----------------------------------------------------------------------------
-SharedVar
------------------------------------------------------------------------------*/
-
-/*
-Handled specially: Semispace is allocated on two ends,
-the lower end for Generic objects, the upper end for
-SharedVar's.
-*/
-class SharedVar {
-public:
-	/*ends up being just one pointer*/
-	Object::ref value;
-	SharedVar(Object::ref x) : value(x) { }
-	static inline void traverse_references(GenericTraverser* gt) {
-		gt->traverse(value);
-	}
-};
-
-/*-----------------------------------------------------------------------------
 Generic
 -----------------------------------------------------------------------------*/
 

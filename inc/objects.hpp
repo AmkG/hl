@@ -19,7 +19,6 @@ Usage:
 #include<climits>
 
 class Generic;
-class SharedVar;
 
 namespace Object {
 
@@ -66,9 +65,6 @@ Configuration
 	};
 	template<> struct tag_traits<Generic*> {
 		static const tag_type tag = 0x0;
-	};
-	template<> struct tag_traits<SharedVar*> {
-		static const tag_type tag = 0x2;
 	};
 
 /*-----------------------------------------------------------------------------
