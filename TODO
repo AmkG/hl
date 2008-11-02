@@ -2,21 +2,27 @@ List of a few basic things to implement (it may change):
 
 Macros are callable objects tagged with 'mac stored in global variables
 Functions, continuations, tables, cons cells, strings are callable
+Preferable if a call* global table/method function can be used to
+extend/change functionality.
 
--- forms
+
+-- forms (in <axiom> package)
 
 if
-fn -- destructuring, optional and rest args
+lambda -- no destructuring, just rest args
 set
-apply
 quote
+tail-call -- *optional* tail-call checking
+()-application
 
 -- macros
 
 quasiquote (unquote, splice)
+fn -- destructuring, optional and rest args (expands to lambda)
 
 -- functions
 
+apply
 err
 cons
 car 
