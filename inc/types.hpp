@@ -48,7 +48,7 @@ public:
 template<class T>
 class GenericDerived : class Generic {
 public:
-	virtual bool real_size(void) {
+	virtual size_t real_size(void) {
 		return sizeof(T);
 	}
 	virtual void break_heart(Generic* to) {
