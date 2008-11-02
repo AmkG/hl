@@ -52,6 +52,8 @@ public:
 	void* alloc(size_t sz);
 	void dealloc(void*); // used only in a constructor-fail delete
 	void normal_dealloc(Generic*);
+	/*no svallocation: no sharedvar's allowed in LifoSemispace*/
+
 	bool can_fit(size_t) const;
 	size_t size(void) const {
 		return (size_t) (((char*) end) - ((char*) mem));
