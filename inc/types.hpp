@@ -21,6 +21,10 @@ public:
 
 	virtual void traverse_references(GenericTraverser* gt) {
 		/*default to having no references to traverse*/
+		/*example for Cons:
+		gt->traverse(a);
+		gt->traverse(d);
+		*/
 	}
 
 	/*some objects have extra allocated space at their ends
@@ -45,10 +49,51 @@ public:
 	virtual ~Generic() { }
 };
 
-template<class T>
-class GenericDerived : class Generic {
+/*-----------------------------------------------------------------------------
+Broken Heart tags
+-----------------------------------------------------------------------------*/
+
+void throw_OverBrokenHeart(Generic*);
+
+class BrokenHeart : public Generic {
 public:
-	virtual size_t real_size(void) {
+	Generic* to;
+	virtual bool break_heart(Generic* to) {
+		/*already broken - don't break too much!*/
+		throw_OverBrokenHeart(to);
+	}
+	BrokenHeart(Object::ref nto) : to(nto) { }
+};
+
+template<class T>
+class BrokenHeartFor : public BrokenHeart {
+public:
+	virtual bool real_size(void) const {
+		return sizeof(T);
+	}
+	explicit BrokenHeartFor<T>(Object::ref x) : BrokenHeart(x) { }
+};
+
+template<class T>
+class BrokenHeartForVariadic : public BrokenHeart {
+private:
+	size_t sz;
+public:
+	virtual bool real_size(void) const {
+		return sizeof(T) + sz * sizeof(Object::ref);
+	}
+	BrokenHeartForVariadic<T>(Object::ref x, size_t nsz)
+		: BrokenHeart(x), sz(nsz) { }
+};
+
+/*-----------------------------------------------------------------------------
+Base classes for Generic-derived objects
+-----------------------------------------------------------------------------*/
+
+template<class T>
+class GenericDerived : public Generic {
+public:
+	virtual size_t real_size(void) const {
 		return sizeof(T);
 	}
 	virtual void break_heart(Generic* to) {
@@ -58,24 +103,43 @@ public:
 	};
 };
 
-void throw_OverBrokenHeart(Generic*);
-
-class BrokenHeart : class Generic {
-public:
-	Generic* to;
-	virtual bool break_heart(Generic* to) {
-		/*already broken - don't break too much!*/
-		throw_OverBrokenHeart(to);
-	}
-};
-
+/*This class implements a variable-size object by informing the
+memory system to reserve extra space.
+*/
 template<class T>
-class BrokenHeartFor : class BrokenHeart {
+class GenericDerivedVariadic : public Generic {
+	GenericDerivedVariadic<T>(); // disallowed!
+protected:
+	/*number of extra Object::ref's*/
+	size_t sz;
+	/*used by the derived classes to get access to
+	the variadic data at the end of the object.
+	*/
+	Object::ref& index(size_t i) {
+		void* vp = this;
+		char* cp = (char*) vp;
+		cp = cp + sizeof(T);
+		Object::ref* op = (void*) cp;
+		return op[i];
+	}
+	GenericDerivedVariadic<T>(size_t nsz) : sz(nsz) {
+		/*clear the extra references*/
+		for(size_t i; i < nsz; ++i) {
+			index(i) = Object::nil();
+		}
+	}
 public:
-	virtual bool real_size(void) {
-		return sizeof(T);
+	virtual size_t real_size(void) const {
+		return sizeof(T) + sz * sizeof(Object::ref);
+	}
+	virtual void break_heart(Object::ref to) {
+		Generic* gp = this;
+		size_t nsz = sz; //save this before dtoring!
+		gp->~Generic();
+		new((void*) gp) BrokenHeartForVariadic<T>(to, nsz);
 	}
 };
+
 
 #endif //TYPES_H
 
