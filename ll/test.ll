@@ -4,9 +4,13 @@
 (using <ll>v1)
 (include "std.ll")
 (using <std>v1)
+(include "<stdio.h>")
+
+"#define " printf " printf\n"
 
 (def main ()
-  (return 0))
+  (let tmp (print (string "hello"))
+    (return 0)))
 
 "int main(void) {\n"
   (return (main)) ";\n"
