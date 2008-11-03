@@ -65,6 +65,10 @@
 (ll-form = (x y)	(bi-math "=" x y))
 (ll-form set (x y)	(bi-math "=" x y))
 
+; allow to pass to C
+(ll-form string (x)
+  (emit "((intptr_t) " (tostring:write x) ")"))
+
 (hl
   (def handle-e-if (cond rest)
     (emit "(" cond ")")
