@@ -98,6 +98,15 @@
 (ll-form var (var (o val))
   (emit "intptr_t var " var " = " val ";\n"))
 
+(ll-form declare (name parms)
+  (emit "\nintptr_t " name "(")
+  (if parms
+      (do (emit "intptr_t")
+          (each p (cdr parms)
+            (emit ", intptr_t")))
+      (emit "void"))
+  (emit");\n"))
+
 (ll-form def (name parms . body)
   (emit "\nintptr_t " name "(")
   (if parms
