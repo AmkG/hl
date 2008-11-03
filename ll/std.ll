@@ -113,3 +113,50 @@
 (ll-form return (x)
   (emit "return " x))
 
+(hl
+  (def handle-if (cond rest)
+    (if rest
+        (do (emit "if(" cond ")\n")
+            (emit "\t" (car rest) ";\n")
+            (emit "else ")
+            (handle-if (cadr rest) (cddr rest)))
+        (emit cond))))
+(ll-form if (cond . rest)
+  (handle-if cond rest))
+
+(ll-form do body
+  (emit "{\n")
+  (each b body
+    (emit "\t" b ";\n"))
+  (emit "}\n"))
+
+(ll-form while (cond . body)
+  (emit "while(" cond ") {\n")
+  (each b body
+    (emit "\t" b ";\n"))
+  (emit "}\n"))
+
+(ll-form let (var val . body)
+  (emit "{ intptr_t " var " = " val ";\n")
+  (each b body
+    (emit "\t" b ";\n"))
+  (emit "}\n"))
+
+(ll-form withs (vars . body)
+  (let pv (pair vars)
+    (emit "{\n")
+    (each (var val) pv
+      (emit "\t intptr_t " var " = " val ";\n"))
+    (each b body
+      (emit "\t" b ";\n"))
+    (emit "}\n")))
+
+(ll-form case (expr . args)
+  (let pc (pair args)
+    (emit "switch(" expr ") {\n")
+    (each p pc
+      (if (cdr p)
+          (emit "case " (car p) ": " (cadr p) "; break;\n")
+          (emit "default: " (car p) ";\n")))
+    (emit "}\n")))
+
