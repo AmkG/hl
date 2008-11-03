@@ -9,9 +9,9 @@
   is isnt
   <= >= < >
   = set
-  e-if
+  string char* e-if
   malloc free realloc
-  const var def
+  declare const var def
   return)
 (include "<stdint.h>")
 (include "<cstring>")
@@ -68,6 +68,8 @@
 ; allow to pass to C
 (ll-form string (x)
   (emit "((intptr_t) " (tostring:write x) ")"))
+(ll-form char* (x)
+  (emit "((char*) " x ")"))
 
 (hl
   (def handle-e-if (cond rest)
