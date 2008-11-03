@@ -93,6 +93,8 @@ Base classes for Generic-derived objects
 
 template<class T>
 class GenericDerived : public Generic {
+protected:
+	GenericDerived<T>(void) { }
 public:
 	virtual size_t real_size(void) const {
 		return sizeof(T);
@@ -111,7 +113,7 @@ a factory function!
 */
 template<class T>
 class GenericDerivedVariadic : public Generic {
-	GenericDerivedVariadic<T>(); // disallowed!
+	GenericDerivedVariadic<T>(void); // disallowed!
 protected:
 	/*number of extra Object::ref's*/
 	size_t sz;
