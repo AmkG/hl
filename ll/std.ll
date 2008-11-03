@@ -9,6 +9,7 @@
   is isnt
   <= >= < >
   = set
+  e-if
   malloc free realloc
   const var def
   return)
@@ -63,6 +64,15 @@
 
 (ll-form = (x y)	(bi-math "=" x y))
 (ll-form set (x y)	(bi-math "=" x y))
+
+(hl
+  (def handle-e-if (cond rest)
+    (emit "(" cond ")")
+    (when rest
+      (emit " ? (" (car rest) ") : ")
+      (handle-e-if (cadr rest) (cddr rest)))))
+(ll-form e-if (cond . rest)
+  (handle-e-if cond rest))
 
 ;-----------------------------------------------------------------------------
 ;Memory allocation
