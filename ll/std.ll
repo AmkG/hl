@@ -112,7 +112,7 @@
 (ll-form def (name parms . body)
   (emit "\nintptr_t " name "(")
   (if parms
-      (do (emit "intpr_t " (car parms))
+      (do (emit "intptr_t " (car parms))
           (each p (cdr parms)
             (emit ", intptr_t " p)))
       (emit "void"))
