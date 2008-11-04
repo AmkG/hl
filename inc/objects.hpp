@@ -18,6 +18,8 @@ Usage:
 #include<stdint.h>
 #include<climits>
 
+#include"unichars.hpp"
+
 class Generic;
 class Symbol;
 
@@ -69,6 +71,9 @@ Configuration
 	};
 	template<> struct tag_traits<Symbol*> {
 		static const tag_type tag = 0x2;
+	};
+	template<> struct tag_traits<UnicodeChar> {
+		static const tag_type tag = 0x3;
 	};
 
 /*-----------------------------------------------------------------------------
@@ -167,6 +172,11 @@ Tagged pointer factories
 		intptr_t tmp = (((intptr_t) x) << tag_bits);
 		return ref(tmp + tag_traits<int>::tag);
 	}
+	template<>
+	static inline ref to_ref<UnicodeChar>(UnicodeChar x) {
+		intptr_t tmp = x.dat << tag_bits;
+		return ref(tmp + tag_traits<UnicodeChar>::tag);
+	}
 
 	/*no checking, even in debug mode... achtung!*/
 	static inline ref from_a_scaled_int(int x) {
@@ -240,6 +250,12 @@ Tagged pointer referencing
 		#endif
 		intptr_t tmp = obj.dat;
 		return (int)(tmp >> tag_bits);
+	}
+
+	template<>
+	static inline UnicodeChar _as_a<UnicodeChar>(ref obj) {
+		uint32_t tmp = obj.dat;
+		return UnicodeChar(tmp >> tag_bits);
 	}
 
 	/*no checking, even in debug mode... achtung!*/
