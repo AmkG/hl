@@ -28,7 +28,12 @@ void printBs(BytecodeSeq & bs) {
 int main(int argc, char **argv) {
   std::ifstream in(argv[1]);
   BytecodeSeq bs;
-  in >> bs;
+  try {
+    in >> bs;
+  } 
+  catch (ReadError re) {
+    cout << re;
+  }
   printBs(bs);
   return 0;
 }

@@ -14,7 +14,7 @@ my @results;
 opendir TEST_DIR, $test_dir or die "Couldn't open $test_dir";
 
 while ($_ = readdir TEST_DIR) {
-    if (-f "$test_dir/$_") {
+    if (-f "$test_dir/$_" && $_ =~ /.*\.test$/) {
         open IN, "$test_dir/$_";
         my @lines = <IN>;
         close IN;

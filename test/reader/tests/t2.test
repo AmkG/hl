@@ -1,0 +1,27 @@
+((8 9))
+
+;\(\(8 9\)
+
+; **********
+
+(8
+
+;EOF
+
+; **********
+
+(8 9 1)
+
+;Spurious contents at end of bytecode
+
+; **********
+
+(8 (0 1 (abc 7))
+
+;EOF
+
+; **********
+
+[abc 5)
+
+;Unknown character at start of bytecode

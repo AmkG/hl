@@ -25,11 +25,16 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
   if (c != bc_start)
     throw ReadError("Unknown character at start of bytecode");
 
+  if (in.eof())
+    throw ReadError("EOF");
+
   std::string name;
   in >> name;
 
   skip_seps(in);
   c = in.peek();
+  if (in.eof())
+    throw ReadError("EOF");
   if (c == bc_start) { // subsequence
     BytecodeSeq *sub = new BytecodeSeq;
     in >> (*sub);
@@ -51,6 +56,8 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
 
   skip_seps(in);
   c = in.get();
+  if (in.eof())
+    throw ReadError("EOF");
   if (c != bc_end) 
     throw ReadError("Spurious contents at end of bytecode");
 
