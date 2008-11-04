@@ -13,7 +13,7 @@
  */
 
 // the argument of a bytecode
-class BytecodeArg {};
+class BytecodeArg { public: virtual ~BytecodeArg() {}};
 
 /*
  * a simple argument is an unsigned integer
