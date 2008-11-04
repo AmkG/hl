@@ -3,6 +3,11 @@
 
 #include"objects.hpp"
 
+#include<cstring>
+#include<utility>
+
+#include<boost/shared_ptr.hpp>
+
 class Generic;
 class SharedVar;
 
