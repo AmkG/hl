@@ -38,7 +38,7 @@ sqrt
 > -- on numbers, strings
 < -- on numbers, strings
 len -- on lists, strings, tables
-annotate
+tag -- equivalent to Arc annotate
 type
 rep
 uniq
@@ -94,8 +94,15 @@ current-process-milliseconds
 current-gc-milliseconds
 seconds
 client-ip
-atomic-invoke
+atomic-invoke -- unnecessary due to process separation
 dead
 ssyntax
 ssexpand
 quit
+
+---- features
+
+GC/automatic reaping for processes waiting for message but
+  without references from other processes
+GC for 'uniq-generated symbols
+
