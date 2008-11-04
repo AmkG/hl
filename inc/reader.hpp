@@ -15,37 +15,58 @@
 // the argument of a bytecode
 class BytecodeArg {};
 
+/*
+ * a simple argument is an unsigned integer
+ * it could represent an int, a scaled int, an offset or a character
+ */
+class SimpleArg : public BytecodeArg {
+private:
+  size_t val;
+public:
+  SimpleArg(size_t v) : val(v) {}
+  size_t getVal() { return val; }
+};
+
 // a single bytecode
+// ?? should bytecode mnemonic be an interned string?
 typedef std::pair<std::string, BytecodeArg*> bytecode;
 
-// bytecode sequence
-// owns all the bytecode args and frees them
+/*
+ * bytecode sequence
+ * owns all the bytecode args and frees them
+ */
 class BytecodeSeq : public std::vector<bytecode>, public BytecodeArg {
 public:
   ~BytecodeSeq();
 };
 
-typedef boost::shared_ptr<BytecodeSeq> bytecodeseq_ptr;
+/*
+ * Argument of bytecode that takes a simple argument and a sequence
+ */
+class SimpleArgAndSeq : public BytecodeArg {
+private:
+  BytecodeSeq *seq;
+  SimpleArg *sa;
+public:
+  SimpleArgAndSeq(SimpleArg *s, BytecodeSeq *bs) : sa(s), seq(bs) {}
+  ~SimpleArgAndSeq() {
+    delete seq;
+    delete sa;
+  }
+  SimpleArg* getSimple() { return sa; }
+  BytecodeSeq* getSeq() { return seq; }
+};
+
+// exception thrown by the reader
+class ReadError : public std::string {
+public:
+  ReadError(const char *str) : std::string(str) {}
+};
 
 /*
  * Bytecode reader
+ * extends bc with a bytecode read from in
  */
-class Reader {
-private:
-  std::istream *in;
-  bytecodeseq_ptr bc;
-public:
-  Reader(std::istream *i) : in(i), bc(new BytecodeSeq()) {}
-  ~Reader() { }
-
-  // read bytecodes until EOF
-  void readAll();
-
-  // read the next bytecode
-  void readOne();
-
-  // return the current bytecode seuence
-  bytecodeseq_ptr getBytecode() { return bc; }
-};
+std::istream& operator>>(std::istream & in, BytecodeSeq & bc);
 
 #endif // READER_H
