@@ -40,12 +40,33 @@ public:
   ~BytecodeSeq();
 };
 
-typedef boost::shared_ptr<BytecodeSeq> bytecodeseq_ptr;
+/*
+ * Argument of bytecode that takes a simple argument and a sequence
+ */
+class SimpleArgAndSeq : public BytecodeArg {
+private:
+  BytecodeSeq *seq;
+  SimpleArg *sa;
+public:
+  SimpleArgAndSeq(SimpleArg *s, BytecodeSeq *bs) : sa(s), seq(bs) {}
+  ~SimpleArgAndSeq() {
+    delete seq;
+    delete sa;
+  }
+  SimpleArg* getSimple() { return sa; }
+  BytecodeSeq* getSeq() { return seq; }
+};
+
+// exception thrown by the reader
+class ReadError : public std::string {
+public:
+  ReadError(const char *str) : std::string(str) {}
+};
 
 /*
  * Bytecode reader
  * extends bc with a bytecode read from in
  */
-std::istream& operator>>(std::istream in, BytecodeSeq & bc);
+std::istream& operator>>(std::istream & in, BytecodeSeq & bc);
 
 #endif // READER_H
