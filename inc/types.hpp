@@ -153,6 +153,26 @@ public:
 	}
 };
 
+/*
+ * Cons cell
+ */
+class Cons : public GenericDerived<Cons> {
+private:
+  
+  Object::ref car_ref;
+  Object::ref cdr_ref;
+
+public:
+
+  inline Object::ref car() { return car_ref; }
+  inline Object::ref cdr() { return cdr_ref; }
+
+  Cons() : car_ref(Object::nil()), cdr_ref(Object::nil()) {}
+
+  void traverse_references(GenericTraverser *gt) {
+    gt->traverse(car_ref);
+    gt->traverse(cdr_ref);
+  }
+};
 
 #endif //TYPES_H
-
