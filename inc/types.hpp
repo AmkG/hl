@@ -153,9 +153,30 @@ public:
 	}
 };
 
+/*-----------------------------------------------------------------------------
+Utility
+-----------------------------------------------------------------------------*/
+
+void throw_HlError(char const*);
+
+/*Usage:
+Cons* cp = expect_type<Cons*>(proc.stack().top(),
+		"Your mom expects a Cons cell on top"
+);
+*/
+template<class T>
+static inline expect_type(Object::ref x, char const* error) {
+	if(!is_a<Generic*>(x)) throw_HlError(error);
+	T* tmp = dynamic_cast<T*>(as_a<Generic*>(x));
+	if(!tmp) throw_HlError(error);
+	return tmp;
+}
+
+
 /*
  * Cons cell
  */
+
 class Cons : public GenericDerived<Cons> {
 private:
   
@@ -174,5 +195,14 @@ public:
     gt->traverse(cdr_ref);
   }
 };
+
+static inline Object::ref car(Object::ref x) {
+	if(!x) return x;
+	return expect_type<Cons*>(x,"'car expects a Cons cell")->car();
+}
+static inline Object::ref cdr(Object::ref x) {
+	if(!x) return x;
+	return expect_type<Cons*>(x,"'cdr expects a Cons cell")->cdr();
+}
 
 #endif //TYPES_H
