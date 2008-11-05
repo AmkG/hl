@@ -1,0 +1,4 @@
+#!/bin/sh
+
+g++ -I../../inc ../../src/reader.cpp test1.cpp -o test1
+
