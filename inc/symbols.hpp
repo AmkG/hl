@@ -2,13 +2,12 @@
 #define SYMBOLS_H
 
 #include"objects.hpp"
+#include"valueholders.hpp"
 
 #include<string>
 #include<map>
 
 #include<boost/scoped_ptr.hpp>
-
-class ValueHolder;
 
 class SymbolsTable;
 

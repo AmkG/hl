@@ -1,4 +1,5 @@
-#include <reader.hpp>
+#include"all_defines.hpp"
+#include"reader.hpp"
 
 static const char bc_start = '(';
 static const char bc_end = ')';

@@ -29,6 +29,7 @@ public:
 
 // a single bytecode
 // ?? should bytecode mnemonic be an interned string?
+// yes, preferably a Symbol* (see "symbols.hpp")
 typedef std::pair<std::string, BytecodeArg*> bytecode;
 
 /*
