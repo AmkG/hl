@@ -70,7 +70,7 @@ template<class T>
 class BrokenHeartFor : public BrokenHeart {
 public:
 	virtual bool real_size(void) const {
-		return sizeof(T);
+		return Object::round_up_to_alignment(sizeof(T));
 	}
 	explicit BrokenHeartFor<T>(Generic* x) : BrokenHeart(x) { }
 };
@@ -81,7 +81,11 @@ private:
 	size_t sz;
 public:
 	virtual bool real_size(void) const {
-		return sizeof(T) + sz * sizeof(Object::ref);
+		return Object::round_up_to_alignment(sizeof(T))
+			 + Object::round_up_to_alignment(
+				sz * sizeof(Object::ref)
+			)
+		;
 	}
 	BrokenHeartForVariadic<T>(Generic* x, size_t nsz)
 		: BrokenHeart(x), sz(nsz) { }
@@ -97,7 +101,7 @@ protected:
 	GenericDerived<T>(void) { }
 public:
 	virtual size_t real_size(void) const {
-		return sizeof(T);
+		return Object::round_up_to_alignment(sizeof(T));
 	}
 	virtual void break_heart(Generic* to) {
 		Generic* gp = this;
@@ -135,7 +139,11 @@ protected:
 	}
 public:
 	virtual size_t real_size(void) const {
-		return sizeof(T) + sz * sizeof(Object::ref);
+		return Object::round_up_to_alignment(sizeof(T))
+			 + Object::round_up_to_alignment(
+				sz * sizeof(Object::ref)
+			)
+		;
 	}
 	virtual void break_heart(Object::ref to) {
 		Generic* gp = this;
