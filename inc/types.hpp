@@ -69,7 +69,7 @@ public:
 template<class T>
 class BrokenHeartFor : public BrokenHeart {
 public:
-	virtual bool real_size(void) const {
+	virtual size_t real_size(void) const {
 		return Object::round_up_to_alignment(sizeof(T));
 	}
 	explicit BrokenHeartFor<T>(Generic* x) : BrokenHeart(x) { }

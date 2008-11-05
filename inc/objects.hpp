@@ -293,7 +293,7 @@ Utility
 
 	static inline size_t round_up_to_alignment(size_t x) {
 		return
-		(x & mask) ?			(x + alignment - (x & mask)) :
+		(x & tag_mask) ?			(x + alignment - (x & tag_mask)) :
 		/*otherwise*/			x ;
 	}
 
