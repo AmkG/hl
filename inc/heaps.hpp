@@ -6,16 +6,16 @@
 #include<cstring>
 #include<utility>
 
-#include<boost/shared_ptr.hpp>
+#include<boost/scoped_ptr.hpp>
+#include<boost/noncopyable.hpp>
 
 class Generic;
-class SharedVar;
 
 /*-----------------------------------------------------------------------------
 Semispaces
 -----------------------------------------------------------------------------*/
 
-class Semispace {
+class Semispace : boost::nocopyable {
 private:
 	void* mem;
 	void* allocpt;
@@ -46,6 +46,62 @@ public:
 	void clone(boost::scoped_ptr<Semispace>&, Generic*&) const;
 
 	friend class Heap;
+};
+
+/*-----------------------------------------------------------------------------
+Heaps
+-----------------------------------------------------------------------------*/
+
+class Heap : boost::nocopyable {
+private:
+	boost::scoped_ptr<Semispace> main;
+
+	void GC(void);
+
+protected:
+	virtual Object::ref root_object(void) const =0;
+
+public:
+	template<class T>
+	inline T* create(void) {
+		/*compile-time checking that T inherits from Generic*/
+		Generic* _create_template_must_be_Generic_ =
+			static_cast<Generic*>((T*) 0);
+		size_t sz = Object::round_up_to_alignment(sizeof(T));
+		if(!main->can_fit(sz)) GC();
+		void* pt = main->alloc(sz);
+		try {
+			new(pt) T();
+			return pt;
+		} catch(...) {
+			main->dealloc(pt);
+			throw;
+		}
+	}
+	template<class T>
+	inline T* create_variadic(size_t extra) {
+		/*TODO: consider splitting Generic hierarchy into two
+		hierarchies inheriting from Generic, one hierarchy for
+		non-variadic types, the other hierarchy for variadic
+		types.
+		*/
+		Generic* _create_variadic_template_must_be_Generic_ =
+			static_cast<Generic*>((T*) 0);
+		size_t sz = Object::round_up_to_alignment(sizeof(T))
+			+ Object::round_up_to_alignment(
+				extra * sizeof(Object::ref)
+			)
+		;
+		if(!main->can_fit(sz)) GC();
+		void* pt = main->alloc(sz);
+		try {
+			new(pt) T(extra);
+			return pt;
+		} catch(...) {
+			main->dealloc(pt);
+			throw;
+		}
+	}
 };
 
 #endif //HEAPS_H
