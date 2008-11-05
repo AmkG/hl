@@ -25,11 +25,14 @@ private:
 public:
 	Semispace(size_t);
 	~Semispace();
+
 	void* alloc(size_t);
 	void dealloc(void*);
+
 	void* lifo_alloc(void);
 	void lifo_dealloc(void*);
 	void lifo_dealloc_abort(void*);
+
 	void resize(size_t);
 	bool can_fit(size_t) const;
 
@@ -40,8 +43,7 @@ public:
 			((((char*) mem) + max) - ((char*) lifoallocpt));
 	};
 
-	std::pair<boost::shared_ptr<Semispace>, Generic* >
-		clone(Generic*) const;
+	void clone(boost::scoped_ptr<Semispace>&, Generic*&) const;
 
 	friend class Heap;
 };
