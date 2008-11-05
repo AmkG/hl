@@ -19,7 +19,7 @@ class Semispace {
 private:
 	void* mem;
 	void* allocpt;
-	void* svallocpt; // sharedvar allocation point
+	void* lifoallocpt;
 	size_t prev_alloc;
 	size_t max;
 public:
@@ -27,46 +27,21 @@ public:
 	~Semispace();
 	void* alloc(size_t);
 	void dealloc(void*);
-	SharedVar* sv_alloc(void);
-	void sv_dealloc(SharedVar*);
+	void* lifo_alloc(void);
+	void lifo_dealloc(void*);
+	void lifo_dealloc_abort(void*);
 	void resize(size_t);
 	bool can_fit(size_t) const;
 
 	size_t size(void) const { return max; };
 	size_t used(void) const {
-		return (size_t)(((char*) allocpt) - ((char*) mem))
-			+ (size_t)((((char*) mem) + max) - ((char*) svallocpt));
+		return (size_t)(((char*) allocpt) - ((char*) mem)) +
+			(size_t)
+			((((char*) mem) + max) - ((char*) lifoallocpt));
 	};
 
 	std::pair<boost::shared_ptr<Semispace>, Generic* >
 		clone(Generic*) const;
-
-	friend class Heap;
-};
-
-/*last-in-first-out allocation semispace*/
-class LifoSemispace {
-private:
-	void* mem;
-	void* allocpt;
-	void* end;
-	size_t prevalloc;
-public:
-	LifoSemispace(size_t sz);
-	~LifoSemispace();
-	void* alloc(size_t sz);
-	void dealloc(void*); // used only in a constructor-fail delete
-	void normal_dealloc(Generic*);
-	/*no svallocation: no sharedvar's allowed in LifoSemispace*/
-
-	bool can_fit(size_t) const;
-	size_t size(void) const {
-		return (size_t) (((char*) end) - ((char*) mem));
-	}
-	size_t used(void) const {
-		return (size_t) (((char*) end) - ((char*) allocpt));
-	}
-	/*no need to clone LIFO semispaces: they never get passed around*/
 
 	friend class Heap;
 };
