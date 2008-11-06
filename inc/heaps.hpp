@@ -55,6 +55,7 @@ Heaps
 class Heap : boost::nocopyable {
 private:
 	boost::scoped_ptr<Semispace> main;
+	boost::scoped_ptr<ValueHolder> other_spaces;
 
 	void GC(void);
 
