@@ -123,6 +123,14 @@ Base classes for Generic-derived objects
 
 template<class T>
 class GenericDerived : public Generic {
+private:
+	/*compile-time assertion*/
+	/*if this line throws a compile-time error,
+	it means the broken heart is bigger than
+	the actual type T.
+	*/
+	typedef char _check_broken_heart_is_not_bigger_[
+		-1 + 2 * (sizeof(BrokenHeartFor<T>) <= sizeof(T))];
 protected:
 	GenericDerived<T>(void) { }
 public:
@@ -143,6 +151,13 @@ a factory function!
 */
 template<class T>
 class GenericDerivedVariadic : public Generic {
+	/*compile-time assertion*/
+	/*if this line throws a compile-time error,
+	it means the broken heart is bigger than
+	the actual type T.
+	*/
+	typedef char _check_broken_heart_is_not_bigger_[
+		-1 + 2 * (sizeof(BrokenHeartForVariadic<T>) <= sizeof(T))];
 	GenericDerivedVariadic<T>(void); // disallowed!
 protected:
 	/*number of extra Object::ref's*/
@@ -150,7 +165,7 @@ protected:
 	/*used by the derived classes to get access to
 	the variadic data at the end of the object.
 	*/
-	Object::ref& index(size_t i) {
+	inline Object::ref& index(size_t i) {
 		void* vp = this;
 		char* cp = (char*) vp;
 		cp = cp + sizeof(T);
