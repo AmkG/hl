@@ -45,9 +45,7 @@ for my $i (0..$#tests) {
     close OUT;
     my $out = `$test_prog $tmp_name`;
     unlink $tmp_name;
-    print "Testing ";
-    print foreach (@{$tests[$i]});
-    print " against $results[$i] ... ";
+    print "Test $i ...";
     if ($out =~ $results[$i]) {
         print "ok.\n";
     } else {
