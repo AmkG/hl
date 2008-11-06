@@ -206,7 +206,7 @@ Cons* cp = expect_type<Cons*>(proc.stack().top(),
 );
 */
 template<class T>
-static inline expect_type(Object::ref x, char const* error) {
+static inline T* expect_type(Object::ref x, char const* error) {
 	if(!is_a<Generic*>(x)) throw_HlError(error);
 	T* tmp = dynamic_cast<T*>(as_a<Generic*>(x));
 	if(!tmp) throw_HlError(error);
