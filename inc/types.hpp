@@ -186,7 +186,7 @@ Utility
 void throw_HlError(char const*);
 
 /*Usage:
-Cons* cp = expect_type<Cons*>(proc.stack().top(),
+Cons* cp = expect_type<Cons>(proc.stack().top(),
 		"Your mom expects a Cons cell on top"
 );
 */
@@ -224,11 +224,11 @@ public:
 
 static inline Object::ref car(Object::ref x) {
 	if(!x) return x;
-	return expect_type<Cons*>(x,"'car expects a Cons cell")->car();
+	return expect_type<Cons>(x,"'car expects a Cons cell")->car();
 }
 static inline Object::ref cdr(Object::ref x) {
 	if(!x) return x;
-	return expect_type<Cons*>(x,"'cdr expects a Cons cell")->cdr();
+	return expect_type<Cons>(x,"'cdr expects a Cons cell")->cdr();
 }
 
 #endif //TYPES_H
