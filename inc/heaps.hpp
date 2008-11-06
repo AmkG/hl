@@ -24,7 +24,7 @@ private:
 	size_t prev_alloc;
 	size_t max;
 public:
-	Semispace(size_t);
+	explicit Semispace(size_t);
 	~Semispace();
 
 	void* alloc(size_t);
