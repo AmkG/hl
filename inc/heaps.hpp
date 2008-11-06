@@ -61,10 +61,9 @@ private:
 	boost::scoped_ptr<Semispace> main;
 	boost::scoped_ptr<ValueHolder> other_spaces;
 
-	void GC(void);
-
 protected:
 	virtual Object::ref root_object(void) const =0;
+	void GC(void);
 
 public:
 	template<class T>
