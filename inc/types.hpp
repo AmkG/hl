@@ -213,8 +213,21 @@ public:
 
   inline Object::ref car() { return car_ref; }
   inline Object::ref cdr() { return cdr_ref; }
+  inline Object::ref scar(Object::ref x) { return car_ref = x; }
+  inline Object::ref scdr(Object::ref x) { return cdr_ref = x; }
 
   Cons() : car_ref(Object::nil()), cdr_ref(Object::nil()) {}
+  /*
+   * Note that we *can't* safely construct any heap-based objects
+   * by, say, passing them any of their data.  This is because the
+   * act of allocating space for these objects may start a garbage
+   * collection, which can move *other* objects.  So any references
+   * passed into the constructor will be invalid; instead, the
+   * process must save the data to be put in the new object in a
+   * root location (such as the process stack) and after it is
+   * given the newly-constructed object, it must store the data
+   * straight from the root location.
+   */
 
   void traverse_references(GenericTraverser *gt) {
     gt->traverse(car_ref);
@@ -229,6 +242,12 @@ static inline Object::ref car(Object::ref x) {
 static inline Object::ref cdr(Object::ref x) {
 	if(!x) return x;
 	return expect_type<Cons>(x,"'cdr expects a Cons cell")->cdr();
+}
+static inline Object::ref scar(Object::ref c, Object::ref v) {
+	return expect_type<Cons>(c,"'scar expects a true Cons cell")->scar(v);
+}
+static inline Object::ref scdr(Object::ref c, Object::ref v) {
+	return expect_type<Cons>(c,"'scdr expects a true Cons cell")->scdr(v);
 }
 
 #endif //TYPES_H
