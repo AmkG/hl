@@ -57,6 +57,10 @@ Broken Heart tags
 void throw_OverBrokenHeart(Generic*);
 
 class BrokenHeart : public Generic {
+private:
+	// disallowed
+	BrokenHeart();
+	BrokenHeart(BrokenHeart const&);
 public:
 	Generic* to;
 	virtual void break_heart(Generic* to) {
@@ -66,8 +70,28 @@ public:
 	BrokenHeart(Generic* nto) : to(nto) { }
 };
 
+class BrokenHeartVariadic : public BrokenHeart {
+private:
+	// disallowed
+	BrokenHeartVariadic();
+	BrokenHeartVariadic(BrokenHeart const&);
+protected:
+	size_t sz;
+public:
+	/*exists only for RTTI*/
+	virtual void break_heart(Generic* to) {
+		throw_OverBrokenHeart(to);
+	}
+	BrokenHeartVariadic(Generic* x, size_t nsz)
+		: BrokenHeart(x), sz(nsz) { }
+};
+
 template<class T>
 class BrokenHeartFor : public BrokenHeart {
+private:
+	// disallowed
+	BrokenHeartFor<T>();
+	BrokenHeartFor<T>(BrokenHeartFor<T> const&);
 public:
 	virtual size_t real_size(void) const {
 		return Object::round_up_to_alignment(sizeof(T));
@@ -76,11 +100,13 @@ public:
 };
 
 template<class T>
-class BrokenHeartForVariadic : public BrokenHeart {
+class BrokenHeartForVariadic : public BrokenHeartVariadic {
 private:
-	size_t sz;
+	// disallowed
+	BrokenHeartForVariadic<T>();
+	BrokenHeartForVariadic<T>(BrokenHeartForVariadic<T> const&);
 public:
-	virtual bool real_size(void) const {
+	virtual size_t real_size(void) const {
 		return Object::round_up_to_alignment(sizeof(T))
 			 + Object::round_up_to_alignment(
 				sz * sizeof(Object::ref)
@@ -88,7 +114,7 @@ public:
 		;
 	}
 	BrokenHeartForVariadic<T>(Generic* x, size_t nsz)
-		: BrokenHeart(x), sz(nsz) { }
+		: BrokenHeartVariadic(x, nsz) { }
 };
 
 /*-----------------------------------------------------------------------------
