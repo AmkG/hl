@@ -25,3 +25,9 @@
 [abc 5)
 
 ;Unknown character at start of bytecode
+
+; **********
+
+(a (b 0) 1 (c 8))
+
+;Spurious contents at end of bytecode

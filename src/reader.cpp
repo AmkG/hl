@@ -16,6 +16,19 @@ void skip_seps(std::istream & in) {
     in.get();
 }
 
+// read a sequence of bytecodes
+void read_bytecodes(std::istream & in, BytecodeSeq & bc) {
+  char c;
+  while (1) {
+    skip_seps(in);
+    c = in.peek();
+    if (!in.eof() && c == bc_start) {
+      in >> bc;
+    }
+    else break;
+  }
+}
+
 // !! missing error checking
 std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
   skip_seps(in);
@@ -38,7 +51,7 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
     throw ReadError("EOF");
   if (c == bc_start) { // subsequence
     BytecodeSeq *sub = new BytecodeSeq;
-    in >> (*sub);
+    read_bytecodes(in, *sub);
     bc.push_back(bytecode(name, sub));
   } else { // simple arg
     size_t val;
@@ -47,9 +60,9 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
     skip_seps(in);
     c = in.peek();
     if (c == bc_start) { // simple arg followed by a sequence
-      BytecodeSeq *bs = new BytecodeSeq;
-      in >> (*bs);
-      bc.push_back(bytecode(name, new SimpleArgAndSeq(sa, bs)));
+      BytecodeSeq *sub = new BytecodeSeq;
+      read_bytecodes(in, *sub);
+      bc.push_back(bytecode(name, new SimpleArgAndSeq(sa, sub)));
     } else {
       bc.push_back(bytecode(name, new SimpleArg(val)));
     }
