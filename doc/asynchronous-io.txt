@@ -1,0 +1,38 @@
+Asynchronous I/O support (AIO from now on).
+
+AIO will be implemented at bytecode level. On the hl level, a set of primitive 
+operations that can't be redefined will be available. The names of those 
+primitives will start with $aio-
+
+Implementation will be based on OS threads. Different implementations (based 
+on select()/epoll()/poll()/posix-aio/...) may be added in the future.
+
+hl primitives:
+
+($aio-file-open filename mode)
+  Opens a file for AIO. Mode is a string and can be "read", "write" or "append"
+
+($aio-server-socket port)
+  Opens a server socket for AIO.
+
+($aio-accept sock fun)
+  Nonblocking. Calls fun with two AIO streams (client input and output) when
+  a client connects to the server.
+
+($aio-client-socket host port)
+  Returns a list of two AIO objects: an input and an output stream.
+
+($aio-write stream string err-fn)
+  Nonblocking. Writes string to an AIO stream object. If an error occurs, 
+  err-fn is called with the error as an argument.
+
+($aio-read stream n fun err-fn)
+  Nonblocking. Calls fun when n bytes are read from stream. The read bytes will
+  be passed to the function in the form of a string.
+
+($aio-peek stream fun err-fn)
+  Nonblocking. fun will be called with the first character available.
+
+($aio-close stream)
+  Close an AIO stream. If there are pending writes/reads the associated error
+  functions will be called.
