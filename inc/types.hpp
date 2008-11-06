@@ -157,7 +157,7 @@ protected:
 		Object::ref* op = (void*) cp;
 		return op[i];
 	}
-	GenericDerivedVariadic<T>(size_t nsz) : sz(nsz) {
+	explicit GenericDerivedVariadic<T>(size_t nsz) : sz(nsz) {
 		/*clear the extra references*/
 		for(size_t i; i < nsz; ++i) {
 			index(i) = Object::nil();
