@@ -71,4 +71,27 @@ Semispace::~Semispace() {
 	}
 }
 
+/*
+sz must be computed using the exact same
+computation used in real_size() of the
+object to be allocated.
+*/
+void* Semispace::alloc(size_t sz) {
+	prev_alloc = sz;
+	void* tmp = allocpt;
+	char* callocpt = allocpt;
+	callocpt += sz;
+	allocpt = callocpt;
+	return tmp;
+}
+
+/*should be used only for most recent allocation*/
+void Semispace::dealloc(void* pt) {
+	#ifdef DEBUG
+		char* callocpt = allocpt;
+		callocpt -= prev_alloc;
+		if(callocpt != pt) throw_DeallocError(pt);
+	#endif
+	allocpt = pt;
+}
 
