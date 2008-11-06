@@ -37,13 +37,13 @@ public:
 	void resize(size_t);
 	bool can_fit(size_t) const;
 
-	size_t size(void) const { return max; };
-	size_t used(void) const {
+	inline size_t size(void) const { return max; };
+	inline size_t used(void) const {
 		return (size_t)(((char*) allocpt) - ((char*) mem)) +
 			(size_t)
 			((((char*) mem) + max) - ((char*) lifoallocpt));
 	};
-	size_t free(void) const {
+	inline size_t free(void) const {
 		return (size_t)(((char*) lifoallocpt) - ((char*) allocpt));
 	}
 
