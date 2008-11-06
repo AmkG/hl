@@ -10,12 +10,13 @@
 #include<boost/noncopyable.hpp>
 
 class Generic;
+class ValueHolder;
 
 /*-----------------------------------------------------------------------------
 Semispaces
 -----------------------------------------------------------------------------*/
 
-class Semispace : boost::nocopyable {
+class Semispace : boost::noncopyable {
 private:
 	void* mem;
 	void* allocpt;
@@ -52,9 +53,10 @@ public:
 Heaps
 -----------------------------------------------------------------------------*/
 
-class Heap : boost::nocopyable {
+class Heap : boost::noncopyable {
 private:
 	boost::scoped_ptr<Semispace> main;
+	boost::scoped_ptr<ValueHolder> other_spaces;
 
 	void GC(void);
 

@@ -57,6 +57,10 @@ Broken Heart tags
 void throw_OverBrokenHeart(Generic*);
 
 class BrokenHeart : public Generic {
+private:
+	// disallowed
+	BrokenHeart();
+	BrokenHeart(BrokenHeart const&);
 public:
 	Generic* to;
 	virtual void break_heart(Generic* to) {
@@ -66,8 +70,28 @@ public:
 	BrokenHeart(Generic* nto) : to(nto) { }
 };
 
+class BrokenHeartVariadic : public BrokenHeart {
+private:
+	// disallowed
+	BrokenHeartVariadic();
+	BrokenHeartVariadic(BrokenHeart const&);
+protected:
+	size_t sz;
+public:
+	/*exists only for RTTI*/
+	virtual void break_heart(Generic* to) {
+		throw_OverBrokenHeart(to);
+	}
+	BrokenHeartVariadic(Generic* x, size_t nsz)
+		: BrokenHeart(x), sz(nsz) { }
+};
+
 template<class T>
 class BrokenHeartFor : public BrokenHeart {
+private:
+	// disallowed
+	BrokenHeartFor<T>();
+	BrokenHeartFor<T>(BrokenHeartFor<T> const&);
 public:
 	virtual size_t real_size(void) const {
 		return Object::round_up_to_alignment(sizeof(T));
@@ -76,11 +100,13 @@ public:
 };
 
 template<class T>
-class BrokenHeartForVariadic : public BrokenHeart {
+class BrokenHeartForVariadic : public BrokenHeartVariadic {
 private:
-	size_t sz;
+	// disallowed
+	BrokenHeartForVariadic<T>();
+	BrokenHeartForVariadic<T>(BrokenHeartForVariadic<T> const&);
 public:
-	virtual bool real_size(void) const {
+	virtual size_t real_size(void) const {
 		return Object::round_up_to_alignment(sizeof(T))
 			 + Object::round_up_to_alignment(
 				sz * sizeof(Object::ref)
@@ -88,7 +114,7 @@ public:
 		;
 	}
 	BrokenHeartForVariadic<T>(Generic* x, size_t nsz)
-		: BrokenHeart(x), sz(nsz) { }
+		: BrokenHeartVariadic(x, nsz) { }
 };
 
 /*-----------------------------------------------------------------------------
@@ -124,14 +150,14 @@ protected:
 	/*used by the derived classes to get access to
 	the variadic data at the end of the object.
 	*/
-	Object::ref& index(size_t i) {
+	inline Object::ref& index(size_t i) {
 		void* vp = this;
 		char* cp = (char*) vp;
 		cp = cp + sizeof(T);
 		Object::ref* op = (void*) cp;
 		return op[i];
 	}
-	GenericDerivedVariadic<T>(size_t nsz) : sz(nsz) {
+	explicit GenericDerivedVariadic<T>(size_t nsz) : sz(nsz) {
 		/*clear the extra references*/
 		for(size_t i; i < nsz; ++i) {
 			index(i) = Object::nil();
@@ -153,9 +179,30 @@ public:
 	}
 };
 
+/*-----------------------------------------------------------------------------
+Utility
+-----------------------------------------------------------------------------*/
+
+void throw_HlError(char const*);
+
+/*Usage:
+Cons* cp = expect_type<Cons>(proc.stack().top(),
+		"Your mom expects a Cons cell on top"
+);
+*/
+template<class T>
+static inline T* expect_type(Object::ref x, char const* error) {
+	if(!is_a<Generic*>(x)) throw_HlError(error);
+	T* tmp = dynamic_cast<T*>(as_a<Generic*>(x));
+	if(!tmp) throw_HlError(error);
+	return tmp;
+}
+
+
 /*
  * Cons cell
  */
+
 class Cons : public GenericDerived<Cons> {
 private:
   
@@ -166,13 +213,41 @@ public:
 
   inline Object::ref car() { return car_ref; }
   inline Object::ref cdr() { return cdr_ref; }
+  inline Object::ref scar(Object::ref x) { return car_ref = x; }
+  inline Object::ref scdr(Object::ref x) { return cdr_ref = x; }
 
   Cons() : car_ref(Object::nil()), cdr_ref(Object::nil()) {}
+  /*
+   * Note that we *can't* safely construct any heap-based objects
+   * by, say, passing them any of their data.  This is because the
+   * act of allocating space for these objects may start a garbage
+   * collection, which can move *other* objects.  So any references
+   * passed into the constructor will be invalid; instead, the
+   * process must save the data to be put in the new object in a
+   * root location (such as the process stack) and after it is
+   * given the newly-constructed object, it must store the data
+   * straight from the root location.
+   */
 
   void traverse_references(GenericTraverser *gt) {
     gt->traverse(car_ref);
     gt->traverse(cdr_ref);
   }
 };
+
+static inline Object::ref car(Object::ref x) {
+	if(!x) return x;
+	return expect_type<Cons>(x,"'car expects a Cons cell")->car();
+}
+static inline Object::ref cdr(Object::ref x) {
+	if(!x) return x;
+	return expect_type<Cons>(x,"'cdr expects a Cons cell")->cdr();
+}
+static inline Object::ref scar(Object::ref c, Object::ref v) {
+	return expect_type<Cons>(c,"'scar expects a true Cons cell")->scar(v);
+}
+static inline Object::ref scdr(Object::ref c, Object::ref v) {
+	return expect_type<Cons>(c,"'scdr expects a true Cons cell")->scdr(v);
+}
 
 #endif //TYPES_H
