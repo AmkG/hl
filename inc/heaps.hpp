@@ -43,6 +43,9 @@ public:
 			(size_t)
 			((((char*) mem) + max) - ((char*) lifoallocpt));
 	};
+	size_t free(void) const {
+		return (size_t)(((char*) lifoallocpt) - ((char*) allocpt));
+	}
 
 	void clone(boost::scoped_ptr<Semispace>&, Generic*&) const;
 
