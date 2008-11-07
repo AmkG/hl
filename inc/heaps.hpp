@@ -24,7 +24,7 @@ private:
 	size_t prev_alloc;
 	size_t max;
 public:
-	Semispace(size_t);
+	explicit Semispace(size_t);
 	~Semispace();
 
 	void* alloc(size_t);
@@ -37,12 +37,15 @@ public:
 	void resize(size_t);
 	bool can_fit(size_t) const;
 
-	size_t size(void) const { return max; };
-	size_t used(void) const {
+	inline size_t size(void) const { return max; };
+	inline size_t used(void) const {
 		return (size_t)(((char*) allocpt) - ((char*) mem)) +
 			(size_t)
 			((((char*) mem) + max) - ((char*) lifoallocpt));
 	};
+	inline size_t free(void) const {
+		return (size_t)(((char*) lifoallocpt) - ((char*) allocpt));
+	}
 
 	void clone(boost::scoped_ptr<Semispace>&, Generic*&) const;
 
@@ -58,10 +61,9 @@ private:
 	boost::scoped_ptr<Semispace> main;
 	boost::scoped_ptr<ValueHolder> other_spaces;
 
-	void GC(void);
-
 protected:
 	virtual Object::ref root_object(void) const =0;
+	void GC(void);
 
 public:
 	template<class T>
