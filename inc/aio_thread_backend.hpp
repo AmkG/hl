@@ -7,6 +7,8 @@
 
 #include "aio.hpp"
 
+#include <fstream>
+
 class ThreadTaskRead : public TaskRead {
   friend class ThreadFileIN;
 private:
@@ -18,8 +20,38 @@ protected:
     : in(i), act(a), to_read(len) {}
 public:
   // Tasks based on threads are always ready
-  bool ready() { return true; }
+  bool ready(seconds timeout) { return true; }
   void perform();
+  void operator()() { perform(); } // for boost::thread compatibility
+};
+
+class ThreadTaskPeek : public TaskPeek {
+  friend class ThreadFileIN;
+private:
+  std::ifstream & in;
+  ActionOn *act;
+protected:
+  ThreadTaskPeek(std::ifstream & i, ActionOn *a) : in(i), act(a) {}
+public:
+  bool ready(seconds timeout) { return true; }
+  void perform();
+  void operator()() { perform(); } // for boost::thread compatibility
+};
+
+class ThreadTaskWrite : public TaskWrite {
+  friend class ThreadFileOUT;
+private:
+  std::ofstream & out;
+  ActionOn *act;
+  char *buf;
+  size_t len;
+protected:
+  ThreadTaskWrite(std::ofstream & o, ActionOn *a, char *b, size_t l) 
+    : out(o), act(a), buf(b), len(l) {}
+public:
+  bool ready(seconds timeout) { return true; }
+  void perform();
+  void operator()() { perform(); } // for boost::thread compatibility
 };
 
 class ThreadTaskQueue : public TaskQueue {
@@ -36,8 +68,10 @@ public:
   void addTaskRead(ActionOn *a, size_t how_many) { 
     addTask(new ThreadTaskRead(in, a, how_many));
   }
-  void addTaskPeek(ActionOn *a);
-  void close();
+  void addTaskPeek(ActionOn *a) {
+    addTask(new ThreadTaskPeek(in, a));
+  }
+  void close() { in.close(); }
 };
 
 class ThreadFileOUT : public FileOUT {
@@ -45,9 +79,11 @@ private:
   std::ofstream out;
 public:
   ThreadFileOUT() { tq = new ThreadTaskQueue; }
-  void addTaskWrite(ActionOn *a, char *buf, size_t len);
+  void addTaskWrite(ActionOn *a, char *buf, size_t len) {
+    addTask(new ThreadTaskWrite(out, a, buf, len));
+  }
   void open(std::string path);
-  void close();
+  void close() { out.close(); }
 };
 
 #endif // AIO_THREAD_BACKEND_H

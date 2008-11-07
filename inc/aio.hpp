@@ -9,6 +9,10 @@
 #include <string>
 #include <queue>
 
+// without these my compiler signals an error
+#define INTPTR_MIN		(-2147483647-1)
+#define INTPTR_MAX		(2147483647)
+
 #include "objects.hpp"
 
 typedef size_t seconds;
@@ -27,7 +31,7 @@ public:
  */
 class ActionOn {
 public:
-  virtual void onComplete(char *data, size_t len, AIOError e) = 0;
+  virtual void onComplete(const char *data, size_t len, AIOError *e) = 0;
 };
 
 /*
@@ -75,7 +79,7 @@ public:
 
 class AOUT : public AIO {
 public:
-  virtual void addTaskWrite(Action *a, char *to_write, size_t len) = 0;
+  virtual void addTaskWrite(ActionOn *a, char *to_write, size_t len) = 0;
 };
 
 /*
