@@ -9,6 +9,12 @@
 
 #include <fstream>
 
+/*
+ * Task classes for thread-based async. I/O
+ * every task takes a heap-allocated ActionOn object
+ * the task is responsible of deallocation
+ */
+
 class ThreadTaskRead : public TaskRead {
   friend class ThreadFileIN;
 private:
@@ -19,10 +25,10 @@ protected:
   ThreadTaskRead(std::ifstream & i, ActionOn *a, size_t len) 
     : in(i), act(a), to_read(len) {}
 public:
+  ~ThreadTaskRead() { delete act; }
   // Tasks based on threads are always ready
   bool ready(seconds timeout) { return true; }
   void perform();
-  void operator()() { perform(); } // for boost::thread compatibility
 };
 
 class ThreadTaskPeek : public TaskPeek {
@@ -33,9 +39,9 @@ private:
 protected:
   ThreadTaskPeek(std::ifstream & i, ActionOn *a) : in(i), act(a) {}
 public:
+  ~ThreadTaskPeek() { delete act; }
   bool ready(seconds timeout) { return true; }
   void perform();
-  void operator()() { perform(); } // for boost::thread compatibility
 };
 
 class ThreadTaskWrite : public TaskWrite {
@@ -49,13 +55,14 @@ protected:
   ThreadTaskWrite(std::ofstream & o, ActionOn *a, char *b, size_t l) 
     : out(o), act(a), buf(b), len(l) {}
 public:
+  ~ThreadTaskWrite() { delete act; }
   bool ready(seconds timeout) { return true; }
   void perform();
-  void operator()() { perform(); } // for boost::thread compatibility
 };
 
 class ThreadTaskQueue : public TaskQueue {
 public:
+  ~ThreadTaskQueue();
   void performAll(seconds timeout); 
 };
 

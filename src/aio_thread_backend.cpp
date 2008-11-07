@@ -50,8 +50,20 @@ void ThreadTaskWrite::perform() {
   act->onComplete(buf, len, NULL);
 }
 
+ThreadTaskQueue::~ThreadTaskQueue() {
+  // delete all the remaining tasks
+  Task *t;
+  while (!empty()) {
+    t = front(); pop();
+    // should tasks be forced to execute before deletion?
+    delete t;
+  }
+}
+
 void* do_it(void *data) {
-  ((Task*)data)->perform();
+  Task *t = (Task*)data;
+  t->perform(); // ?? check for exceptions? It shouldn't throw...
+  delete t; // we own the task: it is in the queue no more
   return NULL;
 }
 
