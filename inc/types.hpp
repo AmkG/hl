@@ -86,6 +86,10 @@ public:
 		: BrokenHeart(x), sz(nsz) { }
 };
 
+/*The BrokenHeartFor classes are specialized for each
+generic-derived class.  They should *not* add any
+storage.
+*/
 template<class T>
 class BrokenHeartFor : public BrokenHeart {
 private:
@@ -94,6 +98,7 @@ private:
 	BrokenHeartFor<T>(BrokenHeartFor<T> const&);
 public:
 	virtual size_t real_size(void) const {
+		/*TODO: consider factoring out this computation*/
 		return Object::round_up_to_alignment(sizeof(T));
 	}
 	explicit BrokenHeartFor<T>(Generic* x) : BrokenHeart(x) { }
