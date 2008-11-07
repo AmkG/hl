@@ -39,6 +39,7 @@ Semispace::~Semispace() {
 	char* mvpt;
 	char* endpt;
 
+	/*TODO: consider refactoring*/
 	/*----Delete normally-allocated memory----*/
 	mvpt = mem;
 	intptr_t tmp = reinterpret_cast<intptr_t>(mem);
