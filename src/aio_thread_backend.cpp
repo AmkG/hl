@@ -1,35 +1,59 @@
 #include "aio_thread_backend.hpp"
 
-#include <boost/thread.hpp>
+#include <pthread.h>
 
 using namespace std;
 
 // !! no error checking for the moment
 
 void ThreadTaskRead::perform() {
+  if (!in) {
+    act->onComplete(NULL, 0, NULL); // should create an AIOError
+    return;
+  }
+  
   size_t n = to_read;
   string res;
-  for (; n>0; n--) 
+  for (; n>0; n--) {
     res += in.get();
+    if (in.eof()) {
+      act->onComplete(NULL, 0, NULL); // should create an AIOError
+      return;
+    }
+  }
   act->onComplete(res.c_str(), res.length(), NULL);
 }
 
 void ThreadTaskPeek::perform() {
+  if (!in) {
+    act->onComplete(NULL, 0, NULL); // should create an AIOError
+    return;
+  }
   char c = in.peek();
+  if (in.eof()) {
+    act->onComplete(NULL, 0, NULL); // should create an AIOError
+    return;
+  }
   act->onComplete(&c, 1, NULL);
 }
 
 void ThreadTaskWrite::perform() {
+  if (!out) {
+    act->onComplete(NULL, 0, NULL); // should create an AIOError
+    return;
+  }
   out.write(buf, len);
+  if (!out) {
+    act->onComplete(NULL, 0, NULL); // should create an AIOError
+    return;
+  }
   act->onComplete(buf, len, NULL);
 }
 
-class doIt {
-public:
-  Task *t;
-  doIt(Task *atask) : t(atask) {}
-  void operator()() { t->perform(); }
-};
+void* do_it(void *data) {
+  ((Task*)data)->perform();
+  return NULL;
+}
 
 void ThreadTaskQueue::performAll(seconds timeout) {
   // thread-based streams are always ready, there is no need to check
@@ -37,7 +61,9 @@ void ThreadTaskQueue::performAll(seconds timeout) {
   while (!empty()) {
     t = front(); pop();
     // start a new thread for each task
-    boost::thread to_run(doIt(t));
+    pthread_t thread;
+    pthread_create(&thread, NULL, do_it, (void*)t);
+    pthread_detach(thread);
   }
 }
 

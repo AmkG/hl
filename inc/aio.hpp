@@ -67,6 +67,7 @@ protected:
   TaskQueue *tq;
 public:
   void addTask(Task *t) { tq->push(t); }
+  void go(seconds timeout) { tq->performAll(timeout); }
   virtual ~AIO() { delete tq; }
   virtual void close() = 0;
 };

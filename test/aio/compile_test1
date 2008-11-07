@@ -1,0 +1,4 @@
+#!/bin/sh
+
+g++ -I../../inc ../../src/aio.cpp ../../src/aio_thread_backend.cpp test1.cpp -pthread -o test1
+
