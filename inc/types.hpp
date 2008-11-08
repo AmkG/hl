@@ -7,6 +7,14 @@ Defines a set of types for use on the hl-side.
 #include<cstring>
 #include"objects.hpp"
 
+/*-----------------------------------------------------------------------------
+GenericTraverser
+-----------------------------------------------------------------------------*/
+/*An abstract base class which provides a
+"traverse" method.  This method is invoked
+on each reference of an object.
+*/
+
 class GenericTraverser {
 public:
 	virtual void traverse(Object::ref&) =0;
