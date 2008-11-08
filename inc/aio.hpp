@@ -42,6 +42,7 @@ class Task {
 public:
   virtual ~Task() {}
   virtual bool ready(seconds timeout) = 0;
+  // when perform finishes, it destroys the object
   virtual void perform() = 0;
 };
 
@@ -60,7 +61,7 @@ public:
   virtual ~TaskQueue() {}
   virtual void add(Task *t) { push(t); }
   // try to perform every action in the given timeout (for each action)
-  virtual void performAll(seconds timeout) = 0; 
+  virtual void performAll(seconds timeout);
 };
 
 /*

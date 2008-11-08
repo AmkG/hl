@@ -22,6 +22,7 @@ private:
   std::ifstream & in;
   ActionOn *act;
   size_t to_read;
+  static void* do_read(void *data);
 protected:
   ThreadTaskRead(std::ifstream & i, ActionOn *a, size_t len) 
     : in(i), act(a), to_read(len) {}
@@ -37,6 +38,7 @@ class ThreadTaskPeek : public TaskPeek {
 private:
   std::ifstream & in;
   ActionOn *act;
+  static void* do_peek(void *data);
 protected:
   ThreadTaskPeek(std::ifstream & i, ActionOn *a) : in(i), act(a) {}
 public:
@@ -52,6 +54,7 @@ private:
   ActionOn *act;
   char *buf;
   size_t len;
+  static void* do_write(void *data);
 protected:
   ThreadTaskWrite(std::ofstream & o, ActionOn *a, char *b, size_t l) 
     : out(o), act(a), buf(b), len(l) {}
