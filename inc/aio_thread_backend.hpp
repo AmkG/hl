@@ -8,6 +8,13 @@
 #include "aio.hpp"
 
 #include <fstream>
+#include <pthread.h>
+
+/*
+ * Task classes for thread-based async. I/O
+ * every task takes a heap-allocated ActionOn object
+ * the task is responsible of deallocation
+ */
 
 class ThreadTaskRead : public TaskRead {
   friend class ThreadFileIN;
@@ -15,14 +22,15 @@ private:
   std::ifstream & in;
   ActionOn *act;
   size_t to_read;
+  static void* do_read(void *data);
 protected:
   ThreadTaskRead(std::ifstream & i, ActionOn *a, size_t len) 
     : in(i), act(a), to_read(len) {}
 public:
+  ~ThreadTaskRead() { delete act; }
   // Tasks based on threads are always ready
   bool ready(seconds timeout) { return true; }
   void perform();
-  void operator()() { perform(); } // for boost::thread compatibility
 };
 
 class ThreadTaskPeek : public TaskPeek {
@@ -30,12 +38,13 @@ class ThreadTaskPeek : public TaskPeek {
 private:
   std::ifstream & in;
   ActionOn *act;
+  static void* do_peek(void *data);
 protected:
   ThreadTaskPeek(std::ifstream & i, ActionOn *a) : in(i), act(a) {}
 public:
+  ~ThreadTaskPeek() { delete act; }
   bool ready(seconds timeout) { return true; }
   void perform();
-  void operator()() { perform(); } // for boost::thread compatibility
 };
 
 class ThreadTaskWrite : public TaskWrite {
@@ -45,17 +54,23 @@ private:
   ActionOn *act;
   char *buf;
   size_t len;
+  static void* do_write(void *data);
 protected:
   ThreadTaskWrite(std::ofstream & o, ActionOn *a, char *b, size_t l) 
     : out(o), act(a), buf(b), len(l) {}
 public:
+  ~ThreadTaskWrite() { delete act; }
   bool ready(seconds timeout) { return true; }
   void perform();
-  void operator()() { perform(); } // for boost::thread compatibility
 };
 
 class ThreadTaskQueue : public TaskQueue {
+private:
+  pthread_mutex_t perform_mutex;
 public:
+  ThreadTaskQueue();
+  ~ThreadTaskQueue();
+  void add(Task *t);
   void performAll(seconds timeout); 
 };
 

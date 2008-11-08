@@ -31,6 +31,7 @@ public:
  */
 class ActionOn {
 public:
+  virtual ~ActionOn() {}
   virtual void onComplete(const char *data, size_t len, AIOError *e) = 0;
 };
 
@@ -39,7 +40,9 @@ public:
  */
 class Task {
 public:
+  virtual ~Task() {}
   virtual bool ready(seconds timeout) = 0;
+  // when perform finishes, it destroys the object
   virtual void perform() = 0;
 };
 
@@ -55,8 +58,10 @@ class TaskWrite : public Task {};
  */
 class TaskQueue : public std::queue<Task*> {
 public:
+  virtual ~TaskQueue() {}
+  virtual void add(Task *t) { push(t); }
   // try to perform every action in the given timeout (for each action)
-  virtual void performAll(seconds timeout) = 0; 
+  virtual void performAll(seconds timeout);
 };
 
 /*
@@ -66,9 +71,9 @@ class AIO {
 protected:
   TaskQueue *tq;
 public:
-  void addTask(Task *t) { tq->push(t); }
-  void go(seconds timeout) { tq->performAll(timeout); }
   virtual ~AIO() { delete tq; }
+  void addTask(Task *t) { tq->add(t); }
+  void go(seconds timeout) { tq->performAll(timeout); }
   virtual void close() = 0;
 };
 
