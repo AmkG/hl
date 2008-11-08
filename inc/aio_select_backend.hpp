@@ -16,8 +16,36 @@ protected:
     : fd(fd), act(a), to_read(len) {}
 public:
   ~SelectTaskRead() { delete act; }
-  // won't be used
-  bool ready(seconds timeout) { return false; }
+  bool ready(seconds timeout);
+  void perform();
+};
+
+class SelectTaskPeek : public TaskPeek {
+  friend class SelectFileIN;
+private:
+  int fd;
+  ActionOn *act;
+protected:
+  SelectTaskPeek(int fd, ActionOn *a) : fd(fd), act(a) {}
+public:
+  ~SelectTaskPeek() { delete act; }
+  bool ready(seconds timeout);
+  void perform();
+};
+
+class SelectTaskWrite : public TaskWrite {
+  friend class SelectFileIN;
+private:
+  int fd;
+  ActionOn *act;
+  const char *buf;
+  size_t len;
+protected:
+  SelectTaskWrite(int fd, ActionOn *a, const char *buf, size_t len) 
+    : fd(fd), act(a), buf(buf), len(len) {}
+public:
+  ~SelectTaskWrite() { delete act; }
+  bool ready(seconds timeout);
   void perform();
 };
 
