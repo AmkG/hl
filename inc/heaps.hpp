@@ -37,8 +37,6 @@ public:
 	void lifo_dealloc(void*);
 	void lifo_dealloc_abort(void*);
 
-	bool can_fit(size_t) const;
-
 	inline size_t size(void) const { return max; };
 	inline size_t used(void) const {
 		return (size_t)(((char*) allocpt) - ((char*) mem)) +
@@ -47,6 +45,9 @@ public:
 	};
 	inline size_t free(void) const {
 		return (size_t)(((char*) lifoallocpt) - ((char*) allocpt));
+	}
+	inline bool can_fit(size_t sz) const {
+		return sz <= free();
 	}
 
 	void clone(boost::scoped_ptr<Semispace>&, Generic*&) const;
