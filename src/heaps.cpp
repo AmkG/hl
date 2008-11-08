@@ -124,7 +124,7 @@ constructor for the object fails.  It does
 */
 void Semispace::lifo_dealloc_abort(void* pt) {
 	#ifdef DEBUG
-		if(pt != lifoallocpt) throw_DeallocError();
+		if(pt != lifoallocpt) throw_DeallocError(pt);
 	#endif
 	char* clifoallocpt = lifoallocpt;
 	clifoallocpt += prev_alloc;
