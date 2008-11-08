@@ -58,6 +58,7 @@ class TaskWrite : public Task {};
 class TaskQueue : public std::queue<Task*> {
 public:
   virtual ~TaskQueue() {}
+  virtual void add(Task *t) { push(t); }
   // try to perform every action in the given timeout (for each action)
   virtual void performAll(seconds timeout) = 0; 
 };
@@ -70,7 +71,7 @@ protected:
   TaskQueue *tq;
 public:
   virtual ~AIO() { delete tq; }
-  void addTask(Task *t) { tq->push(t); }
+  void addTask(Task *t) { tq->add(t); }
   void go(seconds timeout) { tq->performAll(timeout); }
   virtual void close() = 0;
 };

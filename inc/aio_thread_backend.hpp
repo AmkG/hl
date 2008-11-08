@@ -8,6 +8,7 @@
 #include "aio.hpp"
 
 #include <fstream>
+#include <pthread.h>
 
 /*
  * Task classes for thread-based async. I/O
@@ -61,8 +62,12 @@ public:
 };
 
 class ThreadTaskQueue : public TaskQueue {
+private:
+  pthread_mutex_t perform_mutex;
 public:
+  ThreadTaskQueue();
   ~ThreadTaskQueue();
+  void add(Task *t);
   void performAll(seconds timeout); 
 };
 

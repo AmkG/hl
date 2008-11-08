@@ -50,7 +50,12 @@ void ThreadTaskWrite::perform() {
   act->onComplete(buf, len, NULL);
 }
 
+ThreadTaskQueue::ThreadTaskQueue() {
+  pthread_mutex_init(&perform_mutex, NULL);
+}
+
 ThreadTaskQueue::~ThreadTaskQueue() {
+  pthread_mutex_destroy(&perform_mutex);
   // delete all the remaining tasks
   Task *t;
   while (!empty()) {
@@ -67,7 +72,17 @@ void* do_it(void *data) {
   return NULL;
 }
 
+void ThreadTaskQueue::add(Task *t) {
+  // can't add to the queue while a perform cycle is running
+  pthread_mutex_lock(&perform_mutex);
+  TaskQueue::add(t);
+  pthread_mutex_unlock(&perform_mutex);
+}
+
 void ThreadTaskQueue::performAll(seconds timeout) {
+  // only one call to performAll per object may be active at any given time
+  // no exceptions will be raised within the lock
+  pthread_mutex_lock(&perform_mutex);
   // thread-based streams are always ready, there is no need to check
   Task *t;
   while (!empty()) {
@@ -77,6 +92,7 @@ void ThreadTaskQueue::performAll(seconds timeout) {
     pthread_create(&thread, NULL, do_it, (void*)t);
     pthread_detach(thread);
   }
+  pthread_mutex_unlock(&perform_mutex);
 }
 
 void ThreadFileIN::open(string path) {
