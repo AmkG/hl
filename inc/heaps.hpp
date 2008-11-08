@@ -2,6 +2,7 @@
 #define HEAPS_H
 
 #include"objects.hpp"
+#include"types.hpp"
 
 #include<cstring>
 #include<utility>
@@ -71,7 +72,7 @@ public:
 		/*compile-time checking that T inherits from Generic*/
 		Generic* _create_template_must_be_Generic_ =
 			static_cast<Generic*>((T*) 0);
-		size_t sz = Object::round_up_to_alignment(sizeof(T));
+		size_t sz = compute_size<T>();
 		if(!main->can_fit(sz)) GC();
 		void* pt = main->alloc(sz);
 		try {
@@ -91,11 +92,7 @@ public:
 		*/
 		Generic* _create_variadic_template_must_be_Generic_ =
 			static_cast<Generic*>((T*) 0);
-		size_t sz = Object::round_up_to_alignment(sizeof(T))
-			+ Object::round_up_to_alignment(
-				extra * sizeof(Object::ref)
-			)
-		;
+		size_t sz = compute_size_variadic<T>(extra);
 		if(!main->can_fit(sz)) GC();
 		void* pt = main->alloc(sz);
 		try {

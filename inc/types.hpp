@@ -86,13 +86,43 @@ private:
 protected:
 	size_t sz;
 public:
-	/*exists only for RTTI*/
-	virtual void break_heart(Generic* to) {
-		throw_OverBrokenHeart(to);
-	}
 	BrokenHeartVariadic(Generic* x, size_t nsz)
 		: BrokenHeart(x), sz(nsz) { }
 };
+
+/*-----------------------------------------------------------------------------
+Size computations
+-----------------------------------------------------------------------------*/
+
+template<class T>
+static inline size_t compute_size(void) {
+	size_t sizeofBrokenHeart = Object::round_up_to_alignment(
+			sizeof(BrokenHeart)
+	);
+	size_t sizeofT = Object::round_up_to_alignment(sizeof(T));
+	return
+	(sizeofT < sizeofBrokenHeart) ?		sizeofBrokenHeart :
+	/*otherwise*/				sizeofT ;
+}
+
+template<class T>
+static inline size_t compute_size_variadic(size_t sz) {
+	/*remember that this is variadic*/
+	size_t sizeofBrokenHeart = Object::round_up_to_alignment(
+			sizeof(BrokenHeartVariadic)
+	);
+	size_t sizeofT = Object::round_up_to_alignment(sizeof(T))
+			 + Object::round_up_to_alignment(
+				sz * sizeof(Object::ref)
+		);
+	return
+	(sizeofT < sizeofBrokenHeart) ?		sizeofBrokenHeart :
+	/*otherwise*/				sizeofT ;
+}
+
+/*-----------------------------------------------------------------------------
+Specialized broken heart tags
+-----------------------------------------------------------------------------*/
 
 /*The BrokenHeartFor classes are specialized for each
 generic-derived class.  They should *not* add any
@@ -106,8 +136,7 @@ private:
 	BrokenHeartFor<T>(BrokenHeartFor<T> const&);
 public:
 	virtual size_t real_size(void) const {
-		/*TODO: consider factoring out this computation*/
-		return Object::round_up_to_alignment(sizeof(T));
+		return compute_size<T>();
 	}
 	explicit BrokenHeartFor<T>(Generic* x) : BrokenHeart(x) { }
 };
@@ -120,11 +149,7 @@ private:
 	BrokenHeartForVariadic<T>(BrokenHeartForVariadic<T> const&);
 public:
 	virtual size_t real_size(void) const {
-		return Object::round_up_to_alignment(sizeof(T))
-			 + Object::round_up_to_alignment(
-				sz * sizeof(Object::ref)
-			)
-		;
+		return compute_size_variadic<T>(sz);
 	}
 	BrokenHeartForVariadic<T>(Generic* x, size_t nsz)
 		: BrokenHeartVariadic(x, nsz) { }
@@ -140,7 +165,7 @@ protected:
 	GenericDerived<T>(void) { }
 public:
 	virtual size_t real_size(void) const {
-		return Object::round_up_to_alignment(sizeof(T));
+		return compute_size<T>();
 	}
 	virtual void break_heart(Generic* to) {
 		Generic* gp = this;
@@ -178,11 +203,7 @@ protected:
 	}
 public:
 	virtual size_t real_size(void) const {
-		return Object::round_up_to_alignment(sizeof(T))
-			 + Object::round_up_to_alignment(
-				sz * sizeof(Object::ref)
-			)
-		;
+		return compute_size_variadic<T>(sz);
 	}
 	virtual void break_heart(Object::ref to) {
 		Generic* gp = this;
