@@ -13,6 +13,8 @@
 class Generic;
 class ValueHolder;
 
+void throw_DeallocError(void*);
+
 /*-----------------------------------------------------------------------------
 Semispaces
 -----------------------------------------------------------------------------*/
@@ -35,7 +37,6 @@ public:
 	void lifo_dealloc(void*);
 	void lifo_dealloc_abort(void*);
 
-	void resize(size_t);
 	bool can_fit(size_t) const;
 
 	inline size_t size(void) const { return max; };
