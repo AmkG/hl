@@ -43,6 +43,11 @@ public:
 	*/
 	virtual size_t real_size(void) const =0;
 
+	/*Copies an object, used for message passing and
+	copying garbage collection
+	*/
+	virtual Generic* clone(Semispace*) const =0;
+
 	/*hash functions for table-ident and table-is*/
 	virtual size_t hash_ident(void) const {
 		return reinterpret_cast<size_t>(this);
@@ -73,6 +78,10 @@ public:
 	Generic* to;
 	virtual void break_heart(Generic* to) {
 		/*already broken - don't break too much!*/
+		throw_OverBrokenHeart(to);
+	}
+	virtual Generic* clone(Semispace*) const {
+		/*broken - why are we cloning this?*/
 		throw_OverBrokenHeart(to);
 	}
 	BrokenHeart(Generic* nto) : to(nto) { }
@@ -167,6 +176,9 @@ public:
 	virtual size_t real_size(void) const {
 		return compute_size<T>();
 	}
+	virtual Generic* clone(Semispace*) const {
+		/*TODO*/
+	}
 	virtual void break_heart(Generic* to) {
 		Generic* gp = this;
 		gp->~Generic();
@@ -204,6 +216,9 @@ protected:
 public:
 	virtual size_t real_size(void) const {
 		return compute_size_variadic<T>(sz);
+	}
+	virtual Generic* clone(Semispace*) const {
+		/*TODO*/
 	}
 	virtual void break_heart(Object::ref to) {
 		Generic* gp = this;
