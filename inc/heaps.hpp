@@ -2,7 +2,7 @@
 #define HEAPS_H
 
 #include"objects.hpp"
-#include"types.hpp"
+#include"generics.hpp"
 
 #include<cstring>
 #include<utility>
@@ -22,7 +22,9 @@ Semispaces
 class Semispace : boost::noncopyable {
 private:
 	void* mem;
+	void* allocstart;
 	void* allocpt;
+	void* lifoallocstart;
 	void* lifoallocpt;
 	size_t prev_alloc;
 	size_t max;
@@ -33,11 +35,9 @@ public:
 	void* alloc(size_t);
 	void dealloc(void*);
 
-	void* lifo_alloc(void);
+	void* lifo_alloc(size_t);
 	void lifo_dealloc(void*);
 	void lifo_dealloc_abort(void*);
-
-	bool can_fit(size_t) const;
 
 	inline size_t size(void) const { return max; };
 	inline size_t used(void) const {
@@ -47,6 +47,9 @@ public:
 	};
 	inline size_t free(void) const {
 		return (size_t)(((char*) lifoallocpt) - ((char*) allocpt));
+	}
+	inline bool can_fit(size_t sz) const {
+		return sz <= free();
 	}
 
 	void clone(boost::scoped_ptr<Semispace>&, Generic*&) const;
@@ -61,11 +64,13 @@ Heaps
 class Heap : boost::noncopyable {
 private:
 	boost::scoped_ptr<Semispace> main;
-	boost::scoped_ptr<ValueHolder> other_spaces;
+	bool tight;
 
 protected:
-	virtual Object::ref root_object(void) const =0;
-	void GC(void);
+	boost::scoped_ptr<ValueHolder> other_spaces;
+	virtual void scan_root_object(GenericTraverser*) =0;
+	void cheney_collection(Semispace*);
+	void GC(size_t);
 
 public:
 	template<class T>
@@ -74,7 +79,7 @@ public:
 		Generic* _create_template_must_be_Generic_ =
 			static_cast<Generic*>((T*) 0);
 		size_t sz = compute_size<T>();
-		if(!main->can_fit(sz)) GC();
+		if(!main->can_fit(sz)) GC(sz);
 		void* pt = main->alloc(sz);
 		try {
 			new(pt) T();
@@ -94,7 +99,7 @@ public:
 		Generic* _create_variadic_template_must_be_Generic_ =
 			static_cast<Generic*>((T*) 0);
 		size_t sz = compute_size_variadic<T>(extra);
-		if(!main->can_fit(sz)) GC();
+		if(!main->can_fit(sz)) GC(sz);
 		void* pt = main->alloc(sz);
 		try {
 			new(pt) T(extra);
