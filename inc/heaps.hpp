@@ -2,7 +2,7 @@
 #define HEAPS_H
 
 #include"objects.hpp"
-#include"types.hpp"
+#include"generics.hpp"
 
 #include<cstring>
 #include<utility>
