@@ -5,6 +5,8 @@
 #ifndef AIO_SELECT_BACKEND_H
 #define AIO_SELECT_BACKEND_H
 
+#include "aio.hpp"
+
 class SelectTaskRead : public TaskRead {
   friend class SelectFileIN;
 private:
@@ -34,7 +36,7 @@ public:
 };
 
 class SelectTaskWrite : public TaskWrite {
-  friend class SelectFileIN;
+  friend class SelectFileOUT;
 private:
   int fd;
   ActionOn *act;
@@ -47,6 +49,34 @@ public:
   ~SelectTaskWrite() { delete act; }
   bool ready(seconds timeout);
   void perform();
+};
+
+
+class SelectFileIN : public FileIN {
+private:
+  int fd;
+public:
+  SelectFileIN() { tq = new TaskQueue; }
+  void open(std::string path);
+  void addTaskRead(ActionOn *a, size_t how_many) { 
+    addTask(new SelectTaskRead(fd, a, how_many));
+  }
+  void addTaskPeek(ActionOn *a) {
+    addTask(new SelectTaskPeek(fd, a));
+  }
+  void close();
+};
+
+class SelectFileOUT : public FileOUT {
+private:
+  int fd;
+public:
+  SelectFileOUT() { tq = new TaskQueue; }
+  void addTaskWrite(ActionOn *a, char *buf, size_t len) {
+    addTask(new SelectTaskWrite(fd, a, buf, len));
+  }
+  void open(std::string path);
+  void close();
 };
 
 #endif // AIO_SELECT_BACKEND_H

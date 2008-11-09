@@ -8,7 +8,7 @@ void TaskQueue::performAll(seconds timeout) {
   Task *t;
   size_t len = size();
   // each element in the queue will be processed exactly once
-  for (size_t i = 0; i<len; i++) {
+  for (size_t i = 0; !empty() && i<len; i++) {
     t = front(); pop();
     if (t->ready(timeout))
       t->perform();
