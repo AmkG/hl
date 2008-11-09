@@ -23,6 +23,7 @@ Semispace::Semispace(size_t nsz)
 		callocpt += Object::alignment - (tmp & Object::tag_mask);
 		allocpt = callocpt;
 	}
+	allocstart = allocpt;
 
 	char* cmem = mem;
 	char* clifoallocpt = cmem + nsz;
@@ -41,16 +42,10 @@ Semispace::~Semispace() {
 
 	/*TODO: consider refactoring*/
 	/*----Delete normally-allocated memory----*/
-	mvpt = mem;
-	intptr_t tmp = reinterpret_cast<intptr_t>(mem);
-	if(tmp & Object::tag_mask) {
-		char* cmem = mem;
-		cmem += Object::alignment - (tmp & Object::tag_mask);
-		mvpt = cmem;
-	}
+	mvpt = allocstart;
 	endpt = allocpt;
 
-	while(mvpt < allocpt) {
+	while(mvpt < endpt) {
 		gp = (Generic*)(void*) mvpt;
 		step = gp->real_size();
 		gp->~Generic();
@@ -59,12 +54,9 @@ Semispace::~Semispace() {
 
 	/*----Delete lifo-allocated memory----*/
 	mvpt = lifoallocpt;
-	endpt = mem;
-	endpt += sz;
-	intptr_t tmp = reinterpret_cast<intptr_t>(endpt);
-	endpt -= (tmp & Object::tag_mask);
+	endpt = lifoallocstart;
 
-	while(mvpt < allocpt) {
+	while(mvpt < endpt) {
 		gp = (Generic*)(void*) mvpt;
 		step = gp->real_size();
 		gp->~Generic();
@@ -130,4 +122,81 @@ void Semispace::lifo_dealloc_abort(void* pt) {
 	clifoallocpt += prev_alloc;
 	lifoallocpt = clifoallocpt;
 }
+
+/*TODO*/
+void Semispace::clone(boost::scoped_ptr<Semispace>& sp, Generic*& g);
+
+/*-----------------------------------------------------------------------------
+Heaps
+-----------------------------------------------------------------------------*/
+
+/*copy and modify GC class*/
+class GCTraverser : public GenericTraverser {
+	Semispace* nsp;
+public:
+	explicit GCTraverser(Semispace* nnsp) : nsp(nnsp) { }
+	void traverse(Object::ref& r) {
+		if(is_a<Generic*>(r)) {
+			Generic* gp = as_a<Generic*>(r);
+			BrokenHeart* bp = dynamic_cast<BrokenHeart*>(gp);
+			if(bp) { //broken heart
+				r = Object::to_ref(bp->to);
+			} else { //unbroken
+				Generic* ngp = gp->clone(nsp);
+				gp->break_heart(ngp);
+				r = Object::to_ref(ngp);
+			}
+		} else return;
+	}
+};
+
+static void cheney_collection(Semispace* nsp) {
+	GCTraverser gc(nsp);
+	/*step 1: initial traverse*/
+	scan_root_object(gc);
+	/*step 2: non-root traverse*/
+	/*notice that we traverse the new semispace
+	this is a two-pointer Cheney collector, with mvpt
+	being one pointer and nsp->allocpt the other one
+	*/
+	char* mvpt = nsp->allocstart;
+	while(mvpt < ((char*) nsp->allocpt)) {
+		Generic* gp = (Generic*)(void*) mvpt;
+		size_t obsz = gp->real_size();
+		gp->traverse_references(gc);
+		mvpt += obsz;
+	}
+}
+
+void Heap::GC(size_t insurance) {
+	/*Determine the sizes of all semispaces*/
+	size_t total = main->used() + insurance +
+	(other_spaces) ?		other_spaces->used_total() :
+	/*otherwise*/			0 ;
+
+	if(tight) total *= 2;
+
+	/*get a new Semispace*/
+	boost::scoped_ptr<Semispace> nsp(new Semispace(total));
+
+	/*traverse*/
+	cheney_collection(&*nsp);
+
+	/*replace*/
+	main.swap(nsp);
+	nsp.reset();
+	other_spaces.reset();
+
+	/*determine if resizing is appropriate*/
+	if(main->used() + insurance <= total / 4) {
+		/*semispace a bit large... make it smaller*/
+		nsp.reset(new Semispace(total / 2));
+		cheney_collection(&*nsp);
+		main.swap(nsp);
+		nsp.reset();
+	} else if(main->used() + insurance >= (total / 4) * 3) {
+		tight = 1;
+	}
+}
+
 

@@ -22,7 +22,9 @@ Semispaces
 class Semispace : boost::noncopyable {
 private:
 	void* mem;
+	void* allocstart;
 	void* allocpt;
+	void* lifoallocstart;
 	void* lifoallocpt;
 	size_t prev_alloc;
 	size_t max;
@@ -62,11 +64,12 @@ Heaps
 class Heap : boost::noncopyable {
 private:
 	boost::scoped_ptr<Semispace> main;
-	boost::scoped_ptr<ValueHolder> other_spaces;
+	bool tight;
 
 protected:
-	virtual Object::ref root_object(void) const =0;
-	void GC(void);
+	boost::scoped_ptr<ValueHolder> other_spaces;
+	virtual void scan_root_object(GenericTraverser*) =0;
+	void GC(size_t);
 
 public:
 	template<class T>
@@ -75,7 +78,7 @@ public:
 		Generic* _create_template_must_be_Generic_ =
 			static_cast<Generic*>((T*) 0);
 		size_t sz = compute_size<T>();
-		if(!main->can_fit(sz)) GC();
+		if(!main->can_fit(sz)) GC(sz);
 		void* pt = main->alloc(sz);
 		try {
 			new(pt) T();
@@ -95,7 +98,7 @@ public:
 		Generic* _create_variadic_template_must_be_Generic_ =
 			static_cast<Generic*>((T*) 0);
 		size_t sz = compute_size_variadic<T>(extra);
-		if(!main->can_fit(sz)) GC();
+		if(!main->can_fit(sz)) GC(sz);
 		void* pt = main->alloc(sz);
 		try {
 			new(pt) T(extra);
