@@ -94,13 +94,6 @@ ThreadTaskQueue::ThreadTaskQueue() {
 
 ThreadTaskQueue::~ThreadTaskQueue() {
   pthread_mutex_destroy(&perform_mutex);
-  // delete all the remaining tasks
-  Task *t;
-  while (!empty()) {
-    t = front(); pop();
-    // should tasks be forced to execute before deletion?
-    delete t;
-  }
 }
 
 void ThreadTaskQueue::addTask(Task *t) {
