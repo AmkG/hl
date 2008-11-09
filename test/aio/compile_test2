@@ -1,0 +1,3 @@
+#!/bin/sh
+
+g++ -I../../inc ../../src/aio.cpp ../../src/aio_select_backend.cpp test2.cpp -pthread -o test2 
