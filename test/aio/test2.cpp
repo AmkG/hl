@@ -11,7 +11,7 @@ public:
 
 void printIt::onComplete(const char *data, size_t len, AIOError *e) {
   if (data==NULL)
-    std::cout << "An error (or EOF) occurred\n";
+    std::cout << "READ_ERR";
   else {
     for (size_t i = 0; i<len; i++)
       std::cout << data[i];
@@ -26,7 +26,7 @@ class printOne : public ActionOn {
 public:
   void onComplete(const char *data, size_t len, AIOError *e) {
     if (data==NULL || len<1)
-      std::cout << "error (or EOF) in peek\n";
+      std::cout << "PEEK_ERR";
     else
       std::cout << data[0];
   }
@@ -36,9 +36,9 @@ class printOk : public ActionOn {
 public:
   void onComplete(const char *data, size_t len, AIOError *e) {
     if (data==NULL)
-      std::cout << "error\n";
+      std::cout << "WRITE_ERR";
     else
-      std::cout << "ok\n";
+      std::cout << "WRITE_OK";
   }
 };
 

@@ -70,7 +70,7 @@ private:
 public:
   ThreadTaskQueue();
   ~ThreadTaskQueue();
-  void add(Task *t);
+  void addTask(Task *t);
   void performAll(seconds timeout); 
 };
 
@@ -78,13 +78,12 @@ class ThreadFileIN : public FileIN {
 private:
   std::ifstream in;
 public:
-  ThreadFileIN() { tq = new ThreadTaskQueue; }
   void open(std::string path);
-  void addTaskRead(ActionOn *a, size_t how_many) { 
-    addTask(new ThreadTaskRead(in, a, how_many));
+  Task* mkTaskRead(ActionOn *a, size_t how_many) { 
+    return new ThreadTaskRead(in, a, how_many);
   }
-  void addTaskPeek(ActionOn *a) {
-    addTask(new ThreadTaskPeek(in, a));
+  Task* mkTaskPeek(ActionOn *a) {
+    return new ThreadTaskPeek(in, a);
   }
   void close() { in.close(); }
 };
@@ -93,9 +92,8 @@ class ThreadFileOUT : public FileOUT {
 private:
   std::ofstream out;
 public:
-  ThreadFileOUT() { tq = new ThreadTaskQueue; }
-  void addTaskWrite(ActionOn *a, char *buf, size_t len) {
-    addTask(new ThreadTaskWrite(out, a, buf, len));
+  Task* mkTaskWrite(ActionOn *a, char *buf, size_t len) {
+    return new ThreadTaskWrite(out, a, buf, len);
   }
   void open(std::string path);
   void close() { out.close(); }

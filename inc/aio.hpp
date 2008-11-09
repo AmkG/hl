@@ -59,7 +59,7 @@ class TaskWrite : public Task {};
 class TaskQueue : public std::queue<Task*> {
 public:
   virtual ~TaskQueue() {}
-  virtual void add(Task *t) { push(t); }
+  virtual void addTask(Task *t) { push(t); }
   // try to perform every action in the given timeout (for each action)
   virtual void performAll(seconds timeout);
 };
@@ -68,24 +68,20 @@ public:
  * Base async. I/O object
  */
 class AIO {
-protected:
-  TaskQueue *tq;
 public:
-  virtual ~AIO() { delete tq; }
-  void addTask(Task *t) { tq->add(t); }
-  void go(seconds timeout) { tq->performAll(timeout); }
+  virtual ~AIO() {}
   virtual void close() = 0;
 };
 
 class AIN : public AIO {
 public:
-  virtual void addTaskRead(ActionOn *a, size_t how_many) = 0;
-  virtual void addTaskPeek(ActionOn *a) = 0;
+  virtual Task* mkTaskRead(ActionOn *a, size_t how_many) = 0;
+  virtual Task* mkTaskPeek(ActionOn *a) = 0;
 };
 
 class AOUT : public AIO {
 public:
-  virtual void addTaskWrite(ActionOn *a, char *to_write, size_t len) = 0;
+  virtual Task* mkTaskWrite(ActionOn *a, char *to_write, size_t len) = 0;
 };
 
 /*

@@ -103,10 +103,10 @@ ThreadTaskQueue::~ThreadTaskQueue() {
   }
 }
 
-void ThreadTaskQueue::add(Task *t) {
+void ThreadTaskQueue::addTask(Task *t) {
   // can't add to the queue while a perform cycle is running
   pthread_mutex_lock(&perform_mutex);
-  TaskQueue::add(t);
+  TaskQueue::addTask(t);
   pthread_mutex_unlock(&perform_mutex);
 }
 
