@@ -192,7 +192,7 @@ void Heap::GC(size_t insurance) {
 	if(main->used() + insurance <= total / 4) {
 		/*semispace a bit large... make it smaller*/
 		nsp.reset(new Semispace(total / 2));
-		cheney_collection(&*nsp);
+		cheney_collection(*this, &*nsp);
 		main.swap(nsp);
 		nsp.reset();
 	} else if(main->used() + insurance >= (total / 4) * 3) {
