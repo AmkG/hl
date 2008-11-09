@@ -35,7 +35,7 @@ public:
 	void* alloc(size_t);
 	void dealloc(void*);
 
-	void* lifo_alloc(void);
+	void* lifo_alloc(size_t);
 	void lifo_dealloc(void*);
 	void lifo_dealloc_abort(void*);
 
