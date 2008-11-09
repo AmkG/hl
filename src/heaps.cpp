@@ -170,7 +170,8 @@ static void cheney_collection(Heap& hp, Semispace* nsp) {
 
 void Heap::GC(size_t insurance) {
 	/*Determine the sizes of all semispaces*/
-	size_t total = main->used() + insurance +
+	size_t total = main->used() + insurance;
+	total +=
 	(other_spaces) ?		other_spaces->used_total() :
 	/*otherwise*/			0 ;
 
