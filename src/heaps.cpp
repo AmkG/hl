@@ -93,7 +93,7 @@ void Semispace::dealloc(void* pt) {
 }
 
 void* Semispace::lifo_alloc(size_t sz) {
-	prevalloc = sz;
+	prev_alloc = sz;
 	char* clifoallocpt = lifoallocpt;
 	clifoallocpt -= sz;
 	lifoallocpt = clifoallocpt;
