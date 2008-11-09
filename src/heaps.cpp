@@ -19,13 +19,13 @@ Semispace::Semispace(size_t nsz)
 	// check alignment
 	intptr_t tmp = reinterpret_cast<intptr_t>(allocpt);
 	if(tmp & Object::tag_mask) {
-		char* callocpt = allocpt;
+		char* callocpt = (char*)allocpt;
 		callocpt += Object::alignment - (tmp & Object::tag_mask);
 		allocpt = callocpt;
 	}
 	allocstart = allocpt;
 
-	char* cmem = mem;
+	char* cmem = (char*)mem;
 	char* clifoallocpt = cmem + nsz;
 	// adjust for alignment
 	tmp = reinterpret_cast<intptr_t>(lifoallocpt);
@@ -42,8 +42,8 @@ Semispace::~Semispace() {
 
 	/*TODO: consider refactoring*/
 	/*----Delete normally-allocated memory----*/
-	mvpt = allocstart;
-	endpt = allocpt;
+	mvpt = (char*) allocstart;
+	endpt = (char*) allocpt;
 
 	while(mvpt < endpt) {
 		gp = (Generic*)(void*) mvpt;
@@ -53,8 +53,8 @@ Semispace::~Semispace() {
 	}
 
 	/*----Delete lifo-allocated memory----*/
-	mvpt = lifoallocpt;
-	endpt = lifoallocstart;
+	mvpt = (char*) lifoallocpt;
+	endpt = (char*) lifoallocstart;
 
 	while(mvpt < endpt) {
 		gp = (Generic*)(void*) mvpt;
@@ -73,7 +73,7 @@ alignment.
 void* Semispace::alloc(size_t sz) {
 	prev_alloc = sz;
 	void* tmp = allocpt;
-	char* callocpt = allocpt;
+	char* callocpt = (char*) allocpt;
 	callocpt += sz;
 	allocpt = callocpt;
 	return tmp;
