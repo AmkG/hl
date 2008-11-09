@@ -94,7 +94,7 @@ void Semispace::dealloc(void* pt) {
 
 void* Semispace::lifo_alloc(size_t sz) {
 	prev_alloc = sz;
-	char* clifoallocpt = lifoallocpt;
+	char* clifoallocpt = (char*) lifoallocpt;
 	clifoallocpt -= sz;
 	lifoallocpt = clifoallocpt;
 	return lifoallocpt;
@@ -105,7 +105,7 @@ void Semispace::lifo_dealloc(void* pt) {
 	if(pt != lifoallocpt) return;
 	size_t sz = ((Generic*) pt)->real_size();
 	((Generic*) pt)->~Generic();
-	char* clifoallocpt = pt;
+	char* clifoallocpt = (char*) pt;
 	clifoallocpt += sz;
 	lifoallocpt = clifoallocpt;
 }
@@ -118,7 +118,7 @@ void Semispace::lifo_dealloc_abort(void* pt) {
 	#ifdef DEBUG
 		if(pt != lifoallocpt) throw_DeallocError(pt);
 	#endif
-	char* clifoallocpt = lifoallocpt;
+	char* clifoallocpt = (char*) lifoallocpt;
 	clifoallocpt += prev_alloc;
 	lifoallocpt = clifoallocpt;
 }
