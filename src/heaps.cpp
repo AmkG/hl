@@ -2,6 +2,7 @@
 #include"objects.hpp"
 #include"heaps.hpp"
 #include"types.hpp"
+#include"valueholders.hpp"
 
 #include<cstdlib>
 #include<stdint.h>
@@ -123,8 +124,9 @@ void Semispace::lifo_dealloc_abort(void* pt) {
 	lifoallocpt = clifoallocpt;
 }
 
-/*TODO*/
-void Semispace::clone(boost::scoped_ptr<Semispace>& sp, Generic*& g) const;
+void Semispace::clone(boost::scoped_ptr<Semispace>& sp, Generic*& g) const {
+	/*TODO*/
+}
 
 /*-----------------------------------------------------------------------------
 Heaps
@@ -153,7 +155,7 @@ public:
 static void cheney_collection(Heap& hp, Semispace* nsp) {
 	GCTraverser gc(nsp);
 	/*step 1: initial traverse*/
-	hp.scan_root_object(gc);
+	hp.scan_root_object(&gc);
 	/*step 2: non-root traverse*/
 	/*notice that we traverse the new semispace
 	this is a two-pointer Cheney collector, with mvpt
