@@ -150,10 +150,10 @@ public:
 	}
 };
 
-static void cheney_collection(Semispace* nsp) {
+static void cheney_collection(Heap& hp, Semispace* nsp) {
 	GCTraverser gc(nsp);
 	/*step 1: initial traverse*/
-	scan_root_object(gc);
+	hp.scan_root_object(gc);
 	/*step 2: non-root traverse*/
 	/*notice that we traverse the new semispace
 	this is a two-pointer Cheney collector, with mvpt
@@ -180,7 +180,7 @@ void Heap::GC(size_t insurance) {
 	boost::scoped_ptr<Semispace> nsp(new Semispace(total));
 
 	/*traverse*/
-	cheney_collection(&*nsp);
+	cheney_collection(*this, &*nsp);
 
 	/*replace*/
 	main.swap(nsp);
