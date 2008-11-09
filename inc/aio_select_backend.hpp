@@ -56,13 +56,12 @@ class SelectFileIN : public FileIN {
 private:
   int fd;
 public:
-  SelectFileIN() { tq = new TaskQueue; }
   void open(std::string path);
-  void addTaskRead(ActionOn *a, size_t how_many) { 
-    addTask(new SelectTaskRead(fd, a, how_many));
+  Task* mkTaskRead(ActionOn *a, size_t how_many) { 
+    return new SelectTaskRead(fd, a, how_many);
   }
-  void addTaskPeek(ActionOn *a) {
-    addTask(new SelectTaskPeek(fd, a));
+  Task* mkTaskPeek(ActionOn *a) {
+    return new SelectTaskPeek(fd, a);
   }
   void close();
 };
@@ -71,9 +70,8 @@ class SelectFileOUT : public FileOUT {
 private:
   int fd;
 public:
-  SelectFileOUT() { tq = new TaskQueue; }
-  void addTaskWrite(ActionOn *a, char *buf, size_t len) {
-    addTask(new SelectTaskWrite(fd, a, buf, len));
+  Task* mkTaskWrite(ActionOn *a, char *buf, size_t len) {
+    return new SelectTaskWrite(fd, a, buf, len);
   }
   void open(std::string path);
   void close();
