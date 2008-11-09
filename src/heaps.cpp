@@ -152,20 +152,20 @@ public:
 	}
 };
 
-static void cheney_collection(Heap& hp, Semispace* nsp) {
+void Heap::cheney_collection(Semispace* nsp) {
 	GCTraverser gc(nsp);
 	/*step 1: initial traverse*/
-	hp.scan_root_object(&gc);
+	scan_root_object(&gc);
 	/*step 2: non-root traverse*/
 	/*notice that we traverse the new semispace
 	this is a two-pointer Cheney collector, with mvpt
 	being one pointer and nsp->allocpt the other one
 	*/
-	char* mvpt = nsp->allocstart;
+	char* mvpt = (char*) nsp->allocstart;
 	while(mvpt < ((char*) nsp->allocpt)) {
 		Generic* gp = (Generic*)(void*) mvpt;
 		size_t obsz = gp->real_size();
-		gp->traverse_references(gc);
+		gp->traverse_references(&gc);
 		mvpt += obsz;
 	}
 }
@@ -183,7 +183,7 @@ void Heap::GC(size_t insurance) {
 	boost::scoped_ptr<Semispace> nsp(new Semispace(total));
 
 	/*traverse*/
-	cheney_collection(*this, &*nsp);
+	cheney_collection(&*nsp);
 
 	/*replace*/
 	main.swap(nsp);
@@ -194,7 +194,7 @@ void Heap::GC(size_t insurance) {
 	if(main->used() + insurance <= total / 4) {
 		/*semispace a bit large... make it smaller*/
 		nsp.reset(new Semispace(total / 2));
-		cheney_collection(*this, &*nsp);
+		cheney_collection(&*nsp);
 		main.swap(nsp);
 		nsp.reset();
 	} else if(main->used() + insurance >= (total / 4) * 3) {

@@ -69,6 +69,7 @@ private:
 protected:
 	boost::scoped_ptr<ValueHolder> other_spaces;
 	virtual void scan_root_object(GenericTraverser*) =0;
+	void cheney_collection(Semispace*);
 	void GC(size_t);
 
 public:
