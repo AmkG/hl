@@ -124,7 +124,7 @@ void Semispace::lifo_dealloc_abort(void* pt) {
 }
 
 /*TODO*/
-void Semispace::clone(boost::scoped_ptr<Semispace>& sp, Generic*& g);
+void Semispace::clone(boost::scoped_ptr<Semispace>& sp, Generic*& g) const;
 
 /*-----------------------------------------------------------------------------
 Heaps
