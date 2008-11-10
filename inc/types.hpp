@@ -56,8 +56,15 @@ public:
 	virtual size_t real_size(void) const {
 		return compute_size<T>();
 	}
-	virtual Generic* clone(Semispace*) const {
-		/*TODO*/
+	virtual Generic* clone(Semispace* nsp) const {
+		void* pt = nsp->alloc(real_size());
+		try {
+			new(pt) T(*static_cast<T const*>(this));
+			return (Generic*) pt;
+		} catch(...) {
+			nsp->dealloc(pt);
+			throw;
+		}
 	}
 	virtual void break_heart(Generic* to) {
 		Generic* gp = this;
@@ -93,12 +100,25 @@ protected:
 			index(i) = Object::nil();
 		}
 	}
+	GenericDerivedVariadic<T>(GenericDerivedVariadic<T> const& o)
+		: sz(o.sz) {
+		for(size_t i; i < sz; ++i) {
+			index(i) = o.index(i);
+		}
+	}
 public:
 	virtual size_t real_size(void) const {
 		return compute_size_variadic<T>(sz);
 	}
-	virtual Generic* clone(Semispace*) const {
-		/*TODO*/
+	virtual Generic* clone(Semispace* nsp) const {
+		void* pt = nsp->alloc(real_size());
+		try {
+			new(pt) T(*static_cast<T const*>(this));
+			return (Generic*) pt;
+		} catch(...) {
+			nsp->dealloc(pt);
+			throw;
+		}
 	}
 	virtual void break_heart(Object::ref to) {
 		Generic* gp = this;

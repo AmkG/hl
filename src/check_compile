@@ -1,0 +1,4 @@
+#!/bin/sh
+
+g++ -I../inc -o /dev/null -c $@
+
