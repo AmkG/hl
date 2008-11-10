@@ -1,4 +1,4 @@
 #!/bin/sh
 
-g++ -I../../inc -std=c++98 ../../src/heaps.cpp $1
+g++ -I../../inc -std=c++98 -DDEBUG ../../src/heaps.cpp $1
 
