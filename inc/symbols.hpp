@@ -2,7 +2,6 @@
 #define SYMBOLS_H
 
 #include"objects.hpp"
-#include"valueholders.hpp"
 
 #include<string>
 #include<map>
@@ -10,6 +9,7 @@
 #include<boost/scoped_ptr.hpp>
 
 class SymbolsTable;
+class ValueHolder;
 
 class Symbol {
 	boost::scoped_ptr<ValueHolder> value;
