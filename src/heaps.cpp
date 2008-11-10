@@ -32,6 +32,7 @@ Semispace::Semispace(size_t nsz)
 	clifoallocpt -= (tmp & Object::tag_mask);
 
 	lifoallocpt = clifoallocpt;
+	lifoallocstart = lifoallocpt;
 }
 
 Semispace::~Semispace() {
@@ -62,6 +63,8 @@ Semispace::~Semispace() {
 		gp->~Generic();
 		mvpt += step;
 	}
+
+	free(mem);
 }
 
 /*
