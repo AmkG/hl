@@ -64,7 +64,7 @@ Semispace::~Semispace() {
 		mvpt += step;
 	}
 
-	free(mem);
+	std::free(mem);
 }
 
 /*
