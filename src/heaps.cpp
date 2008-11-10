@@ -28,7 +28,7 @@ Semispace::Semispace(size_t nsz)
 	char* cmem = (char*)mem;
 	char* clifoallocpt = cmem + nsz;
 	// adjust for alignment
-	tmp = reinterpret_cast<intptr_t>(lifoallocpt);
+	tmp = reinterpret_cast<intptr_t>(clifoallocpt);
 	clifoallocpt -= (tmp & Object::tag_mask);
 
 	lifoallocpt = clifoallocpt;

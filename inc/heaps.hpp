@@ -184,7 +184,7 @@ public:
 	}
 
 	explicit Heap(size_t initsize = 8 * sizeof(Object::ref))
-		: main(new Semispace(initsize)) { }
+		: main(new Semispace(initsize)), tight(1) { }
 };
 
 #endif //HEAPS_H
