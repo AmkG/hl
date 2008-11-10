@@ -182,6 +182,9 @@ public:
 			throw;
 		}
 	}
+
+	explicit Heap(size_t initsize = 8 * sizeof(Object::ref))
+		: main(new Semispace(initsize)) { }
 };
 
 #endif //HEAPS_H
