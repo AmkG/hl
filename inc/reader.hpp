@@ -4,7 +4,9 @@
 #include <istream>
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+
+#include "all_defines.hpp"
+#include "symbols.hpp"
 
 /*
  * Intermediate bytecode representation constructed by the reader
@@ -28,9 +30,7 @@ public:
 };
 
 // a single bytecode
-// ?? should bytecode mnemonic be an interned string?
-// yes, preferably a Symbol* (see "symbols.hpp")
-typedef std::pair<std::string, BytecodeArg*> bytecode;
+typedef std::pair<Symbol*, BytecodeArg*> bytecode;
 
 /*
  * bytecode sequence

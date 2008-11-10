@@ -1,5 +1,4 @@
-#include"all_defines.hpp"
-#include"reader.hpp"
+#include "reader.hpp"
 
 static const char bc_start = '(';
 static const char bc_end = ')';
@@ -29,8 +28,10 @@ void read_bytecodes(std::istream & in, BytecodeSeq & bc) {
   }
 }
 
-// !! missing error checking
 std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
+  if (!in)
+    throw ReadError("Input stream is invalid");
+
   skip_seps(in);
   if (in.eof())
     return in; // nothing to read
@@ -44,6 +45,9 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
 
   std::string name;
   in >> name;
+  if (!in)
+    throw ReadError("Can't read bytecode mnemonic");
+  Symbol *mnemonic = symbols->lookup(name);
 
   skip_seps(in);
   c = in.peek();
@@ -52,19 +56,21 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
   if (c == bc_start) { // subsequence
     BytecodeSeq *sub = new BytecodeSeq;
     read_bytecodes(in, *sub);
-    bc.push_back(bytecode(name, sub));
+    bc.push_back(bytecode(mnemonic, sub));
   } else { // simple arg
     size_t val;
     in >> val;
+    if (!in)
+      throw ReadError("Can't read simple value");
     SimpleArg *sa = new SimpleArg(val);
     skip_seps(in);
     c = in.peek();
     if (c == bc_start) { // simple arg followed by a sequence
       BytecodeSeq *sub = new BytecodeSeq;
       read_bytecodes(in, *sub);
-      bc.push_back(bytecode(name, new SimpleArgAndSeq(sa, sub)));
+      bc.push_back(bytecode(mnemonic, new SimpleArgAndSeq(sa, sub)));
     } else {
-      bc.push_back(bytecode(name, new SimpleArg(val)));
+      bc.push_back(bytecode(mnemonic, new SimpleArg(val)));
     }
   }
 
