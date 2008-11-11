@@ -1,0 +1,333 @@
+
+hl Process Garbage Collection
+=============================
+
+hl processes themselves are subject to garbage collection.  That
+is, if a process is waiting for a message, and no other running,
+non-waiting processes have references to it (or even indirectly
+through some chain of waiting process references), then logically
+that process will never receive a message, and the process is as
+good as dead - we can freely reclaim its memory.
+
+(Being assigned to a global variable should also count as "having
+a reference" too, BTW)
+
+While the within-process garbage collection is easy - there's no
+need to be concerned about interlocks, because of the process
+boundary - the process collection needs to be more carefully
+designed.
+
+We can use Dijkstra's tri-colour abstraction to allow the tracing
+of the process space from multiple worker threads.  Because of
+the nature of processes, some shortcuts can be had which will
+simplify the tri-colour scheme.
+
+hl Process Execution
+--------------------
+
+Briefly, hl processes are handled by one or more worker threads.
+Ideally, a worker thread is an OS-level thread which the
+operating system may schedule individually on a physical
+processor core; in an ideal configuration a worker thread exists
+for each physical processor core.
+
+The worker threads have a shared workqueue.  Workers interlock
+on the workqueue; initially, when a worker is "holding" no
+process, the worker will grab a process from the workqueue,
+execute a specified number of function calls for that process,
+then it will hold the process, interlock on the workqueue, and
+atomically push the held process while getting another process
+from the workqueue.
+
+If during execution, the process ends up waiting for a message,
+or terminates, the worker releases the process and acts as if it
+has just initialized (i.e. holds no processes).
+
+Note that we've described is exactly just a "thread pool", where
+tasks are processes.
+
+(In the future, we may also use low-lock-overhead work-stealing
+queues in addition to the lock-heavy shared workqueue; I suspect
+the algorithm I will give here will require very little
+modification to support work-stealing queues, but it does
+require the shared workqueue)
+
+To summarize: (1) There is a single shared FIFO workqueue of
+processes; (2) One or more worker threads will grab processes on
+the workqueue to work on them; (3) if the process ends or waits
+for a message, it is not returned to the workqueue; and (4) if
+the process continues beyond the specified number of function
+calls (i.e. the time slice) the worker will suspend it anyway and
+push it back to the workqueue.
+
+Tri-colour Abstraction
+----------------------
+
+Briefly, the tri-colour abstraction is a provenly correct garbage
+collector design created by Dijkstra (which by itself makes it
+provenly correct, LOL).  All modern collectors are equivalent to
+the tri-colour abstraction, but most don't actually explicitly
+use the abstraction.
+
+The tri-colour abstraction assigns objects to one of three
+colours: black, gray, and white.  An object can only have one
+colour; it makes sense to talk of the "black set", the "gray
+set", and the "white set".
+
+The tri-colour abstraction has one all-important invariant:
+**black objects are not allowed to have a reference to a white
+object**.  All objects referenced by a black object should be
+either gray or white.
+
+Initially, all objects are white, except for objects that are
+referenced directly by the machines registers and stack.
+
+The abstraction operates by individually transforming gray
+objects into black ones, i.e. the algorithm grabs an arbitrary
+gray object O and makes it black.  However, in order to preserve
+the invariant, the algorithm must transform any white objects
+which O references into gray objects.  When the algorithm has
+converted all white objects referenced by O into gray objects,
+the algorithm can then safely color O black.
+
+The collection ends when the gray set is empty (i.e. no more
+gray objects).  The algorithm can then free the members of the
+white set, and it can move the black objects back to white;
+the algorithm can then restart collection by setting the root
+object (i.e. the object representing the machine's registers and
+stack) to gray.
+
+As a concrete example: the Cheney semispace algorithm is
+equivalent to the tri-colour abstraction in the following way:
+objects in the from-space without forwarding pointers are white;
+objects in the to-space are either gray or black.  Objects below
+the scanning pointer (i.e. have been scanned) are black; objects
+between the scanning pointer and the allocation pointer are gray.
+The Cheney algorithm then ends when the scanning pointer catches
+up with the allocation pointer (i.e. the gray set is empty),
+then frees the from-space.
+
+To summarize: (1) the tri-colour abstraction separates objects
+into black, gray, and white objects; (2) **black objects cannot
+point to white objects**; (3) the algorithm works by promoting
+gray objects to white objects, and to preserve the invariant, by
+promoting white objects to gray objects; and (4) the algorithm
+ends when there are no gray objects, at which point the black
+objects are all known to be used and the white objects are all
+known to be unused.
+
+The Planned hl Process Collector
+--------------------------------
+
+In this case, an entire process is considered an object, and the
+references to other processes are formed by process ID's in one
+process referring to another process.
+
+Here are some characteristics of this collection algorithm:
+
+1.  Black processes cannot point to white processes, due to the
+    tri-colour invariant. (axiom)
+2.  Processes can gain references to other processes by the
+    following (axiom):
+    2.1.  Being sent a message containing that reference
+    2.2.  Being started by its parent process with a reference
+          to another process.
+    2.3.  Starting a new process (you gain a reference to that
+          new process).
+3.  A black process can only send black messages.  A "black
+    message" is a message which contains references only to black
+    or gray processes.
+    3.1.  Follows from the invariant - the process cannot send a
+          message containing references it doesn't have.
+    3.2.  A black process can safely send to another black
+          process - the target process cannot possibly gain any
+          references to white processes from receiving that
+          message.
+4.  A black process will start black processes.
+    4.1.  Follows from the invariant and from 2.
+5.  Only a running process can send messages and launch new
+    processes. (axiom)
+6.  If at collection time, only black processes can be run, then
+    there is no need for any "write barriers" or similar tricks
+    to transform black objects back to gray.
+    6.1.  Black processes cannot send references to white
+          processes.
+7.  The root set of processes (i.e. the initial gray set) is the
+    set of running processes and the set of processes in global
+    variables.
+
+Here is the algorithm in more detail:
+
+At the startup of the thread pool, one thread is arbitrarily
+chosen as the "trigger" thread.  The trigger thread decides when
+to initiate the process collection.
+
+When the trigger thread decides to initiate the process
+collection, it forces a "soft-stop" condition.  When the other
+worker threads detect soft-stop, they finish the work on their
+process and push it on the workqueue (or drop them if the process
+is finished or waiting), then block on the soft-stop.
+
+When all worker threads are blocked at this point, all running
+processes are now in the workqueue.  The entire workqueue is now
+known to be composed of gray objects.
+
+When the trigger thread detects that all the other threads have
+blocked on the soft-stop, it partitions the global variables.
+Any references to waiting processes are distributed into the
+"gray waiting set" of the worker threads.  Each worker thread has
+its own "gray waiting set".
+
+After partitioning the global variables, the trigger thread
+sets all worker threads (including itself) to "scanning mode",
+then releases the soft-stop condition, allowing the other threads
+to resume operation.  The trigger thread then loses its special
+status as trigger.
+
+During normal operation, the worker thread just grabs a process
+from the workqueue, runs it, and pushes it back (or drops it if
+the process dies or blocks on a message).
+
+However during "scanning mode" operation, after the worker thread
+grabs a process, it checks the process's color.  If the process
+isn't black, it scans the process for any references to waiting
+white processes; it adds those processes to its gray waiting set.
+After scanning, it sets the process to black and performs normal
+running on the process.
+
+If the process is black, the worker thread exits "scanning mode"
+operation.  This is because during scanning mode processes that
+are pushed on the workqueue are already black; when the worker
+thread grabs a black process off the workqueue, it knows that
+all processes that will ever enter the workqueue afterwards are
+going to be black.
+
+During operation, the worker thread will also check its "gray
+waiting set".  It will get one process and determine if it is
+still a waiting, non-black process; if so, it anesthesizes the
+process (preventing it from being run), then scans it for
+references to waiting processes.  After the scan, it
+unanesthesizes it, and if it received any messages pushes it on
+the workqueue and sets it running, or else sets it back to
+waiting.
+
+When all worker threads have left scanning mode and all worker
+threads have empty gray waiting sets, then we know that the
+collection is complete (i.e. the gray set is empty) and we can
+free white processes.
+
+Pseudo-code
+-----------
+
+enum process_states {
+	running
+	waiting
+	dead
+	anesthesized
+}
+
+globals {
+	N		// an atomically-incremented/decremented number
+	U		// the set of all processes
+	soft-stop	// soft-stop condition
+	G		// the set of global variables
+	Ws		// the set of workers
+	workqueue	// the workqueue
+}
+
+thread-locals {
+	T		// if non-zero, this thread is the trigger thread
+	gray-set	// gray waiting set
+	gray-done	// whether we have notified that the gray waiting set is done
+	scanning-mode	// if non-zero, this thread is currently in scanning mode
+}
+
+WorkerLoop:
+	if soft-stop
+		wait for soft-stop to clear
+	if T and timed out // or just about any trigger, as long as only one thread does the triggering
+		set soft-stop
+		wait for other workers to block
+		for each process P in G
+			Ws[i].gray-set += P
+			i = (i + 1) mod Ws.length
+		for each worker W in Ws
+			W.scanning-mode = true
+			W.gray-done = false
+		T = false
+		N = Ws.length
+		clear soft-stop
+	pop process R from workqueue
+execute:
+	if scanning-mode
+		// atomicity not needed - R is a running process,
+		// and the first check done by other workers is to
+		// check if the process is waiting
+		if R is not black
+			for each process P in R
+				atomic: if P is waiting and P is not black
+					gray-set += P
+			set R to black
+		else
+			scanning-mode = false
+	perform R:
+		if R starts a process:
+			// actually the condition we care about here is
+			// "are we collecting or not".
+			if R is black
+				start new process as black
+			else
+				start new process as white
+		if R sends a message M to Q:
+			atomic: Q.mailbox += M; if Q is waiting, set Q to running, then:
+				push R to workqueue
+				R = Q
+				go to execute // also scan the destination process, if necessary
+	if R is running
+		push R to workqueue
+	if not scanning-mode and not gray-done
+		if gray-set is not empty
+			Q = gray-set[0]
+			gray-set -= Q
+			atomic: if Q is waiting and Q is not black, set Q to anesthesized, then:
+				for each process P in Q
+					atomic: if P is waiting and P is not black
+						gray-set += P
+				set Q to black
+				atomic: set Q to waiting; if Q.mailbox is not empty, set Q to running, then:
+					push Q to workqueue
+		else
+			// make sure to count down only once
+			gray-done = true
+			// N counts the number of workers whose gray sets
+			// aren't empty yet
+			atomic: N--; if N == 0, then:
+				go to Sweep
+	go to WorkerLoop
+Sweep:
+	set soft-stop
+	wait for other workers to block
+	for each process P in U
+		if P is black
+			set P to white
+		else
+			delete P
+	compute timeout based on number of deleted processes and retained processes
+	T = true // or better: store the timeout here
+	clear soft-stop
+	go to WorkerLoop
+
+
+/*
+Other considerations:
+1.  It's rather unfair and does not necessarily distribute waiting processes among
+    the worker's gray sets properly.  Potentially we could also push waiting processes
+    onto the workqueue as "anesthesized".  A worker always performs marking on the
+    process it gets if it's in scan-mode; marking a process involves pushing it on the
+    workqueue anesthesized.  If a worker grabs an anesthesized process on the
+    workqueue, it sets it to running only if the process had received any messages,
+    otherwise it sets it back to waiting.  However this complicates detecting the end
+    of collection, because figuring out when the gray set is empty is more difficult
+    (?)
+*/
+
