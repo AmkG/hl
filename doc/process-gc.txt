@@ -77,7 +77,7 @@ set", and the "white set".
 The tri-colour abstraction has one all-important invariant:
 **black objects are not allowed to have a reference to a white
 object**.  All objects referenced by a black object should be
-either gray or white.
+either gray or black.
 
 Initially, all objects are white, except for objects that are
 referenced directly by the machines registers and stack.
