@@ -2,7 +2,6 @@
 #include"objects.hpp"
 #include"heaps.hpp"
 #include"types.hpp"
-#include"valueholders.hpp"
 
 #include<cstdlib>
 #include<stdint.h>
@@ -29,10 +28,11 @@ Semispace::Semispace(size_t nsz)
 	char* cmem = (char*)mem;
 	char* clifoallocpt = cmem + nsz;
 	// adjust for alignment
-	tmp = reinterpret_cast<intptr_t>(lifoallocpt);
+	tmp = reinterpret_cast<intptr_t>(clifoallocpt);
 	clifoallocpt -= (tmp & Object::tag_mask);
 
 	lifoallocpt = clifoallocpt;
+	lifoallocstart = lifoallocpt;
 }
 
 Semispace::~Semispace() {
@@ -63,6 +63,8 @@ Semispace::~Semispace() {
 		gp->~Generic();
 		mvpt += step;
 	}
+
+	std::free(mem);
 }
 
 /*
@@ -86,7 +88,7 @@ constructor throws.)
 */
 void Semispace::dealloc(void* pt) {
 	#ifdef DEBUG
-		char* callocpt = allocpt;
+		char* callocpt = (char*) allocpt;
 		callocpt -= prev_alloc;
 		if(callocpt != pt) throw_DeallocError(pt);
 	#endif
@@ -170,7 +172,16 @@ void Heap::cheney_collection(Semispace* nsp) {
 	}
 }
 
+#ifdef DEBUG
+	#include<iostream>
+#endif
+
 void Heap::GC(size_t insurance) {
+
+	#ifdef DEBUG
+		std::cout << "GC!" << std::endl;
+	#endif
+
 	/*Determine the sizes of all semispaces*/
 	size_t total = main->used() + insurance;
 	total +=

@@ -16,7 +16,7 @@ on each reference of an object.
 class GenericTraverser {
 public:
 	virtual void traverse(Object::ref&) =0;
-	virtual ~GenericTraverser();
+	virtual ~GenericTraverser() {}
 };
 
 /*-----------------------------------------------------------------------------
