@@ -80,7 +80,8 @@ object**.  All objects referenced by a black object should be
 either gray or black.
 
 Initially, all objects are white, except for objects that are
-referenced directly by the machines registers and stack.
+referenced directly by the machines registers and stack.  This
+"root set" is then marked as gray.
 
 The abstraction operates by individually transforming gray
 objects into black ones, i.e. the algorithm grabs an arbitrary
