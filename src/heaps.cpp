@@ -10,9 +10,11 @@
 Semispaces
 -----------------------------------------------------------------------------*/
 
-Semispace::Semispace(size_t nsz)
-	: max(nsz) {
-	mem = std::malloc(nsz);
+Semispace::Semispace(size_t nsz) {
+	nsz = Object::round_up_to_alignment(nsz);
+	max = nsz;
+	// add alignment in case mem is misaligned
+	mem = std::malloc(nsz + Object::alignment);
 	if(!mem) throw std::bad_alloc();
 
 	allocpt = mem;
@@ -126,8 +128,49 @@ void Semispace::lifo_dealloc_abort(void* pt) {
 	lifoallocpt = clifoallocpt;
 }
 
-void Semispace::clone(boost::scoped_ptr<Semispace>& sp, Generic*& g) const {
-	/*TODO*/
+/*Used by clone below*/
+class MovingTraverser : public GenericTraverser {
+private:
+	ptrdiff_t diff;
+public:
+	void traverse(Object::ref& o) {
+		if(is_a<Generic*>(o)) {
+			Generic* gp = as_a<Generic*>(o);
+			char* cgp = (char*)(void*) gp;
+			cgp -= diff;
+			gp = (Generic*)(void*) cgp;
+			o = Object::to_ref(gp);
+		}
+	}
+	explicit MovingTraverser(ptrdiff_t ndiff) : diff(ndiff) { }
+};
+
+/*Preconditions:
+	this should be self-contained (i.e. objects in it
+	  should not contain references to objects outside
+	  of this semispace)
+	this should have no lifo-allocated objects
+*/
+void Semispace::clone(boost::scoped_ptr<Semispace>& ns, Generic*& g) const {
+	ns.reset(new Semispace(max));
+	char* myallocstart = (char*) allocstart;
+	char* hisallocstart = (char*) ns->allocstart;
+
+	MovingTraverser mt(myallocstart - hisallocstart);
+
+	char* mvpt = myallocstart;
+	char* endpt = (char*) allocpt;
+	while(mvpt < endpt) {
+		Generic* tmp = (Generic*)(void*) mvpt;
+		size_t sz = tmp->real_size();
+		Generic* dest = tmp->clone(&*ns);
+		dest->traverse_references(&mt);
+		mvpt += sz;
+	}
+
+	char* cg = (char*)(void*) g;
+	cg -= diff;
+	g = (Generic*)(void*) cg;
 }
 
 /*-----------------------------------------------------------------------------
