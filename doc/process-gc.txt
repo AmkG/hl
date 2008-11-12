@@ -292,6 +292,7 @@ execute:
 					for each process P in R
 						atomic: if P is waiting and P is not black
 							gray-set += P
+					set R to black
 				go to execute
 	if R is dead or R is waiting
 		R = NULL
