@@ -169,7 +169,7 @@ void Semispace::clone(boost::scoped_ptr<Semispace>& ns, Generic*& g) const {
 	}
 
 	char* cg = (char*)(void*) g;
-	cg -= diff;
+	cg -= (myallocstart - hisallocstart);
 	g = (Generic*)(void*) cg;
 }
 
