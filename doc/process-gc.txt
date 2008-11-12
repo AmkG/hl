@@ -237,6 +237,7 @@ globals {
 }
 
 thread-locals {
+	R		// the process we are working on
 	T		// if non-zero, this thread is the trigger thread
 	gray-set	// gray waiting set
 	gray-done	// whether we have notified that the gray waiting set is done
@@ -258,8 +259,10 @@ WorkerLoop:
 		T = false
 		N = Ws.length
 		clear soft-stop
-	pop process R from workqueue
-execute:
+	if R is not NULL
+		atomic: push R on workqueue, then pop R from workqueue
+	else
+		atomic: pop R from workqueue
 	if scanning-mode
 		// atomicity not needed - R is a running process,
 		// and the first check done by other workers is to
@@ -271,6 +274,7 @@ execute:
 			set R to black
 		else
 			scanning-mode = false
+execute:
 	perform R:
 		if R starts a process:
 			// actually the condition we care about here is
@@ -281,11 +285,16 @@ execute:
 				start new process as white
 		if R sends a message M to Q:
 			atomic: Q.mailbox += M; if Q is waiting, set Q to running, then:
-				push R to workqueue
+				atomic: push R to workqueue
 				R = Q
-				go to execute // also scan the destination process, if necessary
-	if R is running
-		push R to workqueue
+				// must scan here, because we don't exit scanning mode
+				if scanning-mode and R is not black
+					for each process P in R
+						atomic: if P is waiting and P is not black
+							gray-set += P
+				go to execute
+	if R is dead or R is waiting
+		R = NULL
 	if not scanning-mode and not gray-done
 		if gray-set is not empty
 			Q = gray-set[0]
@@ -296,7 +305,7 @@ execute:
 						gray-set += P
 				set Q to black
 				atomic: set Q to waiting; if Q.mailbox is not empty, set Q to running, then:
-					push Q to workqueue
+					atomic: push Q to workqueue
 		else
 			// make sure to count down only once
 			gray-done = true
