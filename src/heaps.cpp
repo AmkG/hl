@@ -10,9 +10,11 @@
 Semispaces
 -----------------------------------------------------------------------------*/
 
-Semispace::Semispace(size_t nsz)
-	: max(nsz) {
-	mem = std::malloc(nsz);
+Semispace::Semispace(size_t nsz) {
+	nsz = Object::round_up_to_alignment(nsz);
+	max = nsz;
+	// add alignment in case mem is misaligned
+	mem = std::malloc(nsz + Object::alignment);
 	if(!mem) throw std::bad_alloc();
 
 	allocpt = mem;
@@ -126,13 +128,87 @@ void Semispace::lifo_dealloc_abort(void* pt) {
 	lifoallocpt = clifoallocpt;
 }
 
-void Semispace::clone(boost::scoped_ptr<Semispace>& sp, Generic*& g) const {
-	/*TODO*/
+void Semispace::traverse_objects(HeapTraverser* ht) const {
+	char* mvpt = (char*) allocstart;
+	char* endpt = (char*) allocpt;
+	while(mvpt < endpt) {
+		Generic* tmp = (Generic*)(void*) mvpt;
+		size_t sz = tmp->real_size();
+		ht->traverse(tmp);
+		mvpt += sz;
+	}
+}
+
+/*Used by SemispaceCloningTraverser below*/
+class MovingTraverser : public GenericTraverser {
+private:
+	ptrdiff_t diff;
+public:
+	void traverse(Object::ref& o) {
+		if(is_a<Generic*>(o)) {
+			Generic* gp = as_a<Generic*>(o);
+			char* cgp = (char*)(void*) gp;
+			cgp -= diff;
+			gp = (Generic*)(void*) cgp;
+			o = Object::to_ref(gp);
+		}
+	}
+	explicit MovingTraverser(ptrdiff_t ndiff) : diff(ndiff) { }
+};
+
+class SemispaceCloningTraverser : public HeapTraverser {
+private:
+	Semispace* sp;
+	MovingTraverser mt;
+public:
+	void traverse(Generic* gp) {
+		Generic* np = gp->clone(sp);
+		np->traverse_references(&mt);
+	}
+	SemispaceCloningTraverser(Semispace* nsp, ptrdiff_t ndiff)
+		: sp(nsp), mt(ndiff) { }
+};
+
+/*Preconditions:
+	this should be self-contained (i.e. objects in it
+	  should not contain references to objects outside
+	  of this semispace)
+	this should have no lifo-allocated objects
+*/
+void Semispace::clone(boost::scoped_ptr<Semispace>& ns, Generic*& g) const {
+	ns.reset(new Semispace(max));
+	char* myallocstart = (char*) allocstart;
+	char* hisallocstart = (char*) ns->allocstart;
+
+	SemispaceCloningTraverser sct(&*ns, myallocstart - hisallocstart);
+
+	traverse_objects(&sct);
+
+	char* cg = (char*)(void*) g;
+	cg -= (myallocstart - hisallocstart);
+	g = (Generic*)(void*) cg;
+}
+
+/*-----------------------------------------------------------------------------
+ValueHolder
+-----------------------------------------------------------------------------*/
+
+void ValueHolder::traverse_objects(HeapTraverser* ht) const {
+	for(ValueHolder const* pt = this; pt; pt = &*pt->next) {
+		pt->sp->traverse_objects(ht);
+	}
 }
 
 /*-----------------------------------------------------------------------------
 Heaps
 -----------------------------------------------------------------------------*/
+
+void Heap::traverse_objects(HeapTraverser* ht) const {
+	main->traverse_objects(ht);
+	if(other_spaces) {
+		other_spaces->traverse_objects(ht);
+	}
+}
 
 /*copy and modify GC class*/
 class GCTraverser : public GenericTraverser {
