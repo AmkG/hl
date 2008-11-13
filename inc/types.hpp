@@ -199,4 +199,19 @@ static inline Object::ref scdr(Object::ref c, Object::ref v) {
 	return expect_type<Cons>(c,"'scdr expects a true Cons cell")->scdr(v);
 }
 
+/*-----------------------------------------------------------------------------
+HlPid
+-----------------------------------------------------------------------------*/
+/*Represents a process that can
+be sent messages to by this process
+*/
+
+class Process;
+
+class HlPid : public GenericDerived<HlPid> {
+public:
+	Process* process;
+};
+
 #endif //TYPES_H
+
