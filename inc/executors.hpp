@@ -117,8 +117,6 @@ typedef enum _e_bytecode_label _bytecode_label;
 
 #endif // __GNUC__
 
-#define CLOSUREREF Closure& clos = *static_cast<Closure*>(stack[0])
-
 /* 
  * Generic executor
  * An executor represents a built-in function
@@ -140,6 +138,11 @@ struct bytecode_t {
   intptr_t val; // simple value argument (may be invalid)
   bytecode_t *seq; // sequence argument (may be invalid)
 };
+
+#define INTPARAM(name) intptr_t name = pc->val
+#define INTSEQPARAM(name1, name2)\
+        intptr_t name1 = pc->val; \
+        bytecode_t* name_2 = pc->seq;
 
 // Execute a given process
 ProcessStatus execute(Process & proc, size_t reductions, bool init = 0);
