@@ -16,6 +16,16 @@ class ValueHolder;
 void throw_DeallocError(void*);
 
 /*-----------------------------------------------------------------------------
+HeapTraverser
+-----------------------------------------------------------------------------*/
+
+class HeapTraverser {
+public:
+	virtual void traverse(Generic*) =0;
+	virtual ~HeapTraverser(void) { }
+};
+
+/*-----------------------------------------------------------------------------
 Semispaces
 -----------------------------------------------------------------------------*/
 
@@ -51,6 +61,8 @@ public:
 	inline bool can_fit(size_t sz) const {
 		return sz <= free();
 	}
+
+	void traverse_objects(HeapTraverser*) const;
 
 	void clone(boost::scoped_ptr<Semispace>&, Generic*&) const;
 
@@ -128,6 +140,7 @@ public:
 		what.swap(from);
 		from.swap(what->next);
 	}
+	void traverse_objects(HeapTraverser*) const;
 };
 
 /*-----------------------------------------------------------------------------
@@ -182,6 +195,8 @@ public:
 			throw;
 		}
 	}
+
+	void traverse_objects(HeapTraverser*) const;
 
 	explicit Heap(size_t initsize = 8 * sizeof(Object::ref))
 		: main(new Semispace(initsize)), tight(1) { }

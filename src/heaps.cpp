@@ -128,7 +128,18 @@ void Semispace::lifo_dealloc_abort(void* pt) {
 	lifoallocpt = clifoallocpt;
 }
 
-/*Used by clone below*/
+void Semispace::traverse_objects(HeapTraverser* ht) const {
+	char* mvpt = (char*) allocstart;
+	char* endpt = (char*) allocpt;
+	while(mvpt < endpt) {
+		Generic* tmp = (Generic*)(void*) mvpt;
+		size_t sz = tmp->real_size();
+		ht->traverse(tmp);
+		mvpt += sz;
+	}
+}
+
+/*Used by SemispaceCloningTraverser below*/
 class MovingTraverser : public GenericTraverser {
 private:
 	ptrdiff_t diff;
@@ -145,6 +156,19 @@ public:
 	explicit MovingTraverser(ptrdiff_t ndiff) : diff(ndiff) { }
 };
 
+class SemispaceCloningTraverser : public HeapTraverser {
+private:
+	Semispace* sp;
+	MovingTraverser mt;
+public:
+	void traverse(Generic* gp) {
+		Generic* np = gp->clone(sp);
+		np->traverse_references(&mt);
+	}
+	SemispaceCloningTraverser(Semispace* nsp, ptrdiff_t ndiff)
+		: sp(nsp), mt(ndiff) { }
+};
+
 /*Preconditions:
 	this should be self-contained (i.e. objects in it
 	  should not contain references to objects outside
@@ -156,17 +180,9 @@ void Semispace::clone(boost::scoped_ptr<Semispace>& ns, Generic*& g) const {
 	char* myallocstart = (char*) allocstart;
 	char* hisallocstart = (char*) ns->allocstart;
 
-	MovingTraverser mt(myallocstart - hisallocstart);
+	SemispaceCloningTraverser sct(&*ns, myallocstart - hisallocstart);
 
-	char* mvpt = myallocstart;
-	char* endpt = (char*) allocpt;
-	while(mvpt < endpt) {
-		Generic* tmp = (Generic*)(void*) mvpt;
-		size_t sz = tmp->real_size();
-		Generic* dest = tmp->clone(&*ns);
-		dest->traverse_references(&mt);
-		mvpt += sz;
-	}
+	traverse_objects(&sct);
 
 	char* cg = (char*)(void*) g;
 	cg -= (myallocstart - hisallocstart);
@@ -174,8 +190,25 @@ void Semispace::clone(boost::scoped_ptr<Semispace>& ns, Generic*& g) const {
 }
 
 /*-----------------------------------------------------------------------------
+ValueHolder
+-----------------------------------------------------------------------------*/
+
+void ValueHolder::traverse_objects(HeapTraverser* ht) const {
+	for(ValueHolder const* pt = this; pt; pt = &*pt->next) {
+		pt->sp->traverse_objects(ht);
+	}
+}
+
+/*-----------------------------------------------------------------------------
 Heaps
 -----------------------------------------------------------------------------*/
+
+void Heap::traverse_objects(HeapTraverser* ht) const {
+	main->traverse_objects(ht);
+	if(other_spaces) {
+		other_spaces->traverse_objects(ht);
+	}
+}
 
 /*copy and modify GC class*/
 class GCTraverser : public GenericTraverser {
