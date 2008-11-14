@@ -226,6 +226,7 @@ private:
   bytecode_t *body;
 public:
   Closure(size_t sz) : GenericDerivedVariadic<Closure>(sz) {}
+  Object::ref& operator[](size_t i) { return index(i); }
   bytecode_t* code() { return body; }
   static Closure* NewClosure(Heap & h, bytecode_t *body, size_t n);
 };
