@@ -2,6 +2,7 @@
 #define EXECUTORS_H
 
 #include "processes.hpp"
+#include "reader.hpp" // for Bytecode classes
 
 /*
   hl functions are represented by a Closure structure, which has an
@@ -143,6 +144,10 @@ struct bytecode_t {
 #define INTSEQPARAM(name1, name2)\
         intptr_t name1 = pc->val; \
         bytecode_t* name_2 = pc->seq;
+
+
+// Assemble a sequence of bytecodes
+void assemble(BytecodeSeq & seq, bytecode_t* & a_seq);
 
 // Execute a given process
 ProcessStatus execute(Process & proc, size_t reductions, bool init = 0);

@@ -1,24 +1,14 @@
 #include "executors.hpp"
 
-static std::map<Atom*,_bytecode_label> bytetb;
-static std::map<Atom*, boost::shared_ptr<Executor> > biftb;
+// map opcodes to bytecodes
+static std::map<Symbol*,_bytecode_label> bytetb;
 
-template<class T>
-static inline T* expect_type(Generic* g,
-				char const* s1 = "executor-error",
-				char const* s2 = "Unspecified error"){
-	T* tmp = dynamic_cast<T*>(g);
-	if(tmp == NULL) throw ArcError(s1, s2);
-	return tmp;
-}
-
-static _bytecode_label bytecodelookup(boost::shared_ptr<Atom> a){
-	std::map<Atom*, _bytecode_label>::iterator i = bytetb.find(&*a);
+static _bytecode_label bytecodelookup(Symbol *s){
+	std::map<Symbol*, _bytecode_label>::iterator i = bytetb.find(s);
 	if(i != bytetb.end()){
 		return i->second;
 	} else {
-		throw ArcError("compile",
-			"Unknown bytecode form");
+		throw_HlError("assemble: unknown bytecode form");
 	}
 }
 
@@ -26,25 +16,41 @@ class InitialAssignments {
 public:
 	InitialAssignments const& operator()(
 			char const* s,
-			Executor* e) const {
-		biftb[globals->lookup(s).get()].reset(e);
-		return *this;
-	}
-	InitialAssignments const& operator()(
-			char const* s,
 			_bytecode_label l) const{
-		bytetb[globals->lookup(s).get()] = l;
-		return *this;
-	}
-	InitialAssignments const& operator()(
-			char const* s,
-			Process& proc,
-			Executor* e) const{
-		proc.assign(globals->lookup(s), 
-			NewClosure(proc, e, 0));
+		bytetb[symbols->lookup(s)] = l;
 		return *this;
 	}
 };
+
+void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
+  a_seq = new bytecode_t[seq.size()]; // assembled bytecode
+  for(size_t pos = 0, BytecodeSeq::iterator i = seq.begin(); i!=seq.end(); 
+      i++, pos++) {
+    a_seq[pos].op = bytecodelookup(i->first);
+    SimpleArg *sa;
+    BytecodeSeq *seq_arg;
+    SimpleArgAndSeq *sas;
+    if ((sa = dynamic_cast<SimpleArg*>(i->second)) != NULL) {
+      a_seq[pos].val = sa->getVal();
+    }
+    else {
+      if ((seq_arg = dynamic_cast<BytecodeSeq*>(i->second)) != NULL) {
+        assemble(*seq_arg, a_seq[pos].seq);
+      }
+      else {
+        if ((sas = dynamic_cast<SimpleArgAndSeq*>(i->second)) != NULL) {
+          a_seq[pos].val = sas->getSimple();
+          assemble(sas->getSeq(), a_seq[pos].seq);
+        }
+        else {
+          throw_HlError("assemble: Unknown argument type");
+        }
+      }
+    }
+  }
+
+  return a_seq;
+}
 
 /*attempts to deallocate the specified object if it's a reusable
 continuation closure
@@ -70,6 +76,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     (oh and yeah: proc.nilobj() and proc.tobj()
     are both potentially allocating)
   */
+
   ProcessStack& stack = proc.stack;
   if (init) {
     /*So why isn't this, say, a separate function?  Well,
@@ -80,12 +87,6 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     InitialAssignments()
       /*built-in functions accessible via $*/
-      ("ccc",			THE_EXECUTOR(ccc))
-      ("bytecoder",		THE_EXECUTOR(compile))
-      ("bytecode-to-free-fun",THE_EXECUTOR(to_free_fun))
-      ("halt",		THE_EXECUTOR(halting_continuation))
-      ("spawn",		THE_EXECUTOR(spawn))
-      ("probe",		THE_EXECUTOR(probe))
       /*bytecodes*/
       ("apply",		THE_BYTECODE_LABEL(apply))
       ("apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k))
@@ -136,16 +137,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
       ("variadic",		THE_BYTECODE_LABEL(variadic))
-
       /*assign bultin global*/
-      ("$",			proc, THE_EXECUTOR(bif_dispatch))
-      /*these globals are used only during initialization.  After
-	initialization these globals may be overwritten by user
-	program.
-      */
-      ("<snap>compile</snap>", proc, THE_EXECUTOR(compile))
-      ("<snap>halt</snap>", proc, THE_EXECUTOR(halting_continuation))
-      ("<snap>to-free-fun</snap>", proc, THE_EXECUTOR(to_free_fun))
       ;/*end initializer*/
     return process_running;
   }
