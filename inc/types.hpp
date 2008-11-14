@@ -213,5 +213,22 @@ public:
 	Process* process;
 };
 
-#endif //TYPES_H
+/*-----------------------------------------------------------------------------
+Closures
+-----------------------------------------------------------------------------*/
 
+/*closure structures shouldn't be
+modified after they are constructed
+*/
+class Closure : public GenericDerivedVariadic<Closure> {
+private:
+  bytecode_t *body;
+  Generic *closed_vars;
+  size_t nclosed;
+public:
+  Closure(size_t sz) : GenericDerivedVariadic<Closure>(sz) {}
+  bytecode_t* code() { return body; }
+  static Closure* NewClosure(Heap & h, bytecode_t *body, size_t n);
+};
+
+#endif //TYPES_H
