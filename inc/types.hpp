@@ -8,6 +8,7 @@ Defines a set of types for use on the hl-side.
 #include"objects.hpp"
 #include"generics.hpp"
 #include"heaps.hpp"
+#include"executors.hpp"
 
 /*-----------------------------------------------------------------------------
 Specialized broken heart tags
@@ -91,7 +92,7 @@ protected:
 		void* vp = this;
 		char* cp = (char*) vp;
 		cp = cp + sizeof(T);
-		Object::ref* op = (void*) cp;
+		Object::ref* op = (Object::ref*) cp;
 		return op[i];
 	}
 	explicit GenericDerivedVariadic<T>(size_t nsz) : sz(nsz) {
@@ -120,7 +121,7 @@ public:
 			throw;
 		}
 	}
-	virtual void break_heart(Object::ref to) {
+	virtual void break_heart(Generic *to) {
 		Generic* gp = this;
 		size_t nsz = sz; //save this before dtoring!
 		gp->~Generic();

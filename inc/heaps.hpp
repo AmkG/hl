@@ -189,7 +189,7 @@ public:
 		void* pt = main->alloc(sz);
 		try {
 			new(pt) T(extra);
-			return pt;
+			return (T*)pt;
 		} catch(...) {
 			main->dealloc(pt);
 			throw;
