@@ -2,8 +2,10 @@
 #define WORKERS_H
 
 #include"lockeds.hpp"
+#include"mutexes.hpp"
 
 #include<vector>
+#include<set>
 #include<queue>
 
 #include<boost/thread/barrier.hpp>
@@ -33,7 +35,27 @@ class AllWorkers {
 	std::vector<Process*> U;
 
 	std::queue<Process*> workqueue;
-	boost::mutex workqueue_mutex;
+	AppMutex workqueue_mutex;
+
+	/*default timeslice for processes*/
+	size_t default_timeslice;
+
+	/*atomically register a worker into Ws*/
+	void register_worker(Worker*);
+
+	/*pushes a process onto the workqueue, then pops a process*/
+	void workqueue_push_and_pop(Process*&);
+
+	/*pops a process from the workqueue.
+	blocks if no process is available yet.
+	returns 0 if all worker threads have blocked
+		(meaning all work has ended)
+	returns 1 if a process was successfully popped
+	*/
+	bool workqueue_pop(Process*&);
+
+	/*pushes a process onto the workqueue*/
+	void workqueue_push(Process*);
 
 public:
 	/*initiates the specified number of worker threads
@@ -42,6 +64,9 @@ public:
 	*/
 	void initiate(void);
 
+	/*atomically register a process into U*/
+	void register_process(Process*);
+
 	AllWorkers(unsigned int nworkers)
 		: exit_condition(0),
 		  soft_stop_condition(0),
@@ -49,14 +74,15 @@ public:
 		  gray_workers(0),
 		  total_workers(nworkers),
 		  workqueue(),
-		  workqueue_mutex()
+		  workqueue_mutex(),
+		  default_timeslice(nworkers > 1 ? 256 : 64)
 	{ }
 
 	friend class Worker;
 };
 
 class Worker {
-	std::vector<Process*> gray_set;
+	std::set<Process*> gray_set;
 	bool gray_done;
 	bool scanning_mode;
 
@@ -65,7 +91,13 @@ class Worker {
 	/*worker core*/
 	void work(void);
 
+	/*process marking*/
+	void mark_process(Process*);
+
 public:
+	/*process-level GC triggering*/
+	size_t T;
+
 	/*callable, used to launch a thread*/
 	void operator()(void);
 
@@ -73,7 +105,8 @@ public:
 		: parent(nparent),
 		gray_set(),
 		gray_done(1),
-		scanning_mode(0)
+		scanning_mode(0),
+		T(0)
 	{ }
 };
 
