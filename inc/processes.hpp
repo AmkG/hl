@@ -62,13 +62,15 @@ For process-level garbage collection
 	void blacken(void);
 	/*sets color to white*/
 	void whiten(void);
-	/*checks color*/
+	/*checks color.  no atomicity necessary*/
 	bool is_black(void);
 
 	/*sets process status to process_dead, and frees its
 	heap.
 	*/
 	void kill(void);
+	/*like kill(), but does so atomically (with locks!)*/
+	void atomic_kill(void);
 
 	/*Executes the process for a time slice
 	caller will protect with a try-catch block, which will
@@ -79,11 +81,11 @@ For process-level garbage collection
 	process_change.
 	returns:
 	process_dead - process status was set to dead and its
-		memory was freed (i.e. execute() has called
-		kill()), and caller should silently drop this
-		process.
+		memory was freed (i.e. execute() has called 
+		atomic_kill()), and caller should silently
+		drop this process.
 	process_waiting - process status was set to waiting,
-		and caller should silently drop this process
+		and caller should silently drop this process.
 	process_anesthesized - invalid!
 	process_running - process status was not changed,
 		and caller should return this process to
@@ -95,6 +97,8 @@ For process-level garbage collection
 		previously).  Used when the process sends a
 		message to Q and Q has been waiting, or if
 		the process started a new process Q.
+		Process::execute is responsible for
+		atomically changing Q to process_running.
 	*/
 	ProcessStatus execute(size_t& timeslice, Process*& Q);
 
