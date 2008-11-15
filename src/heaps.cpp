@@ -205,7 +205,7 @@ Heaps
 
 void Heap::traverse_objects(HeapTraverser* ht) const {
 	main->traverse_objects(ht);
-	if(other_spaces) {
+	if(!other_spaces.empty()) {
 		other_spaces->traverse_objects(ht);
 	}
 }
@@ -261,8 +261,8 @@ void Heap::GC(size_t insurance) {
 	/*Determine the sizes of all semispaces*/
 	size_t total = main->used() + insurance;
 	total +=
-	(other_spaces) ?		other_spaces->used_total() :
-	/*otherwise*/			0 ;
+	(other_spaces.empty()) ?	0 :
+	/*otherwise*/			other_spaces->used_total() ;
 
 	if(tight) total *= 2;
 

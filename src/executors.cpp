@@ -35,6 +35,10 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
     }
     else {
       if ((seq_arg = dynamic_cast<BytecodeSeq*>(i->second)) != NULL) {
+        /*Not sure if this is a good idea: thread libraries tend to
+        give limited stack space.  Probably better use explicit stack,
+        or better alloc things in a process's heap.
+        */
         assemble(*seq_arg, a_seq[pos].seq);
       }
       else {
@@ -143,6 +147,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
   }
   // main VM loop
  call_current_closure:
+  if(--reductions == 0) return process_running;
   // get current closure
   Closure & clos = *static_cast<Closure*>(stack[0]);
   // to start, call the closure in stack[0]
@@ -333,6 +338,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         SEQPARAM(S);
         pc = S;
         pc--; // NEXT_BYTECODE will increment
+        // is that safe??  wouldn't that have
+        // array out of bounds?
       }
     } NEXT_BYTECODE;
     /*

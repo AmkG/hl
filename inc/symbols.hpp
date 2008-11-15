@@ -2,26 +2,24 @@
 #define SYMBOLS_H
 
 #include"objects.hpp"
+#include"heaps.hpp"
+#include"mutexes.hpp"
 
 #include<string>
 #include<map>
-
-#include<boost/scoped_ptr.hpp>
 
 class SymbolsTable;
 class ValueHolder;
 
 class Symbol {
-	boost::scoped_ptr<ValueHolder> value;
+	ValueHolderRef value;
 	std::string printname; //utf-8
-	/*
-	insert locking object here
-	*/
+	AppMutex m;
 
 	Symbol(); //disallowed
 	explicit Symbol(std::string x) : printname(x) {};
 public:
-	void copy_value_to(boost::scoped_ptr<ValueHolder>&);
+	void copy_value_to(ValueHolderRef&);
 	void set_value(Object::ref);
 	friend class SymbolsTable;
 };
@@ -29,9 +27,8 @@ public:
 class SymbolsTable {
 private:
 	std::map<std::string, Symbol*> tb;
-	/*
-	insert locking object here
-	*/
+	AppMutex m;
+
 public:
 	Symbol* lookup(std::string);
 	inline Symbol* lookup(char const* s) {

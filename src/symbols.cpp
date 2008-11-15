@@ -1,6 +1,7 @@
 #include"all_defines.hpp"
 
 #include"symbols.hpp"
+#include"mutexes.hpp"
 
 #include<string>
 #include<map>
@@ -8,7 +9,7 @@
 typedef std::map<std::string, Symbol*> maptype;
 
 Symbol* SymbolsTable::lookup(std::string x) {
-	{/*insert locking of table here*/
+	{AppLock l(m);
 		Symbol*& s = tb[x];
 		if(s) return s;
 		s = new Symbol(x);

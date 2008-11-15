@@ -21,3 +21,5 @@ class SymbolsTable;
 
 EXTERN boost::scoped_ptr<SymbolsTable> symbols;
 
+EXTERN bool single_threaded;
+
