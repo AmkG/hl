@@ -1,6 +1,8 @@
 #ifndef PROCESSES_H
 #define PROCESSES_H
 
+#include"heaps.hpp"
+
 enum ProcessStatus {
 	process_dead,
 	process_waiting,
@@ -95,6 +97,12 @@ For process-level garbage collection
 		the process started a new process Q.
 	*/
 	ProcessStatus execute(size_t& timeslice, Process*& Q);
+
+	/*allows access to the heap object*/
+	Heap& heap(void);
+
+	/*allows access to the mailbox*/
+	LockedValueHolderRef& mailbox(void);
 };
 
 #endif // PROCESSES_H
