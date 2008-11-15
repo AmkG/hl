@@ -3,6 +3,7 @@
 
 #include"objects.hpp"
 #include"heaps.hpp"
+#include"mutexes.hpp"
 
 #include<string>
 #include<map>
@@ -13,9 +14,7 @@ class ValueHolder;
 class Symbol {
 	ValueHolderRef value;
 	std::string printname; //utf-8
-	/*
-	insert locking object here
-	*/
+	AppMutex m;
 
 	Symbol(); //disallowed
 	explicit Symbol(std::string x) : printname(x) {};
@@ -28,9 +27,8 @@ public:
 class SymbolsTable {
 private:
 	std::map<std::string, Symbol*> tb;
-	/*
-	insert locking object here
-	*/
+	AppMutex m;
+
 public:
 	Symbol* lookup(std::string);
 	inline Symbol* lookup(char const* s) {
