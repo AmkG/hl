@@ -231,7 +231,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     } NEXT_BYTECODE;
     BYTECODE(closure): {
       INTSEQPARAM(N,S);
-      Closure* nclos = NewClosure(proc, S, N);
+      Closure* nclos = Closure::NewClosure(proc, S, N);
       for(int i = N; i ; --i){
         (*nclos)[i - 1] = stack.top();
         stack.pop();
@@ -242,26 +242,26 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       INTPARAM(N);
       bytecode_closure_ref(stack, clos, N);
     } NEXT_BYTECODE;
-    BYTECODE(composeo): {
+    //    BYTECODE(composeo): {
       /*destructure closure*/
-      stack.push(clos[0]);
-      stack[0] = clos[1];
+      //stack.push(clos[0]);
+      //stack[0] = clos[1];
       // clos is now no longer safe to use
-      KClosure& kclos = *NewKClosure(proc, THE_BYTECODE_LABEL(composeo_continuation), 2);
+      //KClosure& kclos = *NewKClosure(proc, THE_BYTECODE_LABEL(composeo_continuation), 2);
       // clos is now invalid
-      kclos[0] = stack[1];
-      kclos[1] = stack.top(); stack.pop();
-      stack[1] = &kclos;
-      goto call_current_closure;
-    } NEXT_BYTECODE;
-    BYTECODE(composeo_continuation): {
-      stack.push(clos[1]);
-      stack.push(clos[0]);
-      stack.push(stack[1]);
-      attempt_kclos_dealloc(proc, stack[0]);
-      stack.restack(3);
-      goto call_current_closure;
-    } NEXT_BYTECODE;
+      //kclos[0] = stack[1];
+      //kclos[1] = stack.top(); stack.pop();
+      //stack[1] = &kclos;
+      //goto call_current_closure;
+    //} NEXT_BYTECODE;
+    //BYTECODE(composeo_continuation): {
+    //stack.push(clos[1]);
+    //stack.push(clos[0]);
+    //stack.push(stack[1]);
+    //attempt_kclos_dealloc(proc, stack[0]);
+    //stack.restack(3);
+    //goto call_current_closure;
+    //} NEXT_BYTECODE;
     BYTECODE(cons): {
       bytecode_cons(proc,stack);
     } NEXT_BYTECODE;
