@@ -154,6 +154,7 @@ inline void ValueHolderRef::insert(ValueHolderRef& o) {
 	#endif
 	o->next.p = p;
 	p = o.p;
+	o.p = 0; /*release*/
 }
 
 inline void ValueHolderRef::remove(ValueHolderRef& o) {
@@ -172,10 +173,6 @@ inline Object::ref ValueHolderRef::value(void) {
 	if(p)	return p->val;
 	else	return Object::nil();
 }
-
-class LockedValueHolderRef {
-/*TODO*/
-};
 
 /*-----------------------------------------------------------------------------
 Heaps
