@@ -149,6 +149,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
  call_current_closure:
   if(--reductions == 0) return process_running;
   // get current closure
+  // WARNING!  Will fail for KClosure.  Have to use
+  // dynamic_cast<>!
   Closure & clos = *static_cast<Closure*>(stack[0]);
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
