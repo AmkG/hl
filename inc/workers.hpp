@@ -54,9 +54,6 @@ class AllWorkers {
 	*/
 	bool workqueue_pop(Process*&);
 
-	/*pushes a process onto the workqueue*/
-	void workqueue_push(Process*);
-
 public:
 	/*initiates the specified number of worker threads
 	This function will return only when workers run out
@@ -66,6 +63,9 @@ public:
 
 	/*atomically register a process into U*/
 	void register_process(Process*);
+
+	/*pushes a process onto the workqueue*/
+	void workqueue_push(Process*);
 
 	AllWorkers(unsigned int nworkers)
 		: exit_condition(0),
