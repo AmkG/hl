@@ -1,7 +1,7 @@
 #ifndef EXECUTORS_H
 #define EXECUTORS_H
 
-#include "processes.hpp"
+//#include "processes.hpp"
 #include "reader.hpp" // for Bytecode classes
 
 /*
@@ -117,6 +117,10 @@ typedef enum _e_bytecode_label _bytecode_label;
 #define THE_BYTECODE_LABEL(x) BYTECODE_ENUM(x)
 
 #endif // __GNUC__
+
+class Process;
+class ProcessStatus;
+class ProcessStack;
 
 /* 
  * Generic executor
