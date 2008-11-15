@@ -7,8 +7,6 @@
 #include<string>
 #include<map>
 
-#include<boost/scoped_ptr.hpp>
-
 class SymbolsTable;
 class ValueHolder;
 
