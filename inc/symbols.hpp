@@ -2,6 +2,7 @@
 #define SYMBOLS_H
 
 #include"objects.hpp"
+#include"heaps.hpp"
 
 #include<string>
 #include<map>
@@ -12,7 +13,7 @@ class SymbolsTable;
 class ValueHolder;
 
 class Symbol {
-	boost::scoped_ptr<ValueHolder> value;
+	ValueHolderRef value;
 	std::string printname; //utf-8
 	/*
 	insert locking object here
@@ -21,7 +22,7 @@ class Symbol {
 	Symbol(); //disallowed
 	explicit Symbol(std::string x) : printname(x) {};
 public:
-	void copy_value_to(boost::scoped_ptr<ValueHolder>&);
+	void copy_value_to(ValueHolderRef&);
 	void set_value(Object::ref);
 	friend class SymbolsTable;
 };

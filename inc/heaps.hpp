@@ -77,6 +77,36 @@ class ValueHolder;
 
 void throw_ValueHolderLinkingError(ValueHolder*);
 
+class ValueHolder;
+class LockedValueHolderRef;
+
+/*smart pointer specifically for ValueHolder*/
+class ValueHolderRef : boost::noncopyable {
+private:
+	ValueHolder* p;
+public:
+	ValueHolderRef(ValueHolder* np = 0) : p(np) { }
+	~ValueHolderRef();
+	void reset(ValueHolder* np = 0);
+	void swap(ValueHolderRef& n) {
+		ValueHolder* tmp = p;
+		p = n.p;
+		n.p = tmp;
+	}
+	ValueHolder* operator->(void) { return p; }
+	ValueHolder const* operator->(void) const { return p; }
+	ValueHolder& operator*(void) { return *p; }
+	ValueHolder const& operator*(void) const { return *p; }
+	bool empty(void) const { return p == 0; }
+
+	void insert(ValueHolderRef&);
+	void remove(ValueHolderRef&);
+
+	Object::ref value(void);
+
+	friend class LockedValueHolderRef;
+};
+
 class ValueHolder {
 private:
 	boost::scoped_ptr<Semispace> sp;
@@ -86,11 +116,10 @@ private:
 	Allow chaining, for example in
 	the mailbox of a process.
 	*/
-	boost::scoped_ptr<ValueHolder> next;
+	ValueHolderRef next;
 
 	ValueHolder() { }
 public:
-	typedef boost::scoped_ptr<ValueHolder> ptr;
 
 	inline size_t used_total(void) const {
 		size_t total = 0;
@@ -100,47 +129,52 @@ public:
 		return total;
 	}
 
-	/* insert(what, to)
-	On entry:
-		what is a pointer to a ValueHolder
-		to is a potentially empty list of
-		  ValueHolder's
-	On exit:
-		what is an empty pointer
-		to is the new list
-	*/
-	static inline void insert(ptr& what, ptr& to) {
-		#ifdef DEBUG
-			/*make sure what to insert exists and doesn't
-			have a next
-			*/
-			if(!what || what->next) {
-				throw_ValueHolderLinkingError(&*what);
-			}
-		#endif
-		what->next.swap(to);
-		what.swap(to);
-	}
-	/* remove(what, from)
-	On entry:
-		what is an empty pointer
-		from is a non-empty list of ValueHolders
-	On exit:
-		what is the first element in the list
-		from is the rest of the list, or empty if the list
-		  only had one element
-	*/
-	static inline void remove(ptr& what, ptr& from) {
-		#ifdef DEBUG
-			/*make sure there's something to remove and that
-			what is empty
-			*/
-			if(!from || what) throw_ValueHolderLinkingError(&*from);
-		#endif
-		what.swap(from);
-		from.swap(what->next);
-	}
 	void traverse_objects(HeapTraverser*) const;
+	friend class ValueHolderRef;
+	friend class LockedValueHolderRef;
+};
+
+inline ValueHolderRef::~ValueHolderRef() {
+	delete p;
+}
+inline void ValueHolderRef::reset(ValueHolder* np) {
+	delete p;
+	p = np;
+}
+
+inline void ValueHolderRef::insert(ValueHolderRef& o) {
+	#ifdef DEBUG
+		/*make sure there's exactly one element to insert*/
+		if(!o.p) {
+			throw_ValueHolderLinkingError(o.p);
+		}
+		if(o->next.p) {
+			throw_ValueHolderLinkingError(o.p);
+		}
+	#endif
+	o->next.p = p;
+	p = o.p;
+}
+
+inline void ValueHolderRef::remove(ValueHolderRef& o) {
+	#ifdef DEBUG
+		if(o.p) {
+			throw_ValueHolderLinkingError(o.p);
+		}
+	#endif
+	if(!p) return;
+	o.p = p;
+	p = p->next.p;
+	o->next.p = 0;
+}
+
+inline Object::ref ValueHolderRef::value(void) {
+	if(p)	return p->val;
+	else	return Object::nil();
+}
+
+class LockedValueHolderRef {
+/*TODO*/
 };
 
 /*-----------------------------------------------------------------------------
@@ -153,7 +187,7 @@ private:
 	bool tight;
 
 protected:
-	boost::scoped_ptr<ValueHolder> other_spaces;
+	ValueHolderRef other_spaces;
 	virtual void scan_root_object(GenericTraverser*) =0;
 	void cheney_collection(Semispace*);
 	void GC(size_t);
