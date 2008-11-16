@@ -65,6 +65,8 @@ private:
 public:
   explicit Lock(Mutex& nm) : m(&nm) { nm.lock(); }
   ~Lock() { m->unlock(); }
+
+  friend class CondVar;
 };
 
 class CondVar : boost::noncopyable {
@@ -75,7 +77,7 @@ public:
   ~CondVar() { pthread_cond_destroy(&cv); }
   // prevent user from not locking the mutex - get a
   // Lock object instead of a Mutex.
-  void wait(Lock const& l) { pthread_cond_wait(&cv, l.m); }
+  void wait(Lock const& l) { pthread_cond_wait(&cv, &(l.m->m)); }
   // consider throwing on error
 
   // only error is an uninitialized condvar; since
