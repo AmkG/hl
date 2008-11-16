@@ -10,12 +10,13 @@
 #include "all_defines.hpp"
 #include "reader.hpp"
 #include "executors.hpp"
+#include "symbols.hpp"
 
 using namespace std;
 
 void throw_HlError(const char *str) {
-  cout << "Error: " << str << endl;
-  exit(-1);
+  cout << "Error: " << str << endl << flush;
+  exit(1);
 }
 
 void throw_OverBrokenHeart(Generic*) {
@@ -34,14 +35,23 @@ int main(int argc, char **argv) {
     return 2;
   }
 
+  boost::scoped_ptr<SymbolsTable> syms(new SymbolsTable);
+  symbols.swap(syms);
+
   BytecodeSeq program;
-  while (in)
-    in >> program;
+  try {
+    while (!in.eof())
+      in >> program;
+  } catch (ReadError e) {
+    cout << "Reader error: " << e << endl;
+    exit(-1);
+  }
 
   bytecode_t *to_run;
-  assemble(program, to_run);
   Process p;
-  execute(p, 128, 1); // init phase 
+  execute(p, 128, 1); // init phase
+  assemble(program, to_run);
+  p.stack.push(Object::to_ref(Closure::NewClosure(p, to_run, 0))); // entry point
   execute(p, 128); // run!
 
   cout << p.stack.top() << endl;

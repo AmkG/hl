@@ -21,6 +21,7 @@ class Symbol {
 public:
 	void copy_value_to(ValueHolderRef&);
 	void set_value(Object::ref);
+        std::string getPrintName() { return printname; } // for debugging
 	friend class SymbolsTable;
 };
 

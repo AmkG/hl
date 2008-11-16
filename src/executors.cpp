@@ -1,4 +1,5 @@
 #include <stdlib.h> // for size_t
+#include <string>
 #include "types.hpp"
 #include "executors.hpp"
 #include "bytecodes.hpp"
@@ -11,7 +12,9 @@ static _bytecode_label bytecodelookup(Symbol *s){
 	if(i != bytetb.end()){
 		return i->second;
 	} else {
-		throw_HlError("assemble: unknown bytecode form");
+          std::string err = "assemble: unknown bytecode form: ";
+          err += s->getPrintName();
+          throw_HlError(err.c_str());
 	}
 }
 
