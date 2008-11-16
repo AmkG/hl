@@ -48,13 +48,15 @@ Thread<T>::Thread(T const& to_run) {
 class Mutex : boost::noncopyable {
 private:
   pthread_mutex_t m;
-  void lock() { pthread_mutex_lock(&m); }
+  // prevent user from using anything other than a Lock object
+  void lock() { pthread_mutex_lock(&m); } // consider throwing if an error occurs
   void unlock() { pthread_mutex_unlock(&m); }
 public:
   Mutex() { pthread_mutex_init(&m, NULL); }
   ~Mutex() { pthread_mutex_destroy(&m); }
 
   friend class Lock;
+  friend class CondVar;
 };
 
 class Lock : boost::noncopyable {
@@ -63,6 +65,24 @@ private:
 public:
   explicit Lock(Mutex& nm) : m(&nm) { nm.lock(); }
   ~Lock() { m->unlock(); }
+};
+
+class CondVar : boost::noncopyable {
+private:
+  pthread_cond_t cv;
+public:
+  CondVar() { pthread_cond_init(&cv, NULL); }
+  ~CondVar() { pthread_cond_destroy(&cv); }
+  // prevent user from not locking the mutex - get a
+  // Lock object instead of a Mutex.
+  void wait(Lock const& l) { pthread_cond_wait(&cv, l.m); }
+  // consider throwing on error
+
+  // only error is an uninitialized condvar; since
+  // constructing a valid object requires calling the
+  // ctor, that is unlikely to happen.
+  void signal(void) { pthread_cond_signal(&cv); }
+  void broadcast(void) { pthread_cond_broadcast(&cv); }
 };
 
 #endif // THREAD_H
