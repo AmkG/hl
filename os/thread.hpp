@@ -51,12 +51,14 @@ private:
   pthread_mutex_t m;
   // prevent user from using anything other than a Lock object
   void lock() { pthread_mutex_lock(&m); } // consider throwing if an error occurs
+  bool trylock() { return pthread_mutex_trylock(&m) == 0; }
   void unlock() { pthread_mutex_unlock(&m); }
 public:
   Mutex() { pthread_mutex_init(&m, NULL); }
   ~Mutex() { pthread_mutex_destroy(&m); }
 
   friend class Lock;
+  friend class TryLock;
   friend class CondVar;
 };
 
@@ -70,6 +72,27 @@ public:
   friend class CondVar;
 };
 
+class TryLock : boost::noncopyable {
+private:
+  Mutex* m;
+public:
+  explicit TryLock(Mutex& nm) {
+    m = (nm.trylock()) ? &nm : 0 ;
+  }
+  ~TryLock() { if(m) m->unlock(); }
+
+  friend class CondVar;
+
+  /*safe bool idiom*/
+private:
+  static void unspecified_bool(TryLock***) { }
+public:
+  typedef void (*unspecified_bool_type)(TryLock***);
+  operator unspecified_bool_type() const {
+    return m ? &unspecified_bool : 0 ;
+  }
+};
+
 class CondVar : boost::noncopyable {
 private:
   pthread_cond_t cv;
@@ -80,6 +103,9 @@ public:
   // Lock object instead of a Mutex.
   void wait(Lock const& l) { pthread_cond_wait(&cv, &(l.m->m)); }
   // consider throwing on error
+
+  void wait(TryLock const& l) { pthread_cond_wait(&cv, &(l.m->m)); }
+  // should throw an error if trylock hasn't acquired
 
   // only error is an uninitialized condvar; since
   // constructing a valid object requires calling the
