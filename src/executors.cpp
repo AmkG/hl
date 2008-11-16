@@ -155,7 +155,10 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
  call_current_closure:
   if(--reductions == 0) return process_running;
   // get current closure
-  Closure *pt = dynamic_cast<Closure*>(Object::_as_a<Generic*>(stack[0]));
+  // ??? when the Closure created by the closure bytecode is used here
+  // ??? dynamic_cast<Closure*> fails
+  // ??? but this works:
+  Closure *pt = (Closure*)(Object::_as_a<Generic*>(stack[0]));
   if (pt==0)
     throw_HlError("execute: expected a closure!");
   Closure & clos = *pt;

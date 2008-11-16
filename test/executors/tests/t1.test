@@ -27,7 +27,7 @@
 
 (closure 0 
   (check-vars 2)
-  (car-local-push 0)
+  (car-local-push 1)
   (halt ))
 (int 1)
 (int 2)
