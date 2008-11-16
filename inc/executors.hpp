@@ -142,6 +142,8 @@ struct bytecode_t {
   _bytecode_label op; // operation code
   intptr_t val; // simple value argument (may be invalid)
   bytecode_t *seq; // sequence argument (may be invalid)
+  // consider using a smart pointer to prevent leaks
+  // (boost::scoped_ptr is probably good enough)
 };
 
 #define INTPARAM(name) intptr_t name = pc->val
