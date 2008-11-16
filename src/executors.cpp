@@ -1,4 +1,7 @@
+#include <stdlib.h> // for size_t
+#include "types.hpp"
 #include "executors.hpp"
+#include "bytecodes.hpp"
 
 // map opcodes to bytecodes
 static std::map<Symbol*,_bytecode_label> bytetb;
@@ -24,7 +27,8 @@ public:
 
 void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
   a_seq = new bytecode_t[seq.size()]; // assembled bytecode
-  for(size_t pos = 0, BytecodeSeq::iterator i = seq.begin(); i!=seq.end(); 
+  size_t pos = 0;
+  for(BytecodeSeq::iterator i = seq.begin(); i!=seq.end(); 
       i++, pos++) {
     a_seq[pos].op = bytecodelookup(i->first);
     SimpleArg *sa;
@@ -43,8 +47,8 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
       }
       else {
         if ((sas = dynamic_cast<SimpleArgAndSeq*>(i->second)) != NULL) {
-          a_seq[pos].val = sas->getSimple();
-          assemble(sas->getSeq(), a_seq[pos].seq);
+          a_seq[pos].val = sas->getSimple()->getVal();
+          assemble(*(sas->getSeq()), a_seq[pos].seq);
         }
         else {
           throw_HlError("assemble: Unknown argument type");
@@ -52,19 +56,17 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
       }
     }
   }
-
-  return a_seq;
 }
 
 /*attempts to deallocate the specified object if it's a reusable
 continuation closure
 */
-static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
-	KClosure* kp = dynamic_cast<KClosure*>(gp);
-	if(kp == NULL) return;
-	if(!kp->reusable()) return;
-	hp.lifo().normal_dealloc(gp);
-}
+//static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
+//	KClosure* kp = dynamic_cast<KClosure*>(gp);
+//	if(kp == NULL) return;
+//	if(!kp->reusable()) return;
+//	hp.lifo().normal_dealloc(gp);
+//}
 
 ProcessStatus execute(Process& proc, size_t reductions, bool init){
   /*REMINDER
@@ -81,7 +83,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     are both potentially allocating)
   */
 
-  ProcessStack& stack = proc.stack;
+  ProcessStack & stack = proc.stack;
   if (init) {
     /*So why isn't this, say, a separate function?  Well,
       because I originally had this impression that labels
@@ -149,7 +151,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
  call_current_closure:
   if(--reductions == 0) return process_running;
   // get current closure
-  Closure & clos = *static_cast<Closure*>(stack[0]);
+  Closure & clos = *Object::_as_a<Closure*>(stack[0]);
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(apply): {
@@ -171,7 +173,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     BYTECODE(apply_invert_k): {
       INTPARAM(N);
-      Generic* k = stack.top(); stack.pop();
+      Object::ref k = stack.top(); stack.pop();
       stack.top(N-1) = k;
       stack.restack(N);
       goto call_current_closure;
@@ -183,22 +185,22 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     BYTECODE(apply_k_release): {
       INTPARAM(N);
-      attempt_kclos_dealloc(proc, stack[0]);
+      //attempt_kclos_dealloc(proc, stack[0]);
       stack.restack(N);
       goto call_current_closure;
     } /***/ NEXT_BYTECODE; /***/
     BYTECODE(apply_list): {
-      Generic* tmp;
+      Object::ref tmp;
       stack.restack(3);
       /*destructure until stack top is nil*/
-      while(stack.top()->istrue()){
+      while(stack.top()!=Object::nil()){
         tmp = stack.top();
-        bytecode_<&Generic::car>(stack);
+        bytecode_car(stack);
         // we don't expect car to
         // allocate, so tmp should
         // still be valid
         stack.push(tmp);
-        bytecode_<&Generic::cdr>(stack);
+        bytecode_cdr(stack);
       }
       stack.pop();
       goto call_current_closure;
@@ -209,26 +211,26 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         actually change the interpreter
         system.
       */
-      bytecode_<&Generic::car>(stack);
+      bytecode_<&car>(stack);
     } NEXT_BYTECODE;
     BYTECODE(car_local_push): {
       INTPARAM(N);
-      bytecode_local_push_<&Generic::car>(stack, N);
+      bytecode_local_push_<&car>(stack, N);
     } NEXT_BYTECODE;
     BYTECODE(car_clos_push): {
       INTPARAM(N);
-      bytecode_clos_push_<&Generic::car>(stack, clos, N);
+      bytecode_clos_push_<&car>(stack, clos, N);
     } NEXT_BYTECODE;
     BYTECODE(cdr): {
-      bytecode_<&Generic::cdr>(stack);
+      bytecode_cdr(stack);
     } NEXT_BYTECODE;
     BYTECODE(cdr_local_push): {
       INTPARAM(N);
-      bytecode_local_push_<&Generic::cdr>(stack, N);
+      bytecode_local_push_<&cdr>(stack, N);
     } NEXT_BYTECODE;
     BYTECODE(cdr_clos_push): {
       INTPARAM(N);
-      bytecode_clos_push_<&Generic::cdr>(stack, clos, N);
+      bytecode_clos_push_<&cdr>(stack, clos, N);
     } NEXT_BYTECODE;
     BYTECODE(check_vars): {
       INTPARAM(N);
@@ -241,7 +243,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         (*nclos)[i - 1] = stack.top();
         stack.pop();
       }
-      stack.push(nclos);
+      stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(closure_ref): {
       INTPARAM(N);
@@ -301,20 +303,20 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     BYTECODE(continue_on_clos): {
       INTPARAM(N);
-      Generic* gp = stack.top();
+      Object::ref gp = stack.top();
       stack.top() = clos[N];
       stack.push(gp);
-      attempt_kclos_dealloc(proc, stack[0]);
+      //attempt_kclos_dealloc(proc, stack[0]);
       stack.restack(2);
       goto call_current_closure;
     } NEXT_BYTECODE;
     BYTECODE(global): {
       INTPARAM(S);
-      bytecode_global(proc, stack, S);
+      //bytecode_global(proc, stack, S);
     } NEXT_BYTECODE;
     BYTECODE(global_set): {
       INTPARAM(S);
-      bytecode_global_set(proc,stack,S);
+      //bytecode_global_set(proc,stack,S);
     } NEXT_BYTECODE;
     BYTECODE(halt): {
       stack.restack(1);

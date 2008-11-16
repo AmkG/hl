@@ -1,7 +1,8 @@
 #ifndef EXECUTORS_H
 #define EXECUTORS_H
 
-//#include "processes.hpp"
+#include "processes.hpp"
+#include "objects.hpp"
 #include "reader.hpp" // for Bytecode classes
 
 /*
@@ -98,9 +99,9 @@ END_DECLARE_BYTECODES
 
 typedef void* _bytecode_label;
 #define DISPATCH_BYTECODES \
-        bytecode_t *pc = static_cast<Closure*>(stack[0])->code(); \
-	goto (*(pc->op));
-#define NEXT_BYTECODE goto (*((++pc)->op))
+        bytecode_t *pc = Object::_as_a<Closure*>(stack[0])->code();\
+	goto *(pc->op);
+#define NEXT_BYTECODE goto *((++pc)->op)
 #define BYTECODE(x) PASTE_SYMBOLS(label_b_, x)
 #define THE_BYTECODE_LABEL(x) &&PASTE_SYMBOLS(label_b_, x)
 
@@ -119,7 +120,6 @@ typedef enum _e_bytecode_label _bytecode_label;
 #endif // __GNUC__
 
 class Process;
-class ProcessStatus;
 class ProcessStack;
 
 /* 

@@ -8,7 +8,6 @@ Defines a set of types for use on the hl-side.
 #include"objects.hpp"
 #include"generics.hpp"
 #include"heaps.hpp"
-#include"executors.hpp"
 
 /*-----------------------------------------------------------------------------
 Specialized broken heart tags
@@ -185,11 +184,11 @@ public:
   }
 };
 
-static inline Object::ref car(Object::ref x) {
+extern inline Object::ref car(Object::ref x) {
 	if(!x) return x;
 	return expect_type<Cons>(x,"'car expects a Cons cell")->car();
 }
-static inline Object::ref cdr(Object::ref x) {
+extern inline Object::ref cdr(Object::ref x) {
 	if(!x) return x;
 	return expect_type<Cons>(x,"'cdr expects a Cons cell")->cdr();
 }
@@ -217,6 +216,8 @@ public:
 /*-----------------------------------------------------------------------------
 Closures
 -----------------------------------------------------------------------------*/
+
+struct bytecode_t;
 
 /*closure structures shouldn't be
 modified after they are constructed

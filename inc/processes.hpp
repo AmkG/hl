@@ -2,6 +2,38 @@
 #define PROCESSES_H
 
 #include"heaps.hpp"
+#include"types.hpp"
+#include <vector>
+
+class ProcessStack : public std::vector<Object::ref> { 
+public:
+  Object::ref & top(size_t off=1){
+    if(off > size() || off == 0){
+      throw_HlError("internal: process stack underflow in top()");
+    }
+    return (*this)[size() - off];
+  }
+
+  void pop(size_t num=1){
+    if(num > size()){
+      throw_HlError( "internal: Process stack underflow in pop()");
+    }
+    if(num != 0) resize(size() - num);
+  }
+
+  void push(Object::ref gp){
+    push_back(gp);
+  }
+
+  void restack(size_t sz) {
+    if(sz > size()){
+      throw_HlError( "internal: process stack underflow in restack()");
+    }
+    size_t off = size() - sz;
+    /*Not exactly the best way to do it?*/
+    if(sz != 0) erase(begin(), begin() + off);
+  }
+};
 
 enum ProcessStatus {
 	process_dead,
@@ -21,7 +53,7 @@ enum ProcessStatus {
 	process_change
 };
 
-class Process {
+class Process : public Heap {
 public:
 /*-----------------------------------------------------------------------------
 For process-level garbage collection
@@ -107,7 +139,8 @@ For process-level garbage collection
 
 	/*allows access to the mailbox*/
 	LockedValueHolderRef& mailbox(void);
+
+        ProcessStack stack;
 };
 
 #endif // PROCESSES_H
-
