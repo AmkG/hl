@@ -87,8 +87,8 @@ protected:
 	/*used by the derived classes to get access to
 	the variadic data at the end of the object.
 	*/
-	inline Object::ref& index(size_t i) {
-		void* vp = this;
+	inline Object::ref& index(size_t i) const {
+		void* vp = const_cast<GenericDerivedVariadic<T>*>(this);
 		char* cp = (char*) vp;
 		cp = cp + sizeof(T);
 		Object::ref* op = (Object::ref*) cp;

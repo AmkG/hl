@@ -37,8 +37,12 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
     return in; // nothing to read
 
   char c = in.get();
-  if (c != bc_start)
-    throw ReadError("Unknown character at start of bytecode");
+  if (c != bc_start) {
+    std::string err = "Unknown character at start of bytecode";
+    err += " ";
+    err += c;
+    throw ReadError(err.c_str());
+  }
 
   if (in.eof())
     throw ReadError("EOF");
@@ -53,6 +57,11 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
   c = in.peek();
   if (in.eof())
     throw ReadError("EOF");
+  if (c == bc_end) { // single mnemonic
+    in.get();
+    bc.push_back(bytecode(mnemonic, NULL));
+    return in;
+  }
   if (c == bc_start) { // subsequence
     BytecodeSeq *sub = new BytecodeSeq;
     read_bytecodes(in, *sub);

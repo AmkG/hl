@@ -1,4 +1,5 @@
 #include <stdlib.h> // for size_t
+#include <string>
 #include "types.hpp"
 #include "executors.hpp"
 #include "bytecodes.hpp"
@@ -11,7 +12,9 @@ static _bytecode_label bytecodelookup(Symbol *s){
 	if(i != bytetb.end()){
 		return i->second;
 	} else {
-		throw_HlError("assemble: unknown bytecode form");
+          std::string err = "assemble: unknown bytecode form: ";
+          err += s->getPrintName();
+          throw_HlError(err.c_str());
 	}
 }
 
@@ -51,7 +54,8 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
           assemble(*(sas->getSeq()), a_seq[pos].seq);
         }
         else {
-          throw_HlError("assemble: Unknown argument type");
+          if (i->second!=NULL)
+            throw_HlError("assemble: Unknown argument type");
         }
       }
     }

@@ -20,6 +20,12 @@ Usage:
 
 #include"unichars.hpp"
 
+#ifdef MY_COMPILER
+// without these my compiler signals an error
+#define INTPTR_MIN		(-2147483647-1)
+#define INTPTR_MAX		(2147483647)
+#endif // MY_COMPILER
+
 class Generic;
 class Symbol;
 class Cons;
@@ -78,6 +84,7 @@ Configuration
 	template<> struct tag_traits<UnicodeChar> {
 		static const tag_type tag = 0x3;
 	};
+
 
 /*-----------------------------------------------------------------------------
 Provided information
@@ -201,7 +208,7 @@ Tagged pointer factories
 
 	/*no checking, even in debug mode... achtung!*/
 	static inline ref from_a_scaled_int(int x) {
-		return ref(((intptr_t) x) + tag_traits<int>::tag);
+                return ref((((intptr_t) x)<<tag_bits) + tag_traits<int>::tag);
 	}
 
 	static inline ref nil(void) {
@@ -282,7 +289,7 @@ Tagged pointer referencing
 	/*no checking, even in debug mode... achtung!*/
 	static inline int to_a_scaled_int(ref obj) {
 		intptr_t tmp = obj.dat;
-		return (int)(tmp - tag_traits<int>::tag);
+		return (int)((tmp - tag_traits<int>::tag)>>tag_bits);
 		/*use subtraction instead of masking, again to
 		allow smart compilers to merge tag adding and
 		subtracting.  For example the typical case would
