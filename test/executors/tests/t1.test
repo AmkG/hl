@@ -2,3 +2,36 @@
 (halt )
 
 ;^9$
+
+; *******
+
+(int 1)
+(int 2)
+(cons )
+(cdr )
+(halt )
+
+;^2$
+
+; *******
+
+(int 1)
+(int 2)
+(cons )
+(car )
+(halt )
+
+;^1$
+
+; *******
+
+(closure 0 
+  (check-vars 2)
+  (car-local-push 0)
+  (halt ))
+(int 1)
+(int 2)
+(cons )
+(apply 2)
+
+;^1$

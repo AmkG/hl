@@ -155,9 +155,6 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
  call_current_closure:
   if(--reductions == 0) return process_running;
   // get current closure
-  // WARNING!  Will fail for KClosure.  Have to use
-  // dynamic_cast<>!
-  // !! should check that the  cast is correct!
   Closure *pt = dynamic_cast<Closure*>(Object::_as_a<Generic*>(stack[0]));
   if (pt==0)
     throw_HlError("execute: expected a closure!");
