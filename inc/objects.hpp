@@ -78,15 +78,7 @@ Configuration
 	template<> struct tag_traits<UnicodeChar> {
 		static const tag_type tag = 0x3;
 	};
-        template<> struct tag_traits<Cons*> {
-                static const tag_type tag = 0x4;
-        };
-        template<> struct tag_traits<Closure*> {
-                static const tag_type tag = 0x5;
-        };
-        template<> struct tag_traits<KClosure*> {
-                static const tag_type tag = 0x6;
-        };
+
 /*-----------------------------------------------------------------------------
 Provided information
 -----------------------------------------------------------------------------*/
@@ -161,13 +153,28 @@ Tagged pointer factories
 
 	template<typename T>
 	static inline ref to_ref(T x) {
+		/* default to Generic* */
+		return to_ref<Generic*>(x);
+	}
+	template<>
+	static inline ref to_ref<Generic*>(Generic* x) {
 		intptr_t tmp = reinterpret_cast<intptr_t>(x);
 		#ifdef DEBUG
 			if(tmp & tag_mask != 0) {
 				throw_RangeError("Misaligned pointer");
 			}
 		#endif
-		return ref(tmp + tag_traits<T>::tag);
+		return ref(tmp + tag_traits<Generic*>::tag);
+	}
+	template<>
+	static inline ref to_ref<Symbol*>(Symbol* x) {
+		intptr_t tmp = reinterpret_cast<intptr_t>(x);
+		#ifdef DEBUG
+			if(tmp & tag_mask != 0) {
+				throw_RangeError("Misaligned pointer");
+			}
+		#endif
+		return ref(tmp + tag_traits<Symbol*>::tag);
 	}
 	template<>
 	static inline ref to_ref<int>(int x) {

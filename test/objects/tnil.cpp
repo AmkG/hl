@@ -46,11 +46,11 @@ int main (void) {
 
 	assert( !is_a<int>(w) );
 	assert( !is_a<Generic*>(w) );
-	assert( !is_a<SharedVar*>(w) );
+	assert( !is_a<Symbol*>(w) );
 
 	assert( !is_a<int>(x) );
 	assert( !is_a<Generic*>(x) );
-	assert( !is_a<SharedVar*>(x) );
+	assert( !is_a<Symbol*>(x) );
 
 	std::cout << "passed!" << std::endl;
 
