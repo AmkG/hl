@@ -225,16 +225,6 @@ struct bytecode_t;
 /*closure structures shouldn't be
 modified after they are constructed
 */
-class Closure : public GenericDerivedVariadic<Closure> {
-private:
-  bytecode_t *body;
-public:
-  Closure(size_t sz) : GenericDerivedVariadic<Closure>(sz) {}
-  Object::ref& operator[](size_t i) { return index(i); }
-  bytecode_t* code() { return body; }
-  static Closure* NewClosure(Heap & h, bytecode_t *body, size_t n);
-};
-
 /*I suggest merging Closure and KClosure into one class, because
 the broken heart system can't allow us to derive from a
 GenericDerivedVariadic<>-derived base class without some serious
@@ -253,19 +243,20 @@ KClosures are longer than Closures and the operator[] will
 have to take that into account.
 */
 
-class KClosure : public GenericDerivedVariadic<KClosure> {
+class Closure : public GenericDerivedVariadic<Closure> {
 private:
-  bytecode_t *body;
+  bytecode_t* body;
   bool nonreusable;
 public:
-  KClosure(size_t sz) : GenericDerivedVariadic<KClosure>(sz), 
-                        nonreusable(false) {}
+  Closure(size_t sz) : GenericDerivedVariadic<Closure>(sz), 
+                       nonreusable(true) {}
   Object::ref& operator[](size_t i) { return index(i); }
   bytecode_t* code() { return body; }
   void codereset(bytecode_t *b) { body = b; }
   void banreuse() { nonreusable = true; }
   bool reusable() { return !nonreusable; }
-  static KClosure* NewKClosure(Heap & h, bytecode_t *body, size_t n);
+  static Closure* NewKClosure(Heap & h, bytecode_t *body, size_t n);
+  static Closure* NewClosure(Heap & h, bytecode_t *body, size_t n);
 };
 
 #endif //TYPES_H

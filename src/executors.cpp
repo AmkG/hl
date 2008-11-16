@@ -374,7 +374,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     BYTECODE(k_closure): {
     k_closure_perform_create:
       INTSEQPARAM(N,S);
-      KClosure *nclos = KClosure::NewKClosure(proc, S, N);
+      Closure *nclos = Closure::NewKClosure(proc, S, N);
       for(int i = N; i ; --i){
         (*nclos)[i - 1] = stack.top();
         stack.pop();
@@ -397,10 +397,10 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     BYTECODE(k_closure_reuse): {
       INTSEQPARAM(N,S);
-      KClosure *nclos = expect_type<KClosure>(stack[0], "KClosure expected!");
+      Closure *nclos = expect_type<Closure>(stack[0], "Closure expected!");
       if(!nclos->reusable()) {
         // Use the size of the current closure
-        nclos = KClosure::NewKClosure(proc, S, clos.size());
+        nclos = Closure::NewKClosure(proc, S, clos.size());
         //clos is now invalid
       } else {
         nclos->codereset(S);
