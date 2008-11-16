@@ -42,6 +42,7 @@ Thread<T>::Thread(T const& to_run) {
    */
   pthread_create(&t, NULL, _os_thread_bounce_fun<T>, new T(to_run));
   pthread_detach(t); // consider allowing to join
+  /*alternatively: consider joining on destruction of Thread<T>*/
 }
 
 class Mutex : boost::noncopyable {
