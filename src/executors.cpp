@@ -158,7 +158,10 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
   // WARNING!  Will fail for KClosure.  Have to use
   // dynamic_cast<>!
   // !! should check that the  cast is correct!
-  Closure & clos = *dynamic_cast<Closure*>(Object::_as_a<Generic*>(stack[0]));
+  Closure *pt = dynamic_cast<Closure*>(Object::_as_a<Generic*>(stack[0]));
+  if (pt==0)
+    throw_HlError("execute: expected a closure!");
+  Closure & clos = *pt;
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(apply): {
