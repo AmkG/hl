@@ -20,6 +20,12 @@ Usage:
 
 #include"unichars.hpp"
 
+#ifdef MY_COMPILER
+// without these my compiler signals an error
+#define INTPTR_MIN		(-2147483647-1)
+#define INTPTR_MAX		(2147483647)
+#endif // MY_COMPILER
+
 class Generic;
 class Symbol;
 class Cons;

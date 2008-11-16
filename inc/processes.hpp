@@ -141,6 +141,9 @@ For process-level garbage collection
 	LockedValueHolderRef& mailbox(void);
 
         ProcessStack stack;
+
+        // just for compilation
+        virtual void scan_root_object(GenericTraverser* gt) {}
 };
 
 #endif // PROCESSES_H
