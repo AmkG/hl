@@ -21,7 +21,7 @@ static void* _os_thread_bounce_fun(void *v) {
    */
   T* t = (T*) v;
   try {
-    t();
+    (*t)();
     delete t;
   } catch (...) {
     delete t;
