@@ -35,7 +35,8 @@ int main(int argc, char **argv) {
   }
 
   BytecodeSeq program;
-  in >> program;
+  while (in)
+    in >> program;
 
   bytecode_t *to_run;
   assemble(program, to_run);
