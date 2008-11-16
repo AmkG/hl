@@ -65,6 +65,7 @@ public:
 		}
 		std::cout << "producer from " << s << " to "
 			<< e << " completed." << std::endl;
+		std::cout.flush();
 		E->exited();
 	}
 };
@@ -84,6 +85,7 @@ public:
 		for(int i = 0; i < n; ++i) {
 			Q->pop(x);
 			std::cout << nm << " got: " << x << std::endl;
+			std::cout.flush();
 		}
 		E->exited();
 	}
@@ -94,6 +96,7 @@ void test1(void) {
 	LockedQueue Q;
 
 	std::cout << "----test1" << std::endl;
+	std::cout.flush();
 
 	Thread<Consumer> t2(Consumer(E, Q, 10, "consumer"));
 	Thread<Producer> t1(Producer(E, Q, 1, 10));
@@ -106,6 +109,7 @@ void test2(void) {
 	LockedQueue Q;
 
 	std::cout << "----test2" << std::endl;
+	std::cout.flush();
 
 	Thread<Consumer> t1(Consumer(E, Q, 10, "consumer 1"));
 	Thread<Consumer> t2(Consumer(E, Q, 10, "consumer 2"));
