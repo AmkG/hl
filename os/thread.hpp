@@ -14,11 +14,12 @@ public:
 };
 
 template <class T>
-static void* _os_thread_bounce_fun(T *t) {
+static void* _os_thread_bounce_fun(void *v) {
   /*
    * consider using a smart pointer instead of
    * this dorky try-catch.
    */
+  T* t = (T*) v;
   try {
     t();
     delete t;
