@@ -54,7 +54,8 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
           assemble(*(sas->getSeq()), a_seq[pos].seq);
         }
         else {
-          throw_HlError("assemble: Unknown argument type");
+          if (i->second!=NULL)
+            throw_HlError("assemble: Unknown argument type");
         }
       }
     }
