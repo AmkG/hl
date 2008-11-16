@@ -197,7 +197,7 @@ Tagged pointer factories
 
 	/*no checking, even in debug mode... achtung!*/
 	static inline ref from_a_scaled_int(int x) {
-		return ref(((intptr_t) x) + tag_traits<int>::tag);
+                return ref((((intptr_t) x)<<tag_bits) + tag_traits<int>::tag);
 	}
 
 	static inline ref nil(void) {
@@ -278,7 +278,7 @@ Tagged pointer referencing
 	/*no checking, even in debug mode... achtung!*/
 	static inline int to_a_scaled_int(ref obj) {
 		intptr_t tmp = obj.dat;
-		return (int)(tmp - tag_traits<int>::tag);
+		return (int)((tmp - tag_traits<int>::tag)>>tag_bits);
 		/*use subtraction instead of masking, again to
 		allow smart compilers to merge tag adding and
 		subtracting.  For example the typical case would

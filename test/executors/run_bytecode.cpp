@@ -23,6 +23,18 @@ void throw_OverBrokenHeart(Generic*) {
   throw_HlError("overbrokenheart");
 }
 
+/*
+ * printing
+ */
+ostream& operator<<(ostream & o, Object::ref r) {
+  if (Object::_is_a<int>(r)) {
+    o << Object::to_a_scaled_int(r);
+  } else {
+    o << "#<unknown type>";
+  }
+  return o;
+}
+
 int main(int argc, char **argv) {
   if (argc!=2) {
     cout << "Wrong number of arguments" << endl;

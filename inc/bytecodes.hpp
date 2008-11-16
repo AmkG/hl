@@ -83,7 +83,7 @@ inline void bytecode_global(Process& proc, ProcessStack& stack,
   //stack.push(proc.get(S));
 }
 inline void bytecode_int(Process& proc, ProcessStack& stack, int N){
-  stack.push(Object::to_ref(N));
+  stack.push(Object::from_a_scaled_int(N));
 }
 inline void bytecode_lit_nil(Process&proc, ProcessStack& stack){
 	stack.push(Object::nil());
