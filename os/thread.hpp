@@ -30,7 +30,7 @@ static void* _os_thread_bounce_fun(T *t) {
 }
 
 template <class T>
-Thread::Thread(T const& to_run) {
+Thread<T>::Thread(T const& to_run) {
   /*
    * to_run is just used as a template; the new thread is
    * given a copy, which that thread is responsible for
@@ -46,7 +46,7 @@ Thread::Thread(T const& to_run) {
 
 class Mutex : boost::noncopyable {
 private:
-  pthread_mutex m;
+  pthread_mutex_t m;
   void lock() { pthread_mutex_lock(&m); }
   void unlock() { pthread_mutex_unlock(&m); }
 public:
