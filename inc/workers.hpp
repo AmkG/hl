@@ -11,11 +11,12 @@
 #include<boost/thread/barrier.hpp>
 #include<boost/thread/mutex.hpp>
 #include<boost/thread/thread.hpp>
+#include<boost/noncopyable.hpp>
 
 class Worker;
 class Process;
 
-class AllWorkers {
+class AllWorkers : boost::noncopyable {
 	bool exit_condition;
 
 	bool soft_stop_condition;
