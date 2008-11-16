@@ -86,6 +86,10 @@ private:
 	ValueHolder* p;
 public:
 	ValueHolderRef(ValueHolder* np = 0) : p(np) { }
+	/*don't define this here: just declare.
+	The definition should occur after ValueHolder
+	is completely declared.
+	*/
 	~ValueHolderRef();
 	void reset(ValueHolder* np = 0);
 	void swap(ValueHolderRef& n) {
