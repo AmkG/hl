@@ -1,0 +1,4 @@
+#!/bin/sh
+
+g++ -I../../inc -I../../os -DDEBUG -std=c++98 -pthread $1
+
