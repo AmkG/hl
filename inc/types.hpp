@@ -126,6 +126,9 @@ public:
 		gp->~Generic();
 		new((void*) gp) BrokenHeartForVariadic<T>(to, nsz);
 	}
+        virtual size_t size() {
+                return sz;
+        }
 };
 
 /*-----------------------------------------------------------------------------
@@ -239,6 +242,7 @@ private:
 public:
   KClosure(size_t sz) : GenericDerivedVariadic<KClosure>(sz), 
                         nonreusable(false) {}
+  Object::ref& operator[](size_t i) { return index(i); }
   bytecode_t* code() { return body; }
   void codereset(bytecode_t *b) { body = b; }
   void banreuse() { nonreusable = true; }

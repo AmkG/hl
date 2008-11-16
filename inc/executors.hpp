@@ -145,6 +145,7 @@ struct bytecode_t {
 };
 
 #define INTPARAM(name) intptr_t name = pc->val
+#define SEQPARAM(name) bytecode_t* name = pc->seq
 #define INTSEQPARAM(name1, name2)\
         intptr_t name1 = pc->val; \
         bytecode_t* name2 = pc->seq;

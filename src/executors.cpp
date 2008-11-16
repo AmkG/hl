@@ -107,7 +107,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       ("check-vars",		THE_BYTECODE_LABEL(check_vars))
       ("closure",		THE_BYTECODE_LABEL(closure))
       ("closure-ref",		THE_BYTECODE_LABEL(closure_ref))
-      ("composeo",		THE_BYTECODE_LABEL(composeo))
+      //      ("composeo",		THE_BYTECODE_LABEL(composeo))
       ("cons",		THE_BYTECODE_LABEL(cons))
       ("continue",		THE_BYTECODE_LABEL(b_continue))
       ("continue-local",	THE_BYTECODE_LABEL(continue_local))
@@ -127,21 +127,21 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       ("lit-t",		THE_BYTECODE_LABEL(lit_t))
       ("local",		THE_BYTECODE_LABEL(local))
       ("reducto",		THE_BYTECODE_LABEL(reducto))
-      ("rep",			THE_BYTECODE_LABEL(rep))
-      ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
-      ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
-      ("sv",			THE_BYTECODE_LABEL(sv))
-      ("sv-local-push",	THE_BYTECODE_LABEL(sv_local_push))
-      ("sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push))
-      ("sv-ref",		THE_BYTECODE_LABEL(sv_ref))
-      ("sv-ref-local-push",	THE_BYTECODE_LABEL(sv_ref_local_push))
-      ("sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push))
-      ("sym",			THE_BYTECODE_LABEL(sym))
-      ("symeval",		THE_BYTECODE_LABEL(symeval))
-      ("tag",			THE_BYTECODE_LABEL(tag))
-      ("type",		THE_BYTECODE_LABEL(type))
-      ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
-      ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
+//       ("rep",			THE_BYTECODE_LABEL(rep))
+//       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
+//       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+//       ("sv",			THE_BYTECODE_LABEL(sv))
+//       ("sv-local-push",	THE_BYTECODE_LABEL(sv_local_push))
+//       ("sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push))
+//       ("sv-ref",		THE_BYTECODE_LABEL(sv_ref))
+//       ("sv-ref-local-push",	THE_BYTECODE_LABEL(sv_ref_local_push))
+//       ("sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push))
+//       ("sym",			THE_BYTECODE_LABEL(sym))
+//       ("symeval",		THE_BYTECODE_LABEL(symeval))
+//       ("tag",			THE_BYTECODE_LABEL(tag))
+//       ("type",		THE_BYTECODE_LABEL(type))
+//       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
+//       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
       ("variadic",		THE_BYTECODE_LABEL(variadic))
       /*assign bultin global*/
       ;/*end initializer*/
@@ -335,8 +335,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(b_if): {
-      Generic* gp = stack.top(); stack.pop();
-      if (gp->istrue()) {
+      Object::ref gp = stack.top(); stack.pop();
+      if (gp!=Object::nil()) {
         SEQPARAM(S);
         pc = S;
         pc--; // NEXT_BYTECODE will increment
@@ -352,7 +352,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     BYTECODE(if_local): {
       INTSEQPARAM(N,S);
-      if(stack[N]->istrue()){
+      if(stack[N]!=Object::nil()){
         pc = S;
         pc--; // NEXT_BYTECODE will increment
       }
@@ -364,15 +364,15 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     BYTECODE(k_closure): {
     k_closure_perform_create:
       INTSEQPARAM(N,S);
-      KClosure& nclos = *NewKClosure(proc, S, N);
+      KClosure *nclos = KClosure::NewKClosure(proc, S, N);
       for(int i = N; i ; --i){
-        nclos[i - 1] = stack.top();
+        (*nclos)[i - 1] = stack.top();
         stack.pop();
       }
-      stack.push(&nclos);
+      stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(k_closure_recreate): {
-      attempt_kclos_dealloc(proc, stack[0]);
+      // attempt_kclos_dealloc(proc, stack[0]);
       /*put a random object in stack[0]*/
       stack[0] = stack[1];
       /****/ goto k_closure_perform_create; /****/
@@ -387,10 +387,10 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     BYTECODE(k_closure_reuse): {
       INTSEQPARAM(N,S);
-      KClosure* nclos = dynamic_cast<KClosure*>(stack[0]);
-      if(!nclos || !nclos->reusable()){
+      KClosure *nclos = expect_type<KClosure>(stack[0], "KClosure expected!");
+      if(!nclos->reusable()) {
         // Use the size of the current closure
-        nclos = NewKClosure(proc, S, clos.size());
+        nclos = KClosure::NewKClosure(proc, S, clos.size());
         //clos is now invalid
       } else {
         nclos->codereset(S);
@@ -399,7 +399,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         (*nclos)[i - 1] = stack.top();
         stack.pop();
       }
-      stack.push(nclos);
+      stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
       bytecode_lit_nil(proc, stack);
@@ -432,167 +432,162 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         (theoretically possible in a buggy
         bytecode sequence, for example)
       */
-      if(stack.size() < 2){
-        throw ArcError("apply",
-                       "Insufficient number "
-                       "of parameters to "
-                       "variadic function");
-      }
-      size_t params = stack.size() - 2;
-      if(params < 3){
-        /*simple and quick dispatch
-          for common case
-        */
-        stack[0] = clos[params];
-        /*don't disturb the other
-          parameters; the point is
-          to be efficient for the
-          common case
-        */
-      } else {
-        stack[0] = clos[2]; // f2
-        size_t saved_params =
-          params - 2;
-        KClosure& kclos =
-          *NewKClosure(proc, THE_BYTECODE_LABEL(reducto_continuation),
-                       saved_params + 3);
-        // clos is now invalid
-        kclos[0] = stack[0]; // f2
-        kclos[1] = stack[1];
-        /*** placeholder ***/
-        kclos[2] = stack[1];
-        for(size_t i = saved_params + 3; i > 3; --i) {
-          kclos[i - 1] =
-            stack.top();
-          stack.pop();
-        }
-        /*save closure*/
-        stack[1] = &kclos;
-        Integer* Np = proc.create<Integer>(3);
-        // kclos is now invalid
-        KClosure& kkclos = *static_cast<KClosure*>(stack[1]);
-        kkclos[2] = Np;
-      }
+//       if(stack.size() < 2){
+//         throw_HlError("apply: Insufficient number of parameters to variadic function");
+//       }
+//       size_t params = stack.size() - 2;
+//       if(params < 3){
+//         /*simple and quick dispatch
+//           for common case
+//         */
+//         stack[0] = clos[params];
+//         /*don't disturb the other
+//           parameters; the point is
+//           to be efficient for the
+//           common case
+//         */
+//       } else {
+//         stack[0] = clos[2]; // f2
+//         size_t saved_params =
+//           params - 2;
+//         KClosure & kclos = *KClosure::NewKClosure(proc, THE_BYTECODE_LABEL(reducto_continuation), saved_params + 3);
+//         // clos is now invalid
+//         kclos[0] = stack[0]; // f2
+//         kclos[1] = stack[1];
+//         /*** placeholder ***/
+//         kclos[2] = stack[1];
+//         for(size_t i = saved_params + 3; i > 3; --i) {
+//           kclos[i - 1] =
+//             stack.top();
+//           stack.pop();
+//         }
+//         /*save closure*/
+//         stack[1] = &kclos;
+//         Integer* Np = proc.create<Integer>(3);
+//         // kclos is now invalid
+//         KClosure& kkclos = *static_cast<KClosure*>(stack[1]);
+//         kkclos[2] = Np;
+//       }
     } NEXT_BYTECODE;
     BYTECODE(reducto_continuation): {
-      Integer* Np = static_cast<Integer*>(clos[2]);
-      int N = Np->val;
-      int NN = N + 1; // next N
-      stack.push(clos[0]);
-      if(NN == clos.size()){
-        // final iteration
-        stack.push(clos[1]);
-        stack.push(stack[1]);
-        stack.push(clos[N]);
-        attempt_kclos_dealloc(proc, stack[0]);
-        //clos is now invalid
-        stack.restack(4);
-      } else {
-        /*dynamic_cast because it is possible for
-          the program to reconstruct a continuation
-          using an ordinary, non-continuation
-          Closure
-        */
-        KClosure* pkclos =
-          dynamic_cast<KClosure*>(&clos);
-        if(pkclos && pkclos->reusable()){
-          // a reusable continuation
-          Np->val++; // Np is also reusable
-          stack.push(pkclos);
-          stack.push(stack[1]);
-          stack.push(clos[N]);
-          stack.restack(4);
-        } else {
-          /*TODO: instead create a closure
-            with only a reference to this
-            closure and an index number, to
-            reduce memory allocation.
-          */
-          KClosure& nclos =
-            *NewKClosure(proc, THE_BYTECODE_LABEL(reducto_continuation),
-                         // save only necessary
-                         clos.size() - NN + 3);
-          // Np, pkclos and clos are now invalid
-          Closure & clos = *static_cast<Closure*>(stack[0]); //revalidate clos
-          nclos[0] = clos[0];
-          nclos[1] = clos[1];
-          /*** placeholder! ***/
-          nclos[2] = clos[1];
-          for(int j = 0;
-              j < clos.size() - NN;
-              ++j){
-            nclos[3 + j] =
-              clos[NN + j];
-          }
-          stack.push(&nclos);
-          stack.push(stack[1]);
-          stack.push(clos[N]);
-          stack.restack(4);
-          // clos is now invalid again
-          Integer* Np = proc.create<Integer>(3);
-          // nclos is now invalid
-          KClosure& kkclos = *static_cast<KClosure*>(stack[1]);
-          kkclos[2] = Np;
-        }
-      }
+//       Integer* Np = static_cast<Integer*>(clos[2]);
+//       int N = Np->val;
+//       int NN = N + 1; // next N
+//       stack.push(clos[0]);
+//       if(NN == clos.size()){
+//         // final iteration
+//         stack.push(clos[1]);
+//         stack.push(stack[1]);
+//         stack.push(clos[N]);
+//         attempt_kclos_dealloc(proc, stack[0]);
+//         //clos is now invalid
+//         stack.restack(4);
+//       } else {
+//         /*dynamic_cast because it is possible for
+//           the program to reconstruct a continuation
+//           using an ordinary, non-continuation
+//           Closure
+//         */
+//         KClosure* pkclos =
+//           dynamic_cast<KClosure*>(&clos);
+//         if(pkclos && pkclos->reusable()){
+//           // a reusable continuation
+//           Np->val++; // Np is also reusable
+//           stack.push(pkclos);
+//           stack.push(stack[1]);
+//           stack.push(clos[N]);
+//           stack.restack(4);
+//         } else {
+//           /*TODO: instead create a closure
+//             with only a reference to this
+//             closure and an index number, to
+//             reduce memory allocation.
+//           */
+//           KClosure& nclos =
+//             *NewKClosure(proc, THE_BYTECODE_LABEL(reducto_continuation),
+//                          // save only necessary
+//                          clos.size() - NN + 3);
+//           // Np, pkclos and clos are now invalid
+//           Closure & clos = *static_cast<Closure*>(stack[0]); //revalidate clos
+//           nclos[0] = clos[0];
+//           nclos[1] = clos[1];
+//           /*** placeholder! ***/
+//           nclos[2] = clos[1];
+//           for(int j = 0;
+//               j < clos.size() - NN;
+//               ++j){
+//             nclos[3 + j] =
+//               clos[NN + j];
+//           }
+//           stack.push(&nclos);
+//           stack.push(stack[1]);
+//           stack.push(clos[N]);
+//           stack.restack(4);
+//           // clos is now invalid again
+//           Integer* Np = proc.create<Integer>(3);
+//           // nclos is now invalid
+//           KClosure& kkclos = *static_cast<KClosure*>(stack[1]);
+//           kkclos[2] = Np;
+//         }
+//       }
     } NEXT_BYTECODE;
-    BYTECODE(rep): {
-      bytecode_<&Generic::rep>(stack);
-    } NEXT_BYTECODE;
-    BYTECODE(rep_local_push): {
-      INTPARAM(N);
-      bytecode_local_push_<&Generic::rep>(stack, N);
-    } NEXT_BYTECODE;
-    BYTECODE(rep_clos_push): {
-      INTPARAM(N);
-      bytecode_clos_push_<&Generic::rep>(stack, clos, N);
-    } NEXT_BYTECODE;
-    BYTECODE(tag): {
-      bytecode_tag(proc,stack);
-    } NEXT_BYTECODE;
-    BYTECODE(sv): {
-      bytecode_<&Generic::make_sv>(proc, stack);
-    } NEXT_BYTECODE;
-    BYTECODE(sv_local_push): {
-      INTPARAM(N);
-      bytecode_local_push_<&Generic::make_sv>(proc, stack, N);
-    } NEXT_BYTECODE;
-    BYTECODE(sv_clos_push): {
-      INTPARAM(N);
-      bytecode_clos_push_<&Generic::make_sv>(proc, stack, clos, N);
-    } NEXT_BYTECODE;
-    BYTECODE(sv_ref): {
-      bytecode_<&Generic::sv_ref>(stack);
-    } NEXT_BYTECODE;
-    BYTECODE(sv_ref_local_push): {
-      INTPARAM(N);
-      bytecode_local_push_<&Generic::sv_ref>(stack, N);
-    } NEXT_BYTECODE;
-    BYTECODE(sv_ref_clos_push): {
-      INTPARAM(N);
-      bytecode_clos_push_<&Generic::sv_ref>(stack, clos, N);
-    } NEXT_BYTECODE;
-    BYTECODE(sv_set): {
-      bytecode_sv_set(stack);
-    } NEXT_BYTECODE;
-    BYTECODE(sym): {
-      INTPARAM(S);
-      bytecode_sym(proc, stack, S);
-    } NEXT_BYTECODE;
-    BYTECODE(symeval): {
-      bytecode_symeval(proc, stack);
-    } NEXT_BYTECODE;
-    BYTECODE(type): {
-      bytecode_<&Generic::type>(proc, stack);
-    } NEXT_BYTECODE;
-    BYTECODE(type_local_push): {
-      INTPARAM(N);
-      bytecode_local_push_<&Generic::type>(proc, stack, N);
-    } NEXT_BYTECODE;
-    BYTECODE(type_clos_push): {
-      INTPARAM(N);
-      bytecode_clos_push_<&Generic::type>(proc, stack, clos, N);
-    } NEXT_BYTECODE;
+//     BYTECODE(rep): {
+//       bytecode_<&Generic::rep>(stack);
+//     } NEXT_BYTECODE;
+//     BYTECODE(rep_local_push): {
+//       INTPARAM(N);
+//       bytecode_local_push_<&Generic::rep>(stack, N);
+//     } NEXT_BYTECODE;
+//     BYTECODE(rep_clos_push): {
+//       INTPARAM(N);
+//       bytecode_clos_push_<&Generic::rep>(stack, clos, N);
+//     } NEXT_BYTECODE;
+//     BYTECODE(tag): {
+//       bytecode_tag(proc,stack);
+//     } NEXT_BYTECODE;
+//     BYTECODE(sv): {
+//       bytecode_<&Generic::make_sv>(proc, stack);
+//     } NEXT_BYTECODE;
+//     BYTECODE(sv_local_push): {
+//       INTPARAM(N);
+//       bytecode_local_push_<&Generic::make_sv>(proc, stack, N);
+//     } NEXT_BYTECODE;
+//     BYTECODE(sv_clos_push): {
+//       INTPARAM(N);
+//       bytecode_clos_push_<&Generic::make_sv>(proc, stack, clos, N);
+//     } NEXT_BYTECODE;
+//     BYTECODE(sv_ref): {
+//       bytecode_<&Generic::sv_ref>(stack);
+//     } NEXT_BYTECODE;
+//     BYTECODE(sv_ref_local_push): {
+//       INTPARAM(N);
+//       bytecode_local_push_<&Generic::sv_ref>(stack, N);
+//     } NEXT_BYTECODE;
+//     BYTECODE(sv_ref_clos_push): {
+//       INTPARAM(N);
+//       bytecode_clos_push_<&Generic::sv_ref>(stack, clos, N);
+//     } NEXT_BYTECODE;
+//     BYTECODE(sv_set): {
+//       bytecode_sv_set(stack);
+//     } NEXT_BYTECODE;
+//     BYTECODE(sym): {
+//       INTPARAM(S);
+//       bytecode_sym(proc, stack, S);
+//     } NEXT_BYTECODE;
+//     BYTECODE(symeval): {
+//       bytecode_symeval(proc, stack);
+//     } NEXT_BYTECODE;
+//     BYTECODE(type): {
+//       bytecode_<&Generic::type>(proc, stack);
+//     } NEXT_BYTECODE;
+//     BYTECODE(type_local_push): {
+//       INTPARAM(N);
+//       bytecode_local_push_<&Generic::type>(proc, stack, N);
+//     } NEXT_BYTECODE;
+//     BYTECODE(type_clos_push): {
+//       INTPARAM(N);
+//       bytecode_clos_push_<&Generic::type>(proc, stack, clos, N);
+//     } NEXT_BYTECODE;
     BYTECODE(variadic): {
       INTPARAM(N);
       bytecode_variadic(proc, stack, N);

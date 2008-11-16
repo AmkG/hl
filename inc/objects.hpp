@@ -22,6 +22,9 @@ Usage:
 
 class Generic;
 class Symbol;
+class Cons;
+class Closure;
+class KClosure;
 
 namespace Object {
 
@@ -75,7 +78,15 @@ Configuration
 	template<> struct tag_traits<UnicodeChar> {
 		static const tag_type tag = 0x3;
 	};
-
+        template<> struct tag_traits<Cons*> {
+                static const tag_type tag = 0x4;
+        };
+        template<> struct tag_traits<Closure*> {
+                static const tag_type tag = 0x5;
+        };
+        template<> struct tag_traits<KClosure*> {
+                static const tag_type tag = 0x6;
+        };
 /*-----------------------------------------------------------------------------
 Provided information
 -----------------------------------------------------------------------------*/
