@@ -84,12 +84,9 @@ public:
   friend class CondVar;
 
   /*safe bool idiom*/
-private:
-  static void unspecified_bool(TryLock***) { }
-public:
-  typedef void (*unspecified_bool_type)(TryLock***);
+  typedef Mutex* (TryLock::*unspecified_bool_type);
   operator unspecified_bool_type() const {
-    return m ? &unspecified_bool : 0 ;
+    return m ? &TryLock::m : 0 ;
   }
 };
 
