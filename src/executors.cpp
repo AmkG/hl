@@ -157,7 +157,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
   // get current closure
   // WARNING!  Will fail for KClosure.  Have to use
   // dynamic_cast<>!
-  Closure & clos = *Object::_as_a<Closure*>(stack[0]);
+  // !! should check that the  cast is correct!
+  Closure & clos = *dynamic_cast<Closure*>(Object::_as_a<Generic*>(stack[0]));
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(apply): {
