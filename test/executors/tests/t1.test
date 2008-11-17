@@ -3,7 +3,7 @@
 
 ;^9$
 
-; *******
+; *** Some consing ***
 
 (int 1)
 (int 2)
@@ -23,7 +23,7 @@
 
 ;^1$
 
-; *******
+; *** Basic closure ***
 
 (closure 0 
   (check-vars 2)
@@ -36,7 +36,7 @@
 
 ;^1$
 
-; *******
+; *** if ***
 
 (closure 0 
   (check-vars 2)
@@ -51,7 +51,7 @@
 
 ;^2$
 
-; ********
+; ******
 
 (closure 0 
   (check-vars 2)
@@ -64,3 +64,29 @@
 (apply 2)
 
 ;^42$
+
+; *** Closures that close something ***
+
+(int 42)
+(closure 1
+  (check-vars 1)
+  (closure-ref 0)
+  (halt ))
+(apply 1)
+
+;^42$
+
+; *** This will fail: objects pushed on the stack lose their dynamic type information (why?) ***
+
+(int 1)
+(lit-nil )
+(cons )
+(int 2)
+(closure 2
+  (check-vars 1)
+  (closure-ref 0)
+  (car )
+  (halt ))
+(apply 1)
+
+;^1$
