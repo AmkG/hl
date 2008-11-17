@@ -131,14 +131,17 @@ Worker
 
 void Worker::operator()(void) {
 	try {
-		try { WorkerRegistration w(this, parent);
+		try {
+			parent->register_worker(this);
 			work();
+			parent->unregister_worker(this);
 		} catch(std::exception& e) {
 			std::cerr << "Unhandled exception:" << std::endl;
 			std::cerr << e.what() << std::endl;
 			std::cerr << "aborting a worker thread..."
 				<< std::endl;
 			std::cerr.flush();
+			parent->unregister_worker(this);
 			return;
 		}
 	} catch(...) {
@@ -146,6 +149,7 @@ void Worker::operator()(void) {
 		std::cerr << "aborting a worker thread..."
 			<< std::endl;
 		std::cerr.flush();
+		parent->unregister_worker(this);
 		return;
 	}
 }
