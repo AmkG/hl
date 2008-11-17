@@ -50,6 +50,81 @@ void AllWorkers::soft_stop_lower(void) {
 	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
 }
 
+/*
+ * Registration
+ */
+
+void AllWorkers::register_process(Process* P) {
+	AppMutex l(U_mtx);
+	U.push_back(P);
+}
+
+void AllWorkers::register_worker(Worker* W) {
+	AppMutex l(general_mtx);
+	Ws.push_back(W);
+	total_workers++;
+}
+
+void AllWorkers::unregister_worker(Worker* W) {
+	AppMutex l(general_mtx);
+	size_t l = Ws.size();
+	for(size_t i = 0; i < l; ++i) {
+		if(Ws[i] == W) {
+			Ws[i] = Ws[l - 1];
+			Ws.resize(l - 1);
+			--total_workers;
+			return;
+		}
+	}
+}
+
+/*
+ * Workqueue
+ */
+
+void AllWorkers::workqueue_push(Process* R) {
+	AppLock l(workqueue_mtx);
+	bool sig = workqueue.empty();
+	workqueue.push(R);
+	if(sig) workqueue_cv.broadcast();
+}
+void AllWorkers::workqueue_push_and_pop(Process*& R) {
+	AppLock l(workqueue_mtx);
+	/*if workqueue is empty, we'd end up popping what we
+	would have pushed anyway, so just short-circuit it
+	*/
+	if(workqueue.empty()) return;
+	workqueue.push(R);
+	R = workqueue.front();
+	workqueue.pop();
+}
+bool AllWorkers::workqueue_pop(Process*& R) {
+	/*important: order should be workqueue_mtx, then general_mtx*/
+	AppLock lw(workqueue_mtx);
+	if(!workqueue.empty()) {
+		R = workqueue.front();
+		workqueue.pop();
+		return 1;
+	}
+	workqueue_waiting++;
+	{AppLock lg(general_mtx);
+		/*if everyone is waiting, there's no more work!*/
+		if(workqueue_waiting == total_workers) {
+			exit_condition = 1;
+			workqueue_cv.broadcast(lw);
+			return 0;
+		}
+	}
+	do {
+		workqueue_cv.wait(lw);
+	} while(workqueue.empty() && !exit_condition);
+	--workqueue_waiting;
+	if(exit_condition) return 0;
+	R = workqueue.front();
+	workqueue.pop();
+	return 1;
+}
+
 /*-----------------------------------------------------------------------------
 Worker
 -----------------------------------------------------------------------------*/

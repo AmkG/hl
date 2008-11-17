@@ -34,9 +34,12 @@ class AllWorkers : boost::noncopyable {
 	/*set of all workers*/
 	size_t total_workers;
 	std::vector<Worker*> Ws;
+
 	/*set of known processes*/
 	std::vector<Process*> U;
+	AppMutex U_mtx;
 
+	size_t workqueue_waiting;
 	std::queue<Process*> workqueue;
 	AppMutex workqueue_mtx;
 	AppCondVar workqueue_cv;
@@ -44,6 +47,8 @@ class AllWorkers : boost::noncopyable {
 	/*Order of locking:
 	1. workqueue_mtx
 	2. general_mtx
+	U_mtx is always locked independently of workqueue_mtx
+	and general_mtx
 	*/
 
 	/*default timeslice for processes*/
@@ -91,6 +96,8 @@ public:
 
 	/*pushes a process onto the workqueue*/
 	void workqueue_push(Process*);
+
+	~AllWorkers();
 
 	friend class Worker;
 };
