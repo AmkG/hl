@@ -2,3 +2,65 @@
 (halt )
 
 ;^9$
+
+; *******
+
+(int 1)
+(int 2)
+(cons )
+(cdr )
+(halt )
+
+;^2$
+
+; *******
+
+(int 1)
+(int 2)
+(cons )
+(car )
+(halt )
+
+;^1$
+
+; *******
+
+(closure 0 
+  (check-vars 2)
+  (car-local-push 1)
+  (halt ))
+(int 1)
+(int 2)
+(cons )
+(apply 2)
+
+;^1$
+
+; *******
+
+(closure 0 
+  (check-vars 2)
+  (if-local 1
+    (cdr-local-push 1)
+    (halt ))
+  (halt ))
+(int 1)
+(int 2)
+(cons )
+(apply 2)
+
+;^2$
+
+; ********
+
+(closure 0 
+  (check-vars 2)
+  (if-local 1
+    (cdr-local-push 1)
+    (halt ))
+  (int 42)
+  (halt ))
+(lit-nil )
+(apply 2)
+
+;^42$

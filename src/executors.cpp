@@ -156,9 +156,13 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
  call_current_closure:
   if(--reductions == 0) return process_running;
   // get current closure
-  // WARNING!  Will fail for KClosure.  Have to use
-  // dynamic_cast<>!
-  Closure & clos = *Object::_as_a<Closure*>(stack[0]);
+  // ??? when the Closure created by the closure bytecode is used here
+  // ??? dynamic_cast<Closure*> fails
+  // ??? but this works:
+  Closure *pt = (Closure*)(Object::_as_a<Generic*>(stack[0]));
+  if (pt==0)
+    throw_HlError("execute: expected a closure!");
+  Closure & clos = *pt;
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(apply): {
@@ -371,7 +375,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     BYTECODE(k_closure): {
     k_closure_perform_create:
       INTSEQPARAM(N,S);
-      KClosure *nclos = KClosure::NewKClosure(proc, S, N);
+      Closure *nclos = Closure::NewKClosure(proc, S, N);
       for(int i = N; i ; --i){
         (*nclos)[i - 1] = stack.top();
         stack.pop();
@@ -394,10 +398,10 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     BYTECODE(k_closure_reuse): {
       INTSEQPARAM(N,S);
-      KClosure *nclos = expect_type<KClosure>(stack[0], "KClosure expected!");
+      Closure *nclos = expect_type<Closure>(stack[0], "Closure expected!");
       if(!nclos->reusable()) {
         // Use the size of the current closure
-        nclos = KClosure::NewKClosure(proc, S, clos.size());
+        nclos = Closure::NewKClosure(proc, S, clos.size());
         //clos is now invalid
       } else {
         nclos->codereset(S);
