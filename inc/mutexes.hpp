@@ -30,6 +30,7 @@ private:
 	#ifndef single_threaded
 		boost::scoped_ptr<Mutex> mp;
 	#endif
+	AppMutex(AppMutex const&) : mp() { }
 public:
 	AppMutex(void) {
 		#ifndef single_threaded
