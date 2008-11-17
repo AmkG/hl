@@ -159,6 +159,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
   // ??? when the Closure created by the closure bytecode is used here
   // ??? dynamic_cast<Closure*> fails
   // ??? but this works:
+  // ??? in general, objects pushed on the stack lose their dynamic type 
+  // ??? information
   Closure *pt = (Closure*)(Object::_as_a<Generic*>(stack[0]));
   if (pt==0)
     throw_HlError("execute: expected a closure!");
