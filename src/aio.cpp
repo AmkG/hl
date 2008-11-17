@@ -1,3 +1,4 @@
+#include "all_defines.hpp"
 #include "aio.hpp"
 
 void AIOError::invoke() {

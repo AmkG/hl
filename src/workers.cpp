@@ -3,6 +3,7 @@
 #include"types.hpp"
 #include"workers.hpp"
 #include"processes.hpp"
+#include"mutexes.hpp"
 #include"lockeds.hpp"
 #include"symbols.hpp"
 
@@ -15,6 +16,114 @@
 AllWorkers
 -----------------------------------------------------------------------------*/
 
+/*
+ * Soft-stop
+ */
+
+void barrier(AppLock& l, AppCondVar& cv, size_t& called, size_t& needed) {
+	called++;
+	if(called == needed) {
+		called = 0;
+		cv.broadcast();
+	} else {
+		cv.wait(l);
+	}
+}
+bool AllWorkers::soft_stop_check(void) {
+	AppLock l(general_mtx);
+	if(!soft_stop_condition) return 1;
+	if(exit_condition) return 0;
+	/*inform the raiser of the condition that we've stopped*/
+	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
+	/*wait for the raiser to complete*/
+	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
+	return 1;
+}
+void AllWorkers::soft_stop_raise(void) {
+	AppLock l(general_mtx);
+	soft_stop_condition = 1;
+	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
+}
+void AllWorkers::soft_stop_lower(void) {
+	AppLock l(general_mtx);
+	soft_stop_condition = 0;
+	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
+}
+
+/*
+ * Registration
+ */
+
+void AllWorkers::register_process(Process* P) {
+	AppLock l(U_mtx);
+	U.push_back(P);
+}
+
+void AllWorkers::register_worker(Worker* W) {
+	AppLock l(general_mtx);
+	Ws.push_back(W);
+	total_workers++;
+}
+
+void AllWorkers::unregister_worker(Worker* W) {
+	AppLock lg(general_mtx);
+	size_t l = Ws.size();
+	for(size_t i = 0; i < l; ++i) {
+		if(Ws[i] == W) {
+			Ws[i] = Ws[l - 1];
+			Ws.resize(l - 1);
+			--total_workers;
+			return;
+		}
+	}
+}
+
+/*
+ * Workqueue
+ */
+
+void AllWorkers::workqueue_push(Process* R) {
+	AppLock l(workqueue_mtx);
+	bool sig = workqueue.empty();
+	workqueue.push(R);
+	if(sig) workqueue_cv.broadcast();
+}
+void AllWorkers::workqueue_push_and_pop(Process*& R) {
+	AppLock l(workqueue_mtx);
+	/*if workqueue is empty, we'd end up popping what we
+	would have pushed anyway, so just short-circuit it
+	*/
+	if(workqueue.empty()) return;
+	workqueue.push(R);
+	R = workqueue.front();
+	workqueue.pop();
+}
+bool AllWorkers::workqueue_pop(Process*& R) {
+	/*important: order should be workqueue_mtx, then general_mtx*/
+	AppLock lw(workqueue_mtx);
+	if(!workqueue.empty()) {
+		R = workqueue.front();
+		workqueue.pop();
+		return 1;
+	}
+	workqueue_waiting++;
+	{AppLock lg(general_mtx);
+		/*if everyone is waiting, there's no more work!*/
+		if(workqueue_waiting == total_workers) {
+			exit_condition = 1;
+			workqueue_cv.broadcast();
+			return 0;
+		}
+	}
+	do {
+		workqueue_cv.wait(lw);
+	} while(workqueue.empty() && !exit_condition);
+	--workqueue_waiting;
+	if(exit_condition) return 0;
+	R = workqueue.front();
+	workqueue.pop();
+	return 1;
+}
 
 /*-----------------------------------------------------------------------------
 Worker
@@ -25,18 +134,23 @@ void Worker::operator()(void) {
 		try {
 			parent->register_worker(this);
 			work();
+			parent->unregister_worker(this);
 		} catch(std::exception& e) {
-			std::cout << "Unhandled exception:" << std::endl;
-			std::cout << e.what() << std::endl;
-			std::cout << "aborting a worker thread..."
+			std::cerr << "Unhandled exception:" << std::endl;
+			std::cerr << e.what() << std::endl;
+			std::cerr << "aborting a worker thread..."
 				<< std::endl;
+			std::cerr.flush();
+			parent->unregister_worker(this);
 			return;
 		}
 	} catch(...) {
-		std::cout << "Unknown exception!" << std::endl;
-		std::cout << "aborting a worker thread..."
+		std::cerr << "Unknown exception!" << std::endl;
+		std::cerr << "aborting a worker thread..."
 			<< std::endl;
-		throw;
+		std::cerr.flush();
+		parent->unregister_worker(this);
+		return;
 	}
 }
 
@@ -82,16 +196,14 @@ public:
 /*Causes a soft-stop on other worker threads
 */
 class SoftStop : boost::noncopyable {
-	bool* soft_stop;
-	boost::barrier* soft_stop_barrier;
+	AllWorkers* parent;
 	#ifndef single_threaded
 		bool single_threaded_save;
 	#endif
 public:
-	SoftStop(bool& nsoft_stop, boost::barrier& nsoft_stop_barrier)
-		: soft_stop(&nsoft_stop), soft_stop_barrier(&nsoft_stop_barrier) {
-		(*soft_stop) = 1;
-		soft_stop_barrier->wait();
+	explicit SoftStop(AllWorkers* nparent)
+		: parent(nparent) {
+		parent->soft_stop_raise();
 		#ifndef single_threaded
 			single_threaded_save = single_threaded;
 			single_threaded = 1;
@@ -101,8 +213,7 @@ public:
 		#ifndef single_threaded
 			single_threaded = single_threaded_save;
 		#endif
-		(*soft_stop) = 0;
-		soft_stop_barrier->wait();
+		parent->soft_stop_lower();
 	}
 };
 
@@ -181,21 +292,20 @@ void Worker::mark_process(Process* P) {
  * Actual work
  */
 
+/*please refer to file doc/process-gc.txt*/
 void Worker::work(void) {
 	ProcessStatus Rstat;
 	RunningProcessRef R;
 	Process* Q = 0;
 	size_t timeslice;
+	bool alt = 0;
 
 WorkerLoop:
-	if(parent->soft_stop_condition) {
-		/*first time through, notify requesting thread*/
-		parent->soft_stop_barrier.wait();
-		/*second time through, wait for requesting thread
-		to complete work.
-		*/
-		parent->soft_stop_barrier.wait();
-	}
+	/*only do the checking on alternate iterations*/
+	if(alt) {
+		if(!parent->soft_stop_check()) return;
+		alt = 0;
+	} else	alt = 1;
 	if(T) {
 		/*trigger GC*/
 		if(T == 1) {
@@ -203,8 +313,7 @@ WorkerLoop:
 				parent->workqueue_push(R);
 				R = 0;
 			}
-			{SoftStop ss(	parent->soft_stop_condition,
-					parent->soft_stop_barrier);
+			{SoftStop ss(parent);
 				/*all other threads are now suspended*/
 				SymbolScanner ssc(parent->Ws);
 				symbols->traverse_symbols(&ssc);
@@ -278,9 +387,11 @@ execute:
 	goto WorkerLoop;
 
 Sweep:
-	{SoftStop ss(
-			parent->soft_stop_condition,
-			parent->soft_stop_barrier);
+	if(R) {
+		parent->workqueue_push(R);
+		R = 0;
+	}
+	{SoftStop ss(parent);
 		size_t i, j;
 		Process* tmp;
 		std::vector<Process*>& U = parent->U;
@@ -310,14 +421,15 @@ Sweep:
 		}
 		U.resize(j);
 
+		size_t died = l - j;
 		/*having got the short stick, we now compute
 		the trigger point for the next GC
 		*/
 		T =
-		(j >= 512) ? 		1 :
-		/*otherwise*/		(512 - j);
+		(died >= 4096) ? 	1 :
+		/*otherwise*/		(4096 - died);
 		T += 1;
-		T *= 2;
+		T *= 4;
 	}
 	goto WorkerLoop;
 }

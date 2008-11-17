@@ -4,6 +4,7 @@
 #include <pthread.h>
 
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
 template <class T>
 class Thread : boost::noncopyable {
@@ -15,18 +16,8 @@ public:
 
 template <class T>
 static void* _os_thread_bounce_fun(void *v) {
-  /*
-   * consider using a smart pointer instead of
-   * this dorky try-catch.
-   */
-  T* t = (T*) v;
-  try {
-    (*t)();
-    delete t;
-  } catch (...) {
-    delete t;
-    throw;
-  }
+  boost::scoped_ptr<T> t((T*) v);
+  (*t)();
   return NULL;
 }
 
@@ -84,12 +75,9 @@ public:
   friend class CondVar;
 
   /*safe bool idiom*/
-private:
-  static void unspecified_bool(TryLock***) { }
-public:
-  typedef void (*unspecified_bool_type)(TryLock***);
+  typedef Mutex* (TryLock::*unspecified_bool_type);
   operator unspecified_bool_type() const {
-    return m ? &unspecified_bool : 0 ;
+    return m ? &TryLock::m : 0 ;
   }
 };
 

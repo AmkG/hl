@@ -21,7 +21,9 @@ Usage:
 #include"unichars.hpp"
 
 #ifdef MY_COMPILER
-// without these my compiler signals an error
+// without these my compiler signals an error -- stefano
+// I suggest you try it now with all_defines.hpp
+// included in all source files -- almkglor
 #define INTPTR_MIN		(-2147483647-1)
 #define INTPTR_MAX		(2147483647)
 #endif // MY_COMPILER
@@ -139,8 +141,11 @@ The tagged pointer type
 		inline bool operator!(void) {
 			return dat == 0;
 		}
-		inline operator bool(void) {
-			return dat != 0;
+
+		/*safe bool idiom*/
+		typedef intptr_t (ref::*unspecified_bool_type);
+		inline operator unspecified_bool_type(void) {
+			return dat != 0 ? &ref::dat : 0;
 		}
 
 		template<typename T> friend ref to_ref(T);
@@ -318,8 +323,8 @@ Utility
 
 	static inline size_t round_up_to_alignment(size_t x) {
 		return
-		(x & tag_mask) ?			(x + alignment - (x & tag_mask)) :
-		/*otherwise*/			x ;
+		(x & tag_mask) ?      (x + alignment - (x & tag_mask)) :
+		/*otherwise*/         x ;
 	}
 
 }

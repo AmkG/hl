@@ -20,7 +20,10 @@ class AllWorkers : boost::noncopyable {
 	bool exit_condition;
 
 	bool soft_stop_condition;
-	boost::barrier soft_stop_barrier;
+	size_t soft_stop_workers;
+	AppCondVar soft_stop_cv;
+
+	AppMutex general_mtx;
 
 	/*When performing a process collection, this specifies the
 	number of workers that haven't consumed their gray set yet.
@@ -34,15 +37,37 @@ class AllWorkers : boost::noncopyable {
 
 	/*set of known processes*/
 	std::vector<Process*> U;
+	AppMutex U_mtx;
 
+	size_t workqueue_waiting;
 	std::queue<Process*> workqueue;
-	AppMutex workqueue_mutex;
+	AppMutex workqueue_mtx;
+	AppCondVar workqueue_cv;
+
+	/*Order of locking:
+	1. workqueue_mtx
+	2. general_mtx
+	U_mtx is always locked independently of workqueue_mtx
+	and general_mtx
+	*/
 
 	/*default timeslice for processes*/
 	size_t default_timeslice;
 
+	/*check for soft-stop condition
+	blocks if soft-stop condition is detected, and continues
+	only when soft-stop is released
+	also checks exit condition
+	returns 0 if we should exit
+		1 if we should continue
+	*/
+	bool soft_stop_check(void);
+
 	/*atomically register a worker into Ws*/
 	void register_worker(Worker*);
+
+	/*atomically unregister a worker from Ws*/
+	void unregister_worker(Worker*);
 
 	/*pushes a process onto the workqueue, then pops a process*/
 	void workqueue_push_and_pop(Process*&);
@@ -60,24 +85,19 @@ public:
 	This function will return only when workers run out
 	of work, or if someone signals an exit condition
 	*/
-	void initiate(void);
+	void initiate(size_t);
 
 	/*atomically register a process into U*/
 	void register_process(Process*);
 
+	/*request and release soft-stop*/
+	void soft_stop_raise(void);
+	void soft_stop_lower(void);
+
 	/*pushes a process onto the workqueue*/
 	void workqueue_push(Process*);
 
-	AllWorkers(unsigned int nworkers)
-		: exit_condition(0),
-		  soft_stop_condition(0),
-		  soft_stop_barrier(nworkers),
-		  gray_workers(0),
-		  total_workers(nworkers),
-		  workqueue(),
-		  workqueue_mutex(),
-		  default_timeslice(nworkers > 1 ? 256 : 64)
-	{ }
+	~AllWorkers();
 
 	friend class Worker;
 };

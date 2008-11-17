@@ -1,3 +1,4 @@
+#include "all_defines.hpp"
 #include "types.hpp"
 
 Closure* Closure::NewClosure(Heap & h, bytecode_t *body, size_t n) {

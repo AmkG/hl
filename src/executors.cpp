@@ -1,3 +1,4 @@
+#include"all_defines.hpp"
 #include <stdlib.h> // for size_t
 #include <string>
 #include "types.hpp"

@@ -1,4 +1,4 @@
 #!/bin/sh
 
-g++ -I../inc -o /dev/null -c $@
+g++ -I../inc -I../os -o /dev/null -c $@
 

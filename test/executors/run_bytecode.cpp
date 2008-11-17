@@ -1,13 +1,13 @@
 /*
  * Read bytecode from a file, run it and print the result (top of the stack) 
  */
+#include "all_defines.hpp"
 
 #include <iostream>
 #include <fstream>
 
 #define DEFINE_GLOBALS 1
 
-#include "all_defines.hpp"
 #include "reader.hpp"
 #include "executors.hpp"
 #include "symbols.hpp"
