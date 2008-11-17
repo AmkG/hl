@@ -3,10 +3,7 @@ This header should be the first header in each source file,
 and should only be included once
 */
 
-#ifndef ALL_DEFINES_H
-#define ALL_DEFINES_H
-
-#define __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS // necessary for INTPTR_MAX and INTPTR_MIN
 
 #include<boost/scoped_ptr.hpp>
 
@@ -25,6 +22,7 @@ class SymbolsTable;
 
 EXTERN boost::scoped_ptr<SymbolsTable> symbols;
 
-//EXTERN bool single_threaded;
+#ifndef single_threaded
+	EXTERN bool single_threaded;
+#endif
 
-#endif // ALL_DEFINES_H
