@@ -1,6 +1,20 @@
 #ifndef MUTEXES_H
 #define MUTEXES_H
 
+/*
+This header file contains "App" versions of the os/thread.hpp
+objects.
+
+The "App" versions have the following characteristics:
+1.	If you -Dsingle_threaded, they are completely empty and
+	will be removed by a sufficiently-smart compiler.
+	We even lose the dependency on pthreads, so in theory
+	we can still work in an environment without pthreads.
+2.	If you decide to launch hl in single-threaded mode, these
+	will not bother to do locking, or allocate and create
+	lock.
+*/
+
 #ifndef single_threaded
 	#include"thread.hpp"
 	#include<boost/scoped_ptr.hpp>
