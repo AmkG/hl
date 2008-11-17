@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "all_defines.hpp"
 #include "symbols.hpp"
 
 /*
