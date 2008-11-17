@@ -9,7 +9,6 @@
 #include<map>
 
 class SymbolsTable;
-class ValueHolder;
 
 class Symbol {
 	ValueHolderRef value;
@@ -25,6 +24,12 @@ public:
 	friend class SymbolsTable;
 };
 
+class SymbolsTableTraverser {
+public:
+	virtual void traverse(Symbol*) =0;
+	virtual ~SymbolsTableTraverser();
+};
+
 class SymbolsTable {
 private:
 	std::map<std::string, Symbol*> tb;
@@ -35,6 +40,10 @@ public:
 	inline Symbol* lookup(char const* s) {
 		return lookup(std::string(s));
 	}
+	/*note! no atomicity checks.  assumes that traversal
+	occurs only when all other worker threads are suspended.
+	*/
+	void traverse_symbols(SymbolsTableTraverser*) const;
 	~SymbolsTable();
 };
 

@@ -3,6 +3,8 @@
 #include"symbols.hpp"
 #include"mutexes.hpp"
 
+#include<boost/noncopyable.hpp>
+
 #include<string>
 #include<map>
 
@@ -17,10 +19,22 @@ Symbol* SymbolsTable::lookup(std::string x) {
 	}
 }
 
+void SymbolsTable::traverse_symbols(SymbolsTableTraverser* stt) const {
+	for(maptype::const_iterator it = tb.begin(); it != tb.end(); ++it) {
+		stt->traverse(it->second);
+	}
+}
+
+class SymbolDeletor : public SymbolsTableTraverser {
+public:
+	virtual void traverse(Symbol* s) {
+		delete s;
+	}
+};
+
 SymbolsTable::~SymbolsTable() {
 	/*go through the table and delete each symbol*/
-	for(maptype::const_iterator it = tb.begin(); it != tb.end(); ++it) {
-		delete it->second;
-	}
+	SymbolDeletor sd;
+	traverse_symbols(&sd);
 }
 
