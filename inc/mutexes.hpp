@@ -29,8 +29,11 @@ class AppMutex : boost::noncopyable {
 private:
 	#ifndef single_threaded
 		boost::scoped_ptr<Mutex> mp;
+	        AppMutex(AppMutex const&) : mp() { }
+        #else
+               	AppMutex(AppMutex const&) { }
 	#endif
-	AppMutex(AppMutex const&) : mp() { }
+
 public:
 	AppMutex(void) {
 		#ifndef single_threaded
