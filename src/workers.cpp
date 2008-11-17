@@ -55,18 +55,18 @@ void AllWorkers::soft_stop_lower(void) {
  */
 
 void AllWorkers::register_process(Process* P) {
-	AppMutex l(U_mtx);
+	AppLock l(U_mtx);
 	U.push_back(P);
 }
 
 void AllWorkers::register_worker(Worker* W) {
-	AppMutex l(general_mtx);
+	AppLock l(general_mtx);
 	Ws.push_back(W);
 	total_workers++;
 }
 
 void AllWorkers::unregister_worker(Worker* W) {
-	AppMutex l(general_mtx);
+	AppLock lg(general_mtx);
 	size_t l = Ws.size();
 	for(size_t i = 0; i < l; ++i) {
 		if(Ws[i] == W) {
@@ -111,7 +111,7 @@ bool AllWorkers::workqueue_pop(Process*& R) {
 		/*if everyone is waiting, there's no more work!*/
 		if(workqueue_waiting == total_workers) {
 			exit_condition = 1;
-			workqueue_cv.broadcast(lw);
+			workqueue_cv.broadcast();
 			return 0;
 		}
 	}
@@ -134,18 +134,18 @@ void Worker::operator()(void) {
 		try { WorkerRegistration w(this, parent);
 			work();
 		} catch(std::exception& e) {
-			std::err << "Unhandled exception:" << std::endl;
-			std::err << e.what() << std::endl;
-			std::err << "aborting a worker thread..."
+			std::cerr << "Unhandled exception:" << std::endl;
+			std::cerr << e.what() << std::endl;
+			std::cerr << "aborting a worker thread..."
 				<< std::endl;
-			std::err.flush();
+			std::cerr.flush();
 			return;
 		}
 	} catch(...) {
-		std::err << "Unknown exception!" << std::endl;
-		std::err << "aborting a worker thread..."
+		std::cerr << "Unknown exception!" << std::endl;
+		std::cerr << "aborting a worker thread..."
 			<< std::endl;
-		std::err.flush();
+		std::cerr.flush();
 		return;
 	}
 }
@@ -197,7 +197,7 @@ class SoftStop : boost::noncopyable {
 		bool single_threaded_save;
 	#endif
 public:
-	SoftStop(AllWorkers* nparent)
+	explicit SoftStop(AllWorkers* nparent)
 		: parent(nparent) {
 		parent->soft_stop_raise();
 		#ifndef single_threaded
@@ -309,8 +309,7 @@ WorkerLoop:
 				parent->workqueue_push(R);
 				R = 0;
 			}
-			{SoftStop ss(	parent->soft_stop_condition,
-					parent->soft_stop_barrier);
+			{SoftStop ss(parent);
 				/*all other threads are now suspended*/
 				SymbolScanner ssc(parent->Ws);
 				symbols->traverse_symbols(&ssc);
@@ -384,9 +383,11 @@ execute:
 	goto WorkerLoop;
 
 Sweep:
-	{SoftStop ss(
-			parent->soft_stop_condition,
-			parent->soft_stop_barrier);
+	if(R) {
+		parent->workqueue_push(R);
+		R = 0;
+	}
+	{SoftStop ss(parent);
 		size_t i, j;
 		Process* tmp;
 		std::vector<Process*>& U = parent->U;
