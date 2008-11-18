@@ -27,7 +27,7 @@ public:
 class SymbolsTableTraverser {
 public:
 	virtual void traverse(Symbol*) =0;
-	virtual ~SymbolsTableTraverser();
+	virtual ~SymbolsTableTraverser() { }
 };
 
 class SymbolsTable {
