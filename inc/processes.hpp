@@ -143,6 +143,11 @@ For process-level garbage collection
         ProcessStack stack;
 
         // just for compilation
+        // THIS IS THE BUG!
+        // you must include the process stack in the root set
+        // otherwise, GC will *not* update the pointers and
+        // bad things will happen
+        // --- almkglor
         virtual void scan_root_object(GenericTraverser* gt) {}
 };
 
