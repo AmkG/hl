@@ -7,8 +7,6 @@
 #include <iostream>
 #include <fstream>
 
-#define DEFINE_GLOBALS 1
-
 #include "reader.hpp"
 #include "executors.hpp"
 #include "symbols.hpp"
