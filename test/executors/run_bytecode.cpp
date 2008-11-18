@@ -1,6 +1,7 @@
 /*
  * Read bytecode from a file, run it and print the result (top of the stack) 
  */
+#define DEFINE_GLOBALS
 #include "all_defines.hpp"
 
 #include <iostream>
