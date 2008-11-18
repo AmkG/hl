@@ -36,17 +36,17 @@ inline void bytecode_clos_push_(ProcessStack& stack, Closure& clos, int N){
 	stack.push((*MF)(clos[N]));
 }
 
-template<Object::ref (*MF)(Object::ref)>
+template<Object::ref (*MF)(Object::ref, Process&)>
 inline void bytecode_(Process& proc, ProcessStack& stack){
 	stack.top() = (*MF)(stack.top(), proc);
 }
 
-template<Object::ref (*MF)(Object::ref)>
+template<Object::ref (*MF)(Object::ref, Process&)>
 inline void bytecode_local_push_(Process& proc, ProcessStack& stack, int N) {
 	stack.push((*MF)(stack[N], proc));
 }
 
-template<Object::ref (*MF)(Object::ref)>
+template<Object::ref (*MF)(Object::ref, Process&)>
 inline void bytecode_clos_push_(Process& proc, ProcessStack& stack,
 		Closure& clos, int N){
 	stack.push((*MF)(clos[N], proc));

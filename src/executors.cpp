@@ -1,6 +1,10 @@
 #include"all_defines.hpp"
 #include <stdlib.h> // for size_t
 #include <string>
+#ifdef DEBUG
+  #include <typeinfo>
+  #include <iostream>
+#endif
 #include "types.hpp"
 #include "executors.hpp"
 #include "bytecodes.hpp"
@@ -158,12 +162,16 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
   // get current closure
   // ??? when the Closure created by the closure bytecode is used here
   // ??? dynamic_cast<Closure*> fails
-  // ??? but this works:
   // ??? in general, objects pushed on the stack lose their dynamic type 
   // ??? information
-  Closure *pt = (Closure*)(Object::_as_a<Generic*>(stack[0]));
-  if (pt==0)
-    throw_HlError("execute: expected a closure!");
+  Closure *pt = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]));
+  if (pt==0){
+    #ifdef DEBUG
+      std::type_info &inf = typeid(as_a<Generic*>(stack[0]));
+      std::cerr << "Type on stacktop: " << inf.name() << std::endl;
+    #endif
+      throw_HlError("execute: expected a closure!");
+  }
   Closure & clos = *pt;
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {

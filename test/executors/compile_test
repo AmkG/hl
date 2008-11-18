@@ -1,3 +1,10 @@
 #!/bin/sh
 
-g++ -g -Dsingle_threaded -DMY_COMPILER -I../../inc ../../src/{reader.cpp,executors.cpp,heaps.cpp,symbols.cpp,types.cpp} run_bytecode.cpp -o run_bytecode -pthread
+g++ -g -Dsingle_threaded -I../../inc\
+	../../src/reader.cpp\
+	../../src/executors.cpp\
+	../../src/heaps.cpp\
+	../../src/symbols.cpp\
+	../../src/types.cpp\
+	run_bytecode.cpp\
+	-o run_bytecode -pthread
