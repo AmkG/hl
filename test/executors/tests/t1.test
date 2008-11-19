@@ -164,14 +164,15 @@
 
 ; *** continue-on-clos
 
-(int 42)
-(closure 1
-  (check-vars 2)
-  (continue-on-clos 0))
 (closure 0
   (check-vars 2)
   (local 1)
   (halt ))
+(closure 1
+  (check-vars 2)
+  (local 1)
+  (continue-on-clos 0))
+(int 42)
 (apply 2)
 
 ;^42$
