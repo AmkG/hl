@@ -20,7 +20,7 @@ class AllWorkers : boost::noncopyable {
 	bool exit_condition;
 
 	bool soft_stop_condition;
-	size_t soft_stop_workers;
+	size_t soft_stop_waiting;
 	AppCondVar soft_stop_cv;
 
 	AppMutex general_mtx;
@@ -39,29 +39,12 @@ class AllWorkers : boost::noncopyable {
 	std::vector<Process*> U;
 	AppMutex U_mtx;
 
-	size_t workqueue_waiting;
 	std::queue<Process*> workqueue;
-	AppMutex workqueue_mtx;
+	size_t workqueue_waiting;
 	AppCondVar workqueue_cv;
-
-	/*Order of locking:
-	1. workqueue_mtx
-	2. general_mtx
-	U_mtx is always locked independently of workqueue_mtx
-	and general_mtx
-	*/
 
 	/*default timeslice for processes*/
 	size_t default_timeslice;
-
-	/*check for soft-stop condition
-	blocks if soft-stop condition is detected, and continues
-	only when soft-stop is released
-	also checks exit condition
-	returns 0 if we should exit
-		1 if we should continue
-	*/
-	bool soft_stop_check(void);
 
 	/*atomically register a worker into Ws*/
 	void register_worker(Worker*);
@@ -79,6 +62,9 @@ class AllWorkers : boost::noncopyable {
 	returns 1 if a process was successfully popped
 	*/
 	bool workqueue_pop(Process*&);
+
+	/*checks for a soft-stop condition and blocks while it is true*/
+	void soft_stop_check(AppLock&);
 
 public:
 	/*initiates the specified number of worker threads

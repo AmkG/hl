@@ -17,40 +17,6 @@ AllWorkers
 -----------------------------------------------------------------------------*/
 
 /*
- * Soft-stop
- */
-
-void barrier(AppLock& l, AppCondVar& cv, size_t& called, size_t& needed) {
-	called++;
-	if(called == needed) {
-		called = 0;
-		cv.broadcast();
-	} else {
-		cv.wait(l);
-	}
-}
-bool AllWorkers::soft_stop_check(void) {
-	AppLock l(general_mtx);
-	if(!soft_stop_condition) return 1;
-	if(exit_condition) return 0;
-	/*inform the raiser of the condition that we've stopped*/
-	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
-	/*wait for the raiser to complete*/
-	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
-	return 1;
-}
-void AllWorkers::soft_stop_raise(void) {
-	AppLock l(general_mtx);
-	soft_stop_condition = 1;
-	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
-}
-void AllWorkers::soft_stop_lower(void) {
-	AppLock l(general_mtx);
-	soft_stop_condition = 0;
-	barrier(l, soft_stop_cv, soft_stop_workers, total_workers);
-}
-
-/*
  * Registration
  */
 
@@ -73,7 +39,54 @@ void AllWorkers::unregister_worker(Worker* W) {
 			Ws[i] = Ws[l - 1];
 			Ws.resize(l - 1);
 			--total_workers;
+			/*check if this has changed any of the
+			waiting states
+			*/
+			if(soft_stop_condition) {
+				if(soft_stop_waiting == total_workers) {
+					soft_stop_waiting = 0;
+					soft_stop_cv.broadcast();
+				}
+			}
+			if(workqueue_waiting > 0) {
+				if(workqueue_waiting == total_workers) {
+					workqueue_waiting = 0;
+					exit_condition = 1;
+					workqueue_cv.broadcast();
+				}
+			}
 			return;
+		}
+	}
+}
+
+/*
+ * Soft-stop
+ */
+
+void AllWorkers::soft_stop_raise(void) {
+	AppLock l(general_mtx);
+	soft_stop_condition = 1;
+	if(workqueue_waiting != 0) {
+		workqueue_cv.broadcast();
+	}
+	soft_stop_waiting++;
+	soft_stop_cv.wait(l);
+}
+void AllWorkers::soft_stop_lower(void) {
+	AppLock l(general_mtx);
+	soft_stop_condition = 0;
+	soft_stop_cv.broadcast();
+}
+
+void AllWorkers::soft_stop_check(AppLock& l) {
+	while(soft_stop_condition) {
+		soft_stop_waiting++;
+		if(soft_stop_waiting == total_workers) {
+			soft_stop_waiting = 0;
+			soft_stop_cv.broadcast();
+		} else {
+			soft_stop_cv.wait(l);
 		}
 	}
 }
@@ -83,13 +96,14 @@ void AllWorkers::unregister_worker(Worker* W) {
  */
 
 void AllWorkers::workqueue_push(Process* R) {
-	AppLock l(workqueue_mtx);
+	AppLock l(general_mtx);
 	bool sig = workqueue.empty();
 	workqueue.push(R);
 	if(sig) workqueue_cv.broadcast();
 }
 void AllWorkers::workqueue_push_and_pop(Process*& R) {
-	AppLock l(workqueue_mtx);
+	AppLock l(general_mtx);
+	soft_stop_check(l);
 	/*if workqueue is empty, we'd end up popping what we
 	would have pushed anyway, so just short-circuit it
 	*/
@@ -99,27 +113,27 @@ void AllWorkers::workqueue_push_and_pop(Process*& R) {
 	workqueue.pop();
 }
 bool AllWorkers::workqueue_pop(Process*& R) {
-	/*important: order should be workqueue_mtx, then general_mtx*/
-	AppLock lw(workqueue_mtx);
+	AppLock l(general_mtx);
+start:
+	soft_stop_check(l);
 	if(!workqueue.empty()) {
 		R = workqueue.front();
 		workqueue.pop();
 		return 1;
 	}
+retry:
 	workqueue_waiting++;
-	{AppLock lg(general_mtx);
-		/*if everyone is waiting, there's no more work!*/
-		if(workqueue_waiting == total_workers) {
-			exit_condition = 1;
-			workqueue_cv.broadcast();
-			return 0;
-		}
+	if(workqueue_waiting == total_workers) {
+		workqueue_waiting = 0;
+		exit_condition = 1;
+		return 0;
 	}
-	do {
-		workqueue_cv.wait(lw);
-	} while(workqueue.empty() && !exit_condition);
-	--workqueue_waiting;
+	workqueue_cv.wait(l);
 	if(exit_condition) return 0;
+	--workqueue_waiting;
+	/*if we exited due to a soft-stop, bar*/
+	if(soft_stop_condition) goto start;
+	if(workqueue.empty()) goto retry;
 	R = workqueue.front();
 	workqueue.pop();
 	return 1;
@@ -298,14 +312,8 @@ void Worker::work(void) {
 	RunningProcessRef R;
 	Process* Q = 0;
 	size_t timeslice;
-	bool alt = 0;
 
 WorkerLoop:
-	/*only do the checking on alternate iterations*/
-	if(alt) {
-		if(!parent->soft_stop_check()) return;
-		alt = 0;
-	} else	alt = 1;
 	if(T) {
 		/*trigger GC*/
 		if(T == 1) {
@@ -328,6 +336,7 @@ WorkerLoop:
 			--T;
 		}
 	}
+	/*this also checks for soft-stop for us*/
 	if(R) {
 		parent->workqueue_push_and_pop(R);
 	} else {
