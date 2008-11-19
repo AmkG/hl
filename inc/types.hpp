@@ -232,7 +232,12 @@ private:
 public:
   Closure(size_t sz) : GenericDerivedVariadic<Closure>(sz), 
                        nonreusable(true) {}
-  Object::ref& operator[](size_t i) { return index(i); }
+  Object::ref& operator[](size_t i) { 
+    if (i < size())
+      return index(i);
+    else
+      throw_HlError("internal: trying to access closed vars with an index too large!");
+  }
   bytecode_t* code() { return body; }
   void codereset(bytecode_t *b) { body = b; }
   void banreuse() { nonreusable = true; }

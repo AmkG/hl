@@ -129,3 +129,49 @@
 (apply-list )
 
 ;^2$
+
+; *** continue
+
+(closure 0
+  (check-vars 3)
+  (car-local-push 2)
+  (continue ))
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(int 42)
+(lit-nil )
+(cons )
+(apply 3)
+
+;^42$
+
+; *** continue-local
+
+(closure 0
+  (check-vars 4)
+  (continue-local 3))
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(int 19)
+(int 42)
+(apply 4)
+
+;^42$
+
+; *** continue-on-clos
+
+(int 42)
+(closure 1
+  (check-vars 2)
+  (continue-on-clos 0))
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(apply 2)
+
+;^42$
