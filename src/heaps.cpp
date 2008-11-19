@@ -199,6 +199,20 @@ void ValueHolder::traverse_objects(HeapTraverser* ht) const {
 	}
 }
 
+/*clones only itself, not the chain*/
+void ValueHolder::clone(ValueHolderRef& np) const {
+	np.p = new ValueHolder();
+	if(sp) {
+		boost::scoped_ptr<Semispace> nsp;
+		Generic* gp = as_a<Generic*>(val);
+		sp->clone(nsp, gp);
+		np->sp.swap(nsp);
+		np->val = Object::to_ref(gp);
+	} else {
+		np->val = val;
+	}
+}
+
 /*-----------------------------------------------------------------------------
 Heaps
 -----------------------------------------------------------------------------*/

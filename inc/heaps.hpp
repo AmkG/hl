@@ -109,6 +109,7 @@ public:
 	Object::ref value(void);
 
 	friend class LockedValueHolderRef;
+	friend class ValueHolder;
 };
 
 class ValueHolder {
@@ -132,6 +133,8 @@ public:
 		}
 		return total;
 	}
+
+	void clone(ValueHolderRef&) const;
 
 	void traverse_objects(HeapTraverser*) const;
 	friend class ValueHolderRef;
