@@ -160,18 +160,6 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
  call_current_closure:
   if(--reductions == 0) return process_running;
   // get current closure
-  // ??? when the Closure created by the closure bytecode is used here
-  // ??? dynamic_cast<Closure*> fails
-  // ??? in general, objects pushed on the stack lose their dynamic type 
-  // ??? information -- stefano
-  // !!! That's not good.  And that seems impossible, because as_a<Generic*>
-  // !!! returns a Generic* pointer, and the compiler should be able to
-  // !!! get the vtable from that.
-  // !!! SNAP was able to extract the dynamic type information from objects
-  // !!! pushed on the stack; we need to debug this.  Can you put a
-  // !!! complete test environment in test/executor/?  How is run_bytecodes
-  // !!! supposed to be launched?  run_bytecodes tests/t1.test gives "unknown
-  // !!! character at start of bytecode ;" -- almkglor
   Closure *pt = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]));
   if (pt==0){
     #ifdef DEBUG
