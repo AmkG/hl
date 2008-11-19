@@ -58,7 +58,7 @@ public:
 /*-----------------------------------------------------------------------------
 For process-level garbage collection
 -----------------------------------------------------------------------------*/
-	/*atomically check if status is process_status and it is not marked*/
+	/*atomically check if status is process_waiting and it is not marked*/
 	bool waiting_and_not_black(void) const;
 
 	/*adds the message M to this message*/
@@ -142,13 +142,7 @@ For process-level garbage collection
 
         ProcessStack stack;
 
-        // just for compilation
-        // THIS IS THE BUG!
-        // you must include the process stack in the root set
-        // otherwise, GC will *not* update the pointers and
-        // bad things will happen
-        // --- almkglor
-        virtual void scan_root_object(GenericTraverser* gt) {}
+	virtual void scan_root_object(GenericTraverser* gt);
 };
 
 #endif // PROCESSES_H
