@@ -191,7 +191,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     BYTECODE(apply_invert_k): {
       INTPARAM(N);
       Object::ref k = stack.top(); stack.pop();
-      stack.top(N-1) = k;
+      stack.top(N) = k;
       stack.restack(N);
       goto call_current_closure;
     } /***/ NEXT_BYTECODE; /***/

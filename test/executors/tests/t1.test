@@ -76,7 +76,7 @@
 
 ;^42$
 
-; *** This will fail: objects pushed on the stack lose their dynamic type information (why?) ***
+; ***
 
 (int 1)
 (lit-nil )
@@ -90,3 +90,15 @@
 (apply 1)
 
 ;^1$
+
+; *** apply-invert-k
+
+(lit-nil )
+(int 42)
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(apply-invert-k 2)
+
+;^42$
