@@ -222,31 +222,13 @@ Closures
 
 struct bytecode_t;
 
-/*closure structures shouldn't be
-modified after they are constructed
+/*Closure
 */
-/*I suggest merging Closure and KClosure into one class, because
-the broken heart system can't allow us to derive from a
-GenericDerivedVariadic<>-derived base class without some serious
-hacking.
-
-Multiple inheritance is not safe because we cannot specify the
-order in which base classes are put into the derived classes,
-meaning that our memory system might expect a Generic but get
-some other interface base.
-
-Alternatively change GenericDerivedVariadic<> to accept an
-optional second template parameter which defaults to
-Generic, and have GenericDerivedVariadic<> derive from that.
-However that will require making operator[] virtual, because
-KClosures are longer than Closures and the operator[] will
-have to take that into account.
-*/
-
 class Closure : public GenericDerivedVariadic<Closure> {
 private:
   bytecode_t* body;
   bool nonreusable;
+  bool kontinuation;
 public:
   Closure(size_t sz) : GenericDerivedVariadic<Closure>(sz), 
                        nonreusable(true) {}
@@ -257,6 +239,12 @@ public:
   bool reusable() { return !nonreusable; }
   static Closure* NewKClosure(Heap & h, bytecode_t *body, size_t n);
   static Closure* NewClosure(Heap & h, bytecode_t *body, size_t n);
+
+  void traverse_references(GenericTraverser *gt) {
+    for(size_t i = 0; i < sz; ++i) {
+      gt->traverse(index(i));
+    }
+  }
 };
 
 #endif //TYPES_H
