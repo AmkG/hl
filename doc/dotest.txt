@@ -1,0 +1,20 @@
+dotest.pl is a simple Perl script that takes 2 arguments:
+
+1) the test program ro tun
+2) the directory where to find the tests for the program
+
+the test directory is searched for files with the "test" extension. Each file 
+may contain one or more tests. A test file has the following structure:
+
+<input for the program>
+<it can span multiple lines>
+;<regex>
+
+; *** Whatever you like
+
+Everything before ;<regex> is put in a single file that is then passed to the 
+test program. The output is then matched with <regex> (a valid Perl regular 
+expression). If the match fails, the error is reported.
+To separate different tests in a single file, you have to use the separator
+line "; ***". Note that it must be placed at the start of the line, and that 
+the space must be there. After the third "*" the rest of the line is ignored.
