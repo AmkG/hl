@@ -1,14 +1,14 @@
 #include"all_defines.hpp"
 #include <stdlib.h> // for size_t
 #include <string>
-#ifdef DEBUG
-  #include <typeinfo>
-  #include <iostream>
-#endif
 #include "types.hpp"
 #include "executors.hpp"
 #include "bytecodes.hpp"
 
+#ifdef DEBUG
+  #include <typeinfo>
+  #include <iostream>
+#endif
 // map opcodes to bytecodes
 static std::map<Symbol*,_bytecode_label> bytetb;
 
@@ -175,7 +175,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
   Closure *pt = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]));
   if (pt==0){
     #ifdef DEBUG
-      std::type_info &inf = typeid(as_a<Generic*>(stack[0]));
+      std::type_info const &inf = typeid(as_a<Generic*>(stack[0]));
       std::cerr << "Type on stacktop: " << inf.name() << std::endl;
     #endif
       throw_HlError("execute: expected a closure!");
