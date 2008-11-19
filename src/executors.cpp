@@ -160,15 +160,16 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
  call_current_closure:
   if(--reductions == 0) return process_running;
   // get current closure
-  Closure *pt = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]));
-  if (pt==0){
-    #ifdef DEBUG
-      std::type_info const &inf = typeid(as_a<Generic*>(stack[0]));
-      std::cerr << "Type on stacktop: " << inf.name() << std::endl;
-    #endif
-      throw_HlError("execute: expected a closure!");
+#ifdef DEBUG
+  if (is_a<int>(stack[0]))
+    std::cerr << "Type on stacktop: int" << std::endl;
+  else {
+    std::type_info const &inf = typeid(as_a<Generic*>(stack[0]));
+    std::cerr << "Type on stacktop: " << inf.name() << std::endl;
   }
-  Closure & clos = *pt;
+#endif
+  Closure & clos = 
+    *expect_type<Closure>(stack[0], "execute: closure expected!");
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(apply): {
@@ -191,7 +192,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     BYTECODE(apply_invert_k): {
       INTPARAM(N);
       Object::ref k = stack.top(); stack.pop();
-      stack.top(N) = k;
+      stack.top(N-1) = k;
       stack.restack(N);
       goto call_current_closure;
     } /***/ NEXT_BYTECODE; /***/
