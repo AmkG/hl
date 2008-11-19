@@ -176,3 +176,26 @@
 (apply 2)
 
 ;^42$
+
+; *** halt-local-push
+
+(closure 0
+  (check-vars 4)
+  (halt-local-push 2))
+(int 1)
+(int 2)
+(int 3)
+(apply 4)
+
+;^2$
+
+; *** halt-clos-push
+
+(int 99)
+(int 98)
+(closure 2
+  (check-vars 1)
+  (halt-clos-push 1))
+(apply 1)
+
+;^98$
