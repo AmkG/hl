@@ -199,3 +199,17 @@
 (apply 1)
 
 ;^98$
+
+; *** k-closure
+
+(closure 0
+  (check-vars 3)
+  (continue-local 2))
+(k-closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(int 23)
+(apply 3)
+
+;^23$
