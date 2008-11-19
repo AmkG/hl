@@ -27,6 +27,9 @@ class AppCondVar;
 
 class AppMutex : boost::noncopyable {
 private:
+	#ifndef single_threaded
+		boost::scoped_ptr<Mutex> mp;
+	#endif
 	AppMutex(AppMutex const&)
 	#ifndef single_threaded
 		: mp()
