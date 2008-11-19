@@ -189,9 +189,14 @@ private:
 
 protected:
 	ValueHolderRef other_spaces;
-	virtual void scan_root_object(GenericTraverser*) =0;
 	void cheney_collection(Semispace*);
 	void GC(size_t);
+
+	/*required overload*/
+	/*This virtual function *must* be defined by any derived
+	class.  It should scan the root set of the heap.
+	*/
+	virtual void scan_root_object(GenericTraverser*) =0;
 
 public:
 	template<class T>
