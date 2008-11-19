@@ -358,6 +358,7 @@ execute:
 	case process_waiting:
 	case process_dead:
 		R = 0; // clear
+		break;
 	case process_change:
 		parent->workqueue_push(R);
 		R = Q;
