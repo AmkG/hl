@@ -195,10 +195,10 @@ extern inline Object::ref cdr(Object::ref x) {
 	if(!x) return x;
 	return expect_type<Cons>(x,"'cdr expects a Cons cell")->cdr();
 }
-static inline Object::ref scar(Object::ref c, Object::ref v) {
+extern inline Object::ref scar(Object::ref c, Object::ref v) {
 	return expect_type<Cons>(c,"'scar expects a true Cons cell")->scar(v);
 }
-static inline Object::ref scdr(Object::ref c, Object::ref v) {
+extern inline Object::ref scdr(Object::ref c, Object::ref v) {
 	return expect_type<Cons>(c,"'scdr expects a true Cons cell")->scdr(v);
 }
 

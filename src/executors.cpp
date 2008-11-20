@@ -114,6 +114,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       ("car-local-push",	THE_BYTECODE_LABEL(car_local_push))
       ("car-clos-push",	THE_BYTECODE_LABEL(car_clos_push))
       ("cdr",			THE_BYTECODE_LABEL(cdr))
+      ("scdr",                  THE_BYTECODE_LABEL(scdr))
       ("cdr-local-push",	THE_BYTECODE_LABEL(cdr_local_push))
       ("cdr-clos-push",	THE_BYTECODE_LABEL(cdr_clos_push))
       ("check-vars",		THE_BYTECODE_LABEL(check_vars))
@@ -235,7 +236,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       bytecode_<&car>(stack);
     } NEXT_BYTECODE;
     BYTECODE(scar): {
-      bytecode_scar(stack);
+      bytecode2_<&scar>(stack);
     } NEXT_BYTECODE;
     BYTECODE(car_local_push): {
       INTPARAM(N);
@@ -247,6 +248,9 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     } NEXT_BYTECODE;
     BYTECODE(cdr): {
       bytecode_cdr(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(scdr): {
+      bytecode2_<&scdr>(stack);
     } NEXT_BYTECODE;
     BYTECODE(cdr_local_push): {
       INTPARAM(N);

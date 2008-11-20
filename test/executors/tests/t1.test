@@ -278,3 +278,29 @@
 (ccc )
 
 ;^12$
+
+; *** scar
+
+(int 1)
+(lit-t )
+(cons )
+(local 1)
+(int 2)
+(scar )
+(car-local-push 1)
+(halt )
+
+;^2$
+
+; *** scdr
+
+(int 1)
+(lit-t )
+(cons )
+(local 1)
+(int 2)
+(scdr )
+(cdr-local-push 1)
+(halt )
+
+;^2$
