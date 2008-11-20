@@ -394,6 +394,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(k_closure_recreate): {
+      // !! currently meaningless !!
       // attempt_kclos_dealloc(proc, stack[0]);
       /*put a random object in stack[0]*/
       stack[0] = stack[1];
@@ -419,6 +420,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         nclos->codereset(S);
       }
       for(int i = N; i ; --i){
+        // !! closure size may be different !!
         (*nclos)[i - 1] = stack.top();
         stack.pop();
       }

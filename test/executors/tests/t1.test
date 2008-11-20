@@ -213,3 +213,41 @@
 (apply 3)
 
 ;^23$
+
+; *** k-closure-recreate
+
+(k-closure 0
+  (check-vars 2)
+  (int 23)
+  (continue ))
+(k-closure-recreate 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(apply 2)
+
+;^23$
+
+; *** k-closure-reuse
+
+(k-closure-reuse 0
+  (int 42)
+  (halt ))
+(continue )
+
+;^42$
+
+; *** variadic
+
+(closure 0
+  (variadic 2)
+  (car-local-push 2)
+  (halt ))
+(int 1)
+(int 2)
+(int 3)
+(int 4)
+(int 5)
+(apply 6)
+
+;^2$
