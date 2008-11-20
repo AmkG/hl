@@ -67,6 +67,12 @@ inline void bytecode_car(ProcessStack & stack) {
   stack.top() = car(stack.top());
 }
 
+inline void bytecode_scar(ProcessStack & stack) {
+  Object::ref val = stack.top(); stack.pop();
+  Object::ref c = stack.top(); stack.pop();
+  stack.push(scar(c, val));
+}
+
 inline void bytecode_cdr(ProcessStack & stack) {
   stack.top() = cdr(stack.top());
 }

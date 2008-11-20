@@ -110,6 +110,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       ("apply-k-release",	THE_BYTECODE_LABEL(apply_k_release))
       ("apply-list",		THE_BYTECODE_LABEL(apply_list))
       ("car",			THE_BYTECODE_LABEL(car))
+      ("scar",                  THE_BYTECODE_LABEL(scar))
       ("car-local-push",	THE_BYTECODE_LABEL(car_local_push))
       ("car-clos-push",	THE_BYTECODE_LABEL(car_clos_push))
       ("cdr",			THE_BYTECODE_LABEL(cdr))
@@ -134,6 +135,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       ("k-closure",		THE_BYTECODE_LABEL(k_closure))
       ("k-closure-recreate",	THE_BYTECODE_LABEL(k_closure_recreate))
       ("k-closure-reuse",	THE_BYTECODE_LABEL(k_closure_reuse))
+      ("ccc", THE_BYTECODE_LABEL(ccc))
       ("lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("lit-t",		THE_BYTECODE_LABEL(lit_t))
       ("local",		THE_BYTECODE_LABEL(local))
@@ -231,6 +233,9 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         system.
       */
       bytecode_<&car>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(scar): {
+      bytecode_scar(stack);
     } NEXT_BYTECODE;
     BYTECODE(car_local_push): {
       INTPARAM(N);
@@ -425,6 +430,18 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         stack.pop();
       }
       stack.push(Object::to_ref(nclos));
+    } NEXT_BYTECODE;
+    BYTECODE(ccc): {
+      // expect current continuation and function on the stack
+      Closure *k = expect_type<Closure>(stack[1], "ccc expects a continuation");
+      Closure *f = expect_type<Closure>(stack[2], "ccc expects a closure");
+      k->banreuse(); // continuation can't be reused
+      // now call f
+      stack[0] = Object::to_ref(f);
+      // stack[1] already holds current continuation
+      stack[2] = Object::to_ref(k);
+      stack.restack(3); // f + continuation + continuation
+      goto call_current_closure; // do the call
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
       bytecode_lit_nil(proc, stack);
