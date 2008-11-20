@@ -77,6 +77,8 @@ continuation closure
 //	hp.lifo().normal_dealloc(gp);
 //}
 
+#define SETCLOS(name) name = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]))
+
 ProcessStatus execute(Process& proc, size_t reductions, bool init){
   /*REMINDER
     All allocations of Generic objects on the
@@ -168,8 +170,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     std::cerr << "Type on stacktop: " << inf.name() << std::endl;
   }
 #endif
-  Closure & clos = 
-    *expect_type<Closure>(stack[0], "execute: closure expected!");
+  Closure *clos = expect_type<Closure>(stack[0], "execute: closure expected!");
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(apply): {
@@ -237,7 +238,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     } NEXT_BYTECODE;
     BYTECODE(car_clos_push): {
       INTPARAM(N);
-      bytecode_clos_push_<&car>(stack, clos, N);
+      bytecode_clos_push_<&car>(stack, *clos, N);
     } NEXT_BYTECODE;
     BYTECODE(cdr): {
       bytecode_cdr(stack);
@@ -248,7 +249,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     } NEXT_BYTECODE;
     BYTECODE(cdr_clos_push): {
       INTPARAM(N);
-      bytecode_clos_push_<&cdr>(stack, clos, N);
+      bytecode_clos_push_<&cdr>(stack, *clos, N);
     } NEXT_BYTECODE;
     BYTECODE(check_vars): {
       INTPARAM(N);
@@ -257,6 +258,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     BYTECODE(closure): {
       INTSEQPARAM(N,S);
       Closure* nclos = Closure::NewClosure(proc, S, N);
+      SETCLOS(clos); // allocation may invalidate clos
       for(int i = N; i ; --i){
         (*nclos)[i - 1] = stack.top();
         stack.pop();
@@ -265,7 +267,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     } NEXT_BYTECODE;
     BYTECODE(closure_ref): {
       INTPARAM(N);
-      bytecode_closure_ref(stack, clos, N);
+      bytecode_closure_ref(stack, *clos, N);
     } NEXT_BYTECODE;
     //    BYTECODE(composeo): {
       /*destructure closure*/
@@ -289,6 +291,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     //} NEXT_BYTECODE;
     BYTECODE(cons): {
       bytecode_cons(proc,stack);
+      SETCLOS(clos);
     } NEXT_BYTECODE;
     /*
       implements the common case
@@ -322,7 +325,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     BYTECODE(continue_on_clos): {
       INTPARAM(N);
       Object::ref gp = stack.top();
-      stack.top() = clos[N];
+      stack.top() = (*clos)[N];
       stack.push(gp);
       //attempt_kclos_dealloc(proc, stack[0]);
       stack.restack(2);
@@ -348,7 +351,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     } NEXT_BYTECODE;
     BYTECODE(halt_clos_push): {
       INTPARAM(N);
-      stack.push(clos[N]);
+      stack.push((*clos)[N]);
       stack.restack(1);
       return process_dead;
     } NEXT_BYTECODE;
@@ -383,6 +386,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     k_closure_perform_create:
       INTSEQPARAM(N,S);
       Closure *nclos = Closure::NewKClosure(proc, S, N);
+      SETCLOS(clos);
       for(int i = N; i ; --i){
         (*nclos)[i - 1] = stack.top();
         stack.pop();
@@ -408,8 +412,9 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       Closure *nclos = expect_type<Closure>(stack[0], "Closure expected!");
       if(!nclos->reusable()) {
         // Use the size of the current closure
-        nclos = Closure::NewKClosure(proc, S, clos.size());
+        nclos = Closure::NewKClosure(proc, S, clos->size());
         //clos is now invalid
+        SETCLOS(clos);
       } else {
         nclos->codereset(S);
       }
@@ -609,6 +614,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     BYTECODE(variadic): {
       INTPARAM(N);
       bytecode_variadic(proc, stack, N);
+      SETCLOS(clos);
     } NEXT_BYTECODE;
   }
 }
