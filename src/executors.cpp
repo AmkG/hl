@@ -403,7 +403,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(k_closure_recreate): {
-      // !! currently meaningless !!
+      // !! currently meaningless !! -- stefano
+      // ?? hmm.  will need to add lifo_dealloc() to Heap class ?? -- almkglor
       // attempt_kclos_dealloc(proc, stack[0]);
       /*put a random object in stack[0]*/
       stack[0] = stack[1];
@@ -429,7 +430,19 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         nclos->codereset(S);
       }
       for(int i = N; i ; --i){
-        // !! closure size may be different !!
+        // !! closure size may be different !! -- stefano
+        // ?? It's OK: the compiler will not generate
+        // ?? this bytecode at all if the current closure
+        // ?? is known to be smaller.  Basically there's a
+        // ?? decision in the compiler's bytecode generator
+        // ?? which chooses between k-closure-reuse and
+        // ?? k-closure-recreate.  k-closure-reuse is emitted
+        // ?? if the current closure is larger or equal size;
+        // ?? k-closure-recreate is emitted if the current
+        // ?? closure is smaller.  cref:
+        // ?? snap/arc2b/bytecodegen.arc:156 -- almkglor
+        // ?? Note2: probably we should insert some sort
+        // ?? of checking in DEBUG mode -- almkglor
         (*nclos)[i - 1] = stack.top();
         stack.pop();
       }
@@ -444,7 +457,9 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       stack[0] = Object::to_ref(f);
       // stack[1] already holds current continuation
       stack[2] = Object::to_ref(k);
-      stack.restack(3); // f + continuation + continuation
+      // ?? unnecessary - recommend removing this since
+      // ?? call is now set up -- almkglor
+      //stack.restack(3); // f + continuation + continuation
       goto call_current_closure; // do the call
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
