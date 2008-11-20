@@ -33,6 +33,12 @@ public:
     /*Not exactly the best way to do it?*/
     if(sz != 0) erase(begin(), begin() + off);
   }
+
+  Object::ref& operator[](size_t pos) {
+    if (pos >= size())
+      throw_HlError("internal: stack overflow in []");
+    return (*static_cast<std::vector<Object::ref>*>(this))[pos];
+  }
 };
 
 enum ProcessStatus {

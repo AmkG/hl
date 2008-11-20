@@ -76,7 +76,7 @@
 
 ;^42$
 
-; *** This will fail: objects pushed on the stack lose their dynamic type information (why?) ***
+; ***
 
 (int 1)
 (lit-nil )
@@ -90,3 +90,217 @@
 (apply 1)
 
 ;^1$
+
+; *** apply-invert-k
+
+(closure 0
+  (check-vars 3)
+  (local 1)
+  (local 2)
+  (apply 2))
+(lit-nil )
+(int 42)
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(apply-invert-k 3)
+
+;^42$
+
+; *** apply-list
+
+(closure 0
+  (check-vars 5)
+  (local 1)
+  (local 3)
+  (apply 2))
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(int 1)
+(int 2)
+(int 3)
+(lit-nil )
+(cons )
+(cons )
+(cons )
+(apply-list )
+
+;^2$
+
+; *** continue
+
+(closure 0
+  (check-vars 3)
+  (car-local-push 2)
+  (continue ))
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(int 42)
+(lit-nil )
+(cons )
+(apply 3)
+
+;^42$
+
+; *** continue-local
+
+(closure 0
+  (check-vars 4)
+  (continue-local 3))
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(int 19)
+(int 42)
+(apply 4)
+
+;^42$
+
+; *** continue-on-clos
+
+(closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(closure 1
+  (check-vars 2)
+  (local 1)
+  (continue-on-clos 0))
+(int 42)
+(apply 2)
+
+;^42$
+
+; *** halt-local-push
+
+(closure 0
+  (check-vars 4)
+  (halt-local-push 2))
+(int 1)
+(int 2)
+(int 3)
+(apply 4)
+
+;^2$
+
+; *** halt-clos-push
+
+(int 99)
+(int 98)
+(closure 2
+  (check-vars 1)
+  (halt-clos-push 1))
+(apply 1)
+
+;^98$
+
+; *** k-closure
+
+(closure 0
+  (check-vars 3)
+  (continue-local 2))
+(k-closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(int 23)
+(apply 3)
+
+;^23$
+
+; *** k-closure-recreate
+
+(k-closure 0
+  (check-vars 2)
+  (int 23)
+  (continue ))
+(k-closure-recreate 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(apply 2)
+
+;^23$
+
+; *** k-closure-reuse
+
+(k-closure-reuse 0
+  (int 42)
+  (halt ))
+(continue )
+
+;^42$
+
+; *** variadic
+
+(closure 0
+  (variadic 2)
+  (car-local-push 2)
+  (halt ))
+(int 1)
+(int 2)
+(int 3)
+(int 4)
+(int 5)
+(apply 6)
+
+;^2$
+
+; *** ccc
+
+(k-closure 0
+  (local 1)
+  (halt ))
+(closure 0
+  (check-vars 3)
+  (int 23)
+  (continue ))
+(ccc )
+
+;^23$
+
+; *** ccc with call to cc
+
+(k-closure-reuse 0
+  (local 1)
+  (halt ))
+(closure 0
+  (check-vars 3)
+  (local 2)
+  (int 12)
+  (apply 2))
+(ccc )
+
+;^12$
+
+; *** scar
+
+(int 1)
+(lit-t )
+(cons )
+(local 1)
+(int 2)
+(scar )
+(car-local-push 1)
+(halt )
+
+;^2$
+
+; *** scdr
+
+(int 1)
+(lit-t )
+(cons )
+(local 1)
+(int 2)
+(scdr )
+(cdr-local-push 1)
+(halt )
+
+;^2$

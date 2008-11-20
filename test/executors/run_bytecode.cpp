@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
   Process p;
   execute(p, 128, 1); // init phase
   assemble(program, to_run);
-  p.stack.push(Object::to_ref(Closure::NewClosure(p, to_run, 0))); // entry point
+  p.stack.push(Object::to_ref(Closure::NewKClosure(p, to_run, 0))); // entry point
   execute(p, 128); // run!
 
   cout << p.stack.top() << endl;

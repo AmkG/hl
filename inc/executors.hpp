@@ -99,7 +99,7 @@ END_DECLARE_BYTECODES
 
 typedef void* _bytecode_label;
 #define DISPATCH_BYTECODES \
-        bytecode_t *pc = clos.code();\
+        bytecode_t *pc = clos->code();\
 	goto *(pc->op);
 #define NEXT_BYTECODE goto *((++pc)->op)
 #define BYTECODE(x) PASTE_SYMBOLS(label_b_, x)
@@ -111,7 +111,7 @@ typedef void* _bytecode_label;
 
 typedef enum _e_bytecode_label _bytecode_label;
 #define DISPATCH_BYTECODES \
-	bytecode_t *pc = clos.code();\
+	bytecode_t *pc = clos->code();\
 	switch(pc->op)
 #define NEXT_BYTECODE {pc++; continue;}
 #define BYTECODE(x) case BYTECODE_ENUM(x)
