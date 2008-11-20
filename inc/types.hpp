@@ -150,6 +150,14 @@ static inline T* expect_type(Object::ref x, char const* error) {
 	return tmp;
 }
 
+/*Usage:
+// your mom knows it's a Cons on top
+Cons* cp = known_type<Cons>(proc.stack().top());
+*/
+template<class T>
+static inline T* known_type(Object::ref x) {
+	return static_cast<T*>(as_a<Generic*>(x));
+}
 
 /*
  * Cons cell
