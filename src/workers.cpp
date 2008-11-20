@@ -139,6 +139,48 @@ retry:
 	return 1;
 }
 
+/*
+ * Initiate
+ */
+
+class WorkerThreadCollection : boost::noncopyable {
+private:
+	std::vector<Thread<Worker>*> ws;
+public:
+	void launch(Worker const&) {
+		ws.push_back(new Thread<Worker>);
+	}
+	~WorkerThreadCollection() {
+		for(size_t i = 0; i < ws.size(); ++i) {
+			ws[i]->join();
+			delete ws[i];
+		}
+	}
+};
+
+void AllWorkers::initiate(size_t nworkers) {
+	#ifndef single_threaded
+		WorkerThreadCollection wtc;
+	#endif
+	Worker W;
+	#ifndef single_threaded
+		for(size_t i = 1; i < nworkers; ++i) {
+			wtc.launch(W);
+		}
+	#endif
+	W();
+}
+
+/*
+ * constructor/destructor
+ */
+
+AllWorkers::AllWorkers(void) {
+}
+
+AllWorkers::~AllWorkers() {
+}
+
 /*-----------------------------------------------------------------------------
 Worker
 -----------------------------------------------------------------------------*/
@@ -301,6 +343,23 @@ void Worker::mark_process(Process* P) {
 	*/
 	P->blacken();
 }
+
+/*
+ * Scans symbols for references to processes
+ */
+
+class SymbolScanner : boost::noncopyable {
+/*TODO*/
+};
+
+/*
+ * Scan symbols' notification lists for processes that
+ * are about to be deleted.
+ */
+
+class SymbolNotificationCleaner : boost::noncopyable {
+/*TODO*/
+};
 
 /*
  * Actual work
