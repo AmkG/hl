@@ -1,0 +1,345 @@
+The VM is a combined stack/register machine.
+The stack "registers" are numbered from 0 upwards.
+So if the stack is empty, a push operation on the stack
+creates a new register, stack[0].  A pop operation on
+the stack deletes the highest-numbered register.
+
+For example, assuming the stack is empty:
+	(stack!push 1)   ; now stack[0] = 1
+	(stack!push 's)  ; now stack[1] = 's
+	(stack!pop)      ; stack[1] is now invalid
+
+The calling convention has stack[0] as the closure of
+the function to call.  stack[0] may be a non-closure
+whose type has an entry in the global 'call* table,
+in which case a specific transformation on the stack
+is done.  The calling convention has stack[1] as the
+continuation of the function.  Succeeding entries
+are parameters to the function.
+
+For a function that *is* a continuation, however,
+stack[1] is the return value.
+
+Bytecodes have 5 forms:
+bytecode
+	; these bytecodes have no parameters other than
+	; the stack.
+
+(bytecode N)
+	; these bytecodes have a single integer parameter
+	; this usually refers to a stack[N], except for
+	; the cases which don't ^^
+
+(bytecode . seq)
+	; these bytecodes have another bytecode sequence as
+	; a parameter.  For example:
+	; (if  (local 3) continue)
+
+(bytecode N . seq)
+	; these bytecodes have a single integer parameter
+	; and another bytecode sequence
+
+(bytecode 'S)
+(bytecode (quote S))
+	; these bytecodes have a single symbol parameter
+
+
+Bytecodes:
+
+(apply N)
+	(let (fn . params)
+	     (rev:map [stack!pop] (range 1 N))
+	  (apply fn params))
+	; calls the function or other applicable object
+	; with the specified number of parameters, minus
+	; 1 (i.e. the function itself is counted among
+	; the parameters)
+
+(apply-invert-k N)
+	(withs (k             (stack!pop)
+	        (fn . params) (rev:map [stack!pop] (range 1 N)))
+	  (apply fn k (cdr params)))
+	; calls the function or other applicable object
+	; with the specified number of parameters, minus
+	; 1.  However, the first parameter 'k is really
+	; on the top of the stack; its position in the
+	; stack call is filled with dummy data, which
+	; this bytecode will replace with the stack top.
+	;
+	; Basically the expected stack top for a function
+	; taking two parameters is:
+	;   {f <dummy> p1 p2 k}
+	;
+	; This bytecode is used when compiling a
+	; continuation that reuses its closure structure;
+	; the continuation cannot be modified before the
+	; other parameters are calculated, so the real
+	; continuation must be pushed after the parameters
+
+(apply-k-release N)
+	(let (fn . params)
+	     (rev:map [stack!pop] (range 1 N))
+	  (try-free stack.0)
+	  (apply fn params))
+	; similar to apply, but attempts to free the current
+	; closure if it's a reusable continuation closure.
+
+apply-list
+	(withs (l (stack!pop)
+	        k (stack!pop)
+	        f (stack!pop))
+	  (apply f k l))
+	; calls the function with a list of parameters
+
+car
+	(= stack!top (car stack!top))
+
+(car-local-push N)
+	(stack!push (car stack.N))
+
+(car-clos-push N)
+	(stack!push (car (stack.0 N)))
+
+cdr
+	(= stack!top (cdr stack!top))
+
+(cdr-local-push N)
+	(stack!push (cdr stack.N))
+
+(cdr-clos-push N)
+	(stack!push (cdr (stack.0 N)))
+
+(check-vars N)
+	(if (isnt (len stack) N)
+	  (err:annotate 'apply "Incorrect number of parameters"))
+	; intended to be used at the start of a function
+	; sequence that accepts a specific number of
+	; arguments.
+
+(closure N . seq)
+	(let params (rev:map [stack!pop] (range 1 N))
+	  (stack!push (create-closure (compile-seq seq) params)))
+	; creates a function object whose bytecode sequence
+	; is seq, and encloses the top N entries of the stack
+	; The closure's enclosed variables are 0-indexed.
+	;
+	; For example the sequence: a b c (closure 3 ...)
+	; will have a accessible via (closure-ref 0), b via
+	; (closure-ref 1), and c via (closure-ref 2)
+	; a b and c are popped from the stack
+
+(closure-ref N)
+	(stack!push (stack.0 N))
+
+composeo
+	(withs (clos stack.0
+	        f    clos.0
+	        g    clos.1
+	        ps   (map stack (range 2 (len stack))))
+	  (apply g (fn (r) (f stack.1 r))
+	    ps))
+	; similar to reducto, this bytecode implements higher-order
+	; functions
+
+cons
+	(withs (d (stack!pop)
+	        a (stack!pop))
+	  (stack!push (cons a d)))
+	; to use: a d cons
+
+continue
+	(stack.1 stack!top)
+	; the intent is to call or return to the continuation
+	; function (normally at stack[1]) with the stack top
+
+(continue-local N)
+	(stack.1 stack.N)
+	; the intent is to call the continuation function
+	; (normally at stack[1]) with the specified local
+	; variable
+
+(continue-on-clos N)
+	((stack.0 N) stack!top)
+	; the intent is that for a nested continuation to
+	; finally continue to the enclosed continuation
+	; (i.e. for a 'do form to finally continue)
+	;
+	; NOTE.  This bytecode will attempt to free the
+	; current closure if it is a reusable continuation
+	; closure.
+
+(global 'S)
+	(eval S)
+	; gets the value of the global variable
+
+(global-set 'S)
+	(eval `(set ,S ',stack!top))
+	; sets the value of the global variable
+	; does not pop
+	; guaranteed to be slow in SNAP
+
+halt
+	(thread-exit stack!top)
+
+(halt-local-push N)
+	(thread-exit stack.N)
+	; called "push" simply to match names of other bytecode
+	; variants; obviously doesn't push because thread exits
+
+(halt-clos-push N)
+	(thread-exit (stack.0 N))
+	; similar
+
+(if . seq)
+	(if (stack!pop)
+	  (goto (compile-seq seq)))
+	; transfers control to the sequence if the popped
+	; stack top is not nil.  The sequence will be
+	; followed completely if the branch is entered.
+	; If the branch is not entered, this bytecode
+	; just pops the stack top and continues to the
+	; next bytecode in sequence.
+
+(if-local N . seq)
+	(if stack.N
+	  (goto (compile-seq seq)))
+	; transfers control to the sequence if the
+	; specified local is not nil.
+
+(int N)
+	(stack!push (coerce N 'int))
+
+(k-closure N . seq)
+	(let params (rev:map [stack!pop] (range 1 N))
+          (stack!push (create-k-closure (compile-seq seq) params)))
+	; creates a closure object that is identified as a
+	; potentially reusable continuation closure;
+	; otherwise similar to closure
+
+(k-closure-recreate N . seq)
+	; highly similar to k-closure above, except that if the
+	; current closure (stack[0]) is itself a continuation closure
+	; that is still reusable, it will be freed before a new
+	; k-closure is created.
+	(let params (rev:map [stack!pop] (range 1 N))
+	  (= stack.0 nil) ; current closure is potentially freed!
+          (stack!push (create-k-closure (compile-seq seq) params)))
+
+(k-closure-reuse N . seq)
+	(let params (rev:map [stack!pop] (range 1N))
+          (stack!push
+	    (let clos stack.0
+	      (if clos!reusable
+	          (do (on p params (= clos.index p))
+	              (= clos!code (compile-seq seq))
+	              clos)
+	          (create-k-closure (compile-seq-seq) params)))))
+	; reuses the current closure if it is marked
+	; reusable; otherwise same as k-closure
+
+(local N)
+	(stack!push stack.N)
+
+reducto
+	; the most complex single bytecode in SNAP
+	; this bytecode is used to implement variadic
+	; functions that just apply a certain function
+	; on pairs of its parameters and an accumulator
+	; e.g. (+ a b c d)
+	;   => (<base>+ (<base>+ (<base>+ a b) c) d)
+	; this bytecode expects a particular closure
+	; with 3 elements: clos[0] is a thunk that
+	; accepts no parameters (in this case it
+	; accepts a continuation), clos[1] is a
+	; function that accepts a single parameter,
+	; clos[2] is the function used to traverse
+	; multiple parameters
+	(with (clos stack.0
+	       L    (len stack))
+	  (if
+	    (is L 2)
+	      (clos.0 stack.1)
+	    (is L 3)
+	      (clos.1 stack.1 stack.2)
+	    (is L 4)
+	      (clos.2 stack.1 stack.2 stack.3)
+	    ; else
+	      (let I 3
+	        (clos.2
+	          (afn (a)
+	            (++ I)
+	            (if (is (+ I 1) L)
+	                (clos.2 stack.1 a stack.I)
+	                (clos.2 self a stack.I)))
+	          stack.2 stack.3))))
+	; please see more detailed description
+
+rep
+	(= stack!top (type stack!top))
+
+(rep-local-push N)
+	(stack!push (rep stack.N))
+
+(rep-clos-push)
+	(stack!push (rep (stack.0 N)))
+
+sv
+	(= stack!top (%sharedvar stack!top))
+	; shared variables are singleton containers
+	; used to implement mutated local variables
+
+(sv-local-push N)
+	(stack!push (%sharedvar stack.N))
+
+(sv-clos-push)
+	(stack!push (%sharedvar (stack.0 N)))
+
+sv-ref
+	(= stack!top (%sharedvar-read stack!top))
+
+(sv-ref-local-push N)
+	(stack!push (%sharedvar-read stack.N))
+
+(sv-ref-clos-push N)
+	(stack!push (%sharedvar-read (stack.0 N)))
+
+sv-set
+	(withs (val (stack!pop)
+	        sv  (stack!pop))
+	  (%sharedvar-write sv val)
+	  (stack!push val))
+
+(sym 'S)
+	(stack!push (sym S))
+
+symeval
+	(= stack!top (symeval stack!top))
+
+tag
+	(givens R (stack!pop)
+	        T (stack!pop)
+	  (stack!push (annotate T R)))
+
+type
+	(= stack!top (type stack!top))
+
+(type-local-push N)
+	(stack!push (type stack.N))
+
+(type-clos-push)
+	(stack!push (type (stack.0 N)))
+
+(variadic N)
+	(let n (len stack)
+	  (stack!push nil)
+	  (while (> n N)
+	    ; equivalent to bytecode cons
+	    (withs (d (stack!pop)
+	            a (stack!pop))
+	      (stack!push (cons a d)))
+	    (zap - n 1))
+	  (if (isnt n N)
+	    (err:annotate 'apply "Insufficient number of parameters to variadic function")))
+	; intent is to create a list from a variadic
+	; number of parameters
+

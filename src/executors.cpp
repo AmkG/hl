@@ -462,7 +462,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       implement the common reduction functions,
       such as '+.  This bytecode avoids
       allocating new space when called with 2
-      Arc arguments or less, and only allocates
+      arguments or less, and only allocates
       a reusable continuation closure that is
       used an array otherwise
       See also the executor reducto_continuation.
