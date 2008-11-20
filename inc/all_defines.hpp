@@ -7,22 +7,16 @@ and should only be included once
 
 #include<boost/scoped_ptr.hpp>
 
-/*
-One source file, probably the main source file, should
-define "DEFINE_GLOBALS" in order to actually instantiate
-the global variables
-*/
 #ifndef DEFINE_GLOBALS
-#define EXTERN extern
-#else
-#define EXTERN
-#endif
 
 class SymbolsTable;
 
-EXTERN boost::scoped_ptr<SymbolsTable> symbols;
+extern boost::scoped_ptr<SymbolsTable> symbols;
 
 #ifndef single_threaded
-	EXTERN bool single_threaded;
+	extern bool single_threaded;
 #endif
+
+#endif
+
 
