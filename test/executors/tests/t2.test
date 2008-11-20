@@ -1,0 +1,25 @@
+(k-closure 0
+  (check-vars 2)
+  (cdr-local-push 1)
+  (halt ))
+(closure 0
+  (check-vars 3)
+  (continue-local 2))
+(closure 0
+  (check-vars 4)
+  (local 2)
+  (local 3)
+  (cons )
+  (continue ))
+(closure 3
+  (reducto ))
+(k-closure 0
+  (check-vars 2)
+  (local 1)
+  (halt ))
+(int 1)
+(int 2)
+(int 3)
+(apply 5)
+
+;^3$
