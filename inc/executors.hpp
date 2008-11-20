@@ -74,6 +74,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(lit_t)
 	A_BYTECODE(local)
 	A_BYTECODE(reducto)
+        A_BYTECODE(reducto_continuation)
 	A_BYTECODE(rep)
 	A_BYTECODE(rep_local_push)
 	A_BYTECODE(rep_clos_push)

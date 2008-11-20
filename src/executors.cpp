@@ -1,6 +1,7 @@
 #include"all_defines.hpp"
 #include <stdlib.h> // for size_t
 #include <string>
+#include <sstream>
 #include "types.hpp"
 #include "executors.hpp"
 #include "bytecodes.hpp"
@@ -94,6 +95,13 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     are both potentially allocating)
   */
 
+  /*
+   * this will hold a fixed bytecode sequence that will be used
+   * as the reducto continuation
+   */
+  static bytecode_t *reducto_cont_bytecode;
+
+
   ProcessStack & stack = proc.stack;
   if (init) {
     /*So why isn't this, say, a separate function?  Well,
@@ -141,6 +149,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       ("lit-t",		THE_BYTECODE_LABEL(lit_t))
       ("local",		THE_BYTECODE_LABEL(local))
       ("reducto",		THE_BYTECODE_LABEL(reducto))
+      ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
 //       ("rep",			THE_BYTECODE_LABEL(rep))
 //       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
 //       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
@@ -159,6 +168,13 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       ("variadic",		THE_BYTECODE_LABEL(variadic))
       /*assign bultin global*/
       ;/*end initializer*/
+
+    /// build and assemble reducto_cont_bytecode
+    std::stringstream red_cont("(reducto-continuation ) (continue )");
+    BytecodeSeq red_seq;
+    while (!red_cont.eof())
+      red_cont >> red_seq;
+    assemble(red_seq, reducto_cont_bytecode);
     return process_running;
   }
   // main VM loop
@@ -478,104 +494,88 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         (theoretically possible in a buggy
         bytecode sequence, for example)
       */
-//       if(stack.size() < 2){
-//         throw_HlError("apply: Insufficient number of parameters to variadic function");
-//       }
-//       size_t params = stack.size() - 2;
-//       if(params < 3){
-//         /*simple and quick dispatch
-//           for common case
-//         */
-//         stack[0] = clos[params];
-//         /*don't disturb the other
-//           parameters; the point is
-//           to be efficient for the
-//           common case
-//         */
-//       } else {
-//         stack[0] = clos[2]; // f2
-//         size_t saved_params =
-//           params - 2;
-//         KClosure & kclos = *KClosure::NewKClosure(proc, THE_BYTECODE_LABEL(reducto_continuation), saved_params + 3);
-//         // clos is now invalid
-//         kclos[0] = stack[0]; // f2
-//         kclos[1] = stack[1];
-//         /*** placeholder ***/
-//         kclos[2] = stack[1];
-//         for(size_t i = saved_params + 3; i > 3; --i) {
-//           kclos[i - 1] =
-//             stack.top();
-//           stack.pop();
-//         }
-//         /*save closure*/
-//         stack[1] = &kclos;
-//         Integer* Np = proc.create<Integer>(3);
-//         // kclos is now invalid
-//         KClosure& kkclos = *static_cast<KClosure*>(stack[1]);
-//         kkclos[2] = Np;
-//       }
+      if(stack.size() < 2){
+        throw_HlError("apply: Insufficient number of parameters to variadic function");
+      }
+      size_t params = stack.size() - 2;
+      if(params < 3){
+        /*simple and quick dispatch
+          for common case
+        */
+        stack[0] = (*clos)[params];
+        /*don't disturb the other
+          parameters; the point is
+          to be efficient for the
+          common case
+        */
+      } else {
+        stack[0] = (*clos)[2]; // f2
+        size_t saved_params = params - 2;
+        Closure & kclos = *Closure::NewKClosure(proc, reducto_cont_bytecode, 
+                                                saved_params + 3);
+        // clos is now invalid
+        kclos[0] = stack[0]; // f2
+        kclos[1] = stack[1];
+        /*** placeholder ***/
+        kclos[2] = stack[1];
+        for(size_t i = saved_params + 3; i > 3; --i) {
+          kclos[i - 1] = stack.top(); stack.pop();
+        }
+        /*save closure*/
+        stack[1] = Object::to_ref(&kclos);
+        kclos[2] = Object::from_a_scaled_int(3);
+      }
+      goto call_current_closure;
     } NEXT_BYTECODE;
     BYTECODE(reducto_continuation): {
-//       Integer* Np = static_cast<Integer*>(clos[2]);
-//       int N = Np->val;
-//       int NN = N + 1; // next N
-//       stack.push(clos[0]);
-//       if(NN == clos.size()){
-//         // final iteration
-//         stack.push(clos[1]);
-//         stack.push(stack[1]);
-//         stack.push(clos[N]);
-//         attempt_kclos_dealloc(proc, stack[0]);
-//         //clos is now invalid
-//         stack.restack(4);
-//       } else {
-//         /*dynamic_cast because it is possible for
-//           the program to reconstruct a continuation
-//           using an ordinary, non-continuation
-//           Closure
-//         */
-//         KClosure* pkclos =
-//           dynamic_cast<KClosure*>(&clos);
-//         if(pkclos && pkclos->reusable()){
-//           // a reusable continuation
-//           Np->val++; // Np is also reusable
-//           stack.push(pkclos);
-//           stack.push(stack[1]);
-//           stack.push(clos[N]);
-//           stack.restack(4);
-//         } else {
-//           /*TODO: instead create a closure
-//             with only a reference to this
-//             closure and an index number, to
-//             reduce memory allocation.
-//           */
-//           KClosure& nclos =
-//             *NewKClosure(proc, THE_BYTECODE_LABEL(reducto_continuation),
-//                          // save only necessary
-//                          clos.size() - NN + 3);
-//           // Np, pkclos and clos are now invalid
-//           Closure & clos = *static_cast<Closure*>(stack[0]); //revalidate clos
-//           nclos[0] = clos[0];
-//           nclos[1] = clos[1];
-//           /*** placeholder! ***/
-//           nclos[2] = clos[1];
-//           for(int j = 0;
-//               j < clos.size() - NN;
-//               ++j){
-//             nclos[3 + j] =
-//               clos[NN + j];
-//           }
-//           stack.push(&nclos);
-//           stack.push(stack[1]);
-//           stack.push(clos[N]);
-//           stack.restack(4);
-//           // clos is now invalid again
-//           Integer* Np = proc.create<Integer>(3);
-//           // nclos is now invalid
-//           KClosure& kkclos = *static_cast<KClosure*>(stack[1]);
-//           kkclos[2] = Np;
-//         }
-//       }
+      int N = Object::to_a_scaled_int((*clos)[2]);
+      int NN = N + 1; // next N
+      stack.push((*clos)[0]);
+      if(NN == clos->size()){
+        // final iteration
+        stack.push((*clos)[1]);
+        stack.push(stack[1]);
+        stack.push((*clos)[N]);
+        //attempt_kclos_dealloc(proc, stack[0]);
+        //clos is now invalid
+        stack.restack(4);
+      } else {
+        if(clos->reusable()) {
+          // a reusable continuation
+          (*clos)[2] = Object::from_a_scaled_int(NN);
+          stack.push(Object::to_ref(clos));
+          stack.push(stack[1]);
+          stack.push((*clos)[N]);
+          stack.restack(4);
+        } else {
+          /*TODO: instead create a closure
+            with only a reference to this
+            closure and an index number, to
+            reduce memory allocation.
+          */
+          Closure & nclos = *Closure::NewKClosure(proc, reducto_cont_bytecode,
+                                                  // save only necessary
+                                                  clos->size() - NN + 3);
+          // clos is now invalid
+          SETCLOS(clos); //revalidate clos
+          nclos[0] = (*clos)[0];
+          nclos[1] = (*clos)[1];
+          /*** placeholder! ***/
+          nclos[2] = (*clos)[1];
+          for(int j = 0; j < clos->size() - NN; ++j){
+            nclos[3 + j] = (*clos)[NN + j];
+          }
+          stack.push(Object::to_ref(&nclos));
+          stack.push(stack[1]);
+          stack.push((*clos)[N]);
+          stack.restack(4);
+          // clos is now invalid again
+          // nclos is now invalid
+          Closure& kkclos = *dynamic_cast<Closure*>(as_a<Generic*>(stack[1]));
+          kkclos[2] = Object::from_a_scaled_int(3);
+        }
+      }
+      goto call_current_closure;
     } NEXT_BYTECODE;
 //     BYTECODE(rep): {
 //       bytecode_<&Generic::rep>(stack);
