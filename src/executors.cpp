@@ -70,12 +70,12 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
 /*attempts to deallocate the specified object if it's a reusable
 continuation closure
 */
-//static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
-//	KClosure* kp = dynamic_cast<KClosure*>(gp);
-//	if(kp == NULL) return;
-//	if(!kp->reusable()) return;
-//	hp.lifo().normal_dealloc(gp);
-//}
+static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
+	Closure* kp = dynamic_cast<Closure*>(gp);
+	if(kp == NULL) return;
+	if(!kp->reusable()) return;
+	hp.lifo_dealloc(gp);
+}
 
 #define SETCLOS(name) name = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]))
 
@@ -207,7 +207,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
     */
     BYTECODE(apply_k_release): {
       INTPARAM(N);
-      //attempt_kclos_dealloc(proc, stack[0]);
+      /*TODO: insert debug checking for is_a<Generic*> here*/
+      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(N);
       goto call_current_closure;
     } /***/ NEXT_BYTECODE; /***/
@@ -336,7 +337,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       Object::ref gp = stack.top();
       stack.top() = (*clos)[N];
       stack.push(gp);
-      //attempt_kclos_dealloc(proc, stack[0]);
+      /*TODO: insert debug checking for is_a<Generic*> here*/
+      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(2);
       goto call_current_closure;
     } NEXT_BYTECODE;
@@ -403,9 +405,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(k_closure_recreate): {
-      // !! currently meaningless !! -- stefano
-      // ?? hmm.  will need to add lifo_dealloc() to Heap class ?? -- almkglor
-      // attempt_kclos_dealloc(proc, stack[0]);
+      /*TODO: insert debug checking for is_a<Generic*> here*/
+      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       /*put a random object in stack[0]*/
       stack[0] = stack[1];
       /****/ goto k_closure_perform_create; /****/
