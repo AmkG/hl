@@ -147,8 +147,8 @@ class WorkerThreadCollection : boost::noncopyable {
 private:
 	std::vector<Thread<Worker>*> ws;
 public:
-	void launch(Worker const&) {
-		ws.push_back(new Thread<Worker>);
+	void launch(Worker const& W) {
+		ws.push_back(new Thread<Worker>(W));
 	}
 	~WorkerThreadCollection() {
 		for(size_t i = 0; i < ws.size(); ++i) {
@@ -162,7 +162,7 @@ void AllWorkers::initiate(size_t nworkers) {
 	#ifndef single_threaded
 		WorkerThreadCollection wtc;
 	#endif
-	Worker W;
+	Worker W(this);
 	#ifndef single_threaded
 		for(size_t i = 1; i < nworkers; ++i) {
 			wtc.launch(W);
@@ -348,7 +348,7 @@ void Worker::mark_process(Process* P) {
  * Scans symbols for references to processes
  */
 
-class SymbolScanner : boost::noncopyable {
+class SymbolScanner : public SymbolsTableTraverser {
 /*TODO*/
 };
 
@@ -357,7 +357,7 @@ class SymbolScanner : boost::noncopyable {
  * are about to be deleted.
  */
 
-class SymbolNotificationCleaner : boost::noncopyable {
+class SymbolNotificationCleaner : public SymbolsTableTraverser {
 /*TODO*/
 };
 
