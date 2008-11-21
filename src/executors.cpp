@@ -552,7 +552,8 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         stack.push((*clos)[1]);
         stack.push(stack[1]);
         stack.push((*clos)[N]);
-        attempt_kclos_dealloc(proc, stack[0]);
+        /*TODO: insert debug checking for is_a<Generic*> here*/
+        attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
         //clos is now invalid
         stack.restack(4);
       } else {
