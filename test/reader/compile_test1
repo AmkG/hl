@@ -1,4 +1,9 @@
 #!/bin/sh
 
-g++ -I../../inc ../../src/reader.cpp test1.cpp -o test1
-
+g++ -Dsingle_threaded -I../../inc\
+    ../../src/heaps.cpp\
+    ../../src/reader.cpp\
+    ../../src/symbols.cpp\
+    ../../src/types.cpp\
+    ../../src/globals.cpp\
+    test1.cpp -o test1

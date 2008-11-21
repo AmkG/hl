@@ -23,11 +23,12 @@ class BytecodeArg { public: virtual ~BytecodeArg() {}};
  */
 class SimpleArg : public BytecodeArg {
 private:
-  intptr_t val;
+  Object::ref val;
 public:
+  SimpleArg() {}
   template <class T>
-  SimpleArg(T v) { val = (intptr_t)(v); }
-  intptr_t getVal() { return val; }
+  void setVal(T v) { val = Object::to_ref(v); }
+  Object::ref getVal() { return val; }
 };
 
 // a single bytecode
