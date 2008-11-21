@@ -36,6 +36,8 @@ public:
 
 intptr_t getSimpleArgVal(SimpleArg *sa) {
   if (is_a<int>(sa->getVal()))
+    // !! Warning: potentially incorrect code.
+    // !! Did you mean as_a<int>? -- almkglor
     return Object::to_a_scaled_int(sa->getVal());
   else {
     if (is_a<Symbol*>(sa->getVal()))
