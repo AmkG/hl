@@ -373,8 +373,40 @@ void Worker::mark_process(Process* P) {
  * Scans symbols for references to processes
  */
 
-class SymbolScanner : public SymbolsTableTraverser {
-/*TODO*/
+class SymbolProcessScanner : public SymbolsTableTraverser {
+private:
+	std::vector<Worker*>* Wsp;
+	size_t i;
+
+	void add(Process* pp) {
+		std::set<Process*>& gray_set = (*Wsp)[i]->gray_set;
+		gray_set.insert(pp);
+		++i;
+		if(i >= Wsp->size()) i = 0;
+	}
+
+	class SingleSymbolScanner : public HeapTraverser {
+	private:
+		SymbolProcessScanner* parent;
+	public:
+		explicit SingleSymbolScanner(SymbolProcessScanner* nparent)
+			: parent(nparent) { }
+		void traverse(Generic* gp) {
+			HlPid* pp = dynamic_cast<HlPid*>(gp);
+			if(pp) {
+				parent->add(pp->process);
+			}
+		}
+	};
+
+public:
+	explicit SymbolProcessScanner(std::vector<Worker*>& Ws)
+		: Wsp(&Ws), i(0) { }
+
+	void traverse(Symbol* sp) {
+		SingleSymbolScanner sss(this);
+		sp->traverse_objects(&sss);
+	}
 };
 
 /*
@@ -407,7 +439,7 @@ WorkerLoop:
 			}
 			{SoftStop ss(parent);
 				/*all other threads are now suspended*/
-				SymbolScanner ssc(parent->Ws);
+				SymbolProcessScanner ssc(parent->Ws);
 				symbols->traverse_symbols(&ssc);
 				for(size_t i; i < parent->total_workers; ++i) {
 					parent->gray_workers++; // N

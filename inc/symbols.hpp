@@ -20,7 +20,11 @@ class Symbol {
 public:
 	void copy_value_to(ValueHolderRef&);
 	void set_value(Object::ref);
-        std::string getPrintName() { return printname; } // for debugging
+	std::string getPrintName() { return printname; } // for debugging
+	/*WARNING! not thread safe. intended for use during soft-stop*/
+	void traverse_objects(HeapTraverser* ht) {
+		value->traverse_objects(ht);
+	}
 	friend class SymbolsTable;
 };
 

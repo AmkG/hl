@@ -16,6 +16,8 @@
 class Worker;
 class Process;
 
+class SymbolProcessScanner;
+
 class AllWorkers : boost::noncopyable {
 	bool exit_condition;
 
@@ -117,6 +119,8 @@ public:
 		scanning_mode(0),
 		T(0)
 	{ }
+
+	friend class SymbolProcessScanner;
 };
 
 #endif // WORKERS_H
