@@ -25,8 +25,8 @@ void throw_OverBrokenHeart(Generic*) {
  * printing
  */
 ostream& operator<<(ostream & o, Object::ref r) {
-  if (Object::_is_a<int>(r)) {
-    o << Object::to_a_scaled_int(r);
+  if (is_a<int>(r)) {
+    o << as_a<int>(r);
   } else {
     o << "#<unknown type>";
   }
