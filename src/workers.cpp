@@ -179,6 +179,28 @@ AllWorkers::AllWorkers(void) {
 }
 
 AllWorkers::~AllWorkers() {
+	#ifdef DEBUG
+		{AppLock l(general_mtx);
+			/*consistency checks*/
+			if(Ws.size() != 0) {
+				std::cerr
+					<< "thread pool destruction:"
+					<< std::endl
+					<< "Not all workers were unregistered!"
+					<< std::endl;
+			}
+			if(!exit_condition) {
+				std::cerr
+					<< "thread pool destruction:"
+					<< std::endl
+					<< "Exit condition not triggered!"
+					<< std::endl;
+			}
+		}
+	#endif
+	for(size_t i; i < U.size(); ++i) {
+		delete U[i];
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -242,6 +264,7 @@ public:
 		if(p) p->atomic_kill();
 	}
 	operator Process*&(void) { return p; }
+	operator Process* const&(void) const { return p; }
 
 	Process* operator->(void) { return p; }
 	Process* operator->(void) const { return p; }
@@ -285,7 +308,9 @@ public:
 	~AnesthesizeProcess() {
 		if(succeeded) {
 			if(P->unanesthesize()) {
-				/*Process::unanesthesize should have
+				/*Process::unanesthesize returns
+				true if the process received any
+				messages; if so, it should have
 				set status to process_running
 				*/
 				parent->workqueue_push(P);
@@ -441,7 +466,11 @@ execute:
 			{AnesthesizeProcess ap(Q, parent);
 				if(ap.succeeded) {
 					mark_process(Q);
-				} else {
+				} else if(!gray_set.empty()) {
+					/*if anesthesizing failed, keep
+					trying to get one while the
+					gray_set isn't empty
+					*/
 					goto get_gray;
 				}
 			}
