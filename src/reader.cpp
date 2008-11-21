@@ -1,6 +1,9 @@
 #include "all_defines.hpp"
 #include "reader.hpp"
 
+#include <iostream>
+#include <sstream>
+
 static const char bc_start = '(';
 static const char bc_end = ')';
 static const char *separators = " \n\t";
@@ -29,6 +32,36 @@ void read_bytecodes(std::istream & in, BytecodeSeq & bc) {
   }
 }
 
+// read a string until a separator character is found
+std::string read_upto(std::istream & in) {
+  static const char *no_sym = " \t\n()";
+  std::string res;
+  char c;
+  c = in.peek();
+  while (!in.eof() && strchr(no_sym, c)==NULL) {
+    res += in.get();
+    c = in.peek();
+  }
+  if (res=="") 
+    in.setstate(std::ios_base::badbit);
+  return res;
+}
+
+// read a number or a symbol
+std::istream& operator>>(std::istream & in, SimpleArg & sa) {
+  std::string res = read_upto(in);
+  std::stringstream s(res);
+  // try to parse an integer
+  int i;
+  s >> i;
+  if (!s) // it's a symbol
+    sa.setVal(symbols->lookup(res));
+  else
+    sa.setVal(i);
+
+  return in;
+}
+
 std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
   if (!in)
     throw ReadError("Input stream is invalid");
@@ -48,8 +81,7 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
   if (in.eof())
     throw ReadError("EOF");
 
-  std::string name;
-  in >> name;
+  std::string name = read_upto(in);
   if (!in)
     throw ReadError("Can't read bytecode mnemonic");
   Symbol *mnemonic = symbols->lookup(name);
@@ -68,11 +100,12 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
     read_bytecodes(in, *sub);
     bc.push_back(bytecode(mnemonic, sub));
   } else { // simple arg
-    size_t val;
-    in >> val;
-    if (!in)
+    SimpleArg *sa = new SimpleArg();
+    in >> (*sa);
+    if (!in) {
+      delete sa;
       throw ReadError("Can't read simple value");
-    SimpleArg *sa = new SimpleArg(val);
+    }
     skip_seps(in);
     c = in.peek();
     if (c == bc_start) { // simple arg followed by a sequence
@@ -80,7 +113,7 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
       read_bytecodes(in, *sub);
       bc.push_back(bytecode(mnemonic, new SimpleArgAndSeq(sa, sub)));
     } else {
-      bc.push_back(bytecode(mnemonic, new SimpleArg(val)));
+      bc.push_back(bytecode(mnemonic, sa));
     }
   }
 
@@ -88,8 +121,8 @@ std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
   c = in.get();
   if (in.eof())
     throw ReadError("EOF");
-  if (c != bc_end) 
+  if (c != bc_end)
     throw ReadError("Spurious contents at end of bytecode");
-
+  
   return in;
 }

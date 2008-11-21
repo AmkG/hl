@@ -34,6 +34,17 @@ public:
 	}
 };
 
+intptr_t getSimpleArgVal(SimpleArg *sa) {
+  if (is_a<int>(sa->getVal()))
+    return Object::to_a_scaled_int(sa->getVal());
+  else {
+    if (is_a<Symbol*>(sa->getVal()))
+      return (intptr_t)(as_a<Symbol*>(sa->getVal()));
+    else
+      throw_HlError("assemble: impossible argument type to bytecode");
+  }
+}
+
 void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
   a_seq = new bytecode_t[seq.size()]; // assembled bytecode
   size_t pos = 0;
@@ -44,7 +55,7 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
     BytecodeSeq *seq_arg;
     SimpleArgAndSeq *sas;
     if ((sa = dynamic_cast<SimpleArg*>(i->second)) != NULL) {
-      a_seq[pos].val = sa->getVal();
+      a_seq[pos].val = getSimpleArgVal(sa);
     }
     else {
       if ((seq_arg = dynamic_cast<BytecodeSeq*>(i->second)) != NULL) {
@@ -56,7 +67,7 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
       }
       else {
         if ((sas = dynamic_cast<SimpleArgAndSeq*>(i->second)) != NULL) {
-          a_seq[pos].val = sas->getSimple()->getVal();
+          a_seq[pos].val = getSimpleArgVal(sas->getSimple());
           assemble(*(sas->getSeq()), a_seq[pos].seq);
         }
         else {

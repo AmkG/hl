@@ -17,15 +17,18 @@
 class BytecodeArg { public: virtual ~BytecodeArg() {}};
 
 /*
- * a simple argument is an unsigned integer
- * it could represent an int, a scaled int, an offset or a character
+ * a simple argument is a value that can fit in a pointer
+ * it could be an int, a scaled int, an offset, a character, a pointer
+ * to a Symbol, etc.
  */
 class SimpleArg : public BytecodeArg {
 private:
-  size_t val;
+  Object::ref val;
 public:
-  SimpleArg(size_t v) : val(v) {}
-  size_t getVal() { return val; }
+  SimpleArg() {}
+  template <class T>
+  void setVal(T v) { val = Object::to_ref(v); }
+  Object::ref getVal() { return val; }
 };
 
 // a single bytecode
