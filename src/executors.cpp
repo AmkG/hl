@@ -550,12 +550,12 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         }
         /*save closure*/
         stack[1] = Object::to_ref(&kclos);
-        kclos[2] = Object::from_a_scaled_int(3);
+        kclos[2] = Object::to_ref(3);
       }
       goto call_current_closure;
     } NEXT_BYTECODE;
     BYTECODE(reducto_continuation): {
-      int N = Object::to_a_scaled_int((*clos)[2]);
+      int N = as_a<int>((*clos)[2]);
       int NN = N + 1; // next N
       stack.push((*clos)[0]);
       if(NN == clos->size()){
@@ -563,13 +563,14 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
         stack.push((*clos)[1]);
         stack.push(stack[1]);
         stack.push((*clos)[N]);
-        //attempt_kclos_dealloc(proc, stack[0]);
+        /*TODO: insert debug checking for is_a<Generic*> here*/
+        attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
         //clos is now invalid
         stack.restack(4);
       } else {
         if(clos->reusable()) {
           // a reusable continuation
-          (*clos)[2] = Object::from_a_scaled_int(NN);
+          (*clos)[2] = Object::to_ref(NN);
           stack.push(Object::to_ref(clos));
           stack.push(stack[1]);
           stack.push((*clos)[N]);
@@ -599,7 +600,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
           // clos is now invalid again
           // nclos is now invalid
           Closure& kkclos = *dynamic_cast<Closure*>(as_a<Generic*>(stack[1]));
-          kkclos[2] = Object::from_a_scaled_int(3);
+          kkclos[2] = Object::to_ref(3);
         }
       }
       goto call_current_closure;

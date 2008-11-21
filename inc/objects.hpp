@@ -209,6 +209,12 @@ Tagged pointer factories
 	}
 
 	/*no checking, even in debug mode... achtung!*/
+	/*This function is used to convert an int computed using
+	Object::to_a_scaled_int back to an Object::ref.  It is not
+	intended to be used for any other int's.
+	This function is intended for optimized smallint
+	mathematics.
+	*/
 	static inline ref from_a_scaled_int(int x) {
                 return ref((((intptr_t) x)<<tag_bits) + tag_traits<int>::tag);
 	}
@@ -289,6 +295,11 @@ Tagged pointer referencing
 	}
 
 	/*no checking, even in debug mode... achtung!*/
+	/*This function is used to convert a smallint Object::ref
+	to a useable int that is equal to the "real" int, shifted
+	to the left by the number of tag bits (i.e. scaled).  It
+	should be used only for optimizing smallint math operations.
+	*/
 	static inline int to_a_scaled_int(ref obj) {
 		intptr_t tmp = obj.dat;
 		return (int)((tmp - tag_traits<int>::tag)>>tag_bits);

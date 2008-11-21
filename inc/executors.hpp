@@ -12,6 +12,10 @@
   Calling convention:
 
   proc.stack[0] *must* be a Closure
+  !! for now, at least.  in the future we will change this so that
+  !! calls to non-Closure objects will be transformed to calls to
+  !! the global <axiom>call*, which *should* be a Closure
+  !! -- almkglor
 
   proc.stack[0] contains the closure.  If it is a "normal" 
   function, proc.stack[1] is the "continuation" function 
