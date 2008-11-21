@@ -102,7 +102,7 @@ protected:
 	}
 	GenericDerivedVariadic<T>(GenericDerivedVariadic<T> const& o)
 		: sz(o.sz) {
-		for(size_t i; i < sz; ++i) {
+		for(size_t i = 0; i < sz; ++i) {
 			index(i) = o.index(i);
 		}
 	}
