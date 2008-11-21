@@ -1,5 +1,6 @@
 #include"all_defines.hpp"
 #include"thread.hpp"
+#include"mutexes.hpp"
 
 #include<queue>
 #include<iostream>
@@ -9,11 +10,11 @@
 class LockedQueue : boost::noncopyable {
 private:
 	std::queue<int> Q;
-	Mutex m;
-	CondVar c;
+	AppMutex m;
+	AppCondVar c;
 public:
 	void pop(int& x) {
-		Lock l(m);
+		AppLock l(m);
 		while(Q.empty()) {
 			c.wait(l);
 		}
@@ -21,7 +22,7 @@ public:
 		Q.pop();
 	}
 	void push(int x) {
-		Lock l(m);
+		AppLock l(m);
 		bool sig = Q.empty();
 		Q.push(x);
 		if(sig) c.broadcast();
@@ -31,18 +32,18 @@ public:
 class ExitCondition : boost::noncopyable {
 private:
 	size_t num_wait;
-	Mutex m;
-	CondVar c;
+	AppMutex m;
+	AppCondVar c;
 
 	ExitCondition(); // disallowed!
 public:
 	void exited(void) {
-		Lock l(m);
+		AppLock l(m);
 		--num_wait;
 		if(num_wait == 0) c.signal();
 	}
 	void wait(void) {
-		Lock l(m);
+		AppLock l(m);
 		while(num_wait > 0) {
 			c.wait(l);
 		}

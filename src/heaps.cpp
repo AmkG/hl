@@ -105,12 +105,12 @@ void* Semispace::lifo_alloc(size_t sz) {
 	return lifoallocpt;
 }
 
-void Semispace::lifo_dealloc(void* pt) {
+void Semispace::lifo_dealloc(Generic* pt) {
 	/*if we can't deallocate, just ignore*/
-	if(pt != lifoallocpt) return;
-	size_t sz = ((Generic*) pt)->real_size();
-	((Generic*) pt)->~Generic();
-	char* clifoallocpt = (char*) pt;
+	if(((void*) pt) != lifoallocpt) return;
+	size_t sz = pt->real_size();
+	pt->~Generic();
+	char* clifoallocpt = (char*)(void*) pt;
 	clifoallocpt += sz;
 	lifoallocpt = clifoallocpt;
 }
@@ -196,6 +196,20 @@ ValueHolder
 void ValueHolder::traverse_objects(HeapTraverser* ht) const {
 	for(ValueHolder const* pt = this; pt; pt = &*pt->next) {
 		pt->sp->traverse_objects(ht);
+	}
+}
+
+/*clones only itself, not the chain*/
+void ValueHolder::clone(ValueHolderRef& np) const {
+	np.p = new ValueHolder();
+	if(sp) {
+		boost::scoped_ptr<Semispace> nsp;
+		Generic* gp = as_a<Generic*>(val);
+		sp->clone(nsp, gp);
+		np->sp.swap(nsp);
+		np->val = Object::to_ref(gp);
+	} else {
+		np->val = val;
 	}
 }
 

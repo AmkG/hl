@@ -150,6 +150,14 @@ static inline T* expect_type(Object::ref x, char const* error) {
 	return tmp;
 }
 
+/*Usage:
+// your mom knows it's a Cons on top
+Cons* cp = known_type<Cons>(proc.stack().top());
+*/
+template<class T>
+static inline T* known_type(Object::ref x) {
+	return static_cast<T*>(as_a<Generic*>(x));
+}
 
 /*
  * Cons cell
@@ -240,7 +248,27 @@ public:
   }
   bytecode_t* code() { return body; }
   void codereset(bytecode_t *b) { body = b; }
-  void banreuse() { nonreusable = true; }
+  void banreuse() {
+    /*ban reuse for this and for every other continuation referred to*/
+    Closure* kp = this;
+    if(kp) {
+    loop:
+      kp->nonreusable = true;
+      for(size_t i; i < kp->sz; ++i) {
+        Object::ref tmp = kp->index(i);
+        if(is_a<Generic*>(tmp)) {
+          Closure* cp = dynamic_cast<Closure*>(as_a<Generic*>(tmp));
+          if(cp && cp->kontinuation) {
+            /*assume only one continuation is actually referred to
+            directly (this is what the compiler emits anyway)
+            */
+            kp = cp;
+            goto loop;
+          }
+        }
+      }
+    }
+  }
   bool reusable() { return !nonreusable; }
   static Closure* NewKClosure(Heap & h, bytecode_t *body, size_t n);
   static Closure* NewClosure(Heap & h, bytecode_t *body, size_t n);

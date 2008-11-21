@@ -28,21 +28,20 @@ class AppCondVar;
 class AppMutex : boost::noncopyable {
 private:
 	#ifndef single_threaded
-		boost::scoped_ptr<Mutex> mp;
+		Mutex m;
 	#endif
 	AppMutex(AppMutex const&)
 	#ifndef single_threaded
-		: mp()
+		: m()
 	#endif
 	{ }
 public:
-	AppMutex(void) {
-		#ifndef single_threaded
-			if(!single_threaded) {
-				mp.reset(new Mutex());
-			}
-		#endif
-	}
+	AppMutex(void)
+	#ifndef single_threaded
+		: m()
+	#endif
+	{ }
+	
 	friend class AppLock;
 	friend class AppTryLock;
 };
@@ -50,15 +49,25 @@ public:
 class AppLock : boost::noncopyable {
 private:
 	#ifndef single_threaded
-		boost::scoped_ptr<Lock> lp;
+		Mutex* mp;
 	#endif
 	AppLock(void); // disallowed!
 public:
-	AppLock(AppMutex& m) {
+	AppLock(AppMutex& m)
+	#ifndef single_threaded
+		: mp(0)
+	#endif
+	{
 		#ifndef single_threaded
 			if(!single_threaded) {
-				lp.reset(new Lock(*m.mp));
+				mp = &m.m;
+				mp->lock();
 			}
+		#endif
+	}
+	~AppLock() {
+		#ifndef single_threaded
+			if(mp) mp->unlock();
 		#endif
 	}
 	friend class AppCondVar;
@@ -67,15 +76,21 @@ public:
 class AppTryLock : boost::noncopyable {
 private:
 	#ifndef single_threaded
-		boost::scoped_ptr<TryLock> lp;
+		Mutex* mp;
+		bool success;
 	#endif
 	AppTryLock(void); //disallowed!
 public:
-	AppTryLock(AppMutex& m) {
+	AppTryLock(AppMutex& m)
+	#ifndef single_threaded
+		: mp(0), success(0)
+	#endif
+	{
 		#ifndef single_threaded
 			if(!single_threaded) {
-				lp.reset(new TryLock(*m.mp));
-			}
+				mp = &m.m;
+				success = mp->trylock();
+			} else success = 1;
 		#endif
 	}
 	/*safe bool idiom*/
@@ -83,10 +98,14 @@ public:
 	typedef void (AppTryLock::*unspecified_bool_type)(void) const;
 	operator unspecified_bool_type(void) const {
 		#ifndef single_threaded
-			if(!lp) return &AppTryLock::unspecified_bool;
-			return (*lp) ? &AppTryLock::unspecified_bool : 0;
+			return success ? &AppTryLock::unspecified_bool : 0;
 		#else
 			return &AppTryLock::unspecified_bool;
+		#endif
+	}
+	~AppTryLock() {
+		#ifndef single_threaded
+			if(success && mp) mp->unlock();
 		#endif
 	}
 	friend class AppCondVar;
@@ -95,44 +114,38 @@ public:
 class AppCondVar : boost::noncopyable {
 private:
 	#ifndef single_threaded
-		boost::scoped_ptr<CondVar> cp;
+		CondVar c;
 	#endif
 
 public:
-	AppCondVar(void) {
+	AppCondVar(void)
+	#ifndef single_threaded
+		: c()
+	#endif
+	{ }
+	void wait(AppLock const& l) {
 		#ifndef single_threaded
-			if(!single_threaded) {
-				cp.reset(new CondVar());
+			if(l.mp) {
+				c.wait(*l.mp);
 			}
 		#endif
 	}
-	void wait(AppLock const& l) const {
+	void wait(AppTryLock const& l) {
 		#ifndef single_threaded
-			if(l.lp && cp) {
-				cp->wait(*l.lp);
-			}
-		#endif
-	}
-	void wait(AppTryLock const& l) const  {
-		#ifndef single_threaded
-			if(l.lp && cp) {
-				cp->wait(*l.lp);
+			if(l && l.mp) {
+				c.wait(*l.mp);
 			}
 		#endif
 	}
 
 	void signal(void) {
 		#ifndef single_threaded
-			if(cp) {
-				cp->signal();
-			}
+			if(!single_threaded) c.signal();
 		#endif
 	}
 	void broadcast(void) {
 		#ifndef single_threaded
-			if(cp) {
-				cp->broadcast();
-			}
+			if(!single_threaded) c.broadcast();
 		#endif
 	}
 };

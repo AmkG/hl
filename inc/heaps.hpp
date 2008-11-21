@@ -46,7 +46,7 @@ public:
 	void dealloc(void*);
 
 	void* lifo_alloc(size_t);
-	void lifo_dealloc(void*);
+	void lifo_dealloc(Generic*);
 	void lifo_dealloc_abort(void*);
 
 	inline size_t size(void) const { return max; };
@@ -109,6 +109,7 @@ public:
 	Object::ref value(void);
 
 	friend class LockedValueHolderRef;
+	friend class ValueHolder;
 };
 
 class ValueHolder {
@@ -132,6 +133,8 @@ public:
 		}
 		return total;
 	}
+
+	void clone(ValueHolderRef&) const;
 
 	void traverse_objects(HeapTraverser*) const;
 	friend class ValueHolderRef;
@@ -234,6 +237,40 @@ public:
 			main->dealloc(pt);
 			throw;
 		}
+	}
+	template<class T>
+	inline T* lifo_create(void) {
+		Generic* _lifo_create_template_must_be_Generic_ =
+			static_cast<Generic*>((T*) 0);
+		size_t sz = compute_size<T>();
+		if(!main->can_fit(sz)) GC(sz);
+		void* pt = main->lifo_alloc(sz);
+		try {
+			new(pt) T();
+			return (T*) pt;
+		} catch(...) {
+			main->lifo_dealloc_abort(pt);
+			throw;
+		}
+	}
+	template<class T>
+	inline T* lifo_create_variadic(size_t extra) {
+		Generic* _lifo_create_variadic_template_must_be_Generic_ =
+			static_cast<Generic*>((T*) 0);
+		size_t sz = compute_size_variadic<T>(extra);
+		if(!main->can_fit(sz)) GC(sz);
+		void* pt = main->lifo_alloc(sz);
+		try {
+			new(pt) T(extra);
+			return (T*)pt;
+		} catch(...) {
+			main->lifo_dealloc_abort(pt);
+			throw;
+		}
+	}
+
+	inline void lifo_dealloc(Generic* gp) {
+		main->lifo_dealloc(gp);
 	}
 
 	void traverse_objects(HeapTraverser*) const;

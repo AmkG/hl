@@ -83,11 +83,13 @@ public:
 	/*pushes a process onto the workqueue*/
 	void workqueue_push(Process*);
 
+	AllWorkers();
 	~AllWorkers();
 
 	friend class Worker;
 };
 
+/*Must be copyable!*/
 class Worker {
 	std::set<Process*> gray_set;
 	bool gray_done;
