@@ -59,10 +59,14 @@ int main(int argc, char **argv) {
 
   bytecode_t *to_run;
   Process p;
-  execute(p, 128, 1); // init phase
+  Process* Q;
+  size_t timeslice;
+  timeslice = 128;
+  execute(p, timeslice, Q, 1); // init phase
   assemble(program, to_run);
   p.stack.push(Object::to_ref(Closure::NewKClosure(p, to_run, 0))); // entry point
-  execute(p, 128); // run!
+  timeslice = 128;
+  execute(p, timeslice, Q); // run!
 
   cout << p.stack.top() << endl;
 

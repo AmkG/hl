@@ -91,7 +91,7 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 
 #define SETCLOS(name) name = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]))
 
-ProcessStatus execute(Process& proc, size_t reductions, bool init){
+ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init){
   /*REMINDER
     All allocations of Generic objects on the
     Process proc *will* invalidate any pointers
