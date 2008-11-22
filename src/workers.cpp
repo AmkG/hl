@@ -415,7 +415,22 @@ public:
  */
 
 class SymbolNotificationCleaner : public SymbolsTableTraverser {
-/*TODO*/
+private:
+	std::set<Process*> dead;
+
+public:
+	SymbolNotificationCleaner(std::vector<Process*>& U, size_t j) {
+		/*dead processes are from U[j] to U[U.size() - 1]*/
+		for(size_t i = j; i < U.size(); ++i) {
+			dead.insert(U[i]);
+		}
+	}
+	void traverse(Symbol* sp) {
+		/*TODO: in the future, when we actually implement
+		notifications for global variable writes, insert
+		code here.
+		*/
+	}
 };
 
 /*
