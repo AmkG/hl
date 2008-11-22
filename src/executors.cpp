@@ -10,6 +10,9 @@
   #include <typeinfo>
   #include <iostream>
 #endif
+
+std::map<Symbol*, Executor*> Executor::tbl;
+
 // map opcodes to bytecodes
 static std::map<Symbol*,_bytecode_label> bytetb;
 
@@ -177,6 +180,7 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
 //       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
 //       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
       ("variadic",		THE_BYTECODE_LABEL(variadic))
+      ("do-executor",               THE_BYTECODE_LABEL(do_executor))
       /*assign bultin global*/
       ;/*end initializer*/
 
@@ -666,6 +670,19 @@ ProcessStatus execute(Process& proc, size_t reductions, bool init){
       INTPARAM(N);
       bytecode_variadic(proc, stack, N);
       SETCLOS(clos);
+    } NEXT_BYTECODE;
+    BYTECODE(do_executor): {
+      SYMPARAM(s);
+      Executor *e = Executor::findExecutor(s);
+      if (e)
+        // ?? could this cause problems if an hl function is called
+        // ?? by the Executor?
+        e->run(stack, reductions);
+      else {
+        std::string err("couldn't find executor: ");
+        err += s->getPrintName();
+        throw_HlError(err.c_str());
+      }
     } NEXT_BYTECODE;
   }
 }

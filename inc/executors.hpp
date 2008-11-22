@@ -96,6 +96,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(type_local_push)
 	A_BYTECODE(type_clos_push)
 	A_BYTECODE(variadic)
+        A_BYTECODE(do_executor)
 END_DECLARE_BYTECODES
 
 #ifdef __GNUC__
@@ -132,7 +133,22 @@ class ProcessStack;
  * An executor represents a built-in function
  */
 class Executor {
+private:
+  // table of available executors
+  static std::map<Symbol*, Executor*> tbl;
 public:
+  // register an executor in the system
+  // no locks: executors should be registered only during startup
+  static void reg(Symbol *s, Executor *e) {
+    tbl[s] = e;
+  }
+  static Executor* findExecutor(Symbol *s) {
+    std::map<Symbol*,Executor*>::iterator it = tbl.find(s);
+    if (it==tbl.end())
+      return NULL;
+    else
+      return it->second;
+  }
   virtual ~Executor() {}
   virtual void run(ProcessStack & stack, size_t & reductions) = 0;
 };
@@ -152,6 +168,7 @@ struct bytecode_t {
 };
 
 #define INTPARAM(name) intptr_t name = pc->val
+#define SYMPARAM(name) Symbol *s = (Symbol*)pc->val
 #define SEQPARAM(name) bytecode_t* name = pc->seq
 #define INTSEQPARAM(name1, name2)\
         intptr_t name1 = pc->val; \
