@@ -179,6 +179,28 @@ AllWorkers::AllWorkers(void) {
 }
 
 AllWorkers::~AllWorkers() {
+	#ifdef DEBUG
+		{AppLock l(general_mtx);
+			/*consistency checks*/
+			if(Ws.size() != 0) {
+				std::cerr
+					<< "thread pool destruction:"
+					<< std::endl
+					<< "Not all workers were unregistered!"
+					<< std::endl;
+			}
+			if(!exit_condition) {
+				std::cerr
+					<< "thread pool destruction:"
+					<< std::endl
+					<< "Exit condition not triggered!"
+					<< std::endl;
+			}
+		}
+	#endif
+	for(size_t i; i < U.size(); ++i) {
+		delete U[i];
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -242,6 +264,7 @@ public:
 		if(p) p->atomic_kill();
 	}
 	operator Process*&(void) { return p; }
+	operator Process* const&(void) const { return p; }
 
 	Process* operator->(void) { return p; }
 	Process* operator->(void) const { return p; }
@@ -285,7 +308,9 @@ public:
 	~AnesthesizeProcess() {
 		if(succeeded) {
 			if(P->unanesthesize()) {
-				/*Process::unanesthesize should have
+				/*Process::unanesthesize returns
+				true if the process received any
+				messages; if so, it should have
 				set status to process_running
 				*/
 				parent->workqueue_push(P);
@@ -348,8 +373,40 @@ void Worker::mark_process(Process* P) {
  * Scans symbols for references to processes
  */
 
-class SymbolScanner : public SymbolsTableTraverser {
-/*TODO*/
+class SymbolProcessScanner : public SymbolsTableTraverser {
+private:
+	std::vector<Worker*>* Wsp;
+	size_t i;
+
+	void add(Process* pp) {
+		std::set<Process*>& gray_set = (*Wsp)[i]->gray_set;
+		gray_set.insert(pp);
+		++i;
+		if(i >= Wsp->size()) i = 0;
+	}
+
+	class SingleSymbolScanner : public HeapTraverser {
+	private:
+		SymbolProcessScanner* parent;
+	public:
+		explicit SingleSymbolScanner(SymbolProcessScanner* nparent)
+			: parent(nparent) { }
+		void traverse(Generic* gp) {
+			HlPid* pp = dynamic_cast<HlPid*>(gp);
+			if(pp) {
+				parent->add(pp->process);
+			}
+		}
+	};
+
+public:
+	explicit SymbolProcessScanner(std::vector<Worker*>& Ws)
+		: Wsp(&Ws), i(0) { }
+
+	void traverse(Symbol* sp) {
+		SingleSymbolScanner sss(this);
+		sp->traverse_objects(&sss);
+	}
 };
 
 /*
@@ -358,7 +415,22 @@ class SymbolScanner : public SymbolsTableTraverser {
  */
 
 class SymbolNotificationCleaner : public SymbolsTableTraverser {
-/*TODO*/
+private:
+	std::set<Process*> dead;
+
+public:
+	SymbolNotificationCleaner(std::vector<Process*>& U, size_t j) {
+		/*dead processes are from U[j] to U[U.size() - 1]*/
+		for(size_t i = j; i < U.size(); ++i) {
+			dead.insert(U[i]);
+		}
+	}
+	void traverse(Symbol* sp) {
+		/*TODO: in the future, when we actually implement
+		notifications for global variable writes, insert
+		code here.
+		*/
+	}
 };
 
 /*
@@ -382,7 +454,7 @@ WorkerLoop:
 			}
 			{SoftStop ss(parent);
 				/*all other threads are now suspended*/
-				SymbolScanner ssc(parent->Ws);
+				SymbolProcessScanner ssc(parent->Ws);
 				symbols->traverse_symbols(&ssc);
 				for(size_t i; i < parent->total_workers; ++i) {
 					parent->gray_workers++; // N
@@ -441,7 +513,11 @@ execute:
 			{AnesthesizeProcess ap(Q, parent);
 				if(ap.succeeded) {
 					mark_process(Q);
-				} else {
+				} else if(!gray_set.empty()) {
+					/*if anesthesizing failed, keep
+					trying to get one while the
+					gray_set isn't empty
+					*/
 					goto get_gray;
 				}
 			}
