@@ -3,8 +3,11 @@
 
 #include"heaps.hpp"
 #include"types.hpp"
+#include"lockeds.hpp"
+
 #include <vector>
 
+/*Consider putting this into the process's heap*/
 class ProcessStack : public std::vector<Object::ref> { 
 public:
   Object::ref & top(size_t off=1){
@@ -60,12 +63,19 @@ enum ProcessStatus {
 };
 
 class Process : public Heap {
+private:
+	ProcessStatus stat;
+	bool black;
+	AppMutex mtx;
+
+	LockedValueHolderRef mbox;
+
 public:
 /*-----------------------------------------------------------------------------
 For process-level garbage collection
 -----------------------------------------------------------------------------*/
 	/*atomically check if status is process_waiting and it is not marked*/
-	bool waiting_and_not_black(void) const;
+	bool waiting_and_not_black(void);
 
 	/*adds the message M to this message*/
 	/*Must atomically insert M to the mailbox, then
@@ -75,10 +85,7 @@ For process-level garbage collection
 	returns true if it was able to insert M, false if
 	not (e.g. due to contention on the mailbox)
 	*/
-	bool receive_message(
-		boost::scoped_ptr<ValueHolder>& M,
-		bool& is_waiting
-	);
+	bool receive_message( ValueHolderRef& M, bool& is_waiting);
 
 	/*anesthesizes this process if appropriate*/
 	/*Must atomically check if process status is process_waiting,
@@ -97,11 +104,17 @@ For process-level garbage collection
 	bool unanesthesize(void);
 
 	/*sets color to black*/
-	void blacken(void);
+	void blacken(void) {
+		black = true;
+	}
 	/*sets color to white*/
-	void whiten(void);
+	void whiten(void) {
+		black = false;
+	}
 	/*checks color.  no atomicity necessary*/
-	bool is_black(void);
+	bool is_black(void) {
+		return black;
+	}
 
 	/*sets process status to process_dead, and frees its
 	heap.
@@ -146,7 +159,7 @@ For process-level garbage collection
 	/*allows access to the mailbox*/
 	LockedValueHolderRef& mailbox(void);
 
-        ProcessStack stack;
+	ProcessStack stack;
 
 	virtual void scan_root_object(GenericTraverser* gt);
 };
