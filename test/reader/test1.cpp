@@ -17,7 +17,7 @@ void throw_OverBrokenHeart(Generic*) {
 
 void printSimpleArg(SimpleArg *sa) {
   if (is_a<int>(sa->getVal()))
-    cout << Object::to_a_scaled_int(sa->getVal());
+    cout << as_a<int>(sa->getVal());
   else {
     if (is_a<Symbol*>(sa->getVal()))
       cout << as_a<Symbol*>(sa->getVal())->getPrintName();
