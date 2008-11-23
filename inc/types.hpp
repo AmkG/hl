@@ -9,6 +9,8 @@ Defines a set of types for use on the hl-side.
 #include"generics.hpp"
 #include"heaps.hpp"
 
+class ProcessStack;
+
 /*-----------------------------------------------------------------------------
 Specialized broken heart tags
 -----------------------------------------------------------------------------*/
@@ -294,7 +296,7 @@ implementation.  When a string-modifying operation is
 performed on the string, the string-modify detects the
 "shared" flag and copies the implementation.
 */
-class HlString : public GenericDerived {
+class HlString : public GenericDerived<HlString> {
 public:
 	Object::ref impl;
 	void traverse_references(GenericTraverser* gt) {
