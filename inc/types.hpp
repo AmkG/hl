@@ -342,5 +342,22 @@ inline size_t HlString::size(void) {
 	return S.size();
 }
 
-#endif //TYPES_H
+/*-----------------------------------------------------------------------------
+Floating point numbers
+-----------------------------------------------------------------------------*/
 
+class Float : public GenericDerived<Float> {
+private:
+  double val;
+public:
+  // construction
+  static inline Float* mk(Heap & h, double val) {
+    Float *f = h.create<Float>();
+    f->val = val;
+    return f;
+  }
+  inline double get() { return val; }
+  // Numbers are immutable
+};
+
+#endif //TYPES_H
