@@ -1,5 +1,6 @@
 #include "all_defines.hpp"
 #include "types.hpp"
+#include "processes.hpp"
 
 Closure* Closure::NewClosure(Heap & h, bytecode_t *body, size_t n) {
   Closure *c = h.create_variadic<Closure>(n);
@@ -17,7 +18,7 @@ Closure* Closure::NewKClosure(Heap & h, bytecode_t *body, size_t n) {
   return c;
 }
 
-static void HlString::sref(Heap& hp, ProcessStack& stack) {
+void HlString::sref(Heap& hp, ProcessStack& stack) {
 	/*first check the inputs*/
 	HlString* Tp = expect_type<HlString>(stack.top(3),
 				"'string-sref expects a string as first argument");
@@ -52,7 +53,7 @@ static void HlString::sref(Heap& hp, ProcessStack& stack) {
 	stack.pop(2);
 }
 
-static void HlString::stack_create(Heap& hp, ProcessStack& stack, size_t N) {
+void HlString::stack_create(Heap& hp, ProcessStack& stack, size_t N) {
 	/*first, create the implementation*/
 	HlStringImpl* Sp = hp.create_variadic<HlStringImpl>(N);
 	/*fill in from the stack*/
