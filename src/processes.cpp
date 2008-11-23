@@ -2,6 +2,7 @@
 
 #include"processes.hpp"
 #include"mutexes.hpp"
+#include"executors.hpp"
 
 /*
  * Process-level GC functions
@@ -86,5 +87,21 @@ void Process::scan_root_object(GenericTraverser* gt) {
 	}
 	/*insert code for traversing cached globals here*/
 	/*insert code for traversing process-local vars here*/
+}
+
+/*
+ * Execution
+ */
+
+ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
+	/*try*/ {
+		::execute(*this, reductions, Q, 0);
+	} /*catch(HlError& h) ...*/
+	/*In the future, when we catch an HlError,
+	get the process's error handler and force it
+	onto the stack for future execution. i.e.
+	transform a C-side exception into an hl-side
+	invocation of (err 'type "message")
+	*/
 }
 

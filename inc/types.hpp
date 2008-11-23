@@ -9,6 +9,8 @@ Defines a set of types for use on the hl-side.
 #include"generics.hpp"
 #include"heaps.hpp"
 
+class ProcessStack;
+
 /*-----------------------------------------------------------------------------
 Specialized broken heart tags
 -----------------------------------------------------------------------------*/
@@ -159,9 +161,9 @@ static inline T* known_type(Object::ref x) {
 	return static_cast<T*>(as_a<Generic*>(x));
 }
 
-/*
- * Cons cell
- */
+/*-----------------------------------------------------------------------------
+Cons cell
+-----------------------------------------------------------------------------*/
 
 class Cons : public GenericDerived<Cons> {
 private:
@@ -251,20 +253,18 @@ public:
   void banreuse() {
     /*ban reuse for this and for every other continuation referred to*/
     Closure* kp = this;
-    if(kp) {
-    loop:
-      kp->nonreusable = true;
-      for(size_t i; i < kp->sz; ++i) {
-        Object::ref tmp = kp->index(i);
-        if(is_a<Generic*>(tmp)) {
-          Closure* cp = dynamic_cast<Closure*>(as_a<Generic*>(tmp));
-          if(cp && cp->kontinuation) {
-            /*assume only one continuation is actually referred to
-            directly (this is what the compiler emits anyway)
-            */
-            kp = cp;
-            goto loop;
-          }
+  loop:
+    kp->nonreusable = true;
+    for(size_t i = 0; i < kp->sz; ++i) {
+      Object::ref tmp = kp->index(i);
+      if(is_a<Generic*>(tmp)) {
+        Closure* cp = dynamic_cast<Closure*>(as_a<Generic*>(tmp));
+        if(cp && cp->kontinuation) {
+          /*assume only one continuation is actually referred to
+          directly (this is what the compiler emits anyway)
+          */
+          kp = cp;
+          goto loop;
         }
       }
     }
@@ -280,4 +280,67 @@ public:
   }
 };
 
+/*-----------------------------------------------------------------------------
+Strings
+-----------------------------------------------------------------------------*/
+
+/*
+hl strings are really PImpl, where the implementation is a
+variadic array of UnicodeChar's.  Note however that the
+implementation my be shared by several hl strings.
+
+An implementation gets shared when a string is used as a key
+to a table.  The table creates a new HlString with the same
+implementation, then sets the "shared" flag of the
+implementation.  When a string-modifying operation is
+performed on the string, the string-modify detects the
+"shared" flag and copies the implementation.
+*/
+class HlString : public GenericDerived<HlString> {
+public:
+	Object::ref impl;
+	void traverse_references(GenericTraverser* gt) {
+		gt->traverse(impl);
+	}
+	UnicodeChar ref(size_t i);
+	size_t size(void);
+	/*modifies a string:
+		stack.top(3) = string
+		stack.top(2) = UnicodeChar
+		stack.top(1) = offset to modify
+	*/
+	static void sref(Heap& hp, ProcessStack& stack);
+	/*creates a string from the characters on stack.top(N) to stack.top(1)*/
+	static void stack_create(Heap& hp, ProcessStack& stack, size_t N);
+};
+
+class HlStringImpl : public GenericDerivedVariadic<HlStringImpl> {
+public:
+	bool shared;
+	inline Object::ref& operator[](size_t i) {
+		return index(i);
+	}
+	inline Object::ref const& operator[](size_t i) const {
+		return index(i);
+	}
+	inline size_t size(void) const { return sz; };
+	HlStringImpl(size_t sz)
+		: GenericDerivedVariadic<HlStringImpl>(sz),
+		shared(0) { }
+};
+
+inline UnicodeChar HlString::ref(size_t i) {
+	HlStringImpl& S = *known_type<HlStringImpl>(impl);
+	if(i > S.size()) {
+		throw_HlError("'string-ref index out of bounds");
+	}
+	return as_a<UnicodeChar>(S[i]);
+}
+
+inline size_t HlString::size(void) {
+	HlStringImpl& S = *known_type<HlStringImpl>(impl);
+	return S.size();
+}
+
 #endif //TYPES_H
+

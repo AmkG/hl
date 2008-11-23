@@ -12,6 +12,7 @@ public:
 	uint32_t dat;
 	explicit UnicodeChar(uint32_t x) : dat(x) { }
 	explicit UnicodeChar(char x) : dat(x) { }
+	bool operator==(UnicodeChar const& o) const { return dat == o.dat; }
 	/*insert routines for conversion to/from a set of chars here*/
 };
 

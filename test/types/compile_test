@@ -1,4 +1,6 @@
 #!/bin/sh
 
-g++ -I../../inc -std=c++98 $1
+g++ -I../../inc -I../../os -std=c++98 $1 \
+	../../src/types.cpp\
+	../../src/heaps.cpp
 

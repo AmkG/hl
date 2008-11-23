@@ -179,6 +179,6 @@ struct bytecode_t {
 void assemble(BytecodeSeq & seq, bytecode_t* & a_seq);
 
 // Execute a given process
-ProcessStatus execute(Process & proc, size_t reductions, bool init = 0);
+ProcessStatus execute(Process & proc, size_t& reductions, Process*& Q, bool init = 0);
 
 #endif // EXECUTORS_H
