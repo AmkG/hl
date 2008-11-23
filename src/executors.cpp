@@ -43,8 +43,8 @@ intptr_t getSimpleArgVal(SimpleArg *sa) {
   else {
     if (is_a<Symbol*>(sa->getVal()))
       return (intptr_t)(as_a<Symbol*>(sa->getVal()));
-    else
-      throw_HlError("assemble: impossible argument type to bytecode");
+    //else // it's a Generic*
+    //return (intptr_t)(as_a<Generic*>(sa->getVal()));
   }
 }
 

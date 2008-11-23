@@ -356,6 +356,12 @@ public:
     f->val = val;
     return f;
   }
+  // make a float that will live forever
+  static inline Float* mkEternal(double val) {
+    Float *f = new Float();
+    f->val = val;
+    return f;
+  }
   inline double get() { return val; }
   // Numbers are immutable
 };
