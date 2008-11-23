@@ -251,20 +251,18 @@ public:
   void banreuse() {
     /*ban reuse for this and for every other continuation referred to*/
     Closure* kp = this;
-    if(kp) {
-    loop:
-      kp->nonreusable = true;
-      for(size_t i; i < kp->sz; ++i) {
-        Object::ref tmp = kp->index(i);
-        if(is_a<Generic*>(tmp)) {
-          Closure* cp = dynamic_cast<Closure*>(as_a<Generic*>(tmp));
-          if(cp && cp->kontinuation) {
-            /*assume only one continuation is actually referred to
-            directly (this is what the compiler emits anyway)
-            */
-            kp = cp;
-            goto loop;
-          }
+  loop:
+    kp->nonreusable = true;
+    for(size_t i = 0; i < kp->sz; ++i) {
+      Object::ref tmp = kp->index(i);
+      if(is_a<Generic*>(tmp)) {
+        Closure* cp = dynamic_cast<Closure*>(as_a<Generic*>(tmp));
+        if(cp && cp->kontinuation) {
+          /*assume only one continuation is actually referred to
+          directly (this is what the compiler emits anyway)
+          */
+          kp = cp;
+          goto loop;
         }
       }
     }
