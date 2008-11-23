@@ -181,6 +181,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
       ("variadic",		THE_BYTECODE_LABEL(variadic))
       ("do-executor",               THE_BYTECODE_LABEL(do_executor))
+      ("+",                     THE_BYTECODE_LABEL(plus))
       /*assign bultin global*/
       ;/*end initializer*/
 
@@ -683,6 +684,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         err += s->getPrintName();
         throw_HlError(err.c_str());
       }
+    } NEXT_BYTECODE;
+    BYTECODE(plus): {
+      bytecode_plus(proc, stack);
     } NEXT_BYTECODE;
   }
 }

@@ -176,5 +176,61 @@ inline void bytecode_variadic(Process& proc, ProcessStack& stack, int N){
     throw_HlError("apply: insufficient number of parameters to variadic function");
 }
 
-#endif //BYTECODES_H
+// Math
 
+template <int (*iiop)(int, int), float (*ifop)(int, float), 
+          float (*fiop)(float, int), float (*ffop)(float, float)>
+inline void do_math(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(); stack.pop();
+  Object::ref b = stack.top();
+  if (is_a<int>(a)) {
+    if (is_a<int>(b)) {
+      stack.top() = 
+        Object::from_a_scaled_int((*iiop)(Object::to_a_scaled_int(a), 
+                                          Object::to_a_scaled_int(b)));
+    }
+    else {
+      Float *f = expect_type<Float>(b, "number expected");
+      stack.top() = 
+        Object::to_ref(Float::mk(p, (*ifop)(as_a<int>(a), f->get())));
+    }
+  }
+  else {
+    Float *f = expect_type<Float>(a, "number expected");
+    if (is_a<int>(b)) {
+      stack.top() = 
+        Object::to_ref(Float::mk(p, (*fiop)(f->get(), as_a<int>(b))));
+    }
+    else {
+      Float *f2 = expect_type<Float>(b, "number expected");
+      stack.top() = Object::to_ref(Float::mk(p, (*ffop)(f->get(), f2->get())));
+    }
+  }
+}
+
+template <class R, class T1, class T2>
+inline R plus(T1 a, T2 b) {
+  return a+b;
+}
+
+template <class R, class T1, class T2>
+inline R minus(T1 a, T2 b) {
+  return a-b;
+}
+
+template <class R, class T1, class T2>
+inline R divide(T1 a, T2 b) {
+  return a/b;
+}
+
+template <class R, class T1, class T2>
+inline R multiply(T1 a, T2 b) {
+  return a*b;
+}
+
+inline void bytecode_plus(Process& proc, ProcessStack& stack) {
+  // the compiler should inline this properly
+  do_math<&plus, &plus, &plus, &plus>(proc, stack);
+}
+
+#endif //BYTECODES_H
