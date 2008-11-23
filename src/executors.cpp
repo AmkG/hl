@@ -677,12 +677,26 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       if (e)
         // ?? could this cause problems if an hl function is called
         // ?? by the Executor?
+        // !! Not if the Executor sets up the hl stack properly for
+        // !! a function call.  In such a case the Executor would
+        // !! really be written in CPS, with an Executor before the
+        // !! hl-function-call setting up the call to the function,
+        // !! creating a continuation structure that will be used
+        // !! by the next Executor, which receives the return value
+        // !! of the hl function call.
+        // !! It does require access to the Process's Heap in order
+        // !! to allocate though
+        // !! Almost definitely we don't want the Executor to call
+        // !! the hl function by calling back into execute().
         e->run(stack, reductions);
       else {
         std::string err("couldn't find executor: ");
         err += s->getPrintName();
         throw_HlError(err.c_str());
       }
+      // !! Maybe better to use `goto call_current_closure;`
+      // !! although we could use the sequence
+      // !! ( (do-executor 'name) (apply))
     } NEXT_BYTECODE;
   }
 }
