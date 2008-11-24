@@ -97,8 +97,9 @@ DECLARE_BYTECODES
 	A_BYTECODE(type_local_push)
 	A_BYTECODE(type_clos_push)
 	A_BYTECODE(variadic)
-        A_BYTECODE(do_executor)
-        A_BYTECODE(plus)
+	/*maybe organize by alphabetical order of bytecodes ^^*/
+	A_BYTECODE(do_executor)
+	A_BYTECODE(plus)
 END_DECLARE_BYTECODES
 
 #ifdef __GNUC__
