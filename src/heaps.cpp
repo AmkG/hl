@@ -3,6 +3,8 @@
 #include"heaps.hpp"
 #include"types.hpp"
 
+#include<map>
+#include<stack>
 #include<cstdlib>
 #include<stdint.h>
 
@@ -210,6 +212,86 @@ void ValueHolder::clone(ValueHolderRef& np) const {
 		np->val = Object::to_ref(gp);
 	} else {
 		np->val = val;
+	}
+}
+
+class ObjectMeasurer : public GenericTraverser {
+public:
+	size_t N;
+	std::map<Generic*,Generic*>* mp;
+	std::stack<Generic*> todo;
+
+	explicit ObjectMeasurer(std::map<Generic*,Generic*>& m)
+		: N(0), mp(&m) { }
+
+	void traverse(Object::ref& o) {
+		if(is_a<Generic*>(o)) {
+			Generic* gp = as_a<Generic*>(o);
+			if(mp->find(gp) == mp->end()) {
+				N += gp->real_size();
+				(*mp)[gp] = gp;
+				todo.push(gp);
+			}
+		}
+	}
+	void operate(Generic* gp) {
+		(*mp)[gp] = gp;
+		todo.push(gp);
+		do {
+			gp = todo.top(); todo.pop();
+			gp->traverse_references(this);
+		} while(!todo.empty());
+	}
+};
+
+class ReferenceReplacer : public GenericTraverser {
+private:
+	std::map<Generic*, Generic*>* mp;
+public:
+	explicit ReferenceReplacer(std::map<Generic*, Generic*>& m)
+		: mp(&m) { }
+	void traverse(Object::ref& o) {
+		if(is_a<Generic*>(o)) {
+			std::map<Generic*, Generic*>::iterator it;
+			it = mp->find(as_a<Generic*>(o));
+			if(it != mp->end()) {
+				o = Object::to_ref(it->second);
+			}
+		}
+	}
+};
+
+void ValueHolder::copy_object(ValueHolderRef& np, Object::ref o) {
+	typedef std::map<Generic*, Generic*> TM;
+	if(is_a<Generic*>(o)) {
+		TM obs;
+		size_t total;
+		/*first, measure the memory*/
+		{ObjectMeasurer om(obs);
+			om.operate(as_a<Generic*>(o));
+			total = om.N;
+		}
+		/*now create the Semispace*/
+		boost::scoped_ptr<Semispace> sp(new Semispace(total));
+
+		/*copy*/
+		for(TM::iterator it = obs.begin(); it != obs.end(); ++it) {
+			it->second = it->second->clone(&*sp);
+		}
+
+		/*translate*/
+		{ObjectsTraverser<ReferenceReplacer> ot(obs);
+			sp->traverse_objects(&ot);
+		}
+		o = Object::to_ref(obs[as_a<Generic*>(o)]);
+
+		/*create holder*/
+		np.p = new ValueHolder;
+		np.p->val = o;
+		np.p->sp.swap(sp);
+	} else {
+		np.p = new ValueHolder;
+		np.p->val = o;
 	}
 }
 
