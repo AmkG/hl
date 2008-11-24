@@ -68,7 +68,22 @@ int main(int argc, char **argv) {
   timeslice = 128;
   execute(p, timeslice, Q); // run!
 
-  cout << p.stack.top() << endl;
+  Object::ref res = p.stack.top();
+  if (is_a<int>(res))
+    cout << as_a<int>(res) << endl;
+  else {
+    if (is_a<Symbol*>(res))
+      cout << as_a<Symbol*>(res)->getPrintName() << endl;
+    else {
+      if (is_a<Generic*>(res)) {
+        Float *f;
+        if ((f = dynamic_cast<Float*>(as_a<Generic*>(res)))!=NULL)
+          cout << f->get() << endl;
+        else
+          cout << "#<unknown type>" << endl;
+      }
+    }
+  }
 
   return 0;
 }

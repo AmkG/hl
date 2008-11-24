@@ -91,6 +91,9 @@ inline void bytecode_global(Process& proc, ProcessStack& stack,
 inline void bytecode_int(Process& proc, ProcessStack& stack, int N){
   stack.push(Object::to_ref(N));
 }
+inline void bytecode_float(Process& proc, ProcessStack& stack, Float *f) {
+  stack.push(Object::to_ref(f));
+}
 inline void bytecode_lit_nil(Process&proc, ProcessStack& stack){
 	stack.push(Object::nil());
 }

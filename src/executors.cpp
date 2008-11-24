@@ -43,8 +43,8 @@ intptr_t getSimpleArgVal(SimpleArg *sa) {
   else {
     if (is_a<Symbol*>(sa->getVal()))
       return (intptr_t)(as_a<Symbol*>(sa->getVal()));
-    //else // it's a Generic*
-    //return (intptr_t)(as_a<Generic*>(sa->getVal()));
+    else // it's a Generic*
+      return (intptr_t)(as_a<Generic*>(sa->getVal()));
   }
 }
 
@@ -155,6 +155,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("if",			THE_BYTECODE_LABEL(b_if))
       ("if-local",		THE_BYTECODE_LABEL(if_local))
       ("int",			THE_BYTECODE_LABEL(b_int))
+      ("float",                 THE_BYTECODE_LABEL(b_float))
       ("k-closure",		THE_BYTECODE_LABEL(k_closure))
       ("k-closure-recreate",	THE_BYTECODE_LABEL(k_closure_recreate))
       ("k-closure-reuse",	THE_BYTECODE_LABEL(k_closure_reuse))
@@ -424,6 +425,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_int): {
       INTPARAM(N);
       bytecode_int(proc, stack, N);
+    } NEXT_BYTECODE;
+    BYTECODE(b_float): {
+      FLOATPARAM(f);
+      bytecode_float(proc, stack, f);
     } NEXT_BYTECODE;
     BYTECODE(k_closure): {
     k_closure_perform_create:

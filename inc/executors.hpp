@@ -71,6 +71,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(b_if)
 	A_BYTECODE(if_local)
 	A_BYTECODE(b_int)
+	A_BYTECODE(b_float)
 	A_BYTECODE(k_closure)
 	A_BYTECODE(k_closure_recreate)
 	A_BYTECODE(k_closure_reuse)
@@ -169,12 +170,12 @@ struct bytecode_t {
 };
 
 #define INTPARAM(name) intptr_t name = pc->val
-#define SYMPARAM(name) Symbol *s = (Symbol*)pc->val
+#define SYMPARAM(name) Symbol *name = (Symbol*)pc->val
+#define FLOATPARAM(name) Float *name = (Float*)pc->val
 #define SEQPARAM(name) bytecode_t* name = pc->seq
 #define INTSEQPARAM(name1, name2)\
         intptr_t name1 = pc->val; \
         bytecode_t* name2 = pc->seq;
-
 
 // Assemble a sequence of bytecodes
 void assemble(BytecodeSeq & seq, bytecode_t* & a_seq);
