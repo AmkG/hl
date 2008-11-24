@@ -1,5 +1,6 @@
 #include "all_defines.hpp"
 #include "reader.hpp"
+#include "types.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -51,13 +52,22 @@ std::string read_upto(std::istream & in) {
 std::istream& operator>>(std::istream & in, SimpleArg & sa) {
   std::string res = read_upto(in);
   std::stringstream s(res);
-  // try to parse an integer
-  int i;
-  s >> i;
-  if (!s) // it's a symbol
-    sa.setVal(symbols->lookup(res));
-  else
-    sa.setVal(i);
+  if (res.find('.')!=-1) { // try to parse a float
+    double f;
+    s >> f;
+    // we don't have a Heap right now, and anyway we don't want to 
+    // scan an entire bytecode sequence on every GC to look for float
+    // literals. They will be few, anyway.
+    sa.setVal(Float::mkEternal(f));
+  }
+  else { // try to parse an int
+    int i;
+    s >> i; 
+    if (!s) // it's a symbol
+      sa.setVal(symbols->lookup(res));
+    else
+      sa.setVal(i);
+  }
 
   return in;
 }

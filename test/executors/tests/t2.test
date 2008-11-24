@@ -8,7 +8,7 @@
   (local 1)
   (k-closure 0
     (check-vars 2)
-    (local 1)
+    (cdr-local-push 1)
     (halt))
   (int 1)
   (int 2)

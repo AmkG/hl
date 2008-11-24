@@ -1,6 +1,7 @@
 #include "all_defines.hpp"
+#include "types.hpp"
+#include "reader.hpp"
 
-#include <reader.hpp>
 #include <iostream>
 #include <fstream>
 
@@ -21,8 +22,14 @@ void printSimpleArg(SimpleArg *sa) {
   else {
     if (is_a<Symbol*>(sa->getVal()))
       cout << as_a<Symbol*>(sa->getVal())->getPrintName();
-    else
-      cout << "#<unknown argument type>";
+    else {
+      Float *f;
+      if (is_a<Generic*>(sa->getVal()) && 
+          (f = dynamic_cast<Float*>(as_a<Generic*>(sa->getVal()))))
+        cout << f->get();
+      else
+        cout << "#<unknown argument type>";
+    }
   }
 }
 
