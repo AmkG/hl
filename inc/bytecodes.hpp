@@ -236,4 +236,8 @@ inline void bytecode_plus(Process& proc, ProcessStack& stack) {
   do_math<&plus, &plus, &plus, &plus>(proc, stack);
 }
 
+inline void bytecode_minus(Process& proc, ProcessStack& stack) {
+  do_math<&minus, &minus, &minus, &minus>(proc, stack);
+}
+
 #endif //BYTECODES_H
