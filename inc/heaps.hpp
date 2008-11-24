@@ -25,6 +25,28 @@ public:
 	virtual ~HeapTraverser(void) { }
 };
 
+/*
+Utility class to wrap a GenericTraverser in a
+HeapTraverser
+*/
+template<class T>
+class ObjectsTraverser : public HeapTraverser {
+private:
+	T t;
+public:
+	template<class U>
+	ObjectsTraverser(U u) : t(u) {
+		GenericTraverser* ObjectsTraverser_template_should_derive_GenericTraverser
+			= static_cast<GenericTraverser*>(&t);
+	}
+	template<class U, class V>
+	ObjectsTraverser(U u, V v) : t(u, v) { }
+
+	void traverse(Generic* gp) {
+		gp->traverse_references(&t);
+	}
+};
+
 /*-----------------------------------------------------------------------------
 Semispaces
 -----------------------------------------------------------------------------*/
@@ -137,6 +159,9 @@ public:
 	void clone(ValueHolderRef&) const;
 
 	void traverse_objects(HeapTraverser*) const;
+
+	static void copy_object(ValueHolderRef&, Object::ref);
+
 	friend class ValueHolderRef;
 	friend class LockedValueHolderRef;
 };

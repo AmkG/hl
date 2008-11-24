@@ -144,6 +144,7 @@ public:
   static void reg(Symbol *s, Executor *e) {
     tbl[s] = e;
   }
+  // no locks: tbl stucture is immutable after initialization
   static Executor* findExecutor(Symbol *s) {
     std::map<Symbol*,Executor*>::iterator it = tbl.find(s);
     if (it==tbl.end())
