@@ -207,6 +207,9 @@ inline void do_math(Process & p, ProcessStack & stack) {
       stack.top() = 
         Object::from_a_scaled_int((*iiop)(Object::to_a_scaled_int(a), 
                                           Object::to_a_scaled_int(b)));
+      // !! to_a_scaled_int and from_a_scaled_int work properly
+      // !! only for addition and subtraction.  For multiply we
+      // !! need to scale down, for divide we need to scale up.
     }
     else {
       Float *f = expect_type<Float>(b, "number expected");
