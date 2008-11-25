@@ -116,6 +116,15 @@ For process-level garbage collection
 		return black;
 	}
 
+	/*checks if the process is dead.*/
+	bool is_dead(void) {
+		AppLock l(mtx);
+		return stat == process_dead;
+	}
+
+	/*notifies the process of changes in a particular global*/
+	void notify_global_change(Symbol*);
+
 	/*sets process status to process_dead, and frees its
 	heap.
 	*/

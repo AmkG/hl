@@ -22,13 +22,39 @@ void Symbol::copy_value_to(ValueHolderRef& p) {
 		value->clone(p);
 	}
 }
+void Symbol::copy_value_to_and_add_notify(ValueHolderRef& p, Process* R) {
+	{AppLock l(m);
+		value->clone(p);
+		/*check for dead processes in notification list*/
+		size_t j = 0;
+		for(size_t i = 0; i < notification_list.size(); ++i) {
+			if(!notification_list[i]->is_dead()) {
+				if(i != j) {
+					notification_list[j] = notification_list[i];
+				}
+				++j;
+			}
+		}
+		notification_list.resize(j + 1);
+		notification_list[j] = R;
+	}
+}
 
 void Symbol::set_value(Object::ref o) {
 	ValueHolderRef tmp;
 	ValueHolder::copy_object(tmp, o);
 	{AppLock l(m);
 		value.swap(tmp);
-		/*TODO: perform notification here*/
+		size_t j = 0;
+		for(size_t i = 0; i < notification_list.size(); ++i) {
+			if(!notification_list[i]->is_dead()) {
+				if(i != j) {
+					notification_list[j] = notification_list[i];
+				}
+				++j;
+				notification_list[j]->notify_global_change(this);
+			}
+		}
 	}
 }
 

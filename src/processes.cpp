@@ -78,6 +78,14 @@ LockedValueHolderRef& Process::mailbox(void) {
 }
 
 /*
+ * Global variables
+ */
+void Process::notify_global_change(Symbol* S) {
+	/*TODO*/
+}
+
+
+/*
  * Heap inheritance
  */
 

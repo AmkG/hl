@@ -5,6 +5,7 @@
 #include"heaps.hpp"
 #include"mutexes.hpp"
 
+#include<vector>
 #include<string>
 #include<map>
 
@@ -17,8 +18,12 @@ class Symbol {
 
 	Symbol(); //disallowed
 	explicit Symbol(std::string x) : printname(x) {};
+
+	std::vector<Process*> notification_list;
+
 public:
 	void copy_value_to(ValueHolderRef&);
+	void copy_value_to_and_add_notify(ValueHolderRef&, Process*);
 	void set_value(Object::ref);
 	std::string getPrintName() { return printname; } // for debugging
 	/*WARNING! not thread safe. intended for use during soft-stop*/
