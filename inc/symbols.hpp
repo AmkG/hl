@@ -11,6 +11,8 @@
 
 class SymbolsTable;
 
+class Process;
+
 class Symbol {
 	ValueHolderRef value;
 	std::string printname; //utf-8
