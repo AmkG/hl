@@ -55,6 +55,7 @@ void Symbol::set_value(Object::ref o) {
 				notification_list[j]->notify_global_change(this);
 			}
 		}
+		notification_list.resize(j);
 	}
 }
 
