@@ -1,6 +1,7 @@
 #include"all_defines.hpp"
 
 #include"symbols.hpp"
+#include"processes.hpp"
 #include"mutexes.hpp"
 
 #include<boost/noncopyable.hpp>
