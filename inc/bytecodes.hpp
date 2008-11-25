@@ -92,6 +92,22 @@ inline void bytecode_int(Process& proc, ProcessStack& stack, int N){
   stack.push(Object::to_ref(N));
 }
 inline void bytecode_float(Process& proc, ProcessStack& stack, Float *f) {
+  // !! WARNING!  Will not work across a GC and if the bytecode
+  // !! is executed again.  A GC will *destroy* any traced
+  // !! objects (by replacing them with a broken heart tag).
+  // !! Since you're pushing "the same" object, you end up
+  // !! pushing a broken heart tag, which the hl-side code
+  // !! should never see.
+  // !! RECOMMENDATION 1: Compose a float using multiple int's, like
+  // !! so:
+  // !! ((int 1)   ;sign
+  // !!  (int 128) ;exponent
+  // !!  (int 0)   ;higher mantissa (assume smallint's can't exceed 24 bits)
+  // !!  (int 0)   ;lower mantissa  (assume smallint's can't exceed 24 bits)
+  // !!  (float-compose))
+  // !! RECOMMENDATION 2: *Copy* the float being referred to:
+  // !!   Float* nf = Float::mk(proc.heap(), f->get());
+  // !!   stack.push(Object::to_ref(nf));
   stack.push(Object::to_ref(f));
 }
 inline void bytecode_lit_nil(Process&proc, ProcessStack& stack){
