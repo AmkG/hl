@@ -80,10 +80,42 @@ LockedValueHolderRef& Process::mailbox(void) {
 /*
  * Global variables
  */
-void Process::notify_global_change(Symbol* S) {
-	/*TODO*/
+void Process::invalidate_changed_globals(void) {
+	/*create-temp-and-swap*/
+	std::vector<Symbol*> temp;
+	{AppLock l(notification_mtx);
+		temp.swap(invalid_globals);
+	}
+	typedef std::map<Symbol*, Object::ref> cache_map;
+	/*work on temp*/
+	for(size_t i = 0; i < temp.size(); ++i) {
+		cache_map::iterator it = global_cache.find(temp[i]);
+		if(it != global_cache.end()) {
+			global_cache.erase(it);
+		}
+	}
 }
 
+void Process::notify_global_change(Symbol* S) {
+	AppLock l(notification_mtx);
+	invalid_globals.push_back(S);
+}
+
+Object::ref Process::global_read(Symbol* S) {
+	typedef std::map<Symbol*, Object::ref> cache_map;
+	cache_map::iterator it = global_cache.find(S);
+	if(it != global_cache.end()) {
+		return it->second;
+	}
+	/*not in cache: read it*/
+	ValueHolderRef read;
+	S->copy_value_to_and_add_notify(read, this);
+	Object::ref rv = read.value();
+	other_spaces.insert(read);
+	/*now cache*/
+	global_cache[S] = rv;
+	return rv;
+}
 
 /*
  * Heap inheritance

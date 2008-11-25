@@ -6,6 +6,7 @@
 #include"lockeds.hpp"
 
 #include <vector>
+#include <map>
 
 /*Consider putting this into the process's heap*/
 class ProcessStack : public std::vector<Object::ref> { 
@@ -70,6 +71,15 @@ private:
 
 	LockedValueHolderRef mbox;
 
+	/*in the future, consider using a limited cache*/
+	std::map<Symbol*, Object::ref> global_cache;
+
+	AppMutex notification_mtx;
+	std::vector<Symbol*> invalid_globals;
+
+	/*invalidates globals which have been changed*/
+	void invalidate_changed_globals(void);
+
 public:
 /*-----------------------------------------------------------------------------
 For process-level garbage collection
@@ -77,7 +87,7 @@ For process-level garbage collection
 	/*atomically check if status is process_waiting and it is not marked*/
 	bool waiting_and_not_black(void);
 
-	/*adds the message M to this message*/
+	/*adds the message M to this process's mailbox*/
 	/*Must atomically insert M to the mailbox, then
 	check if this process is waiting.  If so, it should
 	set is_waiting to true and change the process state
@@ -124,6 +134,8 @@ For process-level garbage collection
 
 	/*notifies the process of changes in a particular global*/
 	void notify_global_change(Symbol*);
+	/*gets the value of a global*/
+	Object::ref global_read(Symbol*);
 
 	/*sets process status to process_dead, and frees its
 	heap.
