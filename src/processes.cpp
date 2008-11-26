@@ -135,6 +135,15 @@ Object::ref Process::global_read(Symbol* S) {
 	return rv;
 }
 
+void Process::global_write(Symbol* S, Object::ref o) {
+	typedef std::map<Symbol*, Object::ref> cache_map;
+	cache_map::iterator it = global_cache.find(S);
+	if(it != global_cache.end()) {
+		global_cache.erase(it);
+	}
+	S->set_value(o);
+}
+
 /*
  * Heap inheritance
  */
@@ -153,6 +162,13 @@ void Process::scan_root_object(GenericTraverser* gt) {
 
 ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 	/*try*/ {
+		/*only do this here, because we don't give
+		very strict assurances about when a process
+		"sends" a global to all the other processes
+		anyway, and invalidate_changed_globals()
+		involves a lock.
+		*/
+		invalidate_changed_globals();
 		::execute(*this, reductions, Q, 0);
 	} /*catch(HlError& h) ...*/
 	/*In the future, when we catch an HlError,

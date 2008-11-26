@@ -136,6 +136,8 @@ For process-level garbage collection
 	void notify_global_change(Symbol*);
 	/*gets the value of a global*/
 	Object::ref global_read(Symbol*);
+	/*sets the value of a global*/
+	void global_write(Symbol*, Object::ref);
 
 	/*sets process status to process_dead, and frees its
 	heap.

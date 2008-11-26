@@ -121,7 +121,7 @@ inline void bytecode_local(ProcessStack& stack, int N){
 }
 inline void bytecode_global_set(Process& proc, ProcessStack& stack,
 		Symbol *S){
-  S->set_value(stack.top());
+  proc.global_write(S, stack.top());
 }
 /*
 inline void bytecode_sv_set(ProcessStack& stack){
