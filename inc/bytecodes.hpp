@@ -86,7 +86,7 @@ inline void bytecode_closure_ref(ProcessStack& stack, Closure& clos, int N){
 }
 inline void bytecode_global(Process& proc, ProcessStack& stack,
 		Symbol *S){
-  //stack.push(proc.get(S));
+  stack.push(proc.global_read(S));
 }
 inline void bytecode_int(Process& proc, ProcessStack& stack, int N){
   stack.push(Object::to_ref(N));
@@ -121,7 +121,7 @@ inline void bytecode_local(ProcessStack& stack, int N){
 }
 inline void bytecode_global_set(Process& proc, ProcessStack& stack,
 		Symbol *S){
-  //proc.assign(S, stack.top());
+  S->set_value(stack.top());
 }
 /*
 inline void bytecode_sv_set(ProcessStack& stack){
@@ -138,8 +138,8 @@ inline void bytecode_sym(Process& proc, ProcessStack& stack, Symbol *S) {
   stack.push(Object::to_ref(S));
 }
 inline void bytecode_symeval(Process& proc, ProcessStack& stack){
-	Symbol* sp = expect_type<Symbol>(stack.top(), "symbol expected!");
-	//stack.top() = proc.get(sp->a);
+  Symbol* sp = expect_type<Symbol>(stack.top(), "symbol expected!");
+  stack.top() = proc.global_read(sp);
 }
 // inline void bytecode_tag(Process& proc, ProcessStack& stack){
 // 	/*have to check that the current type tag isn't
