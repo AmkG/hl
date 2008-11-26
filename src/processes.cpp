@@ -66,7 +66,7 @@ void Process::kill(void) {
 	}
 	global_cache.clear();
 	invalid_globals.clear();
-	/*TODO: how to free heaps??*/
+	free_heap();
 }
 void Process::atomic_kill(void) {
 	{AppLock l(mtx);
@@ -85,7 +85,7 @@ void Process::atomic_kill(void) {
 	{AppLock l(notification_mtx);
 		invalid_globals.clear();
 	}
-	/*TODO: how to free heaps??*/
+	free_heap();
 }
 
 Heap& Process::heap(void) {

@@ -220,6 +220,11 @@ protected:
 	void cheney_collection(Semispace*);
 	void GC(size_t);
 
+	void free_heap(void) {
+		main.reset();
+		other_spaces.reset(0);
+	}
+
 	/*required overload*/
 	/*This virtual function *must* be defined by any derived
 	class.  It should scan the root set of the heap.
@@ -232,6 +237,7 @@ public:
 		/*compile-time checking that T inherits from Generic*/
 		Generic* _create_template_must_be_Generic_ =
 			static_cast<Generic*>((T*) 0);
+		if(!main) throw std::bad_alloc();
 		size_t sz = compute_size<T>();
 		if(!main->can_fit(sz)) GC(sz);
 		void* pt = main->alloc(sz);
@@ -252,6 +258,7 @@ public:
 		*/
 		Generic* _create_variadic_template_must_be_Generic_ =
 			static_cast<Generic*>((T*) 0);
+		if(!main) throw std::bad_alloc();
 		size_t sz = compute_size_variadic<T>(extra);
 		if(!main->can_fit(sz)) GC(sz);
 		void* pt = main->alloc(sz);
