@@ -61,11 +61,29 @@ bool Process::unanesthesize(void) {
 
 void Process::kill(void) {
 	stat = process_dead;
+	{ValueHolderRef tmp;
+		mbox.swap(tmp);
+	}
+	global_cache.clear();
+	invalid_globals.clear();
 	/*TODO: how to free heaps??*/
 }
 void Process::atomic_kill(void) {
 	{AppLock l(mtx);
 		stat = process_dead;
+		{ValueHolderRef tmp;
+			mbox.swap(tmp);
+		}
+	}
+	/*used only when running anyway; since we're dead,
+	no need to lock
+	*/
+	global_cache.clear();
+	/*lock notification_mtx in case someone decides to
+	notify us at this time
+	*/
+	{AppLock l(notification_mtx);
+		invalid_globals.clear();
 	}
 	/*TODO: how to free heaps??*/
 }
