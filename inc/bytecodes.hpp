@@ -138,7 +138,10 @@ inline void bytecode_sym(Process& proc, ProcessStack& stack, Symbol *S) {
   stack.push(Object::to_ref(S));
 }
 inline void bytecode_symeval(Process& proc, ProcessStack& stack){
-  Symbol* sp = expect_type<Symbol>(stack.top(), "symbol expected!");
+  if(!is_a<Symbol*>(stack.top())) {
+    throw_HlError("symeval expects a symbol");
+  }
+  Symbol* sp = as_a<Symbol*>(stack.top());
   stack.top() = proc.global_read(sp);
 }
 // inline void bytecode_tag(Process& proc, ProcessStack& stack){

@@ -376,12 +376,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       goto call_current_closure;
     } NEXT_BYTECODE;
     BYTECODE(global): {
-      INTPARAM(S);
-      //bytecode_global(proc, stack, S);
+      SYMPARAM(S);
+      bytecode_global(proc, stack, S);
     } NEXT_BYTECODE;
     BYTECODE(global_set): {
-      INTPARAM(S);
-      //bytecode_global_set(proc,stack,S);
+      SYMPARAM(S);
+      bytecode_global_set(proc,stack,S);
     } NEXT_BYTECODE;
     BYTECODE(halt): {
       stack.restack(1);
@@ -654,13 +654,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //     BYTECODE(sv_set): {
 //       bytecode_sv_set(stack);
 //     } NEXT_BYTECODE;
-//     BYTECODE(sym): {
-//       INTPARAM(S);
-//       bytecode_sym(proc, stack, S);
-//     } NEXT_BYTECODE;
-//     BYTECODE(symeval): {
-//       bytecode_symeval(proc, stack);
-//     } NEXT_BYTECODE;
+     BYTECODE(sym): {
+       SYMPARAM(S);
+       bytecode_sym(proc, stack, S);
+     } NEXT_BYTECODE;
+     BYTECODE(symeval): {
+       bytecode_symeval(proc, stack);
+     } NEXT_BYTECODE;
 //     BYTECODE(type): {
 //       bytecode_<&Generic::type>(proc, stack);
 //     } NEXT_BYTECODE;
