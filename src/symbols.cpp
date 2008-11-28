@@ -52,8 +52,8 @@ void Symbol::set_value(Object::ref o) {
 				if(i != j) {
 					notification_list[j] = notification_list[i];
 				}
-				++j;
 				notification_list[j]->notify_global_change(this);
+				++j;
 			}
 		}
 		notification_list.resize(j);
