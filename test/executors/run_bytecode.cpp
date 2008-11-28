@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
 
 #include "reader.hpp"
 #include "executors.hpp"
