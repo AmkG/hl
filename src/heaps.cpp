@@ -265,7 +265,7 @@ void ValueHolder::copy_object(ValueHolderRef& np, Object::ref o) {
 	typedef std::map<Generic*, Generic*> TM;
 	if(is_a<Generic*>(o)) {
 		TM obs;
-		size_t total;
+		size_t total = 0;
 		/*first, measure the memory*/
 		{ObjectMeasurer om(obs);
 			om.operate(as_a<Generic*>(o));
