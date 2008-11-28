@@ -228,7 +228,6 @@ public:
 		if(is_a<Generic*>(o)) {
 			Generic* gp = as_a<Generic*>(o);
 			if(mp->find(gp) == mp->end()) {
-				N += gp->real_size();
 				(*mp)[gp] = gp;
 				todo.push(gp);
 			}
@@ -238,6 +237,7 @@ public:
 		(*mp)[gp] = gp;
 		todo.push(gp);
 		do {
+			N += gp->real_size();
 			gp = todo.top(); todo.pop();
 			gp->traverse_references(this);
 		} while(!todo.empty());
@@ -283,7 +283,9 @@ void ValueHolder::copy_object(ValueHolderRef& np, Object::ref o) {
 		{ObjectsTraverser<ReferenceReplacer> ot(obs);
 			sp->traverse_objects(&ot);
 		}
-		o = Object::to_ref(obs[as_a<Generic*>(o)]);
+		Generic* old_o = as_a<Generic*>(o);
+		Generic* new_o = obs[old_o];
+		o = Object::to_ref(new_o);
 
 		/*create holder*/
 		np.p = new ValueHolder;
