@@ -152,7 +152,11 @@ void Process::scan_root_object(GenericTraverser* gt) {
 	for(size_t i = 0; i < stack.size(); ++i) {
 		gt->traverse(stack[i]);
 	}
-	/*insert code for traversing cached globals here*/
+	typedef std::map<Symbol*, Object::ref>::iterator cache_it;
+	cache_it it;
+	for(it = global_cache.begin(); it != global_cache.end(); ++it) {
+		gt->traverse(it->second);
+	}
 	/*insert code for traversing process-local vars here*/
 }
 
