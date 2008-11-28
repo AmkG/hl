@@ -20,14 +20,6 @@ Usage:
 
 #include"unichars.hpp"
 
-#ifdef MY_COMPILER
-// without these my compiler signals an error -- stefano
-// I suggest you try it now with all_defines.hpp
-// included in all source files -- almkglor
-#define INTPTR_MIN		(-2147483647-1)
-#define INTPTR_MAX		(2147483647)
-#endif // MY_COMPILER
-
 class Generic;
 class Symbol;
 class Cons;
