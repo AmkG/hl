@@ -58,6 +58,8 @@ template<typename T> static inline T as_a(Object::ref);
 
 static inline bool is_t(Object::ref);
 
+size_t hash_is(Object::ref);
+
 namespace Object {
 
 /*-----------------------------------------------------------------------------
@@ -149,6 +151,7 @@ The tagged pointer type
 
 		friend ref t(void);
 		friend bool _is_t(ref);
+		friend size_t ::hash_is(Object::ref);
 	};
 
 /*-----------------------------------------------------------------------------
