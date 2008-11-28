@@ -197,7 +197,7 @@ ValueHolder
 
 void ValueHolder::traverse_objects(HeapTraverser* ht) const {
 	for(ValueHolder const* pt = this; pt; pt = &*pt->next) {
-		pt->sp->traverse_objects(ht);
+		if(pt->sp) pt->sp->traverse_objects(ht);
 	}
 }
 
