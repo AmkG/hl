@@ -86,7 +86,7 @@ public:
 		  black(0),
 		  mtx(),
 		  mbox(),
-		  global_cache()
+		  global_cache(),
 		  notification_mtx(),
 		  invalid_globals() { }
 /*-----------------------------------------------------------------------------
