@@ -81,6 +81,14 @@ private:
 	void invalidate_changed_globals(void);
 
 public:
+	Process(void)
+		: stat(process_running),
+		  black(0),
+		  mtx(),
+		  mbox(),
+		  global_cache()
+		  notification_mtx(),
+		  invalid_globals() { }
 /*-----------------------------------------------------------------------------
 For process-level garbage collection
 -----------------------------------------------------------------------------*/
