@@ -1,0 +1,42 @@
+(int 0)
+(global-set foo)
+(int 1)
+(global foo)
+(+)
+(global-set foo)
+(closure 0
+  (check-vars 2)
+  (global foo)
+  (continue))
+(k-closure 0
+  (halt))
+(apply 2)
+
+;^1$
+
+; **** assign a complex structure
+
+(int 0)
+(int 1)
+(cons)
+(global-set foo)
+(closure 0
+  (check-vars 2)
+  (global foo)
+  (int 2)
+  (cons)
+  (global-set foo)
+  (closure 0
+    (check-vars 2)
+    (global foo)
+    (car)
+    (car)
+    (continue))
+  (local 1)
+  (apply 2))
+(k-closure 0
+  (halt))
+(apply 2)
+
+;^0$
+
