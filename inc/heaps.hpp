@@ -151,7 +151,7 @@ public:
 	inline size_t used_total(void) const {
 		size_t total = 0;
 		for(ValueHolder const* pt = this; pt; pt = &*pt->next) {
-			total += pt->sp->used();
+			if(pt->sp) total += pt->sp->used();
 		}
 		return total;
 	}
