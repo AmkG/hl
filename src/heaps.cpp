@@ -221,8 +221,8 @@ public:
 	std::map<Generic*,Generic*>* mp;
 	std::stack<Generic*> todo;
 
-	explicit ObjectMeasurer(std::map<Generic*,Generic*>& m)
-		: N(0), mp(&m) { }
+	explicit ObjectMeasurer(std::map<Generic*,Generic*>* nmp)
+		: N(0), mp(nmp) { }
 
 	void traverse(Object::ref& o) {
 		if(is_a<Generic*>(o)) {
@@ -248,8 +248,8 @@ class ReferenceReplacer : public GenericTraverser {
 private:
 	std::map<Generic*, Generic*>* mp;
 public:
-	explicit ReferenceReplacer(std::map<Generic*, Generic*>& m)
-		: mp(&m) { }
+	explicit ReferenceReplacer(std::map<Generic*, Generic*>* nmp)
+		: mp(nmp) { }
 	void traverse(Object::ref& o) {
 		if(is_a<Generic*>(o)) {
 			std::map<Generic*, Generic*>::iterator it;
@@ -267,7 +267,7 @@ void ValueHolder::copy_object(ValueHolderRef& np, Object::ref o) {
 		TM obs;
 		size_t total = 0;
 		/*first, measure the memory*/
-		{ObjectMeasurer om(obs);
+		{ObjectMeasurer om(&obs);
 			om.operate(as_a<Generic*>(o));
 			total = om.N;
 		}
@@ -280,7 +280,7 @@ void ValueHolder::copy_object(ValueHolderRef& np, Object::ref o) {
 		}
 
 		/*translate*/
-		{ObjectsTraverser<ReferenceReplacer> ot(obs);
+		{ObjectsTraverser<ReferenceReplacer> ot(&obs);
 			sp->traverse_objects(&ot);
 		}
 		Generic* old_o = as_a<Generic*>(o);
