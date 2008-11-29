@@ -12,11 +12,25 @@ GenericTraverser
 "traverse" method.  This method is invoked
 on each reference of an object.
 */
-
 class GenericTraverser {
 public:
 	virtual void traverse(Object::ref&) =0;
 	virtual ~GenericTraverser() {}
+};
+
+/*-----------------------------------------------------------------------------
+HashingClass
+-----------------------------------------------------------------------------*/
+/*A class which provides a "enhash" method, which
+perturbs its internal state.
+*/
+class HashingClass {
+private:
+	uint32_t a, b;
+public:
+	uint32_t c;
+	void enhash(size_t);
+	HashingClass(void);
 };
 
 /*-----------------------------------------------------------------------------
@@ -56,6 +70,26 @@ public:
 
 	/*broken hearts for GC*/
 	virtual void break_heart(Generic*) =0;
+
+	/*------These two functions must be redefined together------*/
+	virtual bool is(Object::ref) {
+		/*return true if the given Object::ref is-equal to
+		this object, even if they have different addresses
+		*/
+		return false;
+	}
+	virtual void enhash(HashingClass* hc) {
+		/*Should provide hc with all the values
+		it uses to determine equality, as in is()
+		above.
+		Should *not* provide Generic* pointers,
+		because those *will* change in a GC, and
+		we want hash tables to work even across
+		a GC.
+		*/
+		return;
+	}
+	/*------These two functions must be redefined together------*/
 
 	/*dtor*/
 	virtual ~Generic() { }
