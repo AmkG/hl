@@ -161,6 +161,20 @@ static inline T* known_type(Object::ref x) {
 	return static_cast<T*>(as_a<Generic*>(x));
 }
 
+/*
+Cons* cp = maybe_type<Cons>*(proc.stack().top());
+if(cp) {
+	your_mom_does_a_cons(cp);
+} else {
+	your_mom_does_something_else();
+}
+*/
+template<class T>
+static inline T* maybe_type(Object::ref x) {
+	if(!is_a<Generic*>(x)) return NULL;
+	return dynamic_cast<T*>(as_a<Generic*>(x));
+}
+
 /*-----------------------------------------------------------------------------
 Cons cell
 -----------------------------------------------------------------------------*/
@@ -224,6 +238,16 @@ class Process;
 class HlPid : public GenericDerived<HlPid> {
 public:
 	Process* process;
+
+	bool is(Object::ref o) const {
+		HlPid* pp = maybe_type<HlPid>(o);
+		if(pp) {
+			return process == pp->process;
+		} else return false;
+	}
+	void enhash(HashingClass* hc) const {
+		hc->enhash((size_t) process);
+	}
 };
 
 /*-----------------------------------------------------------------------------
@@ -299,11 +323,16 @@ performed on the string, the string-modify detects the
 class HlString : public GenericDerived<HlString> {
 public:
 	Object::ref impl;
+
 	void traverse_references(GenericTraverser* gt) {
 		gt->traverse(impl);
 	}
-	UnicodeChar ref(size_t i);
-	size_t size(void);
+
+	bool is(Object::ref) const;
+	void enhash(HashingClass*) const;
+
+	UnicodeChar ref(size_t i) const;
+	size_t size(void) const;
 	/*modifies a string:
 		stack.top(3) = string
 		stack.top(2) = UnicodeChar
@@ -329,7 +358,7 @@ public:
 		shared(0) { }
 };
 
-inline UnicodeChar HlString::ref(size_t i) {
+inline UnicodeChar HlString::ref(size_t i) const {
 	HlStringImpl& S = *known_type<HlStringImpl>(impl);
 	if(i > S.size()) {
 		throw_HlError("'string-ref index out of bounds");
@@ -337,9 +366,33 @@ inline UnicodeChar HlString::ref(size_t i) {
 	return as_a<UnicodeChar>(S[i]);
 }
 
-inline size_t HlString::size(void) {
+inline size_t HlString::size(void) const {
 	HlStringImpl& S = *known_type<HlStringImpl>(impl);
 	return S.size();
+}
+
+bool HlString::is(Object::ref o) const {
+	HlString* hs = maybe_type<HlString>(o);
+	if(hs) {
+		if(hs->impl == impl) return true;
+		if(hs->size() != size()) return false;
+		HlStringImpl& S1 = *known_type<HlStringImpl>(impl);
+		HlStringImpl& S2 = *known_type<HlStringImpl>(hs->impl);
+		for(size_t i = 0; i < size(); ++i) {
+			if(S1[i] != S2[i]) {
+				return false;
+			}
+		}
+		return true;
+	} else return false;
+}
+void HlString::enhash(HashingClass* hc) const {
+	if(impl) {
+		HlStringImpl& S = *known_type<HlStringImpl>(impl);
+		for(size_t i = 0; i < size(); ++i) {
+			hc->enhash(as_a<UnicodeChar>(S[i]).dat);
+		}
+	}
 }
 
 /*-----------------------------------------------------------------------------
