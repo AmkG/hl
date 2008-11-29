@@ -161,5 +161,15 @@ static inline size_t compute_size_variadic(size_t sz) {
 	/*otherwise*/				sizeofT ;
 }
 
+/*-----------------------------------------------------------------------------
+Utility
+-----------------------------------------------------------------------------*/
+
+static inline bool is(Object::ref a, Object::ref b) {
+	if(a == b) return true;
+	if(!is_a<Generic*>(a)) return false;
+	return as_a<Generic*>(a)->is(b);
+}
+
 #endif // GENERICS_H
 
