@@ -72,13 +72,13 @@ public:
 	virtual void break_heart(Generic*) =0;
 
 	/*------These two functions must be redefined together------*/
-	virtual bool is(Object::ref) {
+	virtual bool is(Object::ref) const {
 		/*return true if the given Object::ref is-equal to
 		this object, even if they have different addresses
 		*/
 		return false;
 	}
-	virtual void enhash(HashingClass* hc) {
+	virtual void enhash(HashingClass* hc) const {
 		/*Should provide hc with all the values
 		it uses to determine equality, as in is()
 		above.
