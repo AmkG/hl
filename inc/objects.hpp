@@ -138,7 +138,7 @@ The tagged pointer type
 
 		/*safe bool idiom*/
 		typedef intptr_t (ref::*unspecified_bool_type);
-		inline operator unspecified_bool_type(void) {
+		inline operator unspecified_bool_type(void) const {
 			return dat != 0 ? &ref::dat : 0;
 		}
 
