@@ -154,7 +154,8 @@ public:
       return it->second;
   }
   virtual ~Executor() {}
-  virtual void run(ProcessStack & stack, size_t & reductions) = 0;
+  // return true if a function call must be performed, false otherwise
+  virtual bool run(Process & proc, size_t & reductions) = 0;
 };
 
 /*

@@ -680,7 +680,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(do_executor): {
       SYMPARAM(s);
       Executor *e = Executor::findExecutor(s);
-      if (e)
+      if (e) {
         // ?? could this cause problems if an hl function is called
         // ?? by the Executor?
         // !! Not if the Executor sets up the hl stack properly for
@@ -694,15 +694,14 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         // !! to allocate though
         // !! Almost definitely we don't want the Executor to call
         // !! the hl function by calling back into execute().
-        e->run(stack, reductions);
+        if (e->run(proc, reductions))
+          goto call_current_closure;
+      }
       else {
         std::string err("couldn't find executor: ");
         err += s->getPrintName();
         throw_HlError(err.c_str());
       }
-      // !! Maybe better to use `goto call_current_closure;`
-      // !! although we could use the sequence
-      // !! ( (do-executor 'name) (apply))
     } NEXT_BYTECODE;
     BYTECODE(plus): {
       bytecode_plus(proc, stack);
