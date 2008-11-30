@@ -187,8 +187,8 @@ private:
 
 public:
 
-  inline Object::ref car() { return car_ref; }
-  inline Object::ref cdr() { return cdr_ref; }
+  inline Object::ref& car() { return car_ref; }
+  inline Object::ref& cdr() { return cdr_ref; }
   inline Object::ref scar(Object::ref x) { return car_ref = x; }
   inline Object::ref scdr(Object::ref x) { return cdr_ref = x; }
 
@@ -419,4 +419,110 @@ public:
   // Numbers are immutable
 };
 
+/*-----------------------------------------------------------------------------
+Array
+-----------------------------------------------------------------------------*/
+
+class HlArray : public GenericDerivedVariadic<HlArray> {
+public:
+	void traverse(GenericTraverser* gt) {
+		for(size_t i = 0; i < sz; ++i) {
+			gt->traverse(index(i));
+		}
+	}
+	size_t size(void) const {
+		return sz;
+	}
+	Object::ref& operator[](size_t i) {
+		return index(i);
+	}
+	Object::ref const& operator[](size_t i) const {
+		return index(i);
+	}
+	HlArray(size_t sz) : GenericDerivedVariadic<HlArray>(sz) { }
+};
+
+/*-----------------------------------------------------------------------------
+Tables
+-----------------------------------------------------------------------------*/
+
+enum HlTableType {
+	/*table is empty*/
+	hl_table_empty,
+
+	/*pairs are stored in a straight array:
+		[0] = first key
+		[1] = first value
+		[2] = second key
+		[3] = second value
+		...
+	*/
+	hl_table_linear,
+
+	/*values are stored in straight array
+		[0] = value for key '0
+		[1] = value for key '1
+		[2] = value for key '2
+		...
+	*/
+	hl_table_arrayed,
+
+	/*pairs are stored in hash buckets.  When hashes collide,
+	simply put in next hash bucket.
+		[0] = (k . v) pair with (hash k) == 0
+		[1] = (k . v) pair with (hash k) == 0 or (hash k) == 1
+		...
+		[N] = (k . v) pair with (hash k) == N
+		[N+1] = (k . v) pair with (hash k) == N or (hash k) == N + 1
+	*/
+	hl_table_hashed
+};
+
+class HlTable : public GenericDerived<HlTable> {
+private:
+	/*number of entries in a linear table before we switch
+	over to a hashed table
+	*/
+	static const size_t LINEAR_LEVEL = 8;
+
+	/*Maximum numeric index when inserting a numeric
+	key into an empty table, and we decide to use
+	an arrayed table
+	*/
+	static const size_t ARRAYED_LEVEL = 4;
+
+	/*used internally*/
+	Object::ref* linear_lookup(Object::ref) const;
+	Object::ref* arrayed_lookup(Object::ref) const;
+	Object::ref* hashed_lookup(Object::ref) const;
+
+	Object::ref* location_lookup(Object::ref) const;
+
+public:
+	Object::ref impl;
+	HlTableType type;
+	size_t pairs;		/*number of key-value pairs*/
+
+	void traverse_references(GenericTraverser* gt) {
+		gt->traverse(impl);
+	}
+
+	inline Object::ref lookup(Object::ref k) const {
+		Object::ref* op = location_lookup(k);
+		if(op) return *op; else return Object::nil();
+	}
+
+	/*On entry:
+		stack.top(1) = key
+		stack.top(2) = value
+		stack.top(3) = table (type not checked!)
+	On return:
+		stack.top(1) = value
+	*/
+	static void insert(Heap&, ProcessStack&);
+
+	HlTable(void) : impl(Object::nil()), type(hl_table_empty) { }
+};
+
 #endif //TYPES_H
+
