@@ -60,14 +60,6 @@ public:
 	*/
 	virtual Generic* clone(Semispace*) const =0;
 
-	/*hash functions for table-ident and table-is*/
-	virtual size_t hash_ident(void) const {
-		return reinterpret_cast<size_t>(this);
-	}
-	virtual size_t hash_is(void) const {
-		return reinterpret_cast<size_t>(this);
-	}
-
 	/*broken hearts for GC*/
 	virtual void break_heart(Generic*) =0;
 

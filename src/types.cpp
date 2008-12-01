@@ -156,7 +156,7 @@ inline Object::ref* HlTable::arrayed_lookup(Object::ref k) const {
 
 inline Object::ref* HlTable::hashed_lookup(Object::ref k) const {
 	HlArray& A = *known_type<HlArray>(impl);
-	size_t I = hash_is() % A.size();
+	size_t I = ::hash_is(k) % A.size();
 	size_t J = I;
 	Object::ref key;
 loop:
