@@ -401,7 +401,7 @@ Array
 
 class HlArray : public GenericDerivedVariadic<HlArray> {
 public:
-	void traverse(GenericTraverser* gt) {
+	void traverse_references(GenericTraverser* gt) {
 		for(size_t i = 0; i < sz; ++i) {
 			gt->traverse(index(i));
 		}
