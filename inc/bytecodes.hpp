@@ -200,66 +200,120 @@ inline void bytecode_variadic(Process& proc, ProcessStack& stack, int N){
 
 // Math
 
-template <int (*iiop)(int, int), float (*ifop)(int, float), 
-          float (*fiop)(float, int), float (*ffop)(float, float)>
-inline void do_math(Process & p, ProcessStack & stack) {
+inline void bytecode_plus(Process & p, ProcessStack & stack) {
   Object::ref a = stack.top(); stack.pop();
   Object::ref b = stack.top();
   if (is_a<int>(a)) {
     if (is_a<int>(b)) {
       stack.top() = 
-        Object::from_a_scaled_int((*iiop)(Object::to_a_scaled_int(a), 
-                                          Object::to_a_scaled_int(b)));
-      // !! to_a_scaled_int and from_a_scaled_int work properly
-      // !! only for addition and subtraction.  For multiply we
-      // !! need to scale down, for divide we need to scale up.
+        Object::from_a_scaled_int(Object::to_a_scaled_int(a) +  
+                                  Object::to_a_scaled_int(b));
     }
     else {
       Float *f = expect_type<Float>(b, "number expected");
       stack.top() = 
-        Object::to_ref(Float::mk(p, (*ifop)(as_a<int>(a), f->get())));
+        Object::to_ref(Float::mk(p, as_a<int>(a) + f->get()));
     }
   }
   else {
     Float *f = expect_type<Float>(a, "number expected");
     if (is_a<int>(b)) {
       stack.top() = 
-        Object::to_ref(Float::mk(p, (*fiop)(f->get(), as_a<int>(b))));
+        Object::to_ref(Float::mk(p, f->get() + as_a<int>(b)));
     }
     else {
       Float *f2 = expect_type<Float>(b, "number expected");
-      stack.top() = Object::to_ref(Float::mk(p, (*ffop)(f->get(), f2->get())));
+      stack.top() = Object::to_ref(Float::mk(p, f->get() + f2->get()));
     }
   }
 }
 
-template <class R, class T1, class T2>
-inline R plus(T1 a, T2 b) {
-  return a+b;
+inline void bytecode_minus(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(); stack.pop();
+  Object::ref b = stack.top();
+  if (is_a<int>(a)) {
+    if (is_a<int>(b)) {
+      stack.top() = 
+        Object::from_a_scaled_int(Object::to_a_scaled_int(a) -  
+                                  Object::to_a_scaled_int(b));
+    }
+    else {
+      Float *f = expect_type<Float>(b, "number expected");
+      stack.top() = 
+        Object::to_ref(Float::mk(p, as_a<int>(a) - f->get()));
+    }
+  }
+  else {
+    Float *f = expect_type<Float>(a, "number expected");
+    if (is_a<int>(b)) {
+      stack.top() = 
+        Object::to_ref(Float::mk(p, f->get() - as_a<int>(b)));
+    }
+    else {
+      Float *f2 = expect_type<Float>(b, "number expected");
+      stack.top() = Object::to_ref(Float::mk(p, f->get() - f2->get()));
+    }
+  }
 }
 
-template <class R, class T1, class T2>
-inline R minus(T1 a, T2 b) {
-  return a-b;
+inline void bytecode_mul(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(); stack.pop();
+  Object::ref b = stack.top();
+  if (is_a<int>(a)) {
+    if (is_a<int>(b)) {
+      stack.top() = Object::to_ref(as_a<int>(a) * as_a<int>(b));
+    }
+    else {
+      Float *f = expect_type<Float>(b, "number expected");
+      stack.top() = Object::to_ref(Float::mk(p, as_a<int>(a) * f->get()));
+    }
+  }
+  else {
+    Float *f = expect_type<Float>(a, "number expected");
+    if (is_a<int>(b)) {
+      stack.top() = Object::to_ref(Float::mk(p, f->get() * as_a<int>(b)));
+    }
+    else {
+      Float *f2 = expect_type<Float>(b, "number expected");
+      stack.top() = Object::to_ref(Float::mk(p, f->get() * f2->get()));
+    }
+  }
 }
 
-template <class R, class T1, class T2>
-inline R divide(T1 a, T2 b) {
-  return a/b;
-}
-
-template <class R, class T1, class T2>
-inline R multiply(T1 a, T2 b) {
-  return a*b;
-}
-
-inline void bytecode_plus(Process& proc, ProcessStack& stack) {
-  // the compiler should inline this properly
-  do_math<&plus, &plus, &plus, &plus>(proc, stack);
-}
-
-inline void bytecode_minus(Process& proc, ProcessStack& stack) {
-  do_math<&minus, &minus, &minus, &minus>(proc, stack);
+inline void bytecode_div(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(); stack.pop();
+  Object::ref b = stack.top();
+  if (is_a<int>(a)) {
+    if (is_a<int>(b)) {
+      int x = as_a<int>(b);
+      if (x == 0)
+        throw_HlError("division by zero");
+      stack.top() = Object::to_ref(as_a<int>(a) / x);
+    }
+    else {
+      Float *f = expect_type<Float>(b, "number expected");
+      float x = f->get();
+      if (x == 0.0)
+        throw_HlError("division by zero");
+      stack.top() = Object::to_ref(Float::mk(p, as_a<int>(a) / x));
+    }
+  }
+  else {
+    Float *f = expect_type<Float>(a, "number expected");
+    if (is_a<int>(b)) {
+      int x = as_a<int>(b);
+      if (x == 0)
+        throw_HlError("division by zero");
+      stack.top() = Object::to_ref(Float::mk(p, f->get() / x));
+    }
+    else {
+      Float *f2 = expect_type<Float>(b, "number expected");
+      float x = f2->get();
+      if (x == 0.0)
+        throw_HlError("division by zero");
+      stack.top() = Object::to_ref(Float::mk(p, f->get() / x));
+    }
+  }
 }
 
 #endif //BYTECODES_H
