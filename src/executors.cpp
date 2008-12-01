@@ -183,6 +183,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("variadic",		THE_BYTECODE_LABEL(variadic))
       ("do-executor",               THE_BYTECODE_LABEL(do_executor))
       ("+",                     THE_BYTECODE_LABEL(plus))
+      ("-",                     THE_BYTECODE_LABEL(minus))
+      ("*",                     THE_BYTECODE_LABEL(mul))
+      ("/",                     THE_BYTECODE_LABEL(div))
+      ("mod",                     THE_BYTECODE_LABEL(mod))
       /*assign bultin global*/
       ;/*end initializer*/
 
@@ -705,6 +709,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(plus): {
       bytecode_plus(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(minus): {
+      bytecode_minus(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(mul): {
+      bytecode_mul(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(div): {
+      bytecode_div(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(mod): {
+      bytecode_mos(proc, stack);
     } NEXT_BYTECODE;
   }
 }
