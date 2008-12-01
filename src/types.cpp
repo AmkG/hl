@@ -446,9 +446,13 @@ rehash: {
 	cp->cdr() = stack.top(2);
 	stack.top(1) = Object::to_ref(cp);
 	/*create the new array*/
-	HlArray& NA = *hp.create_variadic<HlArray>(
-		known_type<HlArray>(T.impl)->size() * 2
-	);
+	HlArray* NAp;
+	{
+		HlTable& T = *known_type<HlTable>(stack.top(3));
+		HlArray& A = *known_type<HlArray>(T.impl);
+		NAp = hp.create_variadic<HlArray>(A.size() * 2);
+	}
+	HlArray& NA = *NAp;
 	/*re-read*/
 	HlTable& T = *known_type<HlTable>(stack.top(3));
 	HlArray& A = *known_type<HlArray>(T.impl);
