@@ -35,7 +35,7 @@ public:
     }
     size_t off = size() - sz;
     /*Not exactly the best way to do it?*/
-    if(sz != 0) erase(begin(), begin() + off);
+    if(off != 0) erase(begin(), begin() + off);
   }
 
   Object::ref& operator[](size_t pos) {
