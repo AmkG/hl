@@ -150,7 +150,7 @@ inline Object::ref* HlTable::arrayed_lookup(Object::ref k) const {
 	if(!is_a<int>(k)) return NULL;
 	HlArray& A = *known_type<HlArray>(impl);
 	int x = as_a<int>(k);
-	if(x < 0 || x > A.size()) return NULL;
+	if(x < 0 || x >= A.size()) return NULL;
 	return &A[x];
 }
 
