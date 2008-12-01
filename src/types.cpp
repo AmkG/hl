@@ -81,6 +81,31 @@ void HlString::stack_create(Heap& hp, ProcessStack& stack, size_t N) {
 	stack.top() = Object::to_ref(Tp);
 }
 
+bool HlString::is(Object::ref o) const {
+	HlString* hs = maybe_type<HlString>(o);
+	if(hs) {
+		if(hs->impl == impl) return true;
+		if(hs->size() != size()) return false;
+		HlStringImpl& S1 = *known_type<HlStringImpl>(impl);
+		HlStringImpl& S2 = *known_type<HlStringImpl>(hs->impl);
+		for(size_t i = 0; i < size(); ++i) {
+			if(S1[i] != S2[i]) {
+				return false;
+			}
+		}
+		return true;
+	} else return false;
+}
+
+void HlString::enhash(HashingClass* hc) const {
+	if(impl) {
+		HlStringImpl& S = *known_type<HlStringImpl>(impl);
+		for(size_t i = 0; i < size(); ++i) {
+			hc->enhash(as_a<UnicodeChar>(S[i]).dat);
+		}
+	}
+}
+
 /*-----------------------------------------------------------------------------
 HlTable
 -----------------------------------------------------------------------------*/
