@@ -316,4 +316,40 @@ inline void bytecode_div(Process & p, ProcessStack & stack) {
   }
 }
 
+inline void bytecode_mod(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(); stack.pop();
+  Object::ref b = stack.top();
+  if (is_a<int>(a)) {
+    if (is_a<int>(b)) {
+      int x = as_a<int>(b);
+      if (x == 0)
+        throw_HlError("division by zero");
+      stack.top() = Object::to_ref(as_a<int>(a) % x);
+    }
+    else {
+      Float *f = expect_type<Float>(b, "number expected");
+      float x = f->get();
+      if (x == 0.0)
+        throw_HlError("division by zero");
+      stack.top() = Object::to_ref(Float::mk(p, as_a<int>(a) % x));
+    }
+  }
+  else {
+    Float *f = expect_type<Float>(a, "number expected");
+    if (is_a<int>(b)) {
+      int x = as_a<int>(b);
+      if (x == 0)
+        throw_HlError("division by zero");
+      stack.top() = Object::to_ref(Float::mk(p, f->get() % x));
+    }
+    else {
+      Float *f2 = expect_type<Float>(b, "number expected");
+      float x = f2->get();
+      if (x == 0.0)
+        throw_HlError("division by zero");
+      stack.top() = Object::to_ref(Float::mk(p, f->get() % x));
+    }
+  }
+}
+
 #endif //BYTECODES_H
