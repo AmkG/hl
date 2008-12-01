@@ -300,6 +300,7 @@ void HlTable::insert(Heap& hp, ProcessStack& stack) {
 							NA[i] = OA[i];
 						}
 						NA[k] = stack.top(2);
+						T.impl = Object::to_ref(&NA);
 						goto clean_up;
 					}
 				}
