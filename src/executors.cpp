@@ -27,6 +27,11 @@ static _bytecode_label bytecodelookup(Symbol *s){
 	}
 }
 
+template<class E>
+Executor* executes(void) {
+	return new E();
+}
+
 class InitialAssignments {
 public:
 	InitialAssignments const& operator()(
@@ -35,18 +40,13 @@ public:
 		bytetb[symbols->lookup(s)] = l;
 		return *this;
 	}
-	template<class E>
 	InitialAssignments const& operator()(
 			char const* s,
-			executes& dummy_unused,
-			E& e) const {
-		Executor::reg(symbols->lookup(s), new E());
+			Executor* e) const {
+		Executor::reg(symbols->lookup(s), e);
 		return *this;
 	}
 };
-
-/*dummy class*/
-class executes { };
 
 intptr_t getSimpleArgVal(SimpleArg *sa) {
   if (is_a<int>(sa->getVal()))
