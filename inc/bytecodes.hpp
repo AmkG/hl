@@ -137,12 +137,24 @@ inline void bytecode_sv_set(ProcessStack& stack){
 inline void bytecode_sym(Process& proc, ProcessStack& stack, Symbol *S) {
   stack.push(Object::to_ref(S));
 }
-inline void bytecode_symeval(Process& proc, ProcessStack& stack){
+inline void bytecode_symeval(Process& proc, ProcessStack& stack) {
   if(!is_a<Symbol*>(stack.top())) {
     throw_HlError("symeval expects a symbol");
   }
   Symbol* sp = as_a<Symbol*>(stack.top());
   stack.top() = proc.global_read(sp);
+}
+inline void bytecode_table_create(Process& proc, ProcessStack& stack) {
+  stack.push(Object::to_ref(proc.heap().create<HlTable>()));
+}
+inline void bytecode_table_ref(Process& proc, ProcessStack& stack) {
+  HlTable& T = *expect_type<HlTable>(stack.top(2), "table-ref expects a table");
+  stack.top(2) = T.lookup(stack.top(1));
+  stack.pop();
+}
+inline void bytecode_table_sref(Process& proc, ProcessStack& stack) {
+  HlTable& T = *expect_type<HlTable>(stack.top(3), "table-sref expects a table");
+  HlTable::insert(proc.heap(), stack);
 }
 // inline void bytecode_tag(Process& proc, ProcessStack& stack){
 // 	/*have to check that the current type tag isn't

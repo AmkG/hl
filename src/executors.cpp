@@ -103,6 +103,33 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 	hp.lifo_dealloc(gp);
 }
 
+class ArrayedTableMapCont : public Executor {
+public:
+	virtual bool run(Process & proc, size_t & reductions) {
+		ProcessStack& stack = proc.stack;
+		if(stack.size() != 2)
+		/*closure is composed of:
+		clos[0] = index
+		clos[1] = number of elements in original
+		clos[2] = original table
+		*/
+		
+		return true;
+	}
+};
+
+class LinearTableMapCont : public Executor {
+public:
+	virtual bool run(Process & proc, size_t & reductions) {
+	}
+};
+
+class HashedTableMapCont : public Executor {
+public:
+	virtual bool run(Process & proc, size_t & reductions) {
+	}
+};
+
 #define SETCLOS(name) name = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]))
 
 ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init){
@@ -183,8 +210,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //       ("sv-ref",		THE_BYTECODE_LABEL(sv_ref))
 //       ("sv-ref-local-push",	THE_BYTECODE_LABEL(sv_ref_local_push))
 //       ("sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push))
-       ("sym",			THE_BYTECODE_LABEL(sym))
-       ("symeval",		THE_BYTECODE_LABEL(symeval))
+      ("sym",			THE_BYTECODE_LABEL(sym))
+      ("symeval",		THE_BYTECODE_LABEL(symeval))
+      ("table-create",		THE_BYTECODE_LABEL(table_create))
+      ("table-ref",		THE_BYTECODE_LABEL(table_ref))
+      ("table-sref",		THE_BYTECODE_LABEL(table_sref))
+      ("table-map",		THE_BYTECODE_LABEL(table_map))
 //       ("tag",			THE_BYTECODE_LABEL(tag))
 //       ("type",		THE_BYTECODE_LABEL(type))
 //       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
@@ -192,6 +223,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("variadic",		THE_BYTECODE_LABEL(variadic))
       ("do-executor",               THE_BYTECODE_LABEL(do_executor))
       ("+",                     THE_BYTECODE_LABEL(plus))
+      /*declare executors*/
+      ("table-map-cont",	executes<TableMapCont>())
       /*assign bultin global*/
       ;/*end initializer*/
 
@@ -725,13 +758,25 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //     BYTECODE(sv_set): {
 //       bytecode_sv_set(stack);
 //     } NEXT_BYTECODE;
-     BYTECODE(sym): {
-       SYMPARAM(S);
-       bytecode_sym(proc, stack, S);
-     } NEXT_BYTECODE;
-     BYTECODE(symeval): {
-       bytecode_symeval(proc, stack);
-     } NEXT_BYTECODE;
+    BYTECODE(sym): {
+      SYMPARAM(S);
+      bytecode_sym(proc, stack, S);
+    } NEXT_BYTECODE;
+    BYTECODE(symeval): {
+      bytecode_symeval(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(table_create): {
+      bytecode_table_create(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(table_ref): {
+      bytecode_table_ref(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(table_sref): {
+      bytecode_table_sref(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(table_map): {
+      
+    } NEXT_BYTECODE;
 //     BYTECODE(type): {
 //       bytecode_<&Generic::type>(proc, stack);
 //     } NEXT_BYTECODE;
