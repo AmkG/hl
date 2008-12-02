@@ -138,6 +138,7 @@ class ProcessStack;
 class Executor {
 private:
   // table of available executors
+  // !! Issue: clean up of executors !!
   static std::map<Symbol*, Executor*> tbl;
 public:
   // register an executor in the system

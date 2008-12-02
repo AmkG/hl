@@ -35,7 +35,18 @@ public:
 		bytetb[symbols->lookup(s)] = l;
 		return *this;
 	}
+	template<class E>
+	InitialAssignments const& operator()(
+			char const* s,
+			executes& dummy_unused,
+			E& e) const {
+		Executor::reg(symbols->lookup(s), new E());
+		return *this;
+	}
 };
+
+/*dummy class*/
+class executes { };
 
 intptr_t getSimpleArgVal(SimpleArg *sa) {
   if (is_a<int>(sa->getVal()))
@@ -100,13 +111,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     Process proc *will* invalidate any pointers
     and references to Generic objects in that
     process.
-    i.e. new(proc) Anything() will *always*
+    i.e. proc.heap().create<Anything>() will *always*
     invalidate any existing pointers.
     (technically it will only do so if a GC
     is triggered but hey, burned once, burned
     for all eternity)
-    (oh and yeah: proc.nilobj() and proc.tobj()
-    are both potentially allocating)
   */
 
   /*
