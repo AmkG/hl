@@ -496,6 +496,68 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(ccc): {
+
+      // !!! WARNING !!!
+      // This is *not* compatible with the SNAP 'ccc bytecode.
+      // In particular, this passes the continuation *directly*.
+      // However, ALL HL-SIDE FUNCTIONS NEVER EXPECT A
+      // CONTINUATION.  INSTEAD, THEY EXPECT A "REAL"
+      // FUNCTION.
+      // In particular, a continuation accepts EXACTLY TWO
+      // parameters: itself, and the return value.  A "REAL"
+      // function accepts AT LEAST TWO: itself, a continuation,
+      // plus any parameters.  The two types of functions
+      // conflict on the second parameter: continuations
+      // expect a return value, real functions accept a
+      // continuation.
+      // In particular, the function in this form:
+      //   (ccc
+      //     (fn (k)
+      //       (k 0)))
+      // compiles down to:
+      //   (closure 0
+      //     (check-vars 3)
+      //     (local 2)
+      //     (local 1)
+      //     (int 0)
+      //     (apply 3))
+      // Notice that it gives k *3* parameters: k, its
+      // own continuation, and the int 0.
+      // However if we use the ccc bytecode for this, the
+      // function k will expect a single parameter, the
+      // return value.
+      // Please review the code in snap/src/executors.cpp
+      //
+      // In particular, the hl-side ccc will have to be
+      // assembled from:
+      //   (closure 0
+      //     (check-vars 3)
+      //     (closure 0
+      //       (ccc))
+      //     (local 1)
+      //     (local 2)
+      //     (closure 1
+      //       (closure-ref 0)  ; f
+      //       (local 1)        ; k
+      //       (local 1)
+      //       (closure 1       ; the k we pass to the function
+      //         (check-vars 3)
+      //         ; actually performs the call to the
+      //         ; continuation
+      //         (closure-ref 0)
+      //         (local 2)
+      //         (apply 2)))
+      //     (apply 3))
+      //   (global-set ccc)
+      // Thus this bytecode is currently unuseable except
+      // to mark that continuations cannot be used; 'ccc
+      // should do something *equivalent* to:
+      //   (fn (k f)
+      //     (f k
+      //        (fn (_ignored_k val)
+      //          (k f))))
+      // !!! WARNING !!!
+
       // expect current continuation and function on the stack
       Closure *k = expect_type<Closure>(stack[1], "ccc expects a continuation");
       Closure *f = expect_type<Closure>(stack[2], "ccc expects a closure");
