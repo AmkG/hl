@@ -151,7 +151,7 @@ The tagged pointer type
 
 		friend ref t(void);
 		friend bool _is_t(ref);
-		friend size_t ::hash_is(Object::ref);
+		friend size_t (::hash_is)(Object::ref);
 	};
 
 /*-----------------------------------------------------------------------------
