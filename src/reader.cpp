@@ -52,7 +52,7 @@ std::string read_upto(std::istream & in) {
 std::istream& operator>>(std::istream & in, SimpleArg & sa) {
   std::string res = read_upto(in);
   std::stringstream s(res);
-  if (res.find('.')!=-1) { // try to parse a float
+  if (res.find('.')!=res.length()) { // try to parse a float
     double f;
     s >> f;
     // we don't have a Heap right now, and anyway we don't want to 

@@ -48,8 +48,8 @@ public:
  */
 class SimpleArgAndSeq : public BytecodeArg {
 private:
-  BytecodeSeq *seq;
   SimpleArg *sa;
+  BytecodeSeq *seq;
 public:
   SimpleArgAndSeq(SimpleArg *s, BytecodeSeq *bs) : sa(s), seq(bs) {}
   ~SimpleArgAndSeq() {

@@ -309,6 +309,7 @@ public:
 
 	explicit Heap(size_t initsize = 8 * sizeof(Object::ref))
 		: main(new Semispace(initsize)), tight(1) { }
+        virtual ~Heap() {}
 };
 
 #endif //HEAPS_H

@@ -304,7 +304,7 @@ inline void bytecode_div(Process & p, ProcessStack & stack) {
     }
     else {
       Float *f = expect_type<Float>(b, "number expected");
-      float x = f->get();
+      double x = f->get();
       if (x == 0.0)
         throw_HlError("division by zero");
       stack.top() = Object::to_ref(Float::mk(p, as_a<int>(a) / x));
@@ -320,7 +320,7 @@ inline void bytecode_div(Process & p, ProcessStack & stack) {
     }
     else {
       Float *f2 = expect_type<Float>(b, "number expected");
-      float x = f2->get();
+      double x = f2->get();
       if (x == 0.0)
         throw_HlError("division by zero");
       stack.top() = Object::to_ref(Float::mk(p, f->get() / x));
@@ -339,27 +339,7 @@ inline void bytecode_mod(Process & p, ProcessStack & stack) {
       stack.top() = Object::to_ref(as_a<int>(a) % x);
     }
     else {
-      Float *f = expect_type<Float>(b, "number expected");
-      float x = f->get();
-      if (x == 0.0)
-        throw_HlError("division by zero");
-      stack.top() = Object::to_ref(Float::mk(p, as_a<int>(a) % x));
-    }
-  }
-  else {
-    Float *f = expect_type<Float>(a, "number expected");
-    if (is_a<int>(b)) {
-      int x = as_a<int>(b);
-      if (x == 0)
-        throw_HlError("division by zero");
-      stack.top() = Object::to_ref(Float::mk(p, f->get() % x));
-    }
-    else {
-      Float *f2 = expect_type<Float>(b, "number expected");
-      float x = f2->get();
-      if (x == 0.0)
-        throw_HlError("division by zero");
-      stack.top() = Object::to_ref(Float::mk(p, f->get() % x));
+      throw_HlError("mod expects two integers");
     }
   }
 }
