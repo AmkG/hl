@@ -213,8 +213,8 @@ inline void bytecode_variadic(Process& proc, ProcessStack& stack, int N){
 // Math
 
 inline void bytecode_plus(Process & p, ProcessStack & stack) {
-  Object::ref a = stack.top(); stack.pop();
-  Object::ref b = stack.top();
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
     if (is_a<int>(b)) {
       stack.top() = 
@@ -241,8 +241,8 @@ inline void bytecode_plus(Process & p, ProcessStack & stack) {
 }
 
 inline void bytecode_minus(Process & p, ProcessStack & stack) {
-  Object::ref a = stack.top(); stack.pop();
-  Object::ref b = stack.top();
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
     if (is_a<int>(b)) {
       stack.top() = 
@@ -269,8 +269,8 @@ inline void bytecode_minus(Process & p, ProcessStack & stack) {
 }
 
 inline void bytecode_mul(Process & p, ProcessStack & stack) {
-  Object::ref a = stack.top(); stack.pop();
-  Object::ref b = stack.top();
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
     if (is_a<int>(b)) {
       stack.top() = Object::to_ref(as_a<int>(a) * as_a<int>(b));
@@ -293,8 +293,8 @@ inline void bytecode_mul(Process & p, ProcessStack & stack) {
 }
 
 inline void bytecode_div(Process & p, ProcessStack & stack) {
-  Object::ref a = stack.top(); stack.pop();
-  Object::ref b = stack.top();
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
     if (is_a<int>(b)) {
       int x = as_a<int>(b);
@@ -329,8 +329,8 @@ inline void bytecode_div(Process & p, ProcessStack & stack) {
 }
 
 inline void bytecode_mod(Process & p, ProcessStack & stack) {
-  Object::ref a = stack.top(); stack.pop();
-  Object::ref b = stack.top();
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
     if (is_a<int>(b)) {
       int x = as_a<int>(b);
