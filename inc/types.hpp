@@ -90,6 +90,9 @@ protected:
 	the variadic data at the end of the object.
 	*/
 	inline Object::ref& index(size_t i) const {
+                if (i >= sz)
+                  throw_HlError
+                    ("internal: overflow in GenericDerivedVariadic index");
 		void* vp = const_cast<GenericDerivedVariadic<T>*>(this);
 		char* cp = (char*) vp;
 		cp = cp + sizeof(T);
