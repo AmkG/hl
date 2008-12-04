@@ -28,7 +28,7 @@ static _bytecode_label bytecodelookup(Symbol *s){
 }
 
 template<class E>
-Executor* executes(void) {
+static inline Executor* THE_EXECUTOR(void) {
 	return new E();
 }
 
@@ -45,6 +45,12 @@ public:
 			Executor* e) const {
 		Executor::reg(symbols->lookup(s), e);
 		return *this;
+	}
+};
+
+class IsSymbolPackaged : public Executor {
+public:
+	bool run(Process& proc, size_t& reductions) {
 	}
 };
 
@@ -102,33 +108,6 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 	if(!kp->reusable()) return;
 	hp.lifo_dealloc(gp);
 }
-
-class ArrayedTableMapCont : public Executor {
-public:
-	virtual bool run(Process & proc, size_t & reductions) {
-		ProcessStack& stack = proc.stack;
-		if(stack.size() != 2)
-		/*closure is composed of:
-		clos[0] = index
-		clos[1] = number of elements in original
-		clos[2] = original table
-		*/
-		
-		return true;
-	}
-};
-
-class LinearTableMapCont : public Executor {
-public:
-	virtual bool run(Process & proc, size_t & reductions) {
-	}
-};
-
-class HashedTableMapCont : public Executor {
-public:
-	virtual bool run(Process & proc, size_t & reductions) {
-	}
-};
 
 #define SETCLOS(name) name = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]))
 
@@ -228,7 +207,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("/",                     THE_BYTECODE_LABEL(div))
       ("mod",                     THE_BYTECODE_LABEL(mod))
       /*declare executors*/
-      ("table-map-cont",	executes<TableMapCont>())
+      ("is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       /*assign bultin global*/
       ;/*end initializer*/
 
