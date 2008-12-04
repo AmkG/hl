@@ -836,7 +836,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_div(proc, stack);
     } NEXT_BYTECODE;
     BYTECODE(mod): {
-      bytecode_mos(proc, stack);
+      bytecode_mod(proc, stack);
     } NEXT_BYTECODE;
   }
 }
