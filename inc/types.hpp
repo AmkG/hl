@@ -6,7 +6,7 @@ Defines a set of types for use on the hl-side.
 
 #include<cstring>
 #include"objects.hpp"
-#include"generics.hpp"
+#include"specializeds.hpp"
 #include"heaps.hpp"
 
 class ProcessStack;
@@ -14,8 +14,6 @@ class ProcessStack;
 /*-----------------------------------------------------------------------------
 Utility
 -----------------------------------------------------------------------------*/
-
-void throw_HlError(char const*);
 
 /*Usage:
 Cons* cp = expect_type<Cons>(proc.stack().top(),
