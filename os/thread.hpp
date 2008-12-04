@@ -64,8 +64,6 @@ private:
 public:
   CondVar() { pthread_cond_init(&cv, NULL); }
   ~CondVar() { pthread_cond_destroy(&cv); }
-  // prevent user from not locking the mutex - get a
-  // Lock object instead of a Mutex.
   void wait(Mutex& m) { pthread_cond_wait(&cv, &m.m); }
 
 
