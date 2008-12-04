@@ -107,6 +107,7 @@ public:
 	virtual Generic* clone(Semispace*) const {
 		/*broken - why are we cloning this?*/
 		throw_OverBrokenHeart(to);
+                return NULL;
 	}
 	BrokenHeart(Generic* nto) : to(nto) { }
 };
