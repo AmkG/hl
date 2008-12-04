@@ -164,7 +164,7 @@ Tagged pointer factories
 		return to_ref<Generic*>(x);
 	}
 	template<>
-	static ref to_ref<Generic*>(Generic* x) {
+	ref to_ref<Generic*>(Generic* x) {
 		intptr_t tmp = reinterpret_cast<intptr_t>(x);
 		#ifdef DEBUG
 			if(tmp & tag_mask != 0) {
@@ -174,7 +174,7 @@ Tagged pointer factories
 		return ref(tmp + tag_traits<Generic*>::tag);
 	}
 	template<>
-	static ref to_ref<Symbol*>(Symbol* x) {
+	ref to_ref<Symbol*>(Symbol* x) {
 		intptr_t tmp = reinterpret_cast<intptr_t>(x);
 		#ifdef DEBUG
 			if(tmp & tag_mask != 0) {
@@ -184,7 +184,7 @@ Tagged pointer factories
 		return ref(tmp + tag_traits<Symbol*>::tag);
 	}
 	template<>
-	static ref to_ref<int>(int x) {
+	ref to_ref<int>(int x) {
 		#ifdef DEBUG
 			#if (INT_MAX >= INTPTR_MAX) || (INT_MIN <= INTPTR_MIN)
 				if(x < smallint_min || x > smallint_max) {
@@ -198,7 +198,7 @@ Tagged pointer factories
 		return ref(tmp + tag_traits<int>::tag);
 	}
 	template<>
-	static ref to_ref<UnicodeChar>(UnicodeChar x) {
+	ref to_ref<UnicodeChar>(UnicodeChar x) {
 		intptr_t tmp = x.dat << tag_bits;
 		return ref(tmp + tag_traits<UnicodeChar>::tag);
 	}
@@ -271,7 +271,7 @@ Tagged pointer referencing
 	}
 
 	template<>
-	static int _as_a<int>(ref obj) {
+	int _as_a<int>(ref obj) {
 		#ifdef DEBUG
 			if(!_is_a<int>(obj)) {
 				throw_TypeError(obj,
@@ -284,7 +284,7 @@ Tagged pointer referencing
 	}
 
 	template<>
-	static UnicodeChar _as_a<UnicodeChar>(ref obj) {
+	UnicodeChar _as_a<UnicodeChar>(ref obj) {
 		uint32_t tmp = obj.dat;
 		return UnicodeChar(tmp >> tag_bits);
 	}
