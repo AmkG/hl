@@ -149,7 +149,6 @@ public:
 class Executor {
 private:
   // table of available executors
-  // !! Issue: clean up of executors !!
   static ExecutorTable tbl;
 public:
   // register an executor in the system
