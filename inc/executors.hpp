@@ -177,6 +177,14 @@ struct bytecode_t {
   // (boost::scoped_ptr is probably good enough)
 };
 
+class Bytecode : public GenericDerivedVariadic<Bytecode> {
+private:
+  bytecode_t *code;
+public:
+  Bytecode(size_t sz) : GenericDerivedVariadic<Bytecode>(sz), code(NULL) {}
+  virtual ~Bytecode() { delete [] code; }
+};
+
 #define INTPARAM(name) intptr_t name = pc->val
 #define SYMPARAM(name) Symbol *name = (Symbol*)pc->val
 #define FLOATPARAM(name) Float *name = (Float*)pc->val
