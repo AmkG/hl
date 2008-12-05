@@ -136,7 +136,7 @@ struct bytecode_t;
 */
 class Closure : public GenericDerivedVariadic<Closure> {
 private:
-  bytecode_t* body;
+  Object::ref body;
   bool nonreusable;
   bool kontinuation;
 public:
@@ -148,8 +148,8 @@ public:
     else
       throw_HlError("internal: trying to access closed vars with an index too large!");
   }
-  bytecode_t* code() { return body; }
-  void codereset(bytecode_t *b) { body = b; }
+  Object::ref code() { return body; }
+  void codereset(Object::ref b) { body = b; }
   void banreuse() {
     /*ban reuse for this and for every other continuation referred to*/
     Closure* kp = this;
@@ -170,8 +170,8 @@ public:
     }
   }
   bool reusable() { return !nonreusable; }
-  static Closure* NewKClosure(Heap & h, bytecode_t *body, size_t n);
-  static Closure* NewClosure(Heap & h, bytecode_t *body, size_t n);
+  static Closure* NewKClosure(Heap & h, Object::ref body, size_t n);
+  static Closure* NewClosure(Heap & h, Object::ref body, size_t n);
 
   void traverse_references(GenericTraverser *gt) {
     for(size_t i = 0; i < sz; ++i) {

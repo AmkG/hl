@@ -6,7 +6,7 @@
 Closure
 -----------------------------------------------------------------------------*/
 
-Closure* Closure::NewClosure(Heap & h, bytecode_t *body, size_t n) {
+Closure* Closure::NewClosure(Heap & h, Object::ref body, size_t n) {
   Closure *c = h.create_variadic<Closure>(n);
   c->body = body;
   c->nonreusable = true;
@@ -14,7 +14,7 @@ Closure* Closure::NewClosure(Heap & h, bytecode_t *body, size_t n) {
   return c;
 }
 
-Closure* Closure::NewKClosure(Heap & h, bytecode_t *body, size_t n) {
+Closure* Closure::NewKClosure(Heap & h, Object::ref body, size_t n) {
   Closure *c = h.lifo_create_variadic<Closure>(n);
   c->body = body;
   c->nonreusable = false;
