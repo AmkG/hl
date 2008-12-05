@@ -172,17 +172,25 @@ public:
 struct bytecode_t {
   _bytecode_label op; // operation code
   intptr_t val; // simple value argument (may be invalid)
-  bytecode_t *seq; // sequence argument (may be invalid)
-  // consider using a smart pointer to prevent leaks
-  // (boost::scoped_ptr is probably good enough)
 };
 
+// a bytecode object contains a table of complex constants such as gensyms
 class Bytecode : public GenericDerivedVariadic<Bytecode> {
 private:
   bytecode_t *code;
 public:
   Bytecode(size_t sz) : GenericDerivedVariadic<Bytecode>(sz), code(NULL) {}
   virtual ~Bytecode() { delete [] code; }
+
+  // after setCode the passed code is managed by the Bytecode object
+  void setCode(bytecode_t *c) { code = c; }
+  bytecode_t* getCode() { return code; }
+
+  void traverse_references(GenericTraverser *gt) {
+    for(size_t i = 0; i < sz; ++i) {
+      gt->traverse(index(i));
+    }
+  }
 };
 
 #define INTPARAM(name) intptr_t name = pc->val
