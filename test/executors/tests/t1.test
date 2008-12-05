@@ -40,13 +40,14 @@
 
 (closure 0 
   (check-vars 2)
-  (if-local 1
+  (local 1)
+  (jmp-nil 2)
     (cdr-local-push 1)
-    (halt ))
-  (halt ))
+    (halt)
+  (halt))
 (int 1)
 (int 2)
-(cons )
+(cons)
 (apply 2)
 
 ;^2$
@@ -55,12 +56,12 @@
 
 (closure 0 
   (check-vars 2)
-  (if-local 1
+  (jmp-nil 2)
     (cdr-local-push 1)
-    (halt ))
+    (halt)
   (int 42)
-  (halt ))
-(lit-nil )
+  (halt))
+(lit-nil)
 (apply 2)
 
 ;^42$

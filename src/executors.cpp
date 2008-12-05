@@ -167,8 +167,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("halt",		THE_BYTECODE_LABEL(halt))
       ("halt-local-push",	THE_BYTECODE_LABEL(halt_local_push))
       ("halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push))
-      ("if",			THE_BYTECODE_LABEL(b_if))
-      ("if-local",		THE_BYTECODE_LABEL(if_local))
+      ("jmp-nil",			THE_BYTECODE_LABEL(jmp_nil))
+      //("if-local",		THE_BYTECODE_LABEL(if_local))
       ("int",			THE_BYTECODE_LABEL(b_int))
       ("float",                 THE_BYTECODE_LABEL(b_float))
       ("k-closure",		THE_BYTECODE_LABEL(k_closure))
@@ -424,14 +424,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.restack(1);
       return process_dead;
     } NEXT_BYTECODE;
-    BYTECODE(b_if): {
+    BYTECODE(jmp_nil): {
+      INTPARAM(N); // number of operations to skip
       Object::ref gp = stack.top(); stack.pop();
-      if (gp!=Object::nil()) {
-        SEQPARAM(S);
-        pc = S;
-        pc--; // NEXT_BYTECODE will increment
-        // is that safe??  wouldn't that have
-        // array out of bounds?
+      if (gp==Object::nil()) { // jump if false
+        pc += N-1;
+        // NEXT_BYTECODE will increment
       }
     } NEXT_BYTECODE;
     /*
@@ -440,13 +438,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       fact we don't expect a plain 'if
       bytecode at all...
     */
-    BYTECODE(if_local): {
-      INTSEQPARAM(N,S);
-      if(stack[N]!=Object::nil()){
-        pc = S;
-        pc--; // NEXT_BYTECODE will increment
-      }
-    } NEXT_BYTECODE;
+    //BYTECODE(if_local): {
+    //INTSEQPARAM(N,S);
+    //if(stack[N]!=Object::nil()){
+    //  pc = S;
+    //  pc--; // NEXT_BYTECODE will increment
+    //}
+    //} NEXT_BYTECODE;
     BYTECODE(b_int): {
       INTPARAM(N);
       bytecode_int(proc, stack, N);
