@@ -135,6 +135,13 @@ typedef enum _e_bytecode_label _bytecode_label;
 class Process;
 class ProcessStack;
 
+class Executor;
+
+class ExecutorTable : public std::map<Symbol*, Executor*> {
+public:
+	~ExecutorTable();
+};
+
 /* 
  * Generic executor
  * An executor represents a built-in function
@@ -143,7 +150,7 @@ class Executor {
 private:
   // table of available executors
   // !! Issue: clean up of executors !!
-  static std::map<Symbol*, Executor*> tbl;
+  static ExecutorTable tbl;
 public:
   // register an executor in the system
   // no locks: executors should be registered only during startup
@@ -162,6 +169,12 @@ public:
   // return true if a function call must be performed, false otherwise
   virtual bool run(Process & proc, size_t & reductions) = 0;
 };
+
+inline ExecutorTable::~ExecutorTable() {
+	for(iterator i = begin(); i != end(); ++i) {
+		delete i->second;
+	}
+}
 
 /*
  * The bytecode read by the reader should be assembled before execution

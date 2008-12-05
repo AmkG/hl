@@ -11,7 +11,7 @@
   #include <iostream>
 #endif
 
-std::map<Symbol*, Executor*> Executor::tbl;
+ExecutorTable Executor::tbl;
 
 // map opcodes to bytecodes
 static std::map<Symbol*,_bytecode_label> bytetb;
