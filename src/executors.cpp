@@ -99,6 +99,18 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
   }
 }
 
+// assemble from a string representation
+bytecode_t* inline_assemble(const char *code) {
+  bytecode_t *res;
+  std::stringstream code_stream(code);
+  BytecodeSeq code_seq;
+  while (!code_stream.eof())
+    code_stream >> code_seq;
+  assemble(code_seq, res);
+  return res;
+}
+
+
 /*attempts to deallocate the specified object if it's a reusable
 continuation closure
 */
@@ -129,7 +141,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
    * as the reducto continuation
    */
   static bytecode_t *reducto_cont_bytecode;
-
+  static bytecode_t *ccc_fn; // body of function obtained through ccc
 
   ProcessStack & stack = proc.stack;
   if (init) {
@@ -212,11 +224,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ;/*end initializer*/
 
     /// build and assemble reducto_cont_bytecode
-    std::stringstream red_cont("(reducto-continuation ) (continue )");
-    BytecodeSeq red_seq;
-    while (!red_cont.eof())
-      red_cont >> red_seq;
-    assemble(red_seq, reducto_cont_bytecode);
+    reducto_cont_bytecode = 
+      inline_assemble("(reducto-continuation) (continue)");
+    ccc_fn = 
+      inline_assemble("(check-vars 3) (continue-on-clos 0)");
     return process_running;
   }
   // main VM loop
@@ -579,10 +590,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       // now call f
       stack[0] = Object::to_ref(f);
       // stack[1] already holds current continuation
-      stack[2] = Object::to_ref(k);
-      // ?? unnecessary - recommend removing this since
-      // ?? call is now set up -- almkglor
-      //stack.restack(3); // f + continuation + continuation
+      Closure *arg = Closure::NewClosure(proc, ccc_fn, 1);
+      (*arg)[0] = Object::to_ref(k); // close other current continuation
+      stack[2] = Object::to_ref(arg);
+      //(f current-continuation function-that-will-call-current-continuation)
       goto call_current_closure; // do the call
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
