@@ -196,10 +196,6 @@ public:
 #define INTPARAM(name) intptr_t name = pc->val
 #define SYMPARAM(name) Symbol *name = (Symbol*)pc->val
 #define FLOATPARAM(name) Float *name = (Float*)pc->val
-#define SEQPARAM(name) bytecode_t* name = pc->seq
-#define INTSEQPARAM(name1, name2)\
-        intptr_t name1 = pc->val; \
-        bytecode_t* name2 = pc->seq;
 
 // Assemble a sequence of bytecodes
 void assemble(BytecodeSeq & seq, bytecode_t* & a_seq);
