@@ -209,6 +209,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("lit-t",		THE_BYTECODE_LABEL(lit_t))
       ("local",		THE_BYTECODE_LABEL(local))
+      ("monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("reducto",		THE_BYTECODE_LABEL(reducto))
       ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
 //       ("rep",			THE_BYTECODE_LABEL(rep))
@@ -636,6 +637,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(local): {
       INTPARAM(N);
       bytecode_local(stack, N);
+    } NEXT_BYTECODE;
+    BYTECODE(monomethod): {
+      HlTable& T = *known_type<HlTable>((*clos)[0]);
+      if(stack.size() >= 3) {
+         Object::ref tp = type(stack[2]);
+         Object::ref f = T.lookup(tp);
+         if(f) stack[0] = f;
+         else  stack[0] = T.lookup(Object::nil());
+      } else {
+         stack[0] = T.lookup(Object::nil());
+      }
+      goto call_current_closure;
     } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*

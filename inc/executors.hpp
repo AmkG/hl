@@ -80,6 +80,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(lit_nil)
 	A_BYTECODE(lit_t)
 	A_BYTECODE(local)
+	A_BYTECODE(monomethod)
 	A_BYTECODE(reducto)
         A_BYTECODE(reducto_continuation)
 	A_BYTECODE(rep)
