@@ -128,6 +128,18 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
   }
 }
 
+// assemble from a string representation
+bytecode_t* inline_assemble(const char *code) {
+  bytecode_t *res;
+  std::stringstream code_stream(code);
+  BytecodeSeq code_seq;
+  while (!code_stream.eof())
+    code_stream >> code_seq;
+  assemble(code_seq, res);
+  return res;
+}
+
+
 /*attempts to deallocate the specified object if it's a reusable
 continuation closure
 */
@@ -157,9 +169,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
    * this will hold a fixed bytecode sequence that will be used
    * as the continuations for various bytecodes
    */
-  static bytecode_t* reducto_cont_bytecode;
+  static bytecode_t *reducto_cont_bytecode;
+  static bytecode_t *ccc_fn; // body of function obtained through ccc
   static bytecode_t* composeo_cont_bytecode;
-
 
   ProcessStack & stack = proc.stack;
   if (init) {
@@ -198,8 +210,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("halt",		THE_BYTECODE_LABEL(halt))
       ("halt-local-push",	THE_BYTECODE_LABEL(halt_local_push))
       ("halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push))
-      ("if",			THE_BYTECODE_LABEL(b_if))
-      ("if-local",		THE_BYTECODE_LABEL(if_local))
+      ("jmp-nil",			THE_BYTECODE_LABEL(jmp_nil))
+      //("if-local",		THE_BYTECODE_LABEL(if_local))
       ("int",			THE_BYTECODE_LABEL(b_int))
       ("float",                 THE_BYTECODE_LABEL(b_float))
       ("k-closure",		THE_BYTECODE_LABEL(k_closure))
@@ -245,17 +257,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ;/*end initializer*/
 
     /// build and assemble reducto_cont_bytecode
-    std::stringstream red_cont("(reducto-continuation ) (continue )");
-    BytecodeSeq red_seq;
-    while (!red_cont.eof())
-      red_cont >> red_seq;
-    assemble(red_seq, reducto_cont_bytecode);
+    reducto_cont_bytecode = 
+      inline_assemble("(reducto-continuation) (continue)");
+    ccc_fn = 
+      inline_assemble("(check-vars 3) (continue-on-clos 0)");
 
     std::stringstream com_cont("(composeo-continuation ) (continue )");
     BytecodeSeq com_seq;
     while (!com_cont.eof())
       com_cont >> red_seq;
     assemble(com_seq, composeo_cont_bytecode);
+
     return process_running;
   }
   // main VM loop
@@ -465,14 +477,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.restack(1);
       return process_dead;
     } NEXT_BYTECODE;
-    BYTECODE(b_if): {
+    BYTECODE(jmp_nil): {
+      INTPARAM(N); // number of operations to skip
       Object::ref gp = stack.top(); stack.pop();
-      if (gp!=Object::nil()) {
-        SEQPARAM(S);
-        pc = S;
-        pc--; // NEXT_BYTECODE will increment
-        // is that safe??  wouldn't that have
-        // array out of bounds?
+      if (gp==Object::nil()) { // jump if false
+        pc += N-1;
+        // NEXT_BYTECODE will increment
       }
     } NEXT_BYTECODE;
     /*
@@ -481,13 +491,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       fact we don't expect a plain 'if
       bytecode at all...
     */
-    BYTECODE(if_local): {
-      INTSEQPARAM(N,S);
-      if(stack[N]!=Object::nil()){
-        pc = S;
-        pc--; // NEXT_BYTECODE will increment
-      }
-    } NEXT_BYTECODE;
+    //BYTECODE(if_local): {
+    //INTSEQPARAM(N,S);
+    //if(stack[N]!=Object::nil()){
+    //  pc = S;
+    //  pc--; // NEXT_BYTECODE will increment
+    //}
+    //} NEXT_BYTECODE;
     BYTECODE(b_int): {
       INTPARAM(N);
       bytecode_int(proc, stack, N);
@@ -622,10 +632,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       // now call f
       stack[0] = Object::to_ref(f);
       // stack[1] already holds current continuation
-      stack[2] = Object::to_ref(k);
-      // ?? unnecessary - recommend removing this since
-      // ?? call is now set up -- almkglor
-      //stack.restack(3); // f + continuation + continuation
+      Closure *arg = Closure::NewClosure(proc, ccc_fn, 1);
+      (*arg)[0] = Object::to_ref(k); // close other current continuation
+      stack[2] = Object::to_ref(arg);
+      //(f current-continuation function-that-will-call-current-continuation)
       goto call_current_closure; // do the call
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
