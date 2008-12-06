@@ -155,9 +155,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 
   /*
    * this will hold a fixed bytecode sequence that will be used
-   * as the reducto continuation
+   * as the continuations for various bytecodes
    */
-  static bytecode_t *reducto_cont_bytecode;
+  static bytecode_t* reducto_cont_bytecode;
+  static bytecode_t* composeo_cont_bytecode;
 
 
   ProcessStack & stack = proc.stack;
@@ -186,7 +187,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("check-vars",		THE_BYTECODE_LABEL(check_vars))
       ("closure",		THE_BYTECODE_LABEL(closure))
       ("closure-ref",		THE_BYTECODE_LABEL(closure_ref))
-      //      ("composeo",		THE_BYTECODE_LABEL(composeo))
+      ("composeo",		THE_BYTECODE_LABEL(composeo))
+      ("composeo-continuation",	THE_BYTECODE_LABEL(composeo_continuation))
       ("cons",		THE_BYTECODE_LABEL(cons))
       ("continue",		THE_BYTECODE_LABEL(b_continue))
       ("continue-local",	THE_BYTECODE_LABEL(continue_local))
@@ -246,6 +248,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     while (!red_cont.eof())
       red_cont >> red_seq;
     assemble(red_seq, reducto_cont_bytecode);
+
+    std::stringstream com_cont("(composeo-continuation ) (continue )");
+    BytecodeSeq com_seq;
+    while (!com_cont.eof())
+      com_cont >> red_seq;
+    assemble(com_seq, composeo_cont_bytecode);
     return process_running;
   }
   // main VM loop
@@ -366,26 +374,28 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N);
       bytecode_closure_ref(stack, *clos, N);
     } NEXT_BYTECODE;
-    //    BYTECODE(composeo): {
+    BYTECODE(composeo): {
       /*destructure closure*/
-      //stack.push(clos[0]);
-      //stack[0] = clos[1];
-      // clos is now no longer safe to use
-      //KClosure& kclos = *NewKClosure(proc, THE_BYTECODE_LABEL(composeo_continuation), 2);
+      stack.push((*clos)[0]);
+      stack[0] = (*clos)[1];
+      Closure& kclos = *Closure::NewKClosure(proc, composeo_cont_bytecode, 
+                                             2);
       // clos is now invalid
-      //kclos[0] = stack[1];
-      //kclos[1] = stack.top(); stack.pop();
-      //stack[1] = &kclos;
-      //goto call_current_closure;
-    //} NEXT_BYTECODE;
-    //BYTECODE(composeo_continuation): {
-    //stack.push(clos[1]);
-    //stack.push(clos[0]);
-    //stack.push(stack[1]);
-    //attempt_kclos_dealloc(proc, stack[0]);
-    //stack.restack(3);
-    //goto call_current_closure;
-    //} NEXT_BYTECODE;
+      /*continuation*/
+      kclos[0] = stack[1];
+      /*next function*/
+      kclos[1] = stack.top(); stack.pop();
+      stack[1] = Object::to_ref(&kclos);
+      goto call_current_closure; // this will revalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(composeo_continuation): {
+      stack.push((*clos)[1]);
+      stack.push((*clos)[0]);
+      stack.push(stack[1]);
+      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
+      stack.restack(3);
+      goto call_current_closure;
+    } NEXT_BYTECODE;
     BYTECODE(cons): {
       bytecode_cons(proc,stack);
       SETCLOS(clos);
