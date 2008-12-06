@@ -3,6 +3,21 @@
 #include "processes.hpp"
 
 /*-----------------------------------------------------------------------------
+Cons
+-----------------------------------------------------------------------------*/
+
+Object::ref Cons::len() {
+  int l = 1;
+  Object::ref next = cdr();
+  while (maybe_type<Cons>(next)) {
+    next = ::cdr(next);
+    l++;
+  }
+  // !! there could be an overflow, but we don't expect to have lists so long
+  return Object::to_ref(l);
+}
+
+/*-----------------------------------------------------------------------------
 Closure
 -----------------------------------------------------------------------------*/
 

@@ -95,7 +95,8 @@ intptr_t getSimpleArgVal(Object::ref sa) {
 }
 
 void assemble(Object::ref seq, bytecode_t* & a_seq) {
-  a_seq = new bytecode_t[seq.size()]; // assembled bytecode
+  Cons *c = expect_type<Cons>(seq, "assemble: wrong format");
+  a_seq = new bytecode_t[as_a<int>(c->len())]; // assembled bytecode
   size_t pos = 0;
   for(Object::ref i = seq; i!=Object::nil(); i = cdr(i), pos++) {
     Object::ref op = car(i);
@@ -103,10 +104,10 @@ void assemble(Object::ref seq, bytecode_t* & a_seq) {
       throw_HlError("assemble: can't find mnemonic");
     a_seq[pos].op = bytecodelookup(as_a<Symbol*>(car(op)));
     if (cdr(op)!=Object::nil()) {
-      Cons *c = expect_type<Cons*>(cdr(op), "assemble: wrong format");
-      Cons *arg1 = maybe_type<Cons*>(c->car());
+      Cons *c = expect_type<Cons>(cdr(op), "assemble: wrong format");
+      Cons *arg1 = maybe_type<Cons>(c->car());
       if (arg1) { // sequence only
-        assemble(c, a_seq[pos].seq);
+        assemble(Object::to_ref(c), a_seq[pos].seq);
       } 
       else {
         a_seq[pos].val = getSimpleArgVal(c->car()); // must be a simple arg!
@@ -123,13 +124,12 @@ void assemble(Object::ref seq, bytecode_t* & a_seq) {
 }
 
 // assemble from a string representation
-bytecode_t* inline_assemble(const char *code) {
+bytecode_t* inline_assemble(Process & proc, const char *code) {
   bytecode_t *res;
   std::stringstream code_stream(code);
-  BytecodeSeq code_seq;
-  while (!code_stream.eof())
-    code_stream >> code_seq;
-  assemble(code_seq, res);
+  read_sequence(proc, code_stream);
+  Object::ref seq = proc.stack.top(); proc.stack.pop();
+  assemble(seq, res);
   return res;
 }
 
@@ -251,11 +251,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 
     /// build and assemble reducto_cont_bytecode
     reducto_cont_bytecode = 
-      inline_assemble("(reducto-continuation) (continue)");
+      inline_assemble(proc, "(reducto-continuation) (continue)");
     ccc_fn = 
-      inline_assemble("(check-vars 3) (continue-on-clos 0)");
+      inline_assemble(proc, "(check-vars 3) (continue-on-clos 0)");
     composeo_cont_bytecode = 
-      inline_assemble("(composeo-continuation) (continue)");
+      inline_assemble(proc, "(composeo-continuation) (continue)");
 
     return process_running;
   }
