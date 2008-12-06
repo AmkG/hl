@@ -115,7 +115,7 @@ typedef void* _bytecode_label;
         bytecode_t *pc = clos->code();\
 	goto *(pc->op);
 #define NEXT_BYTECODE goto *((++pc)->op)
-#define BYTECODE(x) PASTE_SYMBOLS(label_b_, x)
+#define BYTECODE(x) BYTECODE_ENUM(x); PASTE_SYMBOLS(label_b_, x)
 #define THE_BYTECODE_LABEL(x) &&PASTE_SYMBOLS(label_b_, x)
 
 #else // __GNUC__
