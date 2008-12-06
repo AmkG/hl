@@ -52,6 +52,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(car)
 	A_BYTECODE(car_local_push)
 	A_BYTECODE(car_clos_push)
+	A_BYTECODE(ccc)
 	A_BYTECODE(cdr)
 	A_BYTECODE(cdr_local_push)
 	A_BYTECODE(cdr_clos_push)
@@ -59,6 +60,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(closure)
 	A_BYTECODE(closure_ref)
 	A_BYTECODE(composeo)
+	A_BYTECODE(composeo_continuation)
 	A_BYTECODE(cons)
 	A_BYTECODE(b_continue)
 	A_BYTECODE(continue_local)
@@ -83,6 +85,8 @@ DECLARE_BYTECODES
 	A_BYTECODE(rep)
 	A_BYTECODE(rep_local_push)
 	A_BYTECODE(rep_clos_push)
+	A_BYTECODE(scar)
+	A_BYTECODE(scdr)
 	A_BYTECODE(sv)
 	A_BYTECODE(sv_local_push)
 	A_BYTECODE(sv_clos_push)
@@ -104,6 +108,10 @@ DECLARE_BYTECODES
 	/*maybe organize by alphabetical order of bytecodes ^^*/
 	A_BYTECODE(do_executor)
 	A_BYTECODE(plus)
+	A_BYTECODE(minus)
+	A_BYTECODE(mul)
+	A_BYTECODE(div)
+	A_BYTECODE(mod)
 END_DECLARE_BYTECODES
 
 #ifdef __GNUC__
