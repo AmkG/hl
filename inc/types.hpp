@@ -5,9 +5,11 @@ Defines a set of types for use on the hl-side.
 */
 
 #include<cstring>
+
 #include"objects.hpp"
 #include"specializeds.hpp"
 #include"heaps.hpp"
+#include"processes.hpp"
 
 class ProcessStack;
 
@@ -375,6 +377,37 @@ public:
 
 	HlTable(void) : impl(Object::nil()), type(hl_table_empty) { }
 };
+
+/*-----------------------------------------------------------------------------
+SharedVar's / Containers
+-----------------------------------------------------------------------------*/
+
+class SharedVar : public GenericDerived<SharedVar> {
+public:
+	Object::ref val;
+	void traverse_references(GenericTraverser* gt) {
+		gt->traverse(val);
+	}
+
+	SharedVar(void) : val(Object::nil()) { }
+};
+
+inline Object::ref make_sv(Object::ref nval, Process& proc) {
+	SharedVar* rv = proc.heap().create<SharedVar>();
+	rv->val = nval;
+	return Object::to_ref(rv);
+}
+
+inline Object::ref sv_ref(Object::ref sv) {
+	return expect_type<SharedVar>(sv, "sv-ref expects a container")
+		->val;
+}
+
+inline Object::ref sv_set(Object::ref sv, Object::ref nval) {
+	expect_type<SharedVar>(sv, "sv-set expects a container")
+		->val = nval;
+	return nval;
+}
 
 #endif //TYPES_H
 
