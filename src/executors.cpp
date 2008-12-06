@@ -745,31 +745,34 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //     BYTECODE(tag): {
 //       bytecode_tag(proc,stack);
 //     } NEXT_BYTECODE;
-//     BYTECODE(sv): {
-//       bytecode_<&Generic::make_sv>(proc, stack);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_local_push): {
-//       INTPARAM(N);
-//       bytecode_local_push_<&Generic::make_sv>(proc, stack, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_clos_push): {
-//       INTPARAM(N);
-//       bytecode_clos_push_<&Generic::make_sv>(proc, stack, clos, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_ref): {
-//       bytecode_<&Generic::sv_ref>(stack);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_ref_local_push): {
-//       INTPARAM(N);
-//       bytecode_local_push_<&Generic::sv_ref>(stack, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_ref_clos_push): {
-//       INTPARAM(N);
-//       bytecode_clos_push_<&Generic::sv_ref>(stack, clos, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_set): {
-//       bytecode_sv_set(stack);
-//     } NEXT_BYTECODE;
+    BYTECODE(sv): {
+      bytecode_<&make_sv>(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(sv_local_push): {
+      INTPARAM(N);
+      bytecode_local_push_<&make_sv>(proc, stack, N);
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(sv_clos_push): {
+      INTPARAM(N);
+      bytecode_clos_push_<&make_sv>(proc, stack, *clos, N);
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(sv_ref): {
+      bytecode_<&sv_ref>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sv_ref_local_push): {
+      INTPARAM(N);
+      bytecode_local_push_<&sv_ref>(stack, N);
+    } NEXT_BYTECODE;
+    BYTECODE(sv_ref_clos_push): {
+      INTPARAM(N);
+      bytecode_clos_push_<&sv_ref>(stack, *clos, N);
+    } NEXT_BYTECODE;
+    BYTECODE(sv_set): {
+      bytecode2_<&sv_set>(stack);
+    } NEXT_BYTECODE;
     BYTECODE(sym): {
       SYMPARAM(S);
       bytecode_sym(proc, stack, S);
