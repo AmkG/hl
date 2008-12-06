@@ -83,45 +83,39 @@ public:
 	}
 };
 
-intptr_t getSimpleArgVal(SimpleArg *sa) {
-  if (is_a<int>(sa->getVal()))
-    return as_a<int>(sa->getVal());
+intptr_t getSimpleArgVal(Object::ref sa) {
+  if (is_a<int>(sa))
+    return as_a<int>(sa);
   else {
-    if (is_a<Symbol*>(sa->getVal()))
-      return (intptr_t)(as_a<Symbol*>(sa->getVal()));
+    if (is_a<Symbol*>(sa))
+      return (intptr_t)(as_a<Symbol*>(sa));
     else // it's a Generic*
-      return (intptr_t)(as_a<Generic*>(sa->getVal()));
+      return (intptr_t)(as_a<Generic*>(sa));
   }
 }
 
-void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
+void assemble(Object::ref seq, bytecode_t* & a_seq) {
   a_seq = new bytecode_t[seq.size()]; // assembled bytecode
   size_t pos = 0;
-  for(BytecodeSeq::iterator i = seq.begin(); i!=seq.end(); 
-      i++, pos++) {
-    a_seq[pos].op = bytecodelookup(i->first);
-    SimpleArg *sa;
-    BytecodeSeq *seq_arg;
-    SimpleArgAndSeq *sas;
-    if ((sa = dynamic_cast<SimpleArg*>(i->second)) != NULL) {
-      a_seq[pos].val = getSimpleArgVal(sa);
-    }
-    else {
-      if ((seq_arg = dynamic_cast<BytecodeSeq*>(i->second)) != NULL) {
-        /*Not sure if this is a good idea: thread libraries tend to
-        give limited stack space.  Probably better use explicit stack,
-        or better alloc things in a process's heap.
-        */
-        assemble(*seq_arg, a_seq[pos].seq);
-      }
+  for(Object::ref i = seq; i!=Object::nil(); i = cdr(i), pos++) {
+    Object::ref op = car(i);
+    if (!is_a<Symbol*>(car(op)))
+      throw_HlError("assemble: can't find mnemonic");
+    a_seq[pos].op = bytecodelookup(as_a<Symbol*>(car(op)));
+    if (cdr(op)!=Object::nil()) {
+      Cons *c = expect_type<Cons*>(cdr(op), "assemble: wrong format");
+      Cons *arg1 = maybe_type<Cons*>(c->car());
+      if (arg1) { // sequence only
+        assemble(c, a_seq[pos].seq);
+      } 
       else {
-        if ((sas = dynamic_cast<SimpleArgAndSeq*>(i->second)) != NULL) {
-          a_seq[pos].val = getSimpleArgVal(sas->getSimple());
-          assemble(*(sas->getSeq()), a_seq[pos].seq);
-        }
-        else {
-          if (i->second!=NULL)
-            throw_HlError("assemble: Unknown argument type");
+        a_seq[pos].val = getSimpleArgVal(c->car()); // must be a simple arg!
+        if (c->cdr()!=Object::nil()) { // a sequence
+          /*Not sure if this is a good idea: thread libraries tend to
+            give limited stack space.  Probably better use explicit stack,
+            or better alloc things in a process's heap.
+          */
+          assemble(c->cdr(), a_seq[pos].seq);
         }
       }
     }
