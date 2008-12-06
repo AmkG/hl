@@ -52,6 +52,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(car)
 	A_BYTECODE(car_local_push)
 	A_BYTECODE(car_clos_push)
+	A_BYTECODE(ccc)
 	A_BYTECODE(cdr)
 	A_BYTECODE(cdr_local_push)
 	A_BYTECODE(cdr_clos_push)
@@ -59,6 +60,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(closure)
 	A_BYTECODE(closure_ref)
 	A_BYTECODE(composeo)
+	A_BYTECODE(composeo_continuation)
 	A_BYTECODE(cons)
 	A_BYTECODE(b_continue)
 	A_BYTECODE(continue_local)
@@ -83,6 +85,8 @@ DECLARE_BYTECODES
 	A_BYTECODE(rep)
 	A_BYTECODE(rep_local_push)
 	A_BYTECODE(rep_clos_push)
+	A_BYTECODE(scar)
+	A_BYTECODE(scdr)
 	A_BYTECODE(sv)
 	A_BYTECODE(sv_local_push)
 	A_BYTECODE(sv_clos_push)
@@ -104,6 +108,10 @@ DECLARE_BYTECODES
 	/*maybe organize by alphabetical order of bytecodes ^^*/
 	A_BYTECODE(do_executor)
 	A_BYTECODE(plus)
+	A_BYTECODE(minus)
+	A_BYTECODE(mul)
+	A_BYTECODE(div)
+	A_BYTECODE(mod)
 END_DECLARE_BYTECODES
 
 #ifdef __GNUC__
@@ -115,7 +123,7 @@ typedef void* _bytecode_label;
         bytecode_t *pc = expect_type<Bytecode>(clos->code())->getCode();\
 	goto *(pc->op);
 #define NEXT_BYTECODE goto *((++pc)->op)
-#define BYTECODE(x) PASTE_SYMBOLS(label_b_, x)
+#define BYTECODE(x) BYTECODE_ENUM(x); PASTE_SYMBOLS(label_b_, x)
 #define THE_BYTECODE_LABEL(x) &&PASTE_SYMBOLS(label_b_, x)
 
 #else // __GNUC__
@@ -135,6 +143,13 @@ typedef enum _e_bytecode_label _bytecode_label;
 class Process;
 class ProcessStack;
 
+class Executor;
+
+class ExecutorTable : public std::map<Symbol*, Executor*> {
+public:
+	~ExecutorTable();
+};
+
 /* 
  * Generic executor
  * An executor represents a built-in function
@@ -142,8 +157,7 @@ class ProcessStack;
 class Executor {
 private:
   // table of available executors
-  // !! Issue: clean up of executors !!
-  static std::map<Symbol*, Executor*> tbl;
+  static ExecutorTable tbl;
 public:
   // register an executor in the system
   // no locks: executors should be registered only during startup
@@ -162,6 +176,12 @@ public:
   // return true if a function call must be performed, false otherwise
   virtual bool run(Process & proc, size_t & reductions) = 0;
 };
+
+inline ExecutorTable::~ExecutorTable() {
+	for(iterator i = begin(); i != end(); ++i) {
+		delete i->second;
+	}
+}
 
 /*
  * The bytecode read by the reader should be assembled before execution

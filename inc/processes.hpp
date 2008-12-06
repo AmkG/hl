@@ -2,17 +2,19 @@
 #define PROCESSES_H
 
 #include"heaps.hpp"
-#include"types.hpp"
 #include"lockeds.hpp"
 
 #include <vector>
 #include <map>
+
+void throw_HlError(char const*);
 
 /*Consider putting this into the process's heap*/
 class ProcessStack : public std::vector<Object::ref> { 
 public:
   Object::ref & top(size_t off=1){
     if(off > size() || off == 0){
+      // consider throwing a VMError instead of an hl-side error
       throw_HlError("internal: process stack underflow in top()");
     }
     return (*this)[size() - off];

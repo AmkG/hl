@@ -11,7 +11,7 @@
   #include <iostream>
 #endif
 
-std::map<Symbol*, Executor*> Executor::tbl;
+ExecutorTable Executor::tbl;
 
 // map opcodes to bytecodes
 static std::map<Symbol*,_bytecode_label> bytetb;
@@ -51,6 +51,35 @@ public:
 class IsSymbolPackaged : public Executor {
 public:
 	bool run(Process& proc, size_t& reductions) {
+		/*given:
+			stack[0] = unused
+			stack[1] = k
+			stack[2] = a symbol
+		calls k with Object::t() if symbol is
+		packaged, Object::nil() otherwise
+		*/
+		ProcessStack& stack = proc.stack;
+		Object::ref arg = stack[2];
+		stack[2] = Object::nil();
+		if(is_a<Symbol*>(arg)) {
+			Symbol& S = *as_a<Symbol*>(arg);
+			std::string txt = S.getPrintName();
+			if(txt[0] == '<') {
+				/*scan for a matching >
+				symbol print names are in UTF-8, so
+				being ignorant of the encodation is
+				safe
+				*/
+				for(size_t i = 1; i < txt.size(); ++i) {
+					if(txt[i] == '>') {
+						stack[2] = Object::t();
+						break;
+					}
+				}
+			}
+		}
+		stack.restack(2);
+		return true;
 	}
 };
 
@@ -138,10 +167,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 
   /*
    * this will hold a fixed bytecode sequence that will be used
-   * as the reducto continuation
+   * as the continuations for various bytecodes
    */
   static bytecode_t *reducto_cont_bytecode;
   static bytecode_t *ccc_fn; // body of function obtained through ccc
+  static bytecode_t* composeo_cont_bytecode;
 
   ProcessStack & stack = proc.stack;
   if (init) {
@@ -169,7 +199,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("check-vars",		THE_BYTECODE_LABEL(check_vars))
       ("closure",		THE_BYTECODE_LABEL(closure))
       ("closure-ref",		THE_BYTECODE_LABEL(closure_ref))
-      //      ("composeo",		THE_BYTECODE_LABEL(composeo))
+      ("composeo",		THE_BYTECODE_LABEL(composeo))
+      ("composeo-continuation",	THE_BYTECODE_LABEL(composeo_continuation))
       ("cons",		THE_BYTECODE_LABEL(cons))
       ("continue",		THE_BYTECODE_LABEL(b_continue))
       ("continue-local",	THE_BYTECODE_LABEL(continue_local))
@@ -195,12 +226,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //       ("rep",			THE_BYTECODE_LABEL(rep))
 //       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
 //       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
-//       ("sv",			THE_BYTECODE_LABEL(sv))
-//       ("sv-local-push",	THE_BYTECODE_LABEL(sv_local_push))
-//       ("sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push))
-//       ("sv-ref",		THE_BYTECODE_LABEL(sv_ref))
-//       ("sv-ref-local-push",	THE_BYTECODE_LABEL(sv_ref_local_push))
-//       ("sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push))
+      ("sv",			THE_BYTECODE_LABEL(sv))
+      ("sv-local-push",	THE_BYTECODE_LABEL(sv_local_push))
+      ("sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push))
+      ("sv-ref",		THE_BYTECODE_LABEL(sv_ref))
+      ("sv-ref-local-push",	THE_BYTECODE_LABEL(sv_ref_local_push))
+      ("sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push))
+      ("sv-set",		THE_BYTECODE_LABEL(sv_set))
       ("sym",			THE_BYTECODE_LABEL(sym))
       ("symeval",		THE_BYTECODE_LABEL(symeval))
       ("table-create",		THE_BYTECODE_LABEL(table_create))
@@ -228,6 +260,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       inline_assemble("(reducto-continuation) (continue)");
     ccc_fn = 
       inline_assemble("(check-vars 3) (continue-on-clos 0)");
+
+    std::stringstream com_cont("(composeo-continuation ) (continue )");
+    BytecodeSeq com_seq;
+    while (!com_cont.eof())
+      com_cont >> red_seq;
+    assemble(com_seq, composeo_cont_bytecode);
+
     return process_running;
   }
   // main VM loop
@@ -348,26 +387,28 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N);
       bytecode_closure_ref(stack, *clos, N);
     } NEXT_BYTECODE;
-    //    BYTECODE(composeo): {
+    BYTECODE(composeo): {
       /*destructure closure*/
-      //stack.push(clos[0]);
-      //stack[0] = clos[1];
-      // clos is now no longer safe to use
-      //KClosure& kclos = *NewKClosure(proc, THE_BYTECODE_LABEL(composeo_continuation), 2);
+      stack.push((*clos)[0]);
+      stack[0] = (*clos)[1];
+      Closure& kclos = *Closure::NewKClosure(proc, composeo_cont_bytecode, 
+                                             2);
       // clos is now invalid
-      //kclos[0] = stack[1];
-      //kclos[1] = stack.top(); stack.pop();
-      //stack[1] = &kclos;
-      //goto call_current_closure;
-    //} NEXT_BYTECODE;
-    //BYTECODE(composeo_continuation): {
-    //stack.push(clos[1]);
-    //stack.push(clos[0]);
-    //stack.push(stack[1]);
-    //attempt_kclos_dealloc(proc, stack[0]);
-    //stack.restack(3);
-    //goto call_current_closure;
-    //} NEXT_BYTECODE;
+      /*continuation*/
+      kclos[0] = stack[1];
+      /*next function*/
+      kclos[1] = stack.top(); stack.pop();
+      stack[1] = Object::to_ref(&kclos);
+      goto call_current_closure; // this will revalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(composeo_continuation): {
+      stack.push((*clos)[1]);
+      stack.push((*clos)[0]);
+      stack.push(stack[1]);
+      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
+      stack.restack(3);
+      goto call_current_closure;
+    } NEXT_BYTECODE;
     BYTECODE(cons): {
       bytecode_cons(proc,stack);
       SETCLOS(clos);
@@ -725,31 +766,34 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //     BYTECODE(tag): {
 //       bytecode_tag(proc,stack);
 //     } NEXT_BYTECODE;
-//     BYTECODE(sv): {
-//       bytecode_<&Generic::make_sv>(proc, stack);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_local_push): {
-//       INTPARAM(N);
-//       bytecode_local_push_<&Generic::make_sv>(proc, stack, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_clos_push): {
-//       INTPARAM(N);
-//       bytecode_clos_push_<&Generic::make_sv>(proc, stack, clos, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_ref): {
-//       bytecode_<&Generic::sv_ref>(stack);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_ref_local_push): {
-//       INTPARAM(N);
-//       bytecode_local_push_<&Generic::sv_ref>(stack, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_ref_clos_push): {
-//       INTPARAM(N);
-//       bytecode_clos_push_<&Generic::sv_ref>(stack, clos, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(sv_set): {
-//       bytecode_sv_set(stack);
-//     } NEXT_BYTECODE;
+    BYTECODE(sv): {
+      bytecode_<&make_sv>(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(sv_local_push): {
+      INTPARAM(N);
+      bytecode_local_push_<&make_sv>(proc, stack, N);
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(sv_clos_push): {
+      INTPARAM(N);
+      bytecode_clos_push_<&make_sv>(proc, stack, *clos, N);
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(sv_ref): {
+      bytecode_<&sv_ref>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sv_ref_local_push): {
+      INTPARAM(N);
+      bytecode_local_push_<&sv_ref>(stack, N);
+    } NEXT_BYTECODE;
+    BYTECODE(sv_ref_clos_push): {
+      INTPARAM(N);
+      bytecode_clos_push_<&sv_ref>(stack, *clos, N);
+    } NEXT_BYTECODE;
+    BYTECODE(sv_set): {
+      bytecode2_<&sv_set>(stack);
+    } NEXT_BYTECODE;
     BYTECODE(sym): {
       SYMPARAM(S);
       bytecode_sym(proc, stack, S);
