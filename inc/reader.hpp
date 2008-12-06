@@ -3,6 +3,7 @@
 
 #include <istream>
 #include <string>
+#include "objects.hpp"
 #include <vector>
 
 #include "symbols.hpp"
@@ -40,7 +41,7 @@ typedef std::pair<Symbol*, BytecodeArg*> bytecode;
  */
 class BytecodeSeq : public std::vector<bytecode>, public BytecodeArg {
 public:
-  ~BytecodeSeq();
+  ~BytecodeSeq() {}
 };
 
 /*
@@ -70,6 +71,13 @@ public:
  * Bytecode reader
  * extends bc with a bytecode read from in
  */
-std::istream& operator>>(std::istream & in, BytecodeSeq & bc);
+static std::istream& operator>>(std::istream & in, BytecodeSeq & bc) { return in; }
+
+class Process;
+// leaves read bytecode on the stack
+void read_bytecode(Process & proc, std::istream & in);
+
+// simple printer for debugging
+std::ostream& operator<<(std::ostream & out, Object::ref obj);
 
 #endif // READER_H

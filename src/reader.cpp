@@ -1,6 +1,8 @@
 #include "all_defines.hpp"
 #include "reader.hpp"
 #include "types.hpp"
+#include "processes.hpp"
+#include "symbols.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -9,28 +11,33 @@ static const char bc_start = '(';
 static const char bc_end = ')';
 static const char *separators = " \n\t";
 
-BytecodeSeq::~BytecodeSeq() {
-  for (BytecodeSeq::iterator it = begin(); it!=end(); it++) {
-    delete (it->second);
-  }
-}
-
 void skip_seps(std::istream & in) {
   while (!in.eof() && strchr(separators, in.peek())) 
     in.get();
 }
 
-// read a sequence of bytecodes
-void read_bytecodes(std::istream & in, BytecodeSeq & bc) {
+// read a sequence of bytecodes in a list left on the stack
+void read_sequence(Process & proc, std::istream & in) {
   char c;
+  proc.stack.push(Object::nil()); // head
+  proc.stack.push(Object::nil()); // tail
   while (1) {
     skip_seps(in);
     c = in.peek();
     if (!in.eof() && c == bc_start) {
-      in >> bc;
+      read_bytecode(proc, in);
+      Object::ref c2 = Object::to_ref(proc.create<Cons>());
+      if (proc.stack.top(3)==Object::nil()) // test the head
+        proc.stack.top(3) = c2; // new head
+      else
+        scdr(proc.stack.top(2), c2); // cdr of the tail
+      scar(c2, proc.stack.top()); proc.stack.pop();
+      proc.stack.top() = c2; // new tail
     }
-    else break;
+    else 
+      break;
   }
+  proc.stack.pop(); // remove tail and leave head
 }
 
 // read a string until a separator character is found
@@ -48,91 +55,131 @@ std::string read_upto(std::istream & in) {
   return res;
 }
 
-// read a number or a symbol
-std::istream& operator>>(std::istream & in, SimpleArg & sa) {
+// read a number or a symbol, leave it on the stack
+void read_atom(Process & proc, std::istream & in) {
   std::string res = read_upto(in);
   std::stringstream s(res);
   if (res.find('.')!=-1) { // try to parse a float
     double f;
     s >> f;
-    // we don't have a Heap right now, and anyway we don't want to 
-    // scan an entire bytecode sequence on every GC to look for float
-    // literals. They will be few, anyway.
-    sa.setVal(Float::mkEternal(f));
+    if (!s) // it's a symbol
+      proc.stack.push(Object::to_ref(symbols->lookup(res)));
+    else
+      proc.stack.push(Object::to_ref(Float::mk(proc, f)));
   }
   else { // try to parse an int
     int i;
     s >> i; 
     if (!s) // it's a symbol
-      sa.setVal(symbols->lookup(res));
+      proc.stack.push(Object::to_ref(symbols->lookup(res)));   
     else
-      sa.setVal(i);
+      proc.stack.push(Object::to_ref(i));
   }
-
-  return in;
 }
 
-std::istream& operator>>(std::istream & in, BytecodeSeq & bc) {
+void read_bytecode(Process & proc, std::istream & in) {
+  // !! the created object must stay on the stack for correct
+  // !! collection
+  proc.stack.push(Object::to_ref(proc.create<Cons>()));
   if (!in)
-    throw ReadError("Input stream is invalid");
+    throw_HlError("Input stream is invalid");
 
   skip_seps(in);
   if (in.eof())
-    return in; // nothing to read
+    return; // nothing to read
 
   char c = in.get();
   if (c != bc_start) {
     std::string err = "Unknown character at start of bytecode";
     err += " ";
     err += c;
-    throw ReadError(err.c_str());
+    throw_HlError(err.c_str());
   }
 
   if (in.eof())
-    throw ReadError("EOF");
+    throw_HlError("EOF");
 
   std::string name = read_upto(in);
   if (!in)
-    throw ReadError("Can't read bytecode mnemonic");
+    throw_HlError("Can't read bytecode mnemonic");
   Symbol *mnemonic = symbols->lookup(name);
+  scar(proc.stack.top(), Object::to_ref(mnemonic));
 
   skip_seps(in);
   c = in.peek();
   if (in.eof())
-    throw ReadError("EOF");
+    throw_HlError("EOF");
   if (c == bc_end) { // single mnemonic
     in.get();
-    bc.push_back(bytecode(mnemonic, NULL));
-    return in;
+    return;
   }
   if (c == bc_start) { // subsequence
-    BytecodeSeq *sub = new BytecodeSeq;
-    read_bytecodes(in, *sub);
-    bc.push_back(bytecode(mnemonic, sub));
+    read_sequence(proc, in);
+    Object::ref sub = proc.stack.top(); proc.stack.pop();
+    scdr(proc.stack.top(), sub);
   } else { // simple arg
-    SimpleArg *sa = new SimpleArg();
-    in >> (*sa);
-    if (!in) {
-      delete sa;
-      throw ReadError("Can't read simple value");
-    }
+    Cons *c2 = proc.create<Cons>();
+    scdr(proc.stack.top(), Object::to_ref(c2));
+    read_atom(proc, in);
+    if (!in)
+      throw_HlError("Can't read simple value");
     skip_seps(in);
     c = in.peek();
     if (c == bc_start) { // simple arg followed by a sequence
-      BytecodeSeq *sub = new BytecodeSeq;
-      read_bytecodes(in, *sub);
-      bc.push_back(bytecode(mnemonic, new SimpleArgAndSeq(sa, sub)));
+      read_sequence(proc, in);
+      Object::ref sub = proc.stack.top(); proc.stack.pop();
+      Object::ref atom = proc.stack.top(); proc.stack.pop();
+      scar(cdr(proc.stack.top()), atom);
+      scdr(cdr(proc.stack.top()), sub);
     } else {
-      bc.push_back(bytecode(mnemonic, sa));
+      Object::ref atom = proc.stack.top(); proc.stack.pop();
+      scar(cdr(proc.stack.top()), atom);
     }
   }
 
   skip_seps(in);
   c = in.get();
   if (in.eof())
-    throw ReadError("EOF");
+    throw_HlError("EOF");
   if (c != bc_end)
-    throw ReadError("Spurious contents at end of bytecode");
+    throw_HlError("Spurious contents at end of bytecode");
+}
+
+std::ostream& operator<<(std::ostream & out, Object::ref obj) {
+  if (obj==Object::nil()) {
+    out << "nil";
+  } else if (obj==Object::t()) {
+    out << "t";
+  }else if (is_a<int>(obj)) {
+    out << as_a<int>(obj);
+  } else if (is_a<Symbol*>(obj)) {
+    out << as_a<Symbol*>(obj)->getPrintName();
+  } else if (is_a<Generic*>(obj)) {
+    Generic *g = as_a<Generic*>(obj);
+    Float *f;
+    Cons *c;
+    if (f = dynamic_cast<Float*>(g)) {
+      out << f->get();
+    } else if (c = dynamic_cast<Cons*>(g)) {
+      out << "(" << c->car();
+      Object::ref r = c->cdr();
+      Cons *c2;
+      while (is_a<Generic*>(r) && 
+             (c2 = dynamic_cast<Cons*>(as_a<Generic*>(r)))) {
+        out << " " << c2->car();
+        r = c2->cdr();
+      }
+      if (r==Object::nil())
+        out << ")";
+      else
+        out << " . " << r << ")";
+    } else {
+      out << "#<??>";
+    }
+  }
+  else {
+    out << "#<??>";
+  }
   
-  return in;
+  return out;
 }
