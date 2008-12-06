@@ -470,7 +470,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N); // number of operations to skip
       Object::ref gp = stack.top(); stack.pop();
       if (gp==Object::nil()) { // jump if false
-        pc += N-1;
+        pc += N;
         // NEXT_BYTECODE will increment
       }
     } NEXT_BYTECODE;
