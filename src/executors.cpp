@@ -51,6 +51,35 @@ public:
 class IsSymbolPackaged : public Executor {
 public:
 	bool run(Process& proc, size_t& reductions) {
+		/*given:
+			stack[0] = unused
+			stack[1] = k
+			stack[2] = a symbol
+		calls k with Object::t() if symbol is
+		packaged, Object::nil() otherwise
+		*/
+		ProcessStack& stack = proc.stack;
+		Object::ref arg = stack[2];
+		stack[2] = Object::nil();
+		if(is_a<Symbol*>(arg)) {
+			Symbol& S = *as_a<Symbol*>(arg);
+			std::string txt = S.getPrintName();
+			if(txt[0] == '<') {
+				/*scan for a matching >
+				symbol print names are in UTF-8, so
+				being ignorant of the encodation is
+				safe
+				*/
+				for(size_t i = 1; i < txt.size(); ++i) {
+					if(txt[i] == '>') {
+						stack[2] = Object::t();
+						break;
+					}
+				}
+			}
+		}
+		stack.restack(2);
+		return true;
 	}
 };
 
