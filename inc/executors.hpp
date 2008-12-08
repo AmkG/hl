@@ -5,6 +5,8 @@
 #include "objects.hpp"
 #include "reader.hpp" // for Bytecode classes
 
+#include <map>
+
 /*
   hl functions are represented by a Closure structure, which has an
   attached bytecode_t array.
@@ -218,8 +220,28 @@ public:
 #define SYMPARAM(name) Symbol *name = (Symbol*)pc->val
 #define FLOATPARAM(name) Float *name = (Float*)pc->val
 
-// Assemble a sequence of bytecodes
-void assemble(Object::ref seq, bytecode_t* & a_seq);
+class AsOp {
+public:
+  virtual void assemble(Bytecode & b, Object::ref arg, Object::ref seq) = 0;
+};
+
+class Assembler {
+private:
+  typedef sym_op_tbl std::map<Symbol*, AsOp*>;
+  sym_op_tbl tbl;
+public:
+  ~Assembler() { 
+    for (sym_op_tbl::iterator i = tbl.begin(); i!=tbl.end(); i++)
+      delete i->second;
+  }
+
+  // register a new assembler operation
+  template <class T>
+  void reg(Symbol* s) { tbl[s] = new T(); }
+
+  // do the assembly, leave a Bytecode on the stack
+  void go(Process & proc, Object::ref seq); 
+};
 
 // Execute a given process
 ProcessStatus execute(Process & proc, size_t& reductions, Process*& Q, bool init = 0);
