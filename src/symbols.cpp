@@ -60,12 +60,4 @@ void Symbol::set_value(Object::ref o) {
 	}
 }
 
-Symbol* SymbolsTable::lookup(std::string x) {
-	{AppLock l(m);
-		Symbol*& s = tb[x];
-		if(s) return s;
-		s = new Symbol(x);
-		return s;
-	}
-}
 

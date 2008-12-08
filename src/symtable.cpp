@@ -3,6 +3,15 @@
 
 #include"symbols.hpp"
 
+Symbol* SymbolsTable::lookup(std::string x) {
+	{AppLock l(m);
+		Symbol*& s = tb[x];
+		if(s) return s;
+		s = new Symbol(x);
+		return s;
+	}
+}
+
 typedef std::map<std::string, Symbol*> maptype;
 
 void SymbolsTable::traverse_symbols(SymbolsTableTraverser* stt) const {
