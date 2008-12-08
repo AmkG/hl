@@ -254,9 +254,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     reducto_cont_bytecode = 
       inline_assemble(proc, "(reducto-continuation) (continue)");
     ccc_fn = 
-      inline_assemble("(check-vars 3) (continue-on-clos 0)");
+      inline_assemble(proc, "(check-vars 3) (continue-on-clos 0)");
     composeo_cont_bytecode =
-      inline_assemble("(composeo-continuation ) (continue )");
+      inline_assemble(proc, "(composeo-continuation ) (continue )");
 
     return process_running;
   }
