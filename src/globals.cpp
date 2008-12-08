@@ -11,6 +11,15 @@ boost::scoped_ptr<SymbolsTable> symbols;
 Symbol* symbol_sym;
 Symbol* symbol_int;
 Symbol* symbol_char;
+Symbol* symbol_cons;
+Symbol* symbol_pid;
+Symbol* symbol_fn;
+Symbol* symbol_string;
+Symbol* symbol_unspecified;
+Symbol* symbol_num;
+Symbol* symbol_array;
+Symbol* symbol_table;
+Symbol* symbol_container;
 
 void initialize_globals(void) {
 	symbols.reset(new SymbolsTable());
