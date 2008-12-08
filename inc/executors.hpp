@@ -207,7 +207,7 @@ struct bytecode_t {
         bytecode_t* name2 = pc->seq;
 
 // Assemble a sequence of bytecodes
-void assemble(BytecodeSeq & seq, bytecode_t* & a_seq);
+void assemble(Object::ref seq, bytecode_t* & a_seq);
 
 // Execute a given process
 ProcessStatus execute(Process & proc, size_t& reductions, Process*& Q, bool init = 0);

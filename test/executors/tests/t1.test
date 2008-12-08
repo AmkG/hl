@@ -257,12 +257,12 @@
 
 (k-closure 0
   (local 1)
-  (halt ))
+  (halt))
 (closure 0
   (check-vars 3)
   (int 23)
-  (continue ))
-(ccc )
+  (continue))
+(ccc)
 
 ;^23$
 
@@ -274,9 +274,11 @@
 (closure 0
   (check-vars 3)
   (local 2)
+  (k-closure 0
+    (halt))
   (int 12)
   (apply 2))
-(ccc )
+(ccc)
 
 ;^12$
 

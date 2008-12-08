@@ -1,6 +1,6 @@
 ((8 9))
 
-;^Can't read bytecode mnemonic$
+;^Error: Can't read bytecode mnemonic$
 
 ; **********
 

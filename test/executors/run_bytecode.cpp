@@ -10,6 +10,7 @@
 #include "reader.hpp"
 #include "executors.hpp"
 #include "symbols.hpp"
+#include "types.hpp"
 
 using namespace std;
 
@@ -20,18 +21,6 @@ void throw_HlError(const char *str) {
 
 void throw_OverBrokenHeart(Generic*) {
   throw_HlError("overbrokenheart");
-}
-
-/*
- * printing
- */
-ostream& operator<<(ostream & o, Object::ref r) {
-  if (is_a<int>(r)) {
-    o << as_a<int>(r);
-  } else {
-    o << "#<unknown type>";
-  }
-  return o;
 }
 
 int main(int argc, char **argv) {
@@ -48,26 +37,22 @@ int main(int argc, char **argv) {
 
   initialize_globals();
 
-  BytecodeSeq program;
-  try {
-    while (!in.eof())
-      in >> program;
-  } catch (ReadError e) {
-    cout << "Reader error: " << e << endl;
-    exit(-1);
-  }
-
-  bytecode_t *to_run;
   Process p;
   Process* Q;
   size_t timeslice;
   timeslice = 128;
   execute(p, timeslice, Q, 1); // init phase
+
+  read_sequence(p, in);
+  bytecode_t *to_run;
+  Object::ref program = p.stack.top(); p.stack.pop();
   assemble(program, to_run);
   p.stack.push(Object::to_ref(Closure::NewKClosure(p, to_run, 0))); // entry point
   timeslice = 128;
   execute(p, timeslice, Q); // run!
 
+  cout << p.stack.top() << endl;
+  /*
   Object::ref res = p.stack.top();
   if (is_a<int>(res))
     cout << as_a<int>(res) << endl;
@@ -84,6 +69,6 @@ int main(int argc, char **argv) {
       }
     }
   }
-
+  */
   return 0;
 }

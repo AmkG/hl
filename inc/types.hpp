@@ -111,6 +111,8 @@ public:
     gt->traverse(car_ref);
     gt->traverse(cdr_ref);
   }
+
+  Object::ref len();
 };
 
 extern inline Object::ref car(Object::ref x) {
@@ -127,6 +129,7 @@ extern inline Object::ref scar(Object::ref c, Object::ref v) {
 extern inline Object::ref scdr(Object::ref c, Object::ref v) {
 	return expect_type<Cons>(c,"'scdr expects a true Cons cell")->scdr(v);
 }
+
 
 /*-----------------------------------------------------------------------------
 HlPid

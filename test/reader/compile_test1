@@ -2,6 +2,8 @@
 
 g++ -Dsingle_threaded -I../../inc\
     ../../src/heaps.cpp\
+    ../../src/processes.cpp\
+    ../../src/executors.cpp\
     ../../src/reader.cpp\
     ../../src/symbols.cpp\
     ../../src/types.cpp\
