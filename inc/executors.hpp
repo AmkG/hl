@@ -200,17 +200,50 @@ struct bytecode_t {
 // a bytecode object contains a table of complex constants such as gensyms
 class Bytecode : public GenericDerivedVariadic<Bytecode> {
 private:
-  bytecode_t *code;
+  bytecode_t *code; // !! remember to use a smart pointer here !!
+  size_t codeSize;
+  size_t nextCode; // next free position in code
+  size_t nextPos; // next free position in variadic space
+
 public:
-  Bytecode(size_t sz) : GenericDerivedVariadic<Bytecode>(sz), code(NULL) {}
-  virtual ~Bytecode() { delete [] code; }
+  Bytecode(size_t sz) 
+    : GenericDerivedVariadic<Bytecode>(sz), code(NULL), 
+      codeSize(0), nextCode(0), nextPos(0) {}
+  virtual ~Bytecode() { /*delete [] code;*/ }
 
   // after setCode the passed code is managed by the Bytecode object
-  void setCode(bytecode_t *c) { code = c; }
+  void setCode(bytecode_t *c, size_t sz) { 
+    code = c; 
+    nextCode = codeSize = sz; 
+  }
+
   bytecode_t* getCode() { return code; }
 
+  // close a complex constants
+  size_t closeOver(Object::ref obj) {
+    index(nextPos) = obj;
+    return nextPos++;
+  }
+
+  // add a bytecode at the end of the sequence
+  void push(bytecode_t b) {
+    if (code==NULL) {
+      code = new bytecode_t[64]; // default initial size
+      nextCode = 0;
+      codeSize = 64;
+    } else if (nextCode >= codeSize) {
+      bytecode_t *nb = new bytecode_t[codeSize*2];
+      for (size_t i = 0; i<codeSize; i++)
+        nb[i] = code[i];
+      delete [] code;
+      code = nb;
+      codeSize *= 2;
+    }
+    code[nextCode++] = b;
+  }
+
   void traverse_references(GenericTraverser *gt) {
-    for(size_t i = 0; i < sz; ++i) {
+    for(size_t i = 0; i < nextPos; ++i) {
       gt->traverse(index(i));
     }
   }
@@ -222,7 +255,8 @@ public:
 
 class AsOp {
 public:
-  virtual void assemble(Bytecode & b, Object::ref arg, Object::ref seq) = 0;
+  // expect a Bytecode on the stack
+  virtual void assemble(Process & proc, Object::ref arg, Object::ref seq) = 0;
 };
 
 class Assembler {
@@ -241,6 +275,9 @@ public:
 
   // do the assembly, leave a Bytecode on the stack
   void go(Process & proc, Object::ref seq); 
+
+  // count number of comples constants in seq (not recursive)
+  static size_t countConsts(Object::ref seq);
 };
 
 // Execute a given process

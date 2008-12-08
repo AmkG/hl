@@ -83,6 +83,30 @@ public:
 	}
 };
 
+static Assembler assemble;
+
+// closure assembly operation
+class ClosureAs : public AsOp {
+public:
+  void assemble(Process & proc, Object::ref arg, Object::ref seq);
+};
+
+void ClosureAs::assemble(Process & proc, Object::ref arg, Object::ref seq) {
+  assemble.go(proc, seq);
+  Object::ref res = proc.stack.top(); proc.stack.pop();
+  Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
+  size_t iconst = b->closeOver(res); // close over the body
+  // reference to the body
+  b->push((bytecode_t){bytecodelookup(symbols.lookup("const-ref")), iconst});
+  // build the closure
+  b->push((bytecode_t){bytecodelookup(symbols.lookup("build-closure")), 
+                         as_a<int>(arg)});
+};
+
+void Assembler::go(Process & proc, Object::ref seq) {
+  
+}
+
 intptr_t getSimpleArgVal(Object::ref sa) {
   if (is_a<int>(sa))
     return as_a<int>(sa);
@@ -99,7 +123,7 @@ bool is_complex_const(Object::ref obj) {
 }
 
 // count the number of complex constants 
-size_t count_consts(Object::ref seq) {
+size_t Assembler::countConsts(Object::ref seq) {
   size_t n = 0;
   for(Object::ref i = seq; i!=Object::nil(); i = cdr(i)) {
     for (Object::ref i2 = car(i); i2!=Object::nil(); i2 = cdr(i2)) {
