@@ -16,6 +16,15 @@ extern boost::scoped_ptr<SymbolsTable> symbols;
 extern Symbol* symbol_sym;
 extern Symbol* symbol_int;
 extern Symbol* symbol_char;
+extern Symbol* symbol_cons;
+extern Symbol* symbol_pid;
+extern Symbol* symbol_fn;
+extern Symbol* symbol_string;
+extern Symbol* symbol_unspecified;
+extern Symbol* symbol_num;
+extern Symbol* symbol_array;
+extern Symbol* symbol_table;
+extern Symbol* symbol_container;
 
 #ifndef single_threaded
 	extern bool single_threaded;
