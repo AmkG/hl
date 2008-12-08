@@ -354,7 +354,7 @@ private:
 
 public:
 	Object::ref impl;
-	HlTableType type;
+	HlTableType tbtype;
 	size_t pairs;		/*number of key-value pairs*/
 
 	void traverse_references(GenericTraverser* gt) {

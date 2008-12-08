@@ -170,8 +170,8 @@ loop:
 }
 
 Object::ref* HlTable::location_lookup(Object::ref k) const {
-	if(type == hl_table_empty) return NULL;
-	switch(type) {
+	if(tbtype == hl_table_empty) return NULL;
+	switch(tbtype) {
 	case hl_table_linear:
 		return linear_lookup(k);
 		break;
@@ -218,7 +218,7 @@ void HlTable::insert(Heap& hp, ProcessStack& stack) {
 	}
 
 	HlTable& T = *known_type<HlTable>(stack.top(3));
-	if(T.type == hl_table_empty) {
+	if(T.tbtype == hl_table_empty) {
 		/*either we become an hl_table_arrayed,
 		or a hl_table_linear
 		*/
@@ -232,7 +232,7 @@ void HlTable::insert(Heap& hp, ProcessStack& stack) {
 				/*need to re-read, we might have gotten GC'ed*/
 				HlTable& T = *known_type<HlTable>(stack.top(3));
 				T.impl = Object::to_ref(&A);
-				T.type = hl_table_arrayed;
+				T.tbtype = hl_table_arrayed;
 				goto clean_up;
 			}
 		}
@@ -243,7 +243,7 @@ void HlTable::insert(Heap& hp, ProcessStack& stack) {
 		/*need to re-read, we might have gotten GC'ed*/
 		HlTable& T = *known_type<HlTable>(stack.top(3));
 		T.impl = Object::to_ref(&A);
-		T.type = hl_table_linear;
+		T.tbtype = hl_table_linear;
 		T.pairs = 1;
 		goto clean_up;
 	} else {
@@ -264,7 +264,7 @@ void HlTable::insert(Heap& hp, ProcessStack& stack) {
 		if(!stack.top(2)) goto clean_up;
 
 		/*No, we have to insert it.  First figure out what to do*/
-		switch(T.type) {
+		switch(T.tbtype) {
 		case hl_table_arrayed:
 			/*Can we still insert into the array?*/
 			if(is_a<int>(stack.top(1))) {
@@ -383,7 +383,7 @@ transform_arrayed_to_hashed: {
 		++T.pairs;
 		/*replace implementation*/
 		T.impl = stack.top(2);
-		T.type = hl_table_hashed;
+		T.tbtype = hl_table_hashed;
 	}
 	/*clean up stack*/
 	stack.top(3) = cdr(stack.top(1));
@@ -434,7 +434,7 @@ transform_linear_to_hashed: {
 	++T.pairs;
 	/*replace implementation*/
 	T.impl = stack.top(2);
-	T.type = hl_table_hashed;
+	T.tbtype = hl_table_hashed;
 	/*clean up stack*/
 	stack.top(3) = cdr(stack.top(1));
 	stack.pop(2);
