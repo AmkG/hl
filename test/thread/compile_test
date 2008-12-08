@@ -2,7 +2,7 @@
 
 g++ -I../../inc -I../../os -g -std=c++98 -pthread\
 	../../src/globals.cpp\
-	../../src/symbols.cpp\
+	../../src/symtable.cpp\
 	../../src/heaps.cpp\
 	$1
 
