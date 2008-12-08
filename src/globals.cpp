@@ -5,9 +5,8 @@
 	bool single_threaded;
 #endif
 
-#include"symbols.hpp"
+class Symbol;
 
-boost::scoped_ptr<SymbolsTable> symbols;
 Symbol* symbol_sym;
 Symbol* symbol_int;
 Symbol* symbol_char;
@@ -20,6 +19,10 @@ Symbol* symbol_num;
 Symbol* symbol_array;
 Symbol* symbol_table;
 Symbol* symbol_container;
+
+#include"symbols.hpp"
+
+boost::scoped_ptr<SymbolsTable> symbols;
 
 void initialize_globals(void) {
 	symbols.reset(new SymbolsTable());
