@@ -2,5 +2,6 @@
 
 g++ -I../../inc -I../../os -std=c++98 -g $1 \
 	../../src/types.cpp\
-	../../src/heaps.cpp
-
+	../../src/heaps.cpp\
+	../../src/globals.cpp\
+	../../src/symtable.cpp
