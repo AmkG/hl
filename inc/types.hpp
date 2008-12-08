@@ -57,7 +57,7 @@ static inline T* maybe_type(Object::ref x) {
 Types
 -----------------------------------------------------------------------------*/
 
-Object::ref type(Object::ref ob) {
+static inline Object::ref type(Object::ref ob) {
 	if(is_a<Generic*>(ob)) {
 		return as_a<Generic*>(ob)->type();
 	}
