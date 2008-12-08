@@ -83,45 +83,40 @@ public:
 	}
 };
 
-intptr_t getSimpleArgVal(SimpleArg *sa) {
-  if (is_a<int>(sa->getVal()))
-    return as_a<int>(sa->getVal());
+intptr_t getSimpleArgVal(Object::ref sa) {
+  if (is_a<int>(sa))
+    return as_a<int>(sa);
   else {
-    if (is_a<Symbol*>(sa->getVal()))
-      return (intptr_t)(as_a<Symbol*>(sa->getVal()));
+    if (is_a<Symbol*>(sa))
+      return (intptr_t)(as_a<Symbol*>(sa));
     else // it's a Generic*
-      return (intptr_t)(as_a<Generic*>(sa->getVal()));
+      return (intptr_t)(as_a<Generic*>(sa));
   }
 }
 
-void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
-  a_seq = new bytecode_t[seq.size()]; // assembled bytecode
+void assemble(Object::ref seq, bytecode_t* & a_seq) {
+  Cons *c = expect_type<Cons>(seq, "assemble: wrong format");
+  a_seq = new bytecode_t[as_a<int>(c->len())]; // assembled bytecode
   size_t pos = 0;
-  for(BytecodeSeq::iterator i = seq.begin(); i!=seq.end(); 
-      i++, pos++) {
-    a_seq[pos].op = bytecodelookup(i->first);
-    SimpleArg *sa;
-    BytecodeSeq *seq_arg;
-    SimpleArgAndSeq *sas;
-    if ((sa = dynamic_cast<SimpleArg*>(i->second)) != NULL) {
-      a_seq[pos].val = getSimpleArgVal(sa);
-    }
-    else {
-      if ((seq_arg = dynamic_cast<BytecodeSeq*>(i->second)) != NULL) {
-        /*Not sure if this is a good idea: thread libraries tend to
-        give limited stack space.  Probably better use explicit stack,
-        or better alloc things in a process's heap.
-        */
-        assemble(*seq_arg, a_seq[pos].seq);
-      }
+  for(Object::ref i = seq; i!=Object::nil(); i = cdr(i), pos++) {
+    Object::ref op = car(i);
+    if (!is_a<Symbol*>(car(op)))
+      throw_HlError("assemble: can't find mnemonic");
+    a_seq[pos].op = bytecodelookup(as_a<Symbol*>(car(op)));
+    if (cdr(op)!=Object::nil()) {
+      Cons *c = expect_type<Cons>(cdr(op), "assemble: wrong format");
+      Cons *arg1 = maybe_type<Cons>(c->car());
+      if (arg1) { // sequence only
+        assemble(Object::to_ref(c), a_seq[pos].seq);
+      } 
       else {
-        if ((sas = dynamic_cast<SimpleArgAndSeq*>(i->second)) != NULL) {
-          a_seq[pos].val = getSimpleArgVal(sas->getSimple());
-          assemble(*(sas->getSeq()), a_seq[pos].seq);
-        }
-        else {
-          if (i->second!=NULL)
-            throw_HlError("assemble: Unknown argument type");
+        a_seq[pos].val = getSimpleArgVal(c->car()); // must be a simple arg!
+        if (c->cdr()!=Object::nil()) { // a sequence
+          /*Not sure if this is a good idea: thread libraries tend to
+            give limited stack space.  Probably better use explicit stack,
+            or better alloc things in a process's heap.
+          */
+          assemble(c->cdr(), a_seq[pos].seq);
         }
       }
     }
@@ -129,13 +124,12 @@ void assemble(BytecodeSeq & seq, bytecode_t* & a_seq) {
 }
 
 // assemble from a string representation
-bytecode_t* inline_assemble(const char *code) {
+bytecode_t* inline_assemble(Process & proc, const char *code) {
   bytecode_t *res;
   std::stringstream code_stream(code);
-  BytecodeSeq code_seq;
-  while (!code_stream.eof())
-    code_stream >> code_seq;
-  assemble(code_seq, res);
+  read_sequence(proc, code_stream);
+  Object::ref seq = proc.stack.top(); proc.stack.pop();
+  assemble(seq, res);
   return res;
 }
 
@@ -221,6 +215,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("lit-t",		THE_BYTECODE_LABEL(lit_t))
       ("local",		THE_BYTECODE_LABEL(local))
+      ("monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("reducto",		THE_BYTECODE_LABEL(reducto))
       ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
 //       ("rep",			THE_BYTECODE_LABEL(rep))
@@ -255,17 +250,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*assign bultin global*/
       ;/*end initializer*/
 
-    /// build and assemble reducto_cont_bytecode
+    /// build and assemble various bytecode sequences
     reducto_cont_bytecode = 
-      inline_assemble("(reducto-continuation) (continue)");
+      inline_assemble(proc, "(reducto-continuation) (continue)");
     ccc_fn = 
-      inline_assemble("(check-vars 3) (continue-on-clos 0)");
-
-    std::stringstream com_cont("(composeo-continuation ) (continue )");
-    BytecodeSeq com_seq;
-    while (!com_cont.eof())
-      com_cont >> red_seq;
-    assemble(com_seq, composeo_cont_bytecode);
+      inline_assemble(proc, "(check-vars 3) (continue-on-clos 0)");
+    composeo_cont_bytecode =
+      inline_assemble(proc, "(composeo-continuation ) (continue )");
 
     return process_running;
   }
@@ -480,7 +471,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N); // number of operations to skip
       Object::ref gp = stack.top(); stack.pop();
       if (gp==Object::nil()) { // jump if false
-        pc += N-1;
+        pc += N;
         // NEXT_BYTECODE will increment
       }
     } NEXT_BYTECODE;
@@ -646,6 +637,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(local): {
       INTPARAM(N);
       bytecode_local(stack, N);
+    } NEXT_BYTECODE;
+    BYTECODE(monomethod): {
+      HlTable& T = *known_type<HlTable>((*clos)[0]);
+      if(stack.size() >= 3) {
+         Object::ref tp = type(stack[2]);
+         Object::ref f = T.lookup(tp);
+         if(f) stack[0] = f;
+         else  stack[0] = T.lookup(Object::nil());
+      } else {
+         stack[0] = T.lookup(Object::nil());
+      }
+      goto call_current_closure;
     } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*

@@ -1,4 +1,8 @@
 #!/bin/sh
 
-g++ -I../../inc -std=c++98 -DDEBUG -g ../../src/heaps.cpp $1
+g++ -I../../inc -I../../os -std=c++98 -DDEBUG -g \
+	../../src/heaps.cpp\
+	../../src/globals.cpp\
+	../../src/symtable.cpp\
+	$1
 

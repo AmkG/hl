@@ -28,14 +28,14 @@ cons
 car 
 cdr
 is
-+  -- on numbers, lists, strings
++  -- on numbers, lists, strings -- vetoed: numbers only.  Use 'join for sequences
 -
 *
 /
 mod
 expt
 sqrt
-> -- on numbers, strings
+> -- on numbers, strings -- not necessary: just overload < and is
 < -- on numbers, strings
 len -- on lists, strings, tables
 tag -- equivalent to Arc annotate
@@ -104,5 +104,6 @@ quit
 
 GC/automatic reaping for processes waiting for message but
   without references from other processes
+  -- already designed but not tested!
 GC for 'uniq-generated symbols
 

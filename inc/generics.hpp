@@ -81,7 +81,9 @@ public:
 		*/
 		return;
 	}
-	/*------These two functions must be redefined together------*/
+	/*------The above two functions must be redefined together------*/
+
+	virtual Object::ref type(void) const =0;
 
 	/*dtor*/
 	virtual ~Generic() { }
@@ -108,6 +110,9 @@ public:
 		/*broken - why are we cloning this?*/
 		throw_OverBrokenHeart(to);
                 return NULL;
+	}
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_unspecified);
 	}
 	BrokenHeart(Generic* nto) : to(nto) { }
 };

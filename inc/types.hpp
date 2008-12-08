@@ -54,6 +54,26 @@ static inline T* maybe_type(Object::ref x) {
 }
 
 /*-----------------------------------------------------------------------------
+Types
+-----------------------------------------------------------------------------*/
+
+static inline Object::ref type(Object::ref ob) {
+	if(is_a<Generic*>(ob)) {
+		return as_a<Generic*>(ob)->type();
+	}
+	/*maybe some way of putting this in tag_traits?*/
+	if(is_a<Symbol*>(ob)) {
+		return Object::to_ref(symbol_sym);
+	}
+	if(is_a<int>(ob)) {
+		return Object::to_ref(symbol_int);
+	}
+	if(is_a<UnicodeChar>(ob)) {
+		return Object::to_ref(symbol_char);
+	}
+}
+
+/*-----------------------------------------------------------------------------
 Cons cell
 -----------------------------------------------------------------------------*/
 
@@ -83,10 +103,16 @@ public:
    * straight from the root location.
    */
 
+  Object::ref type(void) const {
+    return Object::to_ref(symbol_cons);
+  }
+
   void traverse_references(GenericTraverser *gt) {
     gt->traverse(car_ref);
     gt->traverse(cdr_ref);
   }
+
+  Object::ref len();
 };
 
 extern inline Object::ref car(Object::ref x) {
@@ -103,6 +129,7 @@ extern inline Object::ref scar(Object::ref c, Object::ref v) {
 extern inline Object::ref scdr(Object::ref c, Object::ref v) {
 	return expect_type<Cons>(c,"'scdr expects a true Cons cell")->scdr(v);
 }
+
 
 /*-----------------------------------------------------------------------------
 HlPid
@@ -125,6 +152,9 @@ public:
 	}
 	void enhash(HashingClass* hc) const {
 		hc->enhash((size_t) process);
+	}
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_pid);
 	}
 };
 
@@ -172,8 +202,13 @@ public:
     }
   }
   bool reusable() { return !nonreusable; }
+
   static Closure* NewKClosure(Heap & h, Object::ref body, size_t n);
   static Closure* NewClosure(Heap & h, Object::ref body, size_t n);
+
+  Object::ref type(void) const {
+    return Object::to_ref(symbol_fn);
+  }
 
   void traverse_references(GenericTraverser *gt) {
     for(size_t i = 0; i < sz; ++i) {
@@ -219,6 +254,9 @@ public:
 	static void sref(Heap& hp, ProcessStack& stack);
 	/*creates a string from the characters on stack.top(N) to stack.top(1)*/
 	static void stack_create(Heap& hp, ProcessStack& stack, size_t N);
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_string);
+	}
 };
 
 class HlStringImpl : public GenericDerivedVariadic<HlStringImpl> {
@@ -234,6 +272,9 @@ public:
 	HlStringImpl(size_t sz)
 		: GenericDerivedVariadic<HlStringImpl>(sz),
 		shared(0) { }
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_unspecified);
+	}
 };
 
 inline UnicodeChar HlString::ref(size_t i) const {
@@ -270,6 +311,9 @@ public:
     return f;
   }
   inline double get() { return val; }
+  Object::ref type(void) const {
+    return Object::to_ref(symbol_num);
+  }
   // Numbers are immutable
 };
 
@@ -292,6 +336,9 @@ public:
 	}
 	Object::ref const& operator[](size_t i) const {
 		return index(i);
+	}
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_array);
 	}
 	HlArray(size_t sz) : GenericDerivedVariadic<HlArray>(sz) { }
 };
@@ -354,7 +401,7 @@ private:
 
 public:
 	Object::ref impl;
-	HlTableType type;
+	HlTableType tbtype;
 	size_t pairs;		/*number of key-value pairs*/
 
 	void traverse_references(GenericTraverser* gt) {
@@ -375,7 +422,11 @@ public:
 	*/
 	static void insert(Heap&, ProcessStack&);
 
-	HlTable(void) : impl(Object::nil()), type(hl_table_empty) { }
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_table);
+	}
+
+	HlTable(void) : impl(Object::nil()), tbtype(hl_table_empty) { }
 };
 
 /*-----------------------------------------------------------------------------
@@ -387,6 +438,10 @@ public:
 	Object::ref val;
 	void traverse_references(GenericTraverser* gt) {
 		gt->traverse(val);
+	}
+
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_container);
 	}
 
 	SharedVar(void) : val(Object::nil()) { }

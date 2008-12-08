@@ -80,6 +80,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(lit_nil)
 	A_BYTECODE(lit_t)
 	A_BYTECODE(local)
+	A_BYTECODE(monomethod)
 	A_BYTECODE(reducto)
         A_BYTECODE(reducto_continuation)
 	A_BYTECODE(rep)
@@ -218,7 +219,7 @@ public:
 #define FLOATPARAM(name) Float *name = (Float*)pc->val
 
 // Assemble a sequence of bytecodes
-void assemble(BytecodeSeq & seq, bytecode_t* & a_seq);
+void assemble(Object::ref seq, bytecode_t* & a_seq);
 
 // Execute a given process
 ProcessStatus execute(Process & proc, size_t& reductions, Process*& Q, bool init = 0);
