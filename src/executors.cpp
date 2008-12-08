@@ -256,17 +256,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*assign bultin global*/
       ;/*end initializer*/
 
-    /// build and assemble reducto_cont_bytecode
+    /// build and assemble various bytecode sequences
     reducto_cont_bytecode = 
       inline_assemble("(reducto-continuation) (continue)");
     ccc_fn = 
       inline_assemble("(check-vars 3) (continue-on-clos 0)");
-
-    std::stringstream com_cont("(composeo-continuation ) (continue )");
-    BytecodeSeq com_seq;
-    while (!com_cont.eof())
-      com_cont >> red_seq;
-    assemble(com_seq, composeo_cont_bytecode);
+    composeo_cont_bytecode =
+      inline_assemble("(composeo-continuation ) (continue )");
 
     return process_running;
   }
