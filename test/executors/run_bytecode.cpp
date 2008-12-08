@@ -46,8 +46,7 @@ int main(int argc, char **argv) {
     return 2;
   }
 
-  boost::scoped_ptr<SymbolsTable> syms(new SymbolsTable);
-  symbols.swap(syms);
+  initialize_globals();
 
   BytecodeSeq program;
   try {
