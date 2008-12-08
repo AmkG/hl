@@ -94,10 +94,34 @@ intptr_t getSimpleArgVal(Object::ref sa) {
   }
 }
 
-void assemble(Object::ref seq, bytecode_t* & a_seq) {
+bool is_complex_const(Object::ref obj) {
+  return maybe_type<Cons>(obj) || maybe_type<Float>(obj);
+}
+
+// count the number of complex constants 
+size_t count_consts(Object::ref seq) {
+  size_t n = 0;
+  for(Object::ref i = seq; i!=Object::nil(); i = cdr(i)) {
+    for (Object::ref i2 = car(i); i2!=Object::nil(); i2 = cdr(i2)) {
+      if (is_complex_const(car(i2)))
+        n++;
+    }
+  }
+
+  return n;
+}
+
+// assemble sequence, leave Bytecode object on the stack 
+void assemble(Process & proc, Object::ref seq) {
   Cons *c = expect_type<Cons>(seq, "assemble: wrong format");
-  a_seq = new bytecode_t[as_a<int>(c->len())]; // assembled bytecode
+  size_t next_const_pos = 0;
+  ProcessStack & st = proc.stack;
+  // !! out may change in a sub call to assemble
+  Bytecode *out = h.createVariadic<Bytecode>(count_consts(seq));
+  bytecode_t *a_seq = new bytecode_t[as_a<int>(c->len())];
+  out->setCode(a_seq); // assembled bytecode
   size_t pos = 0;
+  // !!! refs may become invalid
   for(Object::ref i = seq; i!=Object::nil(); i = cdr(i), pos++) {
     Object::ref op = car(i);
     if (!is_a<Symbol*>(car(op)))
@@ -107,7 +131,13 @@ void assemble(Object::ref seq, bytecode_t* & a_seq) {
       Cons *c = expect_type<Cons>(cdr(op), "assemble: wrong format");
       Cons *arg1 = maybe_type<Cons>(c->car());
       if (arg1) { // sequence only
-        assemble(Object::to_ref(c), a_seq[pos].seq);
+        st.push(Object::to_ref(out));
+        assemble(proc, Object::to_ref(c)); // out may be invalid
+        out = expect_type<Bytecode*>(st.top(2));
+        out->index(next_const_pos++) = st.top(); st.pop();
+        // !! generate a reference to complex const here
+        // ...
+        // ...
       } 
       else {
         a_seq[pos].val = getSimpleArgVal(c->car()); // must be a simple arg!
@@ -116,7 +146,10 @@ void assemble(Object::ref seq, bytecode_t* & a_seq) {
             give limited stack space.  Probably better use explicit stack,
             or better alloc things in a process's heap.
           */
-          assemble(c->cdr(), a_seq[pos].seq);
+          st.push(Object::to_ref(out));
+          assemble(proc, Object::to_ref(c->cdr())); // out may be invalid
+          out = expect_type<Bytecode*>(st.top(2));
+          out->index(next_const_pos++) = st.top(); st.pop();
         }
       }
     }
