@@ -88,12 +88,14 @@ static Assembler assemble;
 // closure assembly operation
 class ClosureAs : public AsOp {
 public:
-  void assemble(Process & proc, Object::ref arg, Object::ref seq);
+  void assemble(Process & proc);
 };
 
-void ClosureAs::assemble(Process & proc, Object::ref arg, Object::ref seq) {
-  assemble.go(proc, seq);
+void ClosureAs::assemble(Process & proc) {
+  // assemble the seq. arg, which must be on the top of the stack
+  assemble.go(proc);
   Object::ref res = proc.stack.top(); proc.stack.pop();
+  Object::ref arg = proc.stack.top(); proc.stack.pop();
   Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
   size_t iconst = b->closeOver(res); // close over the body
   // reference to the body
@@ -103,8 +105,36 @@ void ClosureAs::assemble(Process & proc, Object::ref arg, Object::ref seq) {
                          as_a<int>(arg)});
 };
 
-void Assembler::go(Process & proc, Object::ref seq) {
-  
+void Assembler::go(Process & proc) {
+  Object::ref current_cell;
+  Bytecode *b = proc.createVariadic<Bytecode*>(countConsts(proc.stack.top()));
+  proc.stack.push(Object::to_ref(b));
+  current_cell = proc.stack.top(); proc.stack.pop();
+
+  // push the arguments
+  Object::ref current_op = car(current_cell);
+  size_t len = expect_type<Cons*>(current_op)->len();
+  switch (len) {
+  case 0: // no args
+    proc.stack.push(Object::nil());
+    proc.stack.push(Object::nil());
+    break;
+  case 1: 
+    if (maybe_type<Cons>(car(cdr(current_op)))) { // seq
+      proc.stack.push(Object::nil()); // empty simple arg
+      proc.stack.push(car(cdr(current_op)));
+    } else {
+      proc.stack.push(car(cdr(current_op)));
+      proc.stack.push(Object::nil());
+    }
+    break;
+  case 2:
+    proc.stack.push(car(cdr(current_op))); // simple
+    proc.stack.push(car(cdr(cdr(current_op)))); // complex
+    break;
+  default:
+    throw_HlError("assemble: wrong format");
+  }
 }
 
 intptr_t getSimpleArgVal(Object::ref sa) {

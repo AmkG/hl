@@ -255,7 +255,10 @@ public:
 
 class AsOp {
 public:
-  // expect a Bytecode on the stack
+  // expect arguments on the stack:
+  //  - sequence arg (stack top)
+  //  - simple arg
+  //  - Bytecode object being assembled
   virtual void assemble(Process & proc, Object::ref arg, Object::ref seq) = 0;
 };
 
@@ -273,8 +276,9 @@ public:
   template <class T>
   void reg(Symbol* s) { tbl[s] = new T(); }
 
-  // do the assembly, leave a Bytecode on the stack
-  void go(Process & proc, Object::ref seq); 
+  // do the assembly, leave a Bytecode on the stack, expect a sequence on 
+  // the stack
+  void go(Process & proc); 
 
   // count number of comples constants in seq (not recursive)
   static size_t countConsts(Object::ref seq);
