@@ -51,5 +51,21 @@ Known to be supported on GCC >= 2.96
 	#define unlikely(x)	(x)
 #endif
 
+/*-----------------------------------------------------------------------------
+Issue: GCC supports doesn't inline a function declared inline unless you
+	specifically ask for optimization (and it still might not inline)
+Known to occur on GCC >= 2.96
+-----------------------------------------------------------------------------*/
+
+#ifdef __GNUC__
+	#if __GNUC_VERSION__ >= 29600
+		#define F_INLINE	__attribute__((__always_inline__))
+	#endif
+#endif
+
+#ifndef F_INLINE
+	#define F_INLINE
+#endif
+
 #endif // WORKAROUNDS_H
 
