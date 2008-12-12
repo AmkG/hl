@@ -268,7 +268,9 @@ private:
   sym_op_tbl tbl;
 
   // extracts a value pointer/immediate object, throwing away the type tag
-  intptr_t simpleVal();
+  static intptr_t simpleVal();
+  // tells if an object is a complex one or not
+  static bool Assembler::isComplexConst(Object::ref obj);
 
 public:
   ~Assembler() { 

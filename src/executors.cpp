@@ -105,6 +105,26 @@ void ClosureAs::assemble(Process & proc) {
                          as_a<int>(arg)});
 };
 
+// assemble instructions to push a complex constant on the stack
+// a complex constant is one that resides on the process-local heap
+class ComplexAs : public AsOp {
+public:
+  void assemble(Process & proc);
+};
+
+void ComplexAs::assemble(Process & proc) {
+  proc.stack.pop(); // there should be no sequence
+  Object::ref arg = proc.stack.top(); proc.stack.pop();
+  Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
+  if (isComplexConst(arg)) {
+    size_t i = b->closeOver(arg);
+    // generate a reference to it
+    b->push((bytecode_t){bytecodelookup(symbols->lookup("const-ref")), i});
+  } else {
+    throw_HlError("assemble: const expects a complex arg");
+  }
+}
+
 void Assembler::go(Process & proc) {
   Bytecode *b = proc.createVariadic<Bytecode*>(countConsts(proc.stack.top()));
   proc.stack.push(Object::to_ref(b));
@@ -153,11 +173,14 @@ void Assembler::go(Process & proc) {
       // ignore sequence, extracts the simple argument and lookup
       // an interpretable bytecode
       proc.stack.pop(); // throw away sequence
-      intptr_t arg = simpleVal(proc.stack.top()); proc.stack.pop();
+      Object::ref arg = proc.stack.top(); proc.stack.pop();
+      if (isComplexConst(arg))
+        throw_HlError("assemble: complex arg found where simple expected");
       Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
-      b->push((bytecode_t){bytecodelookup(op, arg)});
+      intptr_t arg = simpleVal(proc.stack.top());
+      b->push((bytecode_t){bytecodelookup(op), arg});
     }
-  } 
+  }
 }
 
 intptr_t Assembler::simpleVal(Object::ref sa) {
@@ -171,7 +194,7 @@ intptr_t Assembler::simpleVal(Object::ref sa) {
   }
 }
 
-bool is_complex_const(Object::ref obj) {
+bool Assembler::isComplexConst(Object::ref obj) {
   return maybe_type<Cons>(obj) || maybe_type<Float>(obj);
 }
 
@@ -180,7 +203,7 @@ size_t Assembler::countConsts(Object::ref seq) {
   size_t n = 0;
   for(Object::ref i = seq; i!=Object::nil(); i = cdr(i)) {
     for (Object::ref i2 = car(i); i2!=Object::nil(); i2 = cdr(i2)) {
-      if (is_complex_const(car(i2)))
+      if (isComplexConst(car(i2)))
         n++;
     }
   }
