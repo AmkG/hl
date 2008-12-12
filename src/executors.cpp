@@ -149,13 +149,18 @@ void Assembler::go(Process & proc) {
       // do the call
       tbl[op]->assemble(proc);
     } else {
-      // default behavior
-      // ...
+      // default behavior:
+      // ignore sequence, extracts the simple argument and lookup
+      // an interpretable bytecode
+      proc.stack.pop(); // throw away sequence
+      intptr_t arg = simpleVal(proc.stack.top()); proc.stack.pop();
+      Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
+      b->push((bytecode_t){bytecodelookup(op, arg)});
     }
   } 
 }
 
-intptr_t getSimpleArgVal(Object::ref sa) {
+intptr_t Assembler::simpleVal(Object::ref sa) {
   if (is_a<int>(sa))
     return as_a<int>(sa);
   else {

@@ -266,6 +266,10 @@ class Assembler {
 private:
   typedef sym_op_tbl std::map<Symbol*, AsOp*>;
   sym_op_tbl tbl;
+
+  // extracts a value pointer/immediate object, throwing away the type tag
+  intptr_t simpleVal();
+
 public:
   ~Assembler() { 
     for (sym_op_tbl::iterator i = tbl.begin(); i!=tbl.end(); i++)
