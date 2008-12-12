@@ -125,6 +125,16 @@ void ComplexAs::assemble(Process & proc) {
   }
 }
 
+// build a jmp-if instruction out of a (if (...) (...)) op
+class IfAs : public AsOp {
+public:
+  void assemble(Process & proc);
+};
+
+void IfAs::assemble(Process & proc) {
+  
+}
+
 void Assembler::go(Process & proc) {
   Bytecode *b = proc.createVariadic<Bytecode*>(countConsts(proc.stack.top()));
   proc.stack.push(Object::to_ref(b));
