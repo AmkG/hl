@@ -99,42 +99,60 @@ void ClosureAs::assemble(Process & proc) {
   Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
   size_t iconst = b->closeOver(res); // close over the body
   // reference to the body
-  b->push((bytecode_t){bytecodelookup(symbols.lookup("const-ref")), iconst});
+  b->push((bytecode_t){bytecodelookup(symbols->lookup("const-ref")), iconst});
   // build the closure
-  b->push((bytecode_t){bytecodelookup(symbols.lookup("build-closure")), 
+  b->push((bytecode_t){bytecodelookup(symbols->lookup("build-closure")), 
                          as_a<int>(arg)});
 };
 
 void Assembler::go(Process & proc) {
-  Object::ref current_cell;
   Bytecode *b = proc.createVariadic<Bytecode*>(countConsts(proc.stack.top()));
   proc.stack.push(Object::to_ref(b));
-  current_cell = proc.stack.top(); proc.stack.pop();
 
-  // push the arguments
-  Object::ref current_op = car(current_cell);
-  size_t len = expect_type<Cons*>(current_op)->len();
-  switch (len) {
-  case 0: // no args
-    proc.stack.push(Object::nil());
-    proc.stack.push(Object::nil());
-    break;
-  case 1: 
-    if (maybe_type<Cons>(car(cdr(current_op)))) { // seq
-      proc.stack.push(Object::nil()); // empty simple arg
-      proc.stack.push(car(cdr(current_op)));
-    } else {
-      proc.stack.push(car(cdr(current_op)));
+  // stack now is:
+  // - current Bytecode
+  // - seq to assemble
+
+  while (stack.top(2)!=Object::nil()) {
+    // push the arguments
+    Object::ref current_op = car(proc.stack.top(2));
+    size_t len = expect_type<Cons*>(current_op)->len();
+    // push the current args on the stack
+    switch (len) {
+    case 0: // no args
       proc.stack.push(Object::nil());
+      proc.stack.push(Object::nil());
+      break;
+    case 1: 
+      if (maybe_type<Cons>(car(cdr(current_op)))) { // seq
+        proc.stack.push(Object::nil()); // empty simple arg
+        proc.stack.push(car(cdr(current_op)));
+      } else {
+        proc.stack.push(car(cdr(current_op)));
+        proc.stack.push(Object::nil());
+      }
+      break;
+    case 2:
+      proc.stack.push(car(cdr(current_op))); // simple
+      proc.stack.push(car(cdr(cdr(current_op)))); // seq
+      break;
+    default:
+      throw_HlError("assemble: wrong number of arguments");
     }
-    break;
-  case 2:
-    proc.stack.push(car(cdr(current_op))); // simple
-    proc.stack.push(car(cdr(cdr(current_op)))); // complex
-    break;
-  default:
-    throw_HlError("assemble: wrong format");
-  }
+    // stack now is:
+    // - seq arg
+    // - simple arg
+    // - current Bytecode
+    // - seq being assembled
+    Symbol *op = expect_type<Symbol*>(car(current_op));
+    if (tbl.lookup(op)!=tbl.end()) {
+      // do the call
+      tbl[op]->assemble(proc);
+    } else {
+      // default behavior
+      // ...
+    }
+  } 
 }
 
 intptr_t getSimpleArgVal(Object::ref sa) {

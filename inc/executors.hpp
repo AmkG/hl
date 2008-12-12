@@ -259,7 +259,7 @@ public:
   //  - sequence arg (stack top)
   //  - simple arg
   //  - Bytecode object being assembled
-  virtual void assemble(Process & proc, Object::ref arg, Object::ref seq) = 0;
+  virtual void assemble(Process & proc) = 0;
 };
 
 class Assembler {
