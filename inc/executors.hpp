@@ -214,6 +214,13 @@ public:
       codeSize(0), nextCode(0), nextPos(0) {}
   virtual ~Bytecode() { /*delete [] code;*/ }
 
+  Object::ref& operator[](size_t i) { 
+    if (i < size())
+      return index(i);
+    else
+      throw_HlError("internal: trying to access objects in bytecode with an index too large!");
+  }
+
   Object::ref type(void) const {
     return Object::to_ref(symbol_bytecode);
   }
