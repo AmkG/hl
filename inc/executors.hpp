@@ -282,6 +282,8 @@ public:
   static size_t countConsts(Object::ref seq);
 };
 
+static Assembler assembler;
+
 // Execute a given process
 ProcessStatus execute(Process & proc, size_t& reductions, Process*& Q, bool init = 0);
 

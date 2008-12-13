@@ -44,9 +44,8 @@ int main(int argc, char **argv) {
   execute(p, timeslice, Q, 1); // init phase
 
   read_sequence(p, in);
-  bytecode_t *to_run;
-  Object::ref program = p.stack.top(); p.stack.pop();
-  assemble(program, to_run);
+  assembler.go(p);
+  Object::ref to_run = p.stack.top(); p.stack.pop();
   p.stack.push(Object::to_ref(Closure::NewKClosure(p, to_run, 0))); // entry point
   timeslice = 128;
   execute(p, timeslice, Q); // run!

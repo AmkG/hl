@@ -111,8 +111,6 @@ void Bytecode::push(const char *s, intptr_t val) {
   push(symbols->lookup(s), val);
 }
 
-static Assembler assemble;
-
 // closure assembly operation
 class ClosureAs : public AsOp {
 public:
@@ -121,7 +119,7 @@ public:
 
 void ClosureAs::assemble(Process & proc) {
   // assemble the seq. arg, which must be on the top of the stack
-  assemble.go(proc);
+  assembler.go(proc);
   Object::ref res = proc.stack.top(); proc.stack.pop();
   Object::ref arg = proc.stack.top(); proc.stack.pop();
   Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
