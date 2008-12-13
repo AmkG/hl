@@ -159,8 +159,21 @@ public:
 };
 
 void IfAs::assemble(Process & proc) {
-  size_t to_skip = expect_type<Cons*>(proc.stack.top())->len();
-  
+  Object::ref seq = proc.stack.top(); proc.stack.pop();
+  proc.stack.pop(); // throw away simple arg
+  size_t to_skip = expect_type<Cons*>(seq)->len();
+  b->push("jmp-if", to_skip); // skipping instruction
+  // append seq with seq being assembled
+  Object::ref tail = seq;
+  while (cdr(tail)!=Object::nil()) // search the tail
+    tail = cdr(tail);
+  // stack now is
+  //  - current bytecode
+  //  - seq being assembled
+  scdr(tail, proc.stack.top(2));
+  proc.stack.top(2) = seq;
+  // now main driver will continue and assemble the if body and then 
+  // the rest of the original sequence
 }
 
 void Assembler::go(Process & proc) {

@@ -248,6 +248,7 @@ public:
   //  - sequence arg (stack top)
   //  - simple arg
   //  - Bytecode object being assembled
+  //  - seq being assembled
   virtual void assemble(Process & proc) = 0;
 };
 
