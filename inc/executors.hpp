@@ -200,6 +200,7 @@ struct bytecode_t {
 // a bytecode object contains a table of complex constants such as gensyms
 class Bytecode : public GenericDerivedVariadic<Bytecode> {
 private:
+  // TODO: rearrange to let code be shared between different processes 
   bytecode_t *code; // !! remember to use a smart pointer here !!
   size_t codeSize;
   size_t nextCode; // next free position in code
