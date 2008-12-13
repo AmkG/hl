@@ -226,21 +226,10 @@ public:
   }
 
   // add a bytecode at the end of the sequence
-  void push(bytecode_t b) {
-    if (code==NULL) {
-      code = new bytecode_t[64]; // default initial size
-      nextCode = 0;
-      codeSize = 64;
-    } else if (nextCode >= codeSize) {
-      bytecode_t *nb = new bytecode_t[codeSize*2];
-      for (size_t i = 0; i<codeSize; i++)
-        nb[i] = code[i];
-      delete [] code;
-      code = nb;
-      codeSize *= 2;
-    }
-    code[nextCode++] = b;
-  }
+  void push(bytecode_t b);
+  void push(_bytecode_label op, intptr_t val);
+  void push(Symbol *s, intptr_t val);
+  void push(const char *s, intptr_t val);
 
   void traverse_references(GenericTraverser *gt) {
     for(size_t i = 0; i < nextPos; ++i) {

@@ -83,6 +83,34 @@ public:
 	}
 };
 
+void Bytecode::push(bytecode_t b) {
+  if (code==NULL) {
+    code = new bytecode_t[64]; // default initial size
+    nextCode = 0;
+    codeSize = 64;
+  } else if (nextCode >= codeSize) {
+    bytecode_t *nb = new bytecode_t[codeSize*2];
+    for (size_t i = 0; i<codeSize; i++)
+      nb[i] = code[i];
+    delete [] code;
+    code = nb;
+    codeSize *= 2;
+  }
+  code[nextCode++] = b;
+}
+
+void Bytecode::push(_bytecode_label op, intptr_t val) {
+  push((bytecode_t){op, val});
+}
+
+void Bytecode::push(Symbol *s, intptr_t val) {
+  push(bytecodelookup(s), val);
+}
+
+void Bytecode::push(const char *s, intptr_t val) {
+  push(symbols->lookup(s), val);
+}
+
 static Assembler assemble;
 
 // closure assembly operation
@@ -99,7 +127,7 @@ void ClosureAs::assemble(Process & proc) {
   Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
   size_t iconst = b->closeOver(res); // close over the body
   // reference to the body
-  b->push((bytecode_t){bytecodelookup(symbols->lookup("const-ref")), iconst});
+  b->push(bytecodelookup(symbols->lookup("const-ref")), iconst});
   // build the closure
   b->push((bytecode_t){bytecodelookup(symbols->lookup("build-closure")), 
                          as_a<int>(arg)});
@@ -119,7 +147,7 @@ void ComplexAs::assemble(Process & proc) {
   if (isComplexConst(arg)) {
     size_t i = b->closeOver(arg);
     // generate a reference to it
-    b->push((bytecode_t){bytecodelookup(symbols->lookup("const-ref")), i});
+    b->pushB(bytecodelookup(symbols->lookup("const-ref")), i);
   } else {
     throw_HlError("assemble: const expects a complex arg");
   }
@@ -132,6 +160,7 @@ public:
 };
 
 void IfAs::assemble(Process & proc) {
+  size_t to_skip = expect_type<Cons*>(proc.stack.top())->len();
   
 }
 
