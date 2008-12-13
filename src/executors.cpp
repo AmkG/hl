@@ -122,7 +122,7 @@ void ClosureAs::assemble(Process & proc) {
   assembler.go(proc);
   Object::ref res = proc.stack.top(); proc.stack.pop();
   Object::ref arg = proc.stack.top(); proc.stack.pop();
-  Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
+  Bytecode *b = expect_type<Bytecode>(proc.stack.top());
   size_t iconst = b->closeOver(res); // close over the body
   // reference to the body
   b->push("const-ref", iconst);
@@ -140,7 +140,7 @@ public:
 void ComplexAs::assemble(Process & proc) {
   proc.stack.pop(); // there should be no sequence
   Object::ref arg = proc.stack.top(); proc.stack.pop();
-  Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
+  Bytecode *b = expect_type<Bytecode>(proc.stack.top());
   if (isComplexConst(arg)) {
     size_t i = b->closeOver(arg);
     // generate a reference to it
@@ -159,7 +159,7 @@ public:
 void IfAs::assemble(Process & proc) {
   Object::ref seq = proc.stack.top(); proc.stack.pop();
   proc.stack.pop(); // throw away simple arg
-  size_t to_skip = expect_type<Cons*>(seq)->len();
+  size_t to_skip = expect_type<Cons>(seq)->len();
   b->push("jmp-if", to_skip); // skipping instruction
   // append seq with seq being assembled
   Object::ref tail = seq;
@@ -185,7 +185,7 @@ void Assembler::go(Process & proc) {
   while (stack.top(2)!=Object::nil()) {
     // push the arguments
     Object::ref current_op = car(proc.stack.top(2));
-    size_t len = expect_type<Cons*>(current_op)->len();
+    size_t len = expect_type<Cons>(current_op)->len();
     // push the current args on the stack
     switch (len) {
     case 0: // no args
