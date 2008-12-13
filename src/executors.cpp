@@ -379,6 +379,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("composeo",		THE_BYTECODE_LABEL(composeo))
       ("composeo-continuation",	THE_BYTECODE_LABEL(composeo_continuation))
       ("cons",		THE_BYTECODE_LABEL(cons))
+      ("const-ref",     THE_BYTECODE_LABEL(const_ref))
       ("continue",		THE_BYTECODE_LABEL(b_continue))
       ("continue-local",	THE_BYTECODE_LABEL(continue_local))
       ("continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos))
@@ -586,6 +587,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(cons): {
       bytecode_cons(proc,stack);
       SETCLOS(clos);
+    } NEXT_BYTECODE;
+    BYTECODE(const_ref): {
+      INTPARAM(i);
+      // !! too many indirections and conversions
+      // !! consider holding a reference to the current Bytecode*
+      proc.stack.push((*expect_type<Bytecode*>(clos->code()))[i]);
     } NEXT_BYTECODE;
     /*
       implements the common case

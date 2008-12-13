@@ -162,8 +162,6 @@ public:
 Closures
 -----------------------------------------------------------------------------*/
 
-struct bytecode_t;
-
 /*Closure
 */
 class Closure : public GenericDerivedVariadic<Closure> {

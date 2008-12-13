@@ -64,6 +64,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(composeo)
 	A_BYTECODE(composeo_continuation)
 	A_BYTECODE(cons)
+        A_BYTECODE(const_ref)
 	A_BYTECODE(b_continue)
 	A_BYTECODE(continue_local)
 	A_BYTECODE(continue_on_clos)
@@ -123,7 +124,7 @@ END_DECLARE_BYTECODES
 
 typedef void* _bytecode_label;
 #define DISPATCH_BYTECODES \
-        bytecode_t *pc = expect_type<Bytecode>(clos->code())->getCode();\
+        bytecode_t *pc = expect_type<Bytecode*>(clos->code())->getCode();\
 	goto *(pc->op);
 #define NEXT_BYTECODE goto *((++pc)->op)
 #define BYTECODE(x) BYTECODE_ENUM(x); PASTE_SYMBOLS(label_b_, x)
@@ -135,7 +136,7 @@ typedef void* _bytecode_label;
 
 typedef enum _e_bytecode_label _bytecode_label;
 #define DISPATCH_BYTECODES \
-	bytecode_t *pc = expect_type<Bytecode>(clos->code())->getCode();\
+	bytecode_t *pc = expect_type<Bytecode*>(clos->code())->getCode();\
 	switch(pc->op)
 #define NEXT_BYTECODE {pc++; continue;}
 #define BYTECODE(x) case BYTECODE_ENUM(x)
