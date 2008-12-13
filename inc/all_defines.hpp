@@ -25,6 +25,7 @@ extern Symbol* symbol_num;
 extern Symbol* symbol_array;
 extern Symbol* symbol_table;
 extern Symbol* symbol_container;
+extern Symbol* symbol_bytecode;
 
 #ifndef single_threaded
 	extern bool single_threaded;

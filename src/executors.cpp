@@ -544,7 +544,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(i);
       // !! too many indirections and conversions
       // !! consider holding a reference to the current Bytecode*
-      proc.stack.push((*expect_type<Bytecode*>(clos->code()))[i]);
+      proc.stack.push((*expect_type<Bytecode>(clos->code()))[i]);
     } NEXT_BYTECODE;
     /*
       implements the common case

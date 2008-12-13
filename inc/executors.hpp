@@ -4,6 +4,7 @@
 #include "processes.hpp"
 #include "objects.hpp"
 #include "reader.hpp" // for Bytecode classes
+#include "types.hpp"
 
 #include <map>
 
@@ -212,6 +213,10 @@ public:
     : GenericDerivedVariadic<Bytecode>(sz), code(NULL), 
       codeSize(0), nextCode(0), nextPos(0) {}
   virtual ~Bytecode() { /*delete [] code;*/ }
+
+  Object::ref type(void) const {
+    return Object::to_ref(symbol_bytecode);
+  }
 
   // after setCode the passed code is managed by the Bytecode object
   void setCode(bytecode_t *c, size_t sz) { 
