@@ -261,61 +261,14 @@ size_t Assembler::countConsts(Object::ref seq) {
   return n;
 }
 
-// assemble sequence, leave Bytecode object on the stack 
-void assemble(Process & proc, Object::ref seq) {
-  Cons *c = expect_type<Cons>(seq, "assemble: wrong format");
-  size_t next_const_pos = 0;
-  ProcessStack & st = proc.stack;
-  // !! out may change in a sub call to assemble
-  Bytecode *out = h.createVariadic<Bytecode>(count_consts(seq));
-  bytecode_t *a_seq = new bytecode_t[as_a<int>(c->len())];
-  out->setCode(a_seq); // assembled bytecode
-  size_t pos = 0;
-  // !!! refs may become invalid
-  for(Object::ref i = seq; i!=Object::nil(); i = cdr(i), pos++) {
-    Object::ref op = car(i);
-    if (!is_a<Symbol*>(car(op)))
-      throw_HlError("assemble: can't find mnemonic");
-    a_seq[pos].op = bytecodelookup(as_a<Symbol*>(car(op)));
-    if (cdr(op)!=Object::nil()) {
-      Cons *c = expect_type<Cons>(cdr(op), "assemble: wrong format");
-      Cons *arg1 = maybe_type<Cons>(c->car());
-      if (arg1) { // sequence only
-        st.push(Object::to_ref(out));
-        assemble(proc, Object::to_ref(c)); // out may be invalid
-        out = expect_type<Bytecode*>(st.top(2));
-        out->index(next_const_pos++) = st.top(); st.pop();
-        // !! generate a reference to complex const here
-        // ...
-        // ...
-      } 
-      else {
-        a_seq[pos].val = getSimpleArgVal(c->car()); // must be a simple arg!
-        if (c->cdr()!=Object::nil()) { // a sequence
-          /*Not sure if this is a good idea: thread libraries tend to
-            give limited stack space.  Probably better use explicit stack,
-            or better alloc things in a process's heap.
-          */
-          st.push(Object::to_ref(out));
-          assemble(proc, Object::to_ref(c->cdr())); // out may be invalid
-          out = expect_type<Bytecode*>(st.top(2));
-          out->index(next_const_pos++) = st.top(); st.pop();
-        }
-      }
-    }
-  }
-}
-
 // assemble from a string representation
-bytecode_t* inline_assemble(Process & proc, const char *code) {
-  bytecode_t *res;
+Object::ref inline_assemble(Process & proc, const char *code) {
   std::stringstream code_stream(code);
-  read_sequence(proc, code_stream);
-  Object::ref seq = proc.stack.top(); proc.stack.pop();
-  assemble(seq, res);
+  read_sequence(proc, code_stream); // leaves seq in the stack
+  assembler.go(proc); // take seq from the stack
+  Object::ref res = proc.stack.top(); proc.stack.pop();
   return res;
 }
-
 
 /*attempts to deallocate the specified object if it's a reusable
 continuation closure
