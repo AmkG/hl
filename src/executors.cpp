@@ -215,8 +215,7 @@ void Assembler::go(Process & proc) {
       if (isComplexConst(arg))
         throw_HlError("assemble: complex arg found where simple expected");
       Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
-      intptr_t arg = simpleVal(proc.stack.top());
-      b->push(op, arg);
+      b->push(op, simpleVal(arg));
     }
   }
 }
