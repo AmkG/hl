@@ -127,10 +127,9 @@ void ClosureAs::assemble(Process & proc) {
   Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
   size_t iconst = b->closeOver(res); // close over the body
   // reference to the body
-  b->push(bytecodelookup(symbols->lookup("const-ref")), iconst});
+  b->push("const-ref", iconst);
   // build the closure
-  b->push((bytecode_t){bytecodelookup(symbols->lookup("build-closure")), 
-                         as_a<int>(arg)});
+  b->push("build-closure", as_a<int>(arg));
 };
 
 // assemble instructions to push a complex constant on the stack
@@ -147,7 +146,7 @@ void ComplexAs::assemble(Process & proc) {
   if (isComplexConst(arg)) {
     size_t i = b->closeOver(arg);
     // generate a reference to it
-    b->pushB(bytecodelookup(symbols->lookup("const-ref")), i);
+    b->push("const-ref", i);
   } else {
     throw_HlError("assemble: const expects a complex arg");
   }
@@ -217,7 +216,7 @@ void Assembler::go(Process & proc) {
         throw_HlError("assemble: complex arg found where simple expected");
       Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
       intptr_t arg = simpleVal(proc.stack.top());
-      b->push((bytecode_t){bytecodelookup(op), arg});
+      b->push(op, arg);
     }
   }
 }
