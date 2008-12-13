@@ -141,7 +141,7 @@ void ComplexAs::assemble(Process & proc) {
   proc.stack.pop(); // there should be no sequence
   Object::ref arg = proc.stack.top(); proc.stack.pop();
   Bytecode *b = expect_type<Bytecode>(proc.stack.top());
-  if (isComplexConst(arg)) {
+  if (Assembler::isComplexConst(arg)) {
     size_t i = b->closeOver(arg);
     // generate a reference to it
     b->push("const-ref", i);
@@ -159,8 +159,9 @@ public:
 void IfAs::assemble(Process & proc) {
   Object::ref seq = proc.stack.top(); proc.stack.pop();
   proc.stack.pop(); // throw away simple arg
-  size_t to_skip = expect_type<Cons>(seq)->len();
-  b->push("jmp-if", to_skip); // skipping instruction
+  size_t to_skip = as_a<int>(expect_type<Cons>(seq)->len());
+  // skipping instruction
+  expect_type<Bytecode>(proc.stack.top())->push("jmp-if", to_skip);
   // append seq with seq being assembled
   Object::ref tail = seq;
   while (cdr(tail)!=Object::nil()) // search the tail
@@ -175,17 +176,17 @@ void IfAs::assemble(Process & proc) {
 }
 
 void Assembler::go(Process & proc) {
-  Bytecode *b = proc.createVariadic<Bytecode*>(countConsts(proc.stack.top()));
+  Bytecode *b = proc.create_variadic<Bytecode>(countConsts(proc.stack.top()));
   proc.stack.push(Object::to_ref(b));
 
   // stack now is:
   // - current Bytecode
   // - seq to assemble
 
-  while (stack.top(2)!=Object::nil()) {
+  while (proc.stack.top(2)!=Object::nil()) {
     // push the arguments
     Object::ref current_op = car(proc.stack.top(2));
-    size_t len = expect_type<Cons>(current_op)->len();
+    size_t len = as_a<int>(expect_type<Cons>(current_op)->len());
     // push the current args on the stack
     switch (len) {
     case 0: // no args
@@ -213,8 +214,10 @@ void Assembler::go(Process & proc) {
     // - simple arg
     // - current Bytecode
     // - seq being assembled
-    Symbol *op = expect_type<Symbol*>(car(current_op));
-    if (tbl.lookup(op)!=tbl.end()) {
+    if (!is_a<Symbol*>(car(current_op)))
+      throw_HlError("assemble: symbol expected in operator position");
+    Symbol *op = as_a<Symbol*>(car(current_op));
+    if (tbl.find(op)!=tbl.end()) {
       // do the call
       tbl[op]->assemble(proc);
     } else {
@@ -225,7 +228,7 @@ void Assembler::go(Process & proc) {
       Object::ref arg = proc.stack.top(); proc.stack.pop();
       if (isComplexConst(arg))
         throw_HlError("assemble: complex arg found where simple expected");
-      Bytecode *b = expect_type<Bytecode*>(proc.stack.top());
+      Bytecode *b = expect_type<Bytecode>(proc.stack.top());
       b->push(op, simpleVal(arg));
     }
   }
@@ -308,6 +311,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k))
       ("apply-k-release",	THE_BYTECODE_LABEL(apply_k_release))
       ("apply-list",		THE_BYTECODE_LABEL(apply_list))
+      ("build-closure", THE_BYTECODE_LABEL(build_closure))
       ("car",			THE_BYTECODE_LABEL(car))
       ("scar",                  THE_BYTECODE_LABEL(scar))
       ("car-local-push",	THE_BYTECODE_LABEL(car_local_push))
@@ -317,7 +321,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("cdr-local-push",	THE_BYTECODE_LABEL(cdr_local_push))
       ("cdr-clos-push",	THE_BYTECODE_LABEL(cdr_clos_push))
       ("check-vars",		THE_BYTECODE_LABEL(check_vars))
-      ("closure",		THE_BYTECODE_LABEL(closure))
       ("closure-ref",		THE_BYTECODE_LABEL(closure_ref))
       ("composeo",		THE_BYTECODE_LABEL(composeo))
       ("composeo-continuation",	THE_BYTECODE_LABEL(composeo_continuation))
@@ -458,6 +461,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.pop();
       goto call_current_closure;
     } /***/ NEXT_BYTECODE; /***/
+    BYTECODE(build_closure): {
+      INTPARAM(N);
+      Closure* nclos = Closure::NewClosure(proc, N);
+      nclos->codereset(stack.top());
+      stack.pop();
+      SETCLOS(clos); // allocation may invalidate clos
+      for(int i = N; i ; --i){
+        (*nclos)[i - 1] = stack.top();
+        stack.pop();
+      }
+      stack.push(Object::to_ref(nclos));
+    } NEXT_BYTECODE;
     BYTECODE(car): {
       /*exact implementation is in
         inc/bytecodes.hpp ; we can
@@ -495,16 +510,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N);
       bytecode_check_vars(stack, N);
     } NEXT_BYTECODE;
-    BYTECODE(closure): {
-      INTSEQPARAM(N,S);
-      Closure* nclos = Closure::NewClosure(proc, S, N);
-      SETCLOS(clos); // allocation may invalidate clos
-      for(int i = N; i ; --i){
-        (*nclos)[i - 1] = stack.top();
-        stack.pop();
-      }
-      stack.push(Object::to_ref(nclos));
-    } NEXT_BYTECODE;
     BYTECODE(closure_ref): {
       INTPARAM(N);
       bytecode_closure_ref(stack, *clos, N);
@@ -513,9 +518,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*destructure closure*/
       stack.push((*clos)[0]);
       stack[0] = (*clos)[1];
-      Object::ref body = 
-        proc.global_read(symbols->lookup("$composeo-cont-body"));
-      Closure& kclos = *Closure::NewKClosure(proc, body, 2);
+      Closure& kclos = *Closure::NewKClosure(proc, 2); 
+      kclos.codereset(proc.global_read(symbols->lookup("$composeo-cont-body")));
       // clos is now invalid
       /*continuation*/
       kclos[0] = stack[1];
@@ -760,8 +764,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       // now call f
       stack[0] = Object::to_ref(f);
       // stack[1] already holds current continuation
-      Object::ref body =  proc.global_read(symbols->lookup("$ccc-fn-body"));
-      Closure *arg = Closure::NewClosure(proc, body, 1);
+      Closure *arg = Closure::NewClosure(proc, 1);
+      arg->codereset(proc.global_read(symbols->lookup("$ccc-fn-body")));
       (*arg)[0] = Object::to_ref(k); // close other current continuation
       stack[2] = Object::to_ref(arg);
       //(f current-continuation function-that-will-call-current-continuation)
@@ -827,9 +831,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
         stack[0] = (*clos)[2]; // f2
         size_t saved_params = params - 2;
-        Object::ref body = 
-          proc.global_read(symbols->lookup("$reducto-cont-body"));
-        Closure & kclos = *Closure::NewKClosure(proc, body, saved_params + 3);
+        Closure & kclos = *Closure::NewKClosure(proc, saved_params + 3);
+        kclos.codereset(proc.global_read(symbols->lookup("$reducto-cont-body")));
         // clos is now invalid
         kclos[0] = stack[0]; // f2
         kclos[1] = stack[1];
@@ -871,9 +874,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
             closure and an index number, to
             reduce memory allocation.
           */
-          Closure & nclos = *Closure::NewKClosure(proc, reducto_cont_bytecode,
+          Closure & nclos = *Closure::NewKClosure(proc, 
                                                   // save only necessary
                                                   clos->size() - NN + 3);
+          nclos.codereset(proc.global_read(symbols->lookup("$reducto-cont-body")));
           // clos is now invalid
           SETCLOS(clos); //revalidate clos
           nclos[0] = (*clos)[0];

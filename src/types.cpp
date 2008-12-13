@@ -21,17 +21,17 @@ Object::ref Cons::len() {
 Closure
 -----------------------------------------------------------------------------*/
 
-Closure* Closure::NewClosure(Heap & h, Object::ref body, size_t n) {
+Closure* Closure::NewClosure(Heap & h, size_t n) {
   Closure *c = h.create_variadic<Closure>(n);
-  c->body = body;
+  c->body = Object::nil();
   c->nonreusable = true;
   c->kontinuation = false;
   return c;
 }
 
-Closure* Closure::NewKClosure(Heap & h, Object::ref body, size_t n) {
+Closure* Closure::NewKClosure(Heap & h, size_t n) {
   Closure *c = h.lifo_create_variadic<Closure>(n);
-  c->body = body;
+  c->body = Object::nil();
   c->nonreusable = false;
   c->kontinuation = true;
   return c;

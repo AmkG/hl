@@ -201,8 +201,8 @@ public:
   }
   bool reusable() { return !nonreusable; }
 
-  static Closure* NewKClosure(Heap & h, Object::ref body, size_t n);
-  static Closure* NewClosure(Heap & h, Object::ref body, size_t n);
+  static Closure* NewKClosure(Heap & h, size_t n);
+  static Closure* NewClosure(Heap & h, size_t n);
 
   Object::ref type(void) const {
     return Object::to_ref(symbol_fn);

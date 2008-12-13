@@ -51,6 +51,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(apply_invert_k)
 	A_BYTECODE(apply_list)
 	A_BYTECODE(apply_k_release)
+        A_BYTECODE(build_closure)
 	A_BYTECODE(car)
 	A_BYTECODE(car_local_push)
 	A_BYTECODE(car_clos_push)
@@ -59,7 +60,6 @@ DECLARE_BYTECODES
 	A_BYTECODE(cdr_local_push)
 	A_BYTECODE(cdr_clos_push)
 	A_BYTECODE(check_vars)
-	A_BYTECODE(closure)
 	A_BYTECODE(closure_ref)
 	A_BYTECODE(composeo)
 	A_BYTECODE(composeo_continuation)
@@ -124,7 +124,7 @@ END_DECLARE_BYTECODES
 
 typedef void* _bytecode_label;
 #define DISPATCH_BYTECODES \
-        bytecode_t *pc = expect_type<Bytecode*>(clos->code())->getCode();\
+        bytecode_t *pc = expect_type<Bytecode>(clos->code())->getCode();\
 	goto *(pc->op);
 #define NEXT_BYTECODE goto *((++pc)->op)
 #define BYTECODE(x) BYTECODE_ENUM(x); PASTE_SYMBOLS(label_b_, x)
@@ -136,7 +136,7 @@ typedef void* _bytecode_label;
 
 typedef enum _e_bytecode_label _bytecode_label;
 #define DISPATCH_BYTECODES \
-	bytecode_t *pc = expect_type<Bytecode*>(clos->code())->getCode();\
+	bytecode_t *pc = expect_type<Bytecode>(clos->code())->getCode();\
 	switch(pc->op)
 #define NEXT_BYTECODE {pc++; continue;}
 #define BYTECODE(x) case BYTECODE_ENUM(x)
@@ -260,10 +260,7 @@ private:
   sym_op_tbl tbl;
 
   // extracts a value pointer/immediate object, throwing away the type tag
-  static intptr_t simpleVal();
-  // tells if an object is a complex one or not
-  static bool Assembler::isComplexConst(Object::ref obj);
-
+  static intptr_t simpleVal(Object::ref sa);
 public:
   ~Assembler() { 
     for (sym_op_tbl::iterator i = tbl.begin(); i!=tbl.end(); i++)
@@ -280,6 +277,8 @@ public:
 
   // count number of comples constants in seq (not recursive)
   static size_t countConsts(Object::ref seq);
+  // tells if an object is a complex one or not
+  static bool isComplexConst(Object::ref obj);
 };
 
 static Assembler assembler;
