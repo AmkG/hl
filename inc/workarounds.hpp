@@ -31,7 +31,24 @@ Known to occur on G++ < 4.3
 #endif
 
 #ifndef STATIC_INLINE_SPECIALIZATION
-#define STATIC_INLINE_SPECIALIZATION
+	#define STATIC_INLINE_SPECIALIZATION
+#endif
+
+/*-----------------------------------------------------------------------------
+Non-issue: GCC supports rearranging code for likelihood/unlikelihood
+Known to be supported on GCC >= 2.96
+-----------------------------------------------------------------------------*/
+
+#ifdef __GNUC__
+	#if __GNUC_VERSION__ >= 29600
+		#define likely(x)	__builtin_expect(!!(x), 1)
+		#define unlikely(x)	__builtin_expect(!!(x), 0)
+	#endif
+#endif
+
+#ifndef likely
+	#define likely(x)	(x)
+	#define unlikely(x)	(x)
 #endif
 
 #endif // WORKAROUNDS_H
