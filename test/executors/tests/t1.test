@@ -41,9 +41,9 @@
 (closure 0 
   (check-vars 2)
   (local 1)
-  (jmp-nil 2)
+  (if
     (cdr-local-push 1)
-    (halt)
+    (halt))
   (halt))
 (int 1)
 (int 2)
@@ -56,9 +56,9 @@
 
 (closure 0 
   (check-vars 2)
-  (jmp-nil 2)
+  (if
     (cdr-local-push 1)
-    (halt)
+    (halt))
   (int 42)
   (halt))
 (lit-nil)
