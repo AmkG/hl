@@ -295,14 +295,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     for all eternity)
   */
 
-  /*
-   * this will hold a fixed bytecode sequence that will be used
-   * as the continuations for various bytecodes
-   */
-  static bytecode_t *reducto_cont_bytecode;
-  static bytecode_t *ccc_fn; // body of function obtained through ccc
-  static bytecode_t* composeo_cont_bytecode;
-
   ProcessStack & stack = proc.stack;
   if (init) {
     /*So why isn't this, say, a separate function?  Well,
@@ -387,13 +379,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*assign bultin global*/
       ;/*end initializer*/
 
-    /// build and assemble various bytecode sequences
-    reducto_cont_bytecode = 
-      inline_assemble(proc, "(reducto-continuation) (continue)");
-    ccc_fn = 
-      inline_assemble(proc, "(check-vars 3) (continue-on-clos 0)");
-    composeo_cont_bytecode =
-      inline_assemble(proc, "(composeo-continuation ) (continue )");
+    /*
+     * build and assemble various bytecode sequences
+     * these will hold a fixed Bytecodes that will be used
+     * as the continuations for various bytecodes
+     */
+    symbols->lookup("$reducto-cont-body")->
+      set_value(inline_assemble(proc, "(reducto-continuation) (continue)"));
+    symbols->lookup("$ccc-fn-body")->
+      set_value(inline_assemble(proc, "(check-vars 3) (continue-on-clos 0)"));
+    symbols->lookup("$composeo-cont-body")->
+      set_value(inline_assemble(proc, "(composeo-continuation ) (continue )"));
 
     return process_running;
   }
@@ -519,8 +515,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*destructure closure*/
       stack.push((*clos)[0]);
       stack[0] = (*clos)[1];
-      Closure& kclos = *Closure::NewKClosure(proc, composeo_cont_bytecode, 
-                                             2);
+      Object::ref body = 
+        proc.global_read(symbols->lookup("$composeo-cont-body"));
+      Closure& kclos = *Closure::NewKClosure(proc, body, 2);
       // clos is now invalid
       /*continuation*/
       kclos[0] = stack[1];
@@ -765,7 +762,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       // now call f
       stack[0] = Object::to_ref(f);
       // stack[1] already holds current continuation
-      Closure *arg = Closure::NewClosure(proc, ccc_fn, 1);
+      Object::ref body =  proc.global_read(symbols->lookup("$ccc-fn-body"));
+      Closure *arg = Closure::NewClosure(proc, body, 1);
       (*arg)[0] = Object::to_ref(k); // close other current continuation
       stack[2] = Object::to_ref(arg);
       //(f current-continuation function-that-will-call-current-continuation)
@@ -831,8 +829,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
         stack[0] = (*clos)[2]; // f2
         size_t saved_params = params - 2;
-        Closure & kclos = *Closure::NewKClosure(proc, reducto_cont_bytecode, 
-                                                saved_params + 3);
+        Object::ref body = 
+          proc.global_read(symbols->lookup("$reducto-cont-body"));
+        Closure & kclos = *Closure::NewKClosure(proc, body, saved_params + 3);
         // clos is now invalid
         kclos[0] = stack[0]; // f2
         kclos[1] = stack[1];
