@@ -257,6 +257,11 @@ void Assembler::go(Process & proc) {
       b->push(op, simpleVal(arg));
     }
   }
+  // remove empty sequence
+  proc.stack.top(2) = proc.stack.top();
+  proc.stack.pop();
+  // stack now is
+  //  - bytecode
 }
 
 intptr_t Assembler::simpleVal(Object::ref sa) {
