@@ -209,6 +209,7 @@ public:
   }
 
   void traverse_references(GenericTraverser *gt) {
+    gt->traverse(body);
     for(size_t i = 0; i < sz; ++i) {
       gt->traverse(index(i));
     }
