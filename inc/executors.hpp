@@ -229,6 +229,8 @@ public:
 
   // close a complex constants
   size_t closeOver(Object::ref obj) {
+    if (nextPos >= size())
+      throw_HlError("internal: trying to close over, but there is no space left in Bytecode");
     index(nextPos) = obj;
     return nextPos++;
   }
