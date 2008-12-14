@@ -292,10 +292,11 @@ bool Assembler::isComplexConst(Object::ref obj) {
 size_t Assembler::countConsts(Object::ref seq) {
   size_t n = 0;
   for(Object::ref i = seq; i!=Object::nil(); i = cdr(i)) {
-    for (Object::ref i2 = car(i); i2!=Object::nil(); i2 = cdr(i2)) {
-      if (isComplexConst(car(i2)))
-        n++;
-    }
+    size_t l = as_a<int>(expect_type<Cons>(car(i))->len());
+    if (l==2 && isComplexConst(car(cdr(car(i)))))
+      n++;
+    if (l>2)
+      n++;
   }
 
   return n;

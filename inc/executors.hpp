@@ -214,7 +214,7 @@ public:
       codeSize(0), nextCode(0), nextPos(0) {}
   virtual ~Bytecode() { /*delete [] code;*/ }
 
-  Object::ref& operator[](size_t i) { 
+  Object::ref& operator[](size_t i) {
     if (i < size())
       return index(i);
     else
