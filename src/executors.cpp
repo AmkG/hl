@@ -111,16 +111,17 @@ void Bytecode::push(const char *s, intptr_t val) {
   push(symbols->lookup(s), val);
 }
 
-// closure/k_closure/k_closure_reacreate/k_closure_reuse assembly operation
-class ClosureAs : public AsOp {
+// generic closure/k_closure/k_closure_recreate/k_closure_reuse 
+// assembly operation
+class GenClosureAs : public AsOp {
 private:
   const char *to_build;
 public:
-  ClosureAs(const char *to_build) : to_build(to_build) {}
+  GenClosureAs(const char *to_build) : to_build(to_build) {}
   void assemble(Process & proc);
 };
 
-void ClosureAs::assemble(Process & proc) {
+void GenClosureAs::assemble(Process & proc) {
   // assemble the seq. arg, which must be on the top of the stack
   assembler.go(proc);
   Object::ref res = proc.stack.top(); proc.stack.pop();
@@ -131,6 +132,26 @@ void ClosureAs::assemble(Process & proc) {
   b->push("const-ref", iconst);
   // build the closure
   b->push(to_build, as_a<int>(arg));
+};
+
+class ClosureAs : public GenClosureAs {
+public:
+  ClosureAs() : GenClosureAs("build-closure") {}
+};
+
+class KClosureAs : public GenClosureAs {
+public:
+  KClosureAs() : GenClosureAs("build-k-closure") {}
+};
+
+class KClosureRecreateAs : public GenClosureAs {
+public:
+  KClosureRecreateAs() : GenClosureAs("build-k-closure-recreate") {}
+};
+
+class KClosureReuseAs : public GenClosureAs {
+public:
+  KClosureReuseAs() : GenClosureAs("build-k-closure-reuse") {}
 };
 
 // assemble instructions to push a complex constant on the stack
@@ -382,6 +403,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       /*assign bultin global*/
       ;/*end initializer*/
+
+    // initialize assembler operations
+    assembler.reg<ClosureAs>(symbols->lookup("closure"));
+    assembler.reg<KClosureAs>(symbols->lookup("k-closure"));
+    assembler.reg<KClosureRecreateAs>(symbols->lookup("k-closure-recreate"));
+    assembler.reg<KClosureReuseAs>(symbols->lookup("k-closure-reuse"));
+    assembler.reg<IfAs>(symbols->lookup("if"));
 
     /*
      * build and assemble various bytecode sequences
