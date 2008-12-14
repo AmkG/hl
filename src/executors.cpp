@@ -210,6 +210,7 @@ void Assembler::go(Process & proc) {
   while (proc.stack.top(2)!=Object::nil()) {
     // push the arguments
     Object::ref current_op = car(proc.stack.top(2));
+    proc.stack.top(2) = cdr(proc.stack.top(2)); // advance
     size_t len = as_a<int>(expect_type<Cons>(current_op)->len());
     // push the current args on the stack
     switch (len) {
