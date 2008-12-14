@@ -214,25 +214,31 @@ void Assembler::go(Process & proc) {
     size_t len = as_a<int>(expect_type<Cons>(current_op)->len());
     // push the current args on the stack
     switch (len) {
-    case 0: // no args
+    case 0:
+      throw_HlError("assemble: empty bytecode");
+      break;
+    case 1: // no args
       proc.stack.push(Object::nil());
       proc.stack.push(Object::nil());
       break;
-    case 1: 
+    case 2: // simple or seq
       if (maybe_type<Cons>(car(cdr(current_op)))) { // seq
         proc.stack.push(Object::nil()); // empty simple arg
-        proc.stack.push(car(cdr(current_op)));
-      } else {
+        proc.stack.push(cdr(current_op));
+      } else { // simple
         proc.stack.push(car(cdr(current_op)));
         proc.stack.push(Object::nil());
       }
       break;
-    case 2:
-      proc.stack.push(car(cdr(current_op))); // simple
-      proc.stack.push(car(cdr(cdr(current_op)))); // seq
+    default: // simple+seq or seq
+      if (maybe_type<Cons>(car(cdr(current_op)))) { // just seq
+        proc.stack.push(Object::nil());
+        proc.stack.push(cdr(current_op));
+      } else { // simple+seq
+        proc.stack.push(car(cdr(current_op))); // simple
+        proc.stack.push(cdr(cdr(current_op))); // seq
+      }
       break;
-    default:
-      throw_HlError("assemble: wrong number of arguments");
     }
     // stack now is:
     // - seq arg
