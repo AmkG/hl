@@ -41,7 +41,7 @@ The right thing to do would be:
 	{WRITE_BARRIER_ACQUIRE(*hp);
 		do_stuff(WRITE_BARRIER);
 	}
-	{Mother your_mome;
+	{Mother your_mom;
 		WRITE_BARRIER_ACQUIRE(*hp);
 	}
 */
@@ -60,7 +60,6 @@ The right thing to do would be:
 #endif
 
 namespace Object {
-	static const size_t SSB_SIZE = 512;
 
 	class bar_ref {
 	private:
@@ -130,8 +129,8 @@ namespace Object {
 	class __SSBProtector : boost::noncopyable {
 	private:
 		Heap* hp;
-		Object::ref** pt;
 	public:
+		Object::ref** pt;
 		explicit __SSBProtector(Heap& heap)
 			: hp(&heap), pt(heap.acquire_ssb()) { }
 		~__SSBProtector() {
