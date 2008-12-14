@@ -45,8 +45,9 @@ int main(int argc, char **argv) {
 
   read_sequence(p, in);
   assembler.go(p);
-  Object::ref to_run = p.stack.top(); p.stack.pop();
-  p.stack.push(Object::to_ref(Closure::NewKClosure(p, to_run, 0))); // entry point
+  Closure *k = Closure::NewKClosure(p, 0);
+  k->codereset(p.stack.top()); p.stack.pop();
+  p.stack.push(Object::to_ref(k)); // entry point
   timeslice = 128;
   execute(p, timeslice, Q); // run!
 

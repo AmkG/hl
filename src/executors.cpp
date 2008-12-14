@@ -111,9 +111,12 @@ void Bytecode::push(const char *s, intptr_t val) {
   push(symbols->lookup(s), val);
 }
 
-// closure assembly operation
+// closure/k_closure/k_closure_reacreate/k_closure_reuse assembly operation
 class ClosureAs : public AsOp {
+private:
+  const char *to_build;
 public:
+  ClosureAs(const char *to_build) : to_build(to_build) {}
   void assemble(Process & proc);
 };
 
@@ -127,7 +130,7 @@ void ClosureAs::assemble(Process & proc) {
   // reference to the body
   b->push("const-ref", iconst);
   // build the closure
-  b->push("build-closure", as_a<int>(arg));
+  b->push(to_build, as_a<int>(arg));
 };
 
 // assemble instructions to push a complex constant on the stack
@@ -312,6 +315,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("apply-k-release",	THE_BYTECODE_LABEL(apply_k_release))
       ("apply-list",		THE_BYTECODE_LABEL(apply_list))
       ("build-closure", THE_BYTECODE_LABEL(build_closure))
+      ("build-k-closure",		THE_BYTECODE_LABEL(build_k_closure))
+      ("build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate))
+      ("build-k-closure-reuse",	THE_BYTECODE_LABEL(build_k_closure_reuse))
       ("car",			THE_BYTECODE_LABEL(car))
       ("scar",                  THE_BYTECODE_LABEL(scar))
       ("car-local-push",	THE_BYTECODE_LABEL(car_local_push))
@@ -338,9 +344,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       //("if-local",		THE_BYTECODE_LABEL(if_local))
       ("int",			THE_BYTECODE_LABEL(b_int))
       ("float",                 THE_BYTECODE_LABEL(b_float))
-      ("k-closure",		THE_BYTECODE_LABEL(k_closure))
-      ("k-closure-recreate",	THE_BYTECODE_LABEL(k_closure_recreate))
-      ("k-closure-reuse",	THE_BYTECODE_LABEL(k_closure_reuse))
       ("ccc", THE_BYTECODE_LABEL(ccc))
       ("lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("lit-t",		THE_BYTECODE_LABEL(lit_t))
@@ -464,10 +467,67 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(build_closure): {
       INTPARAM(N);
       Closure* nclos = Closure::NewClosure(proc, N);
-      nclos->codereset(stack.top());
-      stack.pop();
+      nclos->codereset(stack.top()); stack.pop();
       SETCLOS(clos); // allocation may invalidate clos
       for(int i = N; i ; --i){
+        (*nclos)[i - 1] = stack.top();
+        stack.pop();
+      }
+      stack.push(Object::to_ref(nclos));
+    } NEXT_BYTECODE;
+    BYTECODE(build_k_closure): {
+    k_closure_perform_create:
+      INTPARAM(N);
+      Closure *nclos = Closure::NewKClosure(proc, N);
+      nclos->codereset(stack.top()); stack.pop();
+      SETCLOS(clos);
+      for(int i = N; i ; --i){
+        (*nclos)[i - 1] = stack.top();
+        stack.pop();
+      }
+      stack.push(Object::to_ref(nclos));
+    } NEXT_BYTECODE;
+    BYTECODE(build_k_closure_recreate): {
+      /*TODO: insert debug checking for is_a<Generic*> here*/
+      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
+      /*put a random object in stack[0]*/
+      stack[0] = stack[1];
+      /****/ goto k_closure_perform_create; /****/
+    } NEXT_BYTECODE;
+    /*attempts to reuse the current
+      continuation closure.  Falls back
+      to allocating a new KClosure if
+      the closure isn't a continuation
+      (for example due to serialization)
+      or if it can't be reused (due to
+      'ccc).
+    */
+    BYTECODE(build_k_closure_reuse): {
+      INTPARAM(N);
+      Closure *nclos = expect_type<Closure>(stack[0], "Closure expected!");
+      if(!nclos->reusable()) {
+        // Use the size of the current closure
+        nclos = Closure::NewKClosure(proc, clos->size());
+        nclos->codereset(stack.top()); stack.pop();
+        //clos is now invalid
+        SETCLOS(clos);
+      } else {
+        nclos->codereset(stack.top()); stack.pop();
+      }
+      for(int i = N; i ; --i){
+        // !! closure size may be different !! -- stefano
+        // ?? It's OK: the compiler will not generate
+        // ?? this bytecode at all if the current closure
+        // ?? is known to be smaller.  Basically there's a
+        // ?? decision in the compiler's bytecode generator
+        // ?? which chooses between k-closure-reuse and
+        // ?? k-closure-recreate.  k-closure-reuse is emitted
+        // ?? if the current closure is larger or equal size;
+        // ?? k-closure-recreate is emitted if the current
+        // ?? closure is smaller.  cref:
+        // ?? snap/arc2b/bytecodegen.arc:156 -- almkglor
+        // ?? Note2: probably we should insert some sort
+        // ?? of checking in DEBUG mode -- almkglor
         (*nclos)[i - 1] = stack.top();
         stack.pop();
       }
@@ -638,62 +698,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_float): {
       FLOATPARAM(f);
       bytecode_float(proc, stack, f);
-    } NEXT_BYTECODE;
-    BYTECODE(k_closure): {
-    k_closure_perform_create:
-      INTSEQPARAM(N,S);
-      Closure *nclos = Closure::NewKClosure(proc, S, N);
-      SETCLOS(clos);
-      for(int i = N; i ; --i){
-        (*nclos)[i - 1] = stack.top();
-        stack.pop();
-      }
-      stack.push(Object::to_ref(nclos));
-    } NEXT_BYTECODE;
-    BYTECODE(k_closure_recreate): {
-      /*TODO: insert debug checking for is_a<Generic*> here*/
-      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
-      /*put a random object in stack[0]*/
-      stack[0] = stack[1];
-      /****/ goto k_closure_perform_create; /****/
-    } NEXT_BYTECODE;
-    /*attempts to reuse the current
-      continuation closure.  Falls back
-      to allocating a new KClosure if
-      the closure isn't a continuation
-      (for example due to serialization)
-      or if it can't be reused (due to
-      'ccc).
-    */
-    BYTECODE(k_closure_reuse): {
-      INTSEQPARAM(N,S);
-      Closure *nclos = expect_type<Closure>(stack[0], "Closure expected!");
-      if(!nclos->reusable()) {
-        // Use the size of the current closure
-        nclos = Closure::NewKClosure(proc, S, clos->size());
-        //clos is now invalid
-        SETCLOS(clos);
-      } else {
-        nclos->codereset(S);
-      }
-      for(int i = N; i ; --i){
-        // !! closure size may be different !! -- stefano
-        // ?? It's OK: the compiler will not generate
-        // ?? this bytecode at all if the current closure
-        // ?? is known to be smaller.  Basically there's a
-        // ?? decision in the compiler's bytecode generator
-        // ?? which chooses between k-closure-reuse and
-        // ?? k-closure-recreate.  k-closure-reuse is emitted
-        // ?? if the current closure is larger or equal size;
-        // ?? k-closure-recreate is emitted if the current
-        // ?? closure is smaller.  cref:
-        // ?? snap/arc2b/bytecodegen.arc:156 -- almkglor
-        // ?? Note2: probably we should insert some sort
-        // ?? of checking in DEBUG mode -- almkglor
-        (*nclos)[i - 1] = stack.top();
-        stack.pop();
-      }
-      stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(ccc): {
 
