@@ -199,6 +199,8 @@ void IfAs::assemble(Process & proc) {
   // the rest of the original sequence
 }
 
+Assembler assembler;
+
 void Assembler::go(Process & proc) {
   Bytecode *b = proc.create_variadic<Bytecode>(countConsts(proc.stack.top()));
   proc.stack.push(Object::to_ref(b));
@@ -248,9 +250,10 @@ void Assembler::go(Process & proc) {
     if (!is_a<Symbol*>(car(current_op)))
       throw_HlError("assemble: symbol expected in operator position");
     Symbol *op = as_a<Symbol*>(car(current_op));
-    if (tbl.find(op)!=tbl.end()) {
+    sym_op_tbl::iterator it = tbl.find(op);
+    if (it!=tbl.end()) {
       // do the call
-      tbl[op]->assemble(proc);
+      it->second->assemble(proc);
     } else {
       // default behavior:
       // ignore sequence, extracts the simple argument and lookup

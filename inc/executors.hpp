@@ -293,7 +293,7 @@ public:
   static bool isComplexConst(Object::ref obj);
 };
 
-static Assembler assembler;
+extern Assembler assembler;
 
 // Execute a given process
 ProcessStatus execute(Process & proc, size_t& reductions, Process*& Q, bool init = 0);
