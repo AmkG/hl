@@ -225,12 +225,6 @@ public:
     return Object::to_ref(symbol_bytecode);
   }
 
-  // after setCode the passed code is managed by the Bytecode object
-  void setCode(bytecode_t *c, size_t sz) { 
-    code = c; 
-    nextCode = codeSize = sz; 
-  }
-
   bytecode_t* getCode() { return code; }
 
   // close a complex constants
