@@ -124,14 +124,15 @@ public:
 void GenClosureAs::assemble(Process & proc) {
   // assemble the seq. arg, which must be on the top of the stack
   assembler.go(proc);
-  Object::ref res = proc.stack.top(); proc.stack.pop();
-  Object::ref arg = proc.stack.top(); proc.stack.pop();
-  Bytecode *b = expect_type<Bytecode>(proc.stack.top());
-  size_t iconst = b->closeOver(res); // close over the body
+  Object::ref body = proc.stack.top(); proc.stack.pop();
+  // number of objects to close over
+  Object::ref nclose = proc.stack.top(); proc.stack.pop();
+  Bytecode *current = expect_type<Bytecode>(proc.stack.top());
+  size_t iconst = current->closeOver(body); // close over the body
   // reference to the body
-  b->push("const-ref", iconst);
+  current->push("const-ref", iconst);
   // build the closure
-  b->push(to_build, as_a<int>(arg));
+  current->push(to_build, as_a<int>(nclose));
 };
 
 class ClosureAs : public GenClosureAs {
@@ -322,7 +323,7 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 	hp.lifo_dealloc(gp);
 }
 
-#define SETCLOS(name) name = dynamic_cast<Closure*>(as_a<Generic*>(stack[0]))
+#define SETCLOS(name) name = expect_type<Closure>(stack[0], "internal: SETCLOS expects a Closure in stack[0]")
 
 ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init){
   /*REMINDER
@@ -559,6 +560,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         SETCLOS(clos);
       } else {
         nclos->codereset(stack.top()); stack.pop();
+        // !! BUG: the bytecode of the current closure has changed,
+        // !! we can't keep going: a const-ref would reference the wrong 
+        // !! object
       }
       for(int i = N; i ; --i){
         // !! closure size may be different !! -- stefano
