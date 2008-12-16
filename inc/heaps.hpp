@@ -253,7 +253,7 @@ private:
 		void generational_GC(size_t);
 
 		/*determine if the specified address is in old space*/
-		bool in_old(Object::ref*);
+		bool in_old(void*);
 
 		std::set<Object::ref*> intergen;
 
