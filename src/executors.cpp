@@ -325,7 +325,7 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 
 #define SETCLOS(name) name = expect_type<Closure>(stack[0], "internal: SETCLOS expects a Closure in stack[0]")
 
-#define DOCALL() proc.pop_extra_root(); goto call_current_closure;
+#define DOCALL() goto call_current_closure;
 
 ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init){
   /*REMINDER
@@ -447,8 +447,15 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     return process_running;
   }
   // main VM loop
+  Object::ref bytecode = Object::nil();
+  // add it as an extra root object to scan
+  // must be removed before returning from execute()
+  proc.push_extra_root(bytecode);
  call_current_closure:
-  if(--reductions == 0) return process_running;
+  if(--reductions == 0) {
+    proc.pop_extra_root();
+    return process_running;
+  }
   // get current closure
 #ifdef DEBUG
   if (is_a<int>(stack[0]))
@@ -464,10 +471,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   // they may change the body of the current closure, but we are still
   // executing the old body and if we don't retain it we can't access it from
   // clos->code(), since clos->code() may now refer to a different body
-  Object::ref bytecode = clos->code();
-  // add it as an extra root object to scan
-  // must be removed before returning from the function
-  proc.push_extra_root(bytecode);
+  bytecode = clos->code();
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(apply): {
@@ -1084,4 +1088,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_mod(proc, stack);
     } NEXT_BYTECODE;
   }
+  // execution shouldn't reach this point
+  proc.pop_extra_root();
+  throw_HlError("internal: end of execute() reached");
 }
