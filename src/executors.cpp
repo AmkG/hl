@@ -464,9 +464,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   // they may change the body of the current closure, but we are still
   // executing the old body and if we don't retain it we can't access it from
   // clos->code(), since clos->code() may now refer to a different body
-  // !! this won't work, since the GC may invalidate it
-  // !! we can't use the same strategy as with clos to just call SETCLOS
-  // !! because the last reference to the bytecode may be in this variable
   Object::ref bytecode = clos->code();
   // add it as an extra root object to scan
   // must be removed before returning from the function
@@ -574,9 +571,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         nclos->codereset(stack.top()); stack.pop();
       } else {
         nclos->codereset(stack.top()); stack.pop();
-        // !! BUG: the bytecode of the current closure has changed,
-        // !! we can't keep going: a const-ref would reference the wrong 
-        // !! object
       }
       for(int i = N; i ; --i){
         // !! closure size may be different !! -- stefano
