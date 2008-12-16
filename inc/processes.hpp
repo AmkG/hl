@@ -82,6 +82,8 @@ private:
 	/*invalidates globals which have been changed*/
 	void invalidate_changed_globals(void);
 
+        /*extra root objects to scan during GC*/
+        std::vector<Object::ref*> extra_roots;
 public:
 	Process(void)
 		: stat(process_running),
@@ -193,6 +195,12 @@ For process-level garbage collection
 	LockedValueHolderRef& mailbox(void);
 
 	ProcessStack stack;
+
+        void push_extra_root(Object::ref & root) { 
+          extra_roots.push_back(&root); 
+        }
+
+        void pop_extra_root() { extra_roots.pop_back(); }
 
 	virtual void scan_root_object(GenericTraverser* gt);
 };

@@ -325,6 +325,8 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 
 #define SETCLOS(name) name = expect_type<Closure>(stack[0], "internal: SETCLOS expects a Closure in stack[0]")
 
+#define DOCALL() proc.pop_extra_root(); goto call_current_closure;
+
 ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init){
   /*REMINDER
     All allocations of Generic objects on the
@@ -457,12 +459,24 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   }
 #endif
   Closure *clos = expect_type<Closure>(stack[0], "execute: closure expected!");
+  // a reference to the current bytecode *must* be reatained for 
+  // k-closure-recreate and k-closure-reuse to work correctly:
+  // they may change the body of the current closure, but we are still
+  // executing the old body and if we don't retain it we can't access it from
+  // clos->code(), since clos->code() may now refer to a different body
+  // !! this won't work, since the GC may invalidate it
+  // !! we can't use the same strategy as with clos to just call SETCLOS
+  // !! because the last reference to the bytecode may be in this variable
+  Object::ref bytecode = clos->code();
+  // add it as an extra root object to scan
+  // must be removed before returning from the function
+  proc.push_extra_root(bytecode);
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(apply): {
       INTPARAM(N);
       stack.restack(N);
-      goto call_current_closure;
+      DOCALL();
     } NEXT_BYTECODE;
     /*Used by a continuation that would
       like to reuse its closure if possible.
@@ -481,7 +495,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       Object::ref k = stack.top(); stack.pop();
       stack.top(N-1) = k;
       stack.restack(N);
-      goto call_current_closure;
+      DOCALL();
     } /***/ NEXT_BYTECODE; /***/
     /*Used by a continuation that will
       perform an otherwise ordinary call;
@@ -493,7 +507,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*TODO: insert debug checking for is_a<Generic*> here*/
       attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(N);
-      goto call_current_closure;
+      DOCALL();
     } /***/ NEXT_BYTECODE; /***/
     BYTECODE(apply_list): {
       Object::ref tmp;
@@ -509,7 +523,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         bytecode_cdr(stack);
       }
       stack.pop();
-      goto call_current_closure;
+      DOCALL();
     } /***/ NEXT_BYTECODE; /***/
     BYTECODE(build_closure): {
       INTPARAM(N);
@@ -555,9 +569,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       if(!nclos->reusable()) {
         // Use the size of the current closure
         nclos = Closure::NewKClosure(proc, clos->size());
-        nclos->codereset(stack.top()); stack.pop();
         //clos is now invalid
         SETCLOS(clos);
+        nclos->codereset(stack.top()); stack.pop();
       } else {
         nclos->codereset(stack.top()); stack.pop();
         // !! BUG: the bytecode of the current closure has changed,
@@ -636,7 +650,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*next function*/
       kclos[1] = stack.top(); stack.pop();
       stack[1] = Object::to_ref(&kclos);
-      goto call_current_closure; // this will revalidate clos
+      DOCALL(); // this will revalidate clos
     } NEXT_BYTECODE;
     BYTECODE(composeo_continuation): {
       stack.push((*clos)[1]);
@@ -644,7 +658,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push(stack[1]);
       attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(3);
-      goto call_current_closure;
+      DOCALL();
     } NEXT_BYTECODE;
     BYTECODE(cons): {
       bytecode_cons(proc,stack);
@@ -654,7 +668,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(i);
       // !! too many indirections and conversions
       // !! consider holding a reference to the current Bytecode*
-      Bytecode &b = *expect_type<Bytecode>(clos->code(), "const-ref: bytecode expected");
+      Bytecode &b = *expect_type<Bytecode>(bytecode);//clos->code(), "const-ref: bytecode expected");
       proc.stack.push(b[i]);
     } NEXT_BYTECODE;
     /*
@@ -666,7 +680,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_continue): {
       stack.top(2) = stack[1];
       stack.restack(2);
-      goto call_current_closure;
+      DOCALL();
     } NEXT_BYTECODE;
     /*
       implements the case where we
@@ -679,7 +693,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push(stack[N]);
       stack.top(2) = stack[1];
       stack.restack(2);
-      goto call_current_closure;
+      DOCALL();
     } NEXT_BYTECODE;
     /*
       handles the case where the
@@ -694,7 +708,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*TODO: insert debug checking for is_a<Generic*> here*/
       attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(2);
-      goto call_current_closure;
+      DOCALL();
     } NEXT_BYTECODE;
     BYTECODE(global): {
       SYMPARAM(S);
@@ -706,18 +720,21 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(halt): {
       stack.restack(1);
+      proc.pop_extra_root();
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(halt_local_push): {
       INTPARAM(N);
       stack.push(stack[N]);
       stack.restack(1);
+      proc.pop_extra_root();
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(halt_clos_push): {
       INTPARAM(N);
       stack.push((*clos)[N]);
       stack.restack(1);
+      proc.pop_extra_root();
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(jmp_nil): {
@@ -824,7 +841,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       (*arg)[0] = Object::to_ref(k); // close other current continuation
       stack[2] = Object::to_ref(arg);
       //(f current-continuation function-that-will-call-current-continuation)
-      goto call_current_closure; // do the call
+      DOCALL(); // do the call
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
       bytecode_lit_nil(proc, stack);
@@ -846,7 +863,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
          stack[0] = T.lookup(Object::nil());
       }
-      goto call_current_closure;
+      DOCALL();
     } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*
@@ -900,7 +917,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         stack[1] = Object::to_ref(&kclos);
         kclos[2] = Object::to_ref(3);
       }
-      goto call_current_closure;
+      DOCALL();
     } NEXT_BYTECODE;
     BYTECODE(reducto_continuation): {
       int N = as_a<int>((*clos)[2]);
@@ -952,7 +969,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
           kkclos[2] = Object::to_ref(3);
         }
       }
-      goto call_current_closure;
+      DOCALL();
     } NEXT_BYTECODE;
 //     BYTECODE(rep): {
 //       bytecode_<&Generic::rep>(stack);
@@ -1049,7 +1066,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         // !! Almost definitely we don't want the Executor to call
         // !! the hl function by calling back into execute().
         if (e->run(proc, reductions))
-          goto call_current_closure;
+          DOCALL();
       }
       else {
         std::string err("couldn't find executor: ");

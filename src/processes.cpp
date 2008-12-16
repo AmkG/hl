@@ -157,6 +157,11 @@ void Process::scan_root_object(GenericTraverser* gt) {
 	for(it = global_cache.begin(); it != global_cache.end(); ++it) {
 		gt->traverse(it->second);
 	}
+        // scan extra roots
+        for (std::vector<Object::ref*>::iterator it = extra_roots.begin(); 
+             it != extra_roots.end(); ++it) {
+                gt->traverse(*(*it));
+        }
 	/*insert code for traversing process-local vars here*/
 }
 
