@@ -450,6 +450,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   Object::ref bytecode = Object::nil();
   // add it as an extra root object to scan
   // must be removed before returning from execute()
+  // !! BUG: if throw_HlError() is called the extra root won't be popped! 
   proc.push_extra_root(bytecode);
  call_current_closure:
   if(--reductions == 0) {
