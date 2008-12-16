@@ -252,9 +252,6 @@ private:
 
 		void generational_GC(size_t);
 
-		/*determine if the specified address is in old space*/
-		bool in_old(void*);
-
 		std::set<Object::ref*> intergen;
 
 	#endif
@@ -282,6 +279,9 @@ public:
 	#ifndef ONLY_COPYING_GC
 		Object::ref** acquire_ssb(void) const;
 		void release_ssb(Object::ref**);
+
+		/*determine if the specified address is in old space*/
+		bool in_old(void*);
 
 		friend Object::ref** __ssb_clean(Object::ref**);
 	#endif
