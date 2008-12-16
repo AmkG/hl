@@ -174,7 +174,7 @@ void ComplexAs::assemble(Process & proc) {
   }
 }
 
-// build a jmp-if instruction out of a (if (...) (...)) op
+// build a jmp-nil instruction out of a (if (...) (...)) op
 class IfAs : public AsOp {
 public:
   void assemble(Process & proc);
@@ -186,7 +186,7 @@ void IfAs::assemble(Process & proc) {
   // !! TODO: this won't work in presence of nested ifs !!
   size_t to_skip = as_a<int>(expect_type<Cons>(seq)->len());
   // skipping instruction
-  expect_type<Bytecode>(proc.stack.top())->push("jmp-if", to_skip);
+  expect_type<Bytecode>(proc.stack.top())->push("jmp-nil", to_skip);
   // append seq with seq being assembled
   Object::ref tail = seq;
   while (cdr(tail)!=Object::nil()) // search the tail
