@@ -461,6 +461,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   proc.push_extra_root(bytecode);
   // this way we're sure to pop it before it becomes an invalid reference
   RememberToPop dont_forget(proc);
+  // ?? could this approach be used for clos too?
  call_current_closure:
   if(--reductions == 0) {
     return process_running;
