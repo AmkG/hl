@@ -183,6 +183,7 @@ public:
 void IfAs::assemble(Process & proc) {
   Object::ref seq = proc.stack.top(); proc.stack.pop();
   proc.stack.pop(); // throw away simple arg
+  // !! TODO: this won't work in presence of nested ifs !!
   size_t to_skip = as_a<int>(expect_type<Cons>(seq)->len());
   // skipping instruction
   expect_type<Bytecode>(proc.stack.top())->push("jmp-if", to_skip);
