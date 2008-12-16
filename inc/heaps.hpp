@@ -246,7 +246,6 @@ private:
 
 		void* ssb_start;
 		void* ssb_point;
-		void* ssb_end;
 
 		void* old_end;
 
