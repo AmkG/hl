@@ -327,6 +327,14 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 
 #define DOCALL() goto call_current_closure;
 
+class RememberToPop {
+private:
+  Process & proc;
+public:
+  RememberToPop(Process & proc) : proc(proc) {}
+  ~RememberToPop() { proc.pop_extra_root(); }
+};
+
 ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init){
   /*REMINDER
     All allocations of Generic objects on the
@@ -450,11 +458,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   Object::ref bytecode = Object::nil();
   // add it as an extra root object to scan
   // must be removed before returning from execute()
-  // !! BUG: if throw_HlError() is called the extra root won't be popped! 
   proc.push_extra_root(bytecode);
+  // this way we're sure to pop it before it becomes an invalid reference
+  RememberToPop dont_forget(proc);
  call_current_closure:
   if(--reductions == 0) {
-    proc.pop_extra_root();
     return process_running;
   }
   // get current closure
@@ -719,21 +727,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(halt): {
       stack.restack(1);
-      proc.pop_extra_root();
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(halt_local_push): {
       INTPARAM(N);
       stack.push(stack[N]);
       stack.restack(1);
-      proc.pop_extra_root();
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(halt_clos_push): {
       INTPARAM(N);
       stack.push((*clos)[N]);
       stack.restack(1);
-      proc.pop_extra_root();
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(jmp_nil): {
@@ -1090,6 +1095,5 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
   }
   // execution shouldn't reach this point
-  proc.pop_extra_root();
   throw_HlError("internal: end of execute() reached");
 }
