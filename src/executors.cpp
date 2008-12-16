@@ -427,6 +427,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     assembler.reg<KClosureRecreateAs>(symbols->lookup("k-closure-recreate"));
     assembler.reg<KClosureReuseAs>(symbols->lookup("k-closure-reuse"));
     assembler.reg<IfAs>(symbols->lookup("if"));
+    assembler.reg<ComplexAs>(symbols->lookup("float"));
 
     /*
      * build and assemble various bytecode sequences
