@@ -297,8 +297,14 @@ size_t Assembler::countConsts(Object::ref seq) {
     size_t l = as_a<int>(expect_type<Cons>(car(i))->len());
     if (l==2 && isComplexConst(car(cdr(car(i)))))
       n++;
-    if (l>2)
-      n++;
+    if (l>2) {
+      //if (as_a<Symbol*>(car(car(i)))==symbols->lookup("if")) {
+        // must look within the 'if subseq
+        //n += countConsts(cdr(car(i)));
+        //} else {
+        n++;
+        //}
+    }
   }
 
   return n;

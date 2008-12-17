@@ -13,7 +13,7 @@ Object::ref Cons::len() {
   while (maybe_type<Cons>(next)) {
     next = ::cdr(next);
     p2 = ::cdr(::cdr(p2));
-    if(next == p2) return Object::to_ref(0); // fail on infinite lists
+    if(next == p2 && next != Object::nil()) return Object::to_ref(0); // fail on infinite lists
     l++;
   }
   // !! there could be an overflow, but we don't expect to have lists so long
