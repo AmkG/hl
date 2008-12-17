@@ -298,12 +298,12 @@ size_t Assembler::countConsts(Object::ref seq) {
     if (l==2 && isComplexConst(car(cdr(car(i)))))
       n++;
     if (l>2) {
-      //if (as_a<Symbol*>(car(car(i)))==symbols->lookup("if")) {
+      if (as_a<Symbol*>(car(car(i)))==symbols->lookup("if")) {
         // must look within the 'if subseq
-        //n += countConsts(cdr(car(i)));
-        //} else {
+        n += countConsts(cdr(car(i)));
+      } else {
         n++;
-        //}
+      }
     }
   }
 
