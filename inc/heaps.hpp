@@ -217,6 +217,7 @@ private:
 	bool tight;
 
 	#ifndef ONLY_COPYING_GC
+		/*I get the vague feeling I should be using a class for this*/
 		enum GCType { gc_type_copying, gc_type_generational };
 		GCType gc_type;
 
