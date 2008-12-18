@@ -66,6 +66,19 @@
 
 ;^42$
 
+; *** nested if ***
+
+(lit-nil)
+(if
+  (lit-t)
+  (if 
+    (int 21)
+    (halt)))
+(int 42)
+(halt)
+
+;^42$
+
 ; *** Closures that close something ***
 
 (int 42)

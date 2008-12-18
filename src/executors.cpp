@@ -177,15 +177,29 @@ void ComplexAs::assemble(Process & proc) {
 
 // build a jmp-nil instruction out of a (if (...) (...)) op
 class IfAs : public AsOp {
+private:
+  static size_t countToSkip(Object::ref seq);
 public:
   void assemble(Process & proc);
 };
 
+size_t IfAs::countToSkip(Object::ref seq) {
+  // !! TODO: this won't work in presence of nested ifs !!
+  size_t n = 0;
+  for(Object::ref i = seq; i != Object::nil(); i = cdr(i)) {
+    if (as_a<Symbol*>(car(car(i)))==symbols->lookup("if"))
+      n += 1 + countToSkip(cdr(car(i))); // +1 for jmp-nil
+    else
+      n++;
+  }
+
+  return n;
+}
+
 void IfAs::assemble(Process & proc) {
   Object::ref seq = proc.stack.top(); proc.stack.pop();
   proc.stack.pop(); // throw away simple arg
-  // !! TODO: this won't work in presence of nested ifs !!
-  size_t to_skip = as_a<int>(expect_type<Cons>(seq)->len());
+  size_t to_skip = countToSkip(seq);
   // skipping instruction
   expect_type<Bytecode>(proc.stack.top())->push("jmp-nil", to_skip);
   // append seq with seq being assembled
