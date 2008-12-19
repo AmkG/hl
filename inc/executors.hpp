@@ -8,6 +8,8 @@
 
 #include <map>
 
+#include <boost/smart_ptr.hpp>
+
 /*
   hl functions are represented by a Closure structure, which has an
   attached bytecode_t array.
@@ -202,17 +204,17 @@ struct bytecode_t {
 // a bytecode object contains a table of complex constants such as gensyms
 class Bytecode : public GenericDerivedVariadic<Bytecode> {
 private:
-  // TODO: rearrange to let code be shared between different processes 
-  bytecode_t *code; // !! remember to use a smart pointer here !!
+  // TODO: rearrange to let code be shared between different processes
+  boost::shared_array<bytecode_t> code;
   size_t codeSize;
   size_t nextCode; // next free position in code
   size_t nextPos; // next free position in variadic space
 
 public:
   Bytecode(size_t sz) 
-    : GenericDerivedVariadic<Bytecode>(sz), code(NULL), 
-      codeSize(0), nextCode(0), nextPos(0) {}
-  virtual ~Bytecode() { /*delete [] code;*/ }
+    : GenericDerivedVariadic<Bytecode>(sz), codeSize(0), nextCode(0), 
+      nextPos(0) {}
+  virtual ~Bytecode() {}
 
   Object::ref& operator[](size_t i) {
     if (i < size())
@@ -225,7 +227,7 @@ public:
     return Object::to_ref(symbol_bytecode);
   }
 
-  bytecode_t* getCode() { return code; }
+  bytecode_t* getCode() { return code.get(); }
 
   // close a complex constants
   size_t closeOver(Object::ref obj) {
