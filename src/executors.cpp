@@ -184,7 +184,6 @@ public:
 };
 
 size_t IfAs::countToSkip(Object::ref seq) {
-  // !! TODO: this won't work in presence of nested ifs !!
   size_t n = 0;
   for(Object::ref i = seq; i != Object::nil(); i = cdr(i)) {
     if (as_a<Symbol*>(car(car(i)))==symbols->lookup("if"))
