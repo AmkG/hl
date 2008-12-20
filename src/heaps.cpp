@@ -533,6 +533,71 @@ void Heap::GC(size_t insurance) {
 }
 
 #ifndef ONLY_COPYING_GC
+	Object::ref** Heap::acquire_ssb(void) const {
+		/*determine if we should switch GC algo*/
+		if(recommended_gc_type != gc_type) {
+			switch(gc_type) {
+			case gc_type_copying:
+				switch(recommended_gc_type) {
+				case gc_type_generational:
+					/*determine if there's a
+					SSB already
+					*/
+					if(!ssb_start) {
+						/*create one*/
+						ssb_start = malloc(
+							(SSB_SIZE + 1)
+							* sizeof(void*)
+						);
+						/*clear*/
+						Object::ref** a =
+							(Object::ref**)
+							ssb_start;
+						for(size_t i = 0;
+								i < SSB_SIZE;
+								++i) {
+							a[i] = NULL;
+						}
+						/*attach our heap*/
+						Heap** ah =
+							(Heap**)
+							ssb_start;
+						ah[SSB_SIZE] = this;
+					}
+					break;
+				}
+				break;
+			case gc_type_generational:
+				switch(recommended_gc_type) {
+				case gc_type_copying:
+					/*clear the entire SSB*/
+					Object::ref** start =
+						(Object::ref**)(void*)
+						ssb_start;
+					for(size_t i = 0; i < SSB_SIZE; ++i) {
+						start[i] = NULL;
+					}
+					intergen.erase(
+						intergen.begin(),
+						intergen.end()
+					);
+					ssb_point = ssb_start;
+					break;
+				}
+				break;
+			}
+			gc_type = recommended_gc_type;
+		}
+		switch(gc_type) {
+		case gc_type_generational;
+			return (Object::ref**)(void*) ssb_point;
+			break;
+		case gc_type_copying;
+			return NULL;
+			break;
+		}
+	}
+
 	Object::ref** __ssb_clean(Object::ref** pt) {
 		Object::ref** startpt = pt - Heap::SSB_SIZE;
 		Heap** ppheap = (Heap**)(void*) pt;
