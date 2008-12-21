@@ -369,7 +369,6 @@ public:
 			recommended_gc_type(gc_type_copying),
 			ssb_start(0),
 			ssb_point(0),
-			ssb_end(0),
 			old_end(0),
 			intergen()
 		#endif
