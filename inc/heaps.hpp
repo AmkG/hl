@@ -277,7 +277,7 @@ protected:
 public:
 
 	#ifndef ONLY_COPYING_GC
-		Object::ref** acquire_ssb(void) const;
+		Object::ref** acquire_ssb(void);
 		void release_ssb(Object::ref**);
 
 		/*determine if the specified address is in old space*/

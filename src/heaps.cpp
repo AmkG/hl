@@ -533,7 +533,7 @@ void Heap::GC(size_t insurance) {
 }
 
 #ifndef ONLY_COPYING_GC
-	Object::ref** Heap::acquire_ssb(void) const {
+	Object::ref** Heap::acquire_ssb(void) {
 		/*determine if we should switch GC algo*/
 		if(recommended_gc_type != gc_type) {
 			switch(gc_type) {
