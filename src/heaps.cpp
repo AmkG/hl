@@ -455,7 +455,7 @@ void Heap::default_GC(size_t insurance) {
 			for(; start != end; ++start) {
 				if(*start) {
 					if(in_old(*start)) {
-						intergen.insert();
+						intergen.insert(*start);
 					}
 					*start = NULL;
 				}
@@ -476,7 +476,7 @@ void Heap::default_GC(size_t insurance) {
 			while(!gray.empty()) {
 				Generic* gp = gray.pop();
 				black.push(gp);
-				gp->traverse_references(gs);
+				gp->traverse_references(&gs);
 				total += gp->real_size();
 			}
 		/*check free space*/
