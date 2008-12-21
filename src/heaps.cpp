@@ -589,10 +589,10 @@ void Heap::GC(size_t insurance) {
 			gc_type = recommended_gc_type;
 		}
 		switch(gc_type) {
-		case gc_type_generational;
+		case gc_type_generational:
 			return (Object::ref**)(void*) ssb_point;
 			break;
-		case gc_type_copying;
+		case gc_type_copying:
 			return NULL;
 			break;
 		}
