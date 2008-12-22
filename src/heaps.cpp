@@ -145,10 +145,10 @@ void Semispace::traverse_objects(HeapTraverser* ht) const {
 	endpt = (char*) lifoallocstart;
 
 	while(mvpt < endpt) {
-		gp = (Generic*)(void*) mvpt;
-		step = gp->real_size();
-		gp->~Generic();
-		mvpt += step;
+		Generic* tmp = (Generic*)(void*) mvpt;
+		size_t sz = tmp->real_size();
+		ht->traverse(tmp);
+		mvpt += sz;
 	}
 }
 
