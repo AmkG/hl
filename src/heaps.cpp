@@ -2,14 +2,11 @@
 #include"objects.hpp"
 #include"heaps.hpp"
 #include"types.hpp"
-#include"bars.hpp"
 
 #include<map>
 #include<stack>
 #include<cstdlib>
 #include<stdint.h>
-
-#include<boost/noncopyable.hpp>
 
 /*-----------------------------------------------------------------------------
 Semispaces
@@ -322,10 +319,6 @@ void Heap::traverse_objects(HeapTraverser* ht) const {
 	}
 }
 
-/*
- * Copying GC
- */
-
 /*copy and modify GC class*/
 class GCTraverser : public GenericTraverser {
 	Semispace* nsp;
@@ -364,7 +357,15 @@ void Heap::cheney_collection(Semispace* nsp) {
 	}
 }
 
-void Heap::default_GC(size_t insurance) {
+#ifdef DEBUG
+	#include<iostream>
+#endif
+
+void Heap::GC(size_t insurance) {
+
+	#ifdef DEBUG
+		std::cout << "GC!" << std::endl;
+	#endif
 
 	/*Determine the sizes of all semispaces*/
 	size_t total = main->used() + insurance;
@@ -395,232 +396,6 @@ void Heap::default_GC(size_t insurance) {
 	} else if(main->used() + insurance >= (total / 4) * 3) {
 		tight = 1;
 	}
-
-	#ifndef ONLY_COPYING_GC
-		/*recommend using generational after some sizes*/
-		if(main->size() > GENERATIONAL_TRIGGER_LEVEL) {
-			recommended_gc_type = gc_type_generational;
-		}
-	#endif
-
 }
 
-/*
- * Generational GC
- */
-
-#ifndef ONLY_COPYING_GC
-
-	class ToPointerStack : boost::noncopyable, ToPointerUser {
-	private:
-		Object::ref pt;
-	public:
-		ToPointerStack(void) : pt(Object::t()) { }
-		void push(Generic* gp) {
-			to_pointer(*gp) = pt;
-			pt = Object::to_ref(gp);
-		}
-		Generic* pop(void) {
-			Generic* gp = as_a<Generic*>(pt);
-			pt = to_pointer(*gp);
-			to_pointer(*gp) = Object::nil();
-			return gp;
-		}
-		bool empty(void) const {
-			return pt == Object::t();
-		}
-		void invalidate(void) {
-			pt = Object::t();
-		}
-		~ToPointerStack() {
-			/*clean up the stack*/
-			while(!empty()) {
-				pop();
-			}
-		}
-	};
-
-	class GenerationalScanner : public GenericTraverser, ToPointerUser {
-	private:
-		ToPointerStack* grayp;
-		Heap* hp;
-	public:
-		void traverse(Object::ref& o) {
-			if(is_a<Generic*>(o)) {
-				Generic* gp = as_a<Generic*>(o);
-				/*if not old and not marked, then mark*/
-				if(!hp->in_old(gp) && !to_pointer(*gp)) {
-					grayp->push(gp);
-				}
-			}
-		}
-		GenerationalScanner(ToPointerStack& gray, Heap& heap)
-			: grayp(&gray), hp(&heap) { }
-	};
-
-	void Heap::generational_GC(size_t insurance) {
-		/*clear out the SSB*/
-		{
-			Object::ref** start = (Object::ref**)(void*) ssb_start;
-			Object::ref** end = start + SSB_SIZE;
-			for(; start != end; ++start) {
-				if(*start) {
-					if(in_old(*start)) {
-						intergen.insert(*start);
-					}
-					*start = NULL;
-				}
-			}
-		}
-		{ToPointerStack gray, black;
-		GenerationalScanner gs(gray, *this);
-		/*initially scan roots and intergenerationals*/
-			scan_root_object(&gs);
-			typedef std::set<Object::ref*> intergen_type;
-			for(intergen_type::iterator it = intergen.begin();
-					it != intergen.end(); ++it) {
-				Object::ref* to_scan;
-				gs.traverse(*to_scan);
-			}
-		/*mark*/
-			size_t total = 0; /*keep track of total size*/
-			while(!gray.empty()) {
-				Generic* gp = gray.pop();
-				black.push(gp);
-				gp->traverse_references(&gs);
-				total += gp->real_size();
-			}
-		/*check free space*/
-			char* eden_end = (char*)(void*) main->lifoallocstart;
-			char* eden_start = (char*)(void*) old_end;
-			// !! overflow?  Not likely until we get process
-			// !! heaps of 2Gb or more...
-			if(total + 2 * insurance > (size_t)(eden_end - eden_start)) {
-				/*use a goto to force dtor of black set*/
-				goto fallback_return;
-			}
-			/*prevent black set from cleaning up to-pointers*/
-			black.invalidate();
-		}
-		/*compute to-pointers*/
-		/*update pointers*/
-		/*move objects*/
-		return;
-	fallback_return:
-		// !! Maybe better to fall back on non-generational
-		// !! mark-compact
-		return default_GC(insurance);
-	}
-
-	inline bool Heap::in_old(void* addr) {
-		char* lolimit = (char*)(void*) main->allocstart;
-		char* pt = (char*)(void*) addr;
-		char* hilimit = (char*)(void*) old_end;
-		return (lolimit <= pt) && (pt < hilimit);
-	}
-
-#endif
-
-#ifdef DEBUG
-	#include<iostream>
-#endif
-
-void Heap::GC(size_t insurance) {
-
-	#ifdef DEBUG
-		std::cout << "GC!" << std::endl;
-	#endif
-
-	#ifdef ONLY_COPYING_GC
-		default_GC(insurance);
-	#else
-		switch(gc_type) {
-		case gc_type_copying:
-			return default_GC(insurance);
-		case gc_type_generational:
-			return generational_GC(insurance);
-		}
-	#endif
-}
-
-#ifndef ONLY_COPYING_GC
-	Object::ref** Heap::acquire_ssb(void) {
-		/*determine if we should switch GC algo*/
-		if(recommended_gc_type != gc_type) {
-			switch(gc_type) {
-			case gc_type_copying:
-				switch(recommended_gc_type) {
-				case gc_type_generational:
-					/*determine if there's a
-					SSB already
-					*/
-					if(!ssb_start) {
-						/*create one*/
-						ssb_start = malloc(
-							(SSB_SIZE + 1)
-							* sizeof(void*)
-						);
-						/*clear*/
-						Object::ref** a =
-							(Object::ref**)
-							ssb_start;
-						for(size_t i = 0;
-								i < SSB_SIZE;
-								++i) {
-							a[i] = NULL;
-						}
-						/*attach our heap*/
-						Heap** ah =
-							(Heap**)
-							ssb_start;
-						ah[SSB_SIZE] = this;
-					}
-					break;
-				}
-				break;
-			case gc_type_generational:
-				switch(recommended_gc_type) {
-				case gc_type_copying:
-					/*clear the entire SSB*/
-					Object::ref** start =
-						(Object::ref**)(void*)
-						ssb_start;
-					for(size_t i = 0; i < SSB_SIZE; ++i) {
-						start[i] = NULL;
-					}
-					intergen.erase(
-						intergen.begin(),
-						intergen.end()
-					);
-					ssb_point = ssb_start;
-					break;
-				}
-				break;
-			}
-			gc_type = recommended_gc_type;
-		}
-		switch(gc_type) {
-		case gc_type_generational:
-			return (Object::ref**)(void*) ssb_point;
-			break;
-		case gc_type_copying:
-			return NULL;
-			break;
-		}
-	}
-
-	Object::ref** __ssb_clean(Object::ref** pt) {
-		Object::ref** startpt = pt - Heap::SSB_SIZE;
-		Heap** ppheap = (Heap**)(void*) pt;
-		Heap& hp = **ppheap;
-		for(Object::ref** it = startpt; it != pt; ++it) {
-			Object::ref* reference = *it;
-			if(hp.in_old(reference)) {
-				hp.intergen.insert(reference);
-			}
-			*it = NULL;
-		}
-		return startpt;
-	}
-#endif
 

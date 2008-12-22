@@ -6,7 +6,6 @@
 
 #include<cstring>
 #include<utility>
-#include<set>
 
 #include<boost/scoped_ptr.hpp>
 #include<boost/noncopyable.hpp>
@@ -216,51 +215,9 @@ private:
 	boost::scoped_ptr<Semispace> main;
 	bool tight;
 
-	#ifndef ONLY_COPYING_GC
-		/*I get the vague feeling I should be using a class for this*/
-		enum GCType { gc_type_copying, gc_type_generational };
-		GCType gc_type;
-
-		/*Deferred GC type.*/
-		GCType recommended_gc_type;
-		/*
-		We first decide to change GC types, but only
-		assign to recommended_gc_type.  When the ssb
-		is acquired, only then do we finalize the
-		recommended type to the actual type.
-		This is done in order to facilitate JIT.
-		We can then JIT two versions of the code:
-		one with write barriers, another without
-		write barriers.  When JITted code ends up
-		allocating a lot of memory while the GC is
-		a copying GC, we would rather switch over to
-		the generational mark and compact one.
-		However the JITted code at that time may not
-		have the required write barrier.
-		We can only safely switch collectors when
-		JITted code isn't running.
-		*/
-
-		static const size_t GENERATIONAL_TRIGGER_LEVEL =
-			16384 * sizeof(Object::ref);
-		static const size_t SSB_SIZE = 512;
-
-		void* ssb_start;
-		void* ssb_point;
-
-		void* old_end;
-
-		void generational_GC(size_t);
-
-		std::set<Object::ref*> intergen;
-
-	#endif
-
-	void cheney_collection(Semispace*);
-	void default_GC(size_t);
-
 protected:
 	ValueHolderRef other_spaces;
+	void cheney_collection(Semispace*);
 	void GC(size_t);
 
 	void free_heap(void) {
@@ -275,17 +232,6 @@ protected:
 	virtual void scan_root_object(GenericTraverser*) =0;
 
 public:
-
-	#ifndef ONLY_COPYING_GC
-		Object::ref** acquire_ssb(void);
-		void release_ssb(Object::ref**);
-
-		/*determine if the specified address is in old space*/
-		bool in_old(void*);
-
-		friend Object::ref** __ssb_clean(Object::ref**);
-	#endif
-
 	template<class T>
 	inline T* create(void) {
 		/*compile-time checking that T inherits from Generic*/
@@ -362,17 +308,7 @@ public:
 	void traverse_objects(HeapTraverser*) const;
 
 	explicit Heap(size_t initsize = 8 * sizeof(Object::ref))
-		: main(new Semispace(initsize)),
-		tight(1)
-		#ifndef ONLY_COPYING_GC
-			, gc_type(gc_type_copying),
-			recommended_gc_type(gc_type_copying),
-			ssb_start(0),
-			ssb_point(0),
-			old_end(0),
-			intergen()
-		#endif
-	{ }
+		: main(new Semispace(initsize)), tight(1) { }
         virtual ~Heap() {}
 };
 

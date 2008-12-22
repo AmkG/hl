@@ -4,7 +4,6 @@
 #include"objects.hpp"
 
 class Semispace;
-class ToPointerUser;
 
 /*-----------------------------------------------------------------------------
 GenericTraverser
@@ -34,15 +33,11 @@ public:
 	HashingClass(void);
 };
 
-
 /*-----------------------------------------------------------------------------
 Generic
 -----------------------------------------------------------------------------*/
 
 class Generic {
-private:
-	Object::ref to_pointer;
-
 public:
 
 	virtual void traverse_references(GenericTraverser* gt) {
@@ -92,8 +87,6 @@ public:
 
 	/*dtor*/
 	virtual ~Generic() { }
-
-	friend class ToPointerUser;
 };
 
 /*-----------------------------------------------------------------------------
@@ -165,22 +158,6 @@ static inline size_t compute_size_variadic(size_t sz) {
 	(sizeofT < sizeofBrokenHeart) ?		sizeofBrokenHeart :
 	/*otherwise*/				sizeofT ;
 }
-
-/*-----------------------------------------------------------------------------
-ToPointerUser
------------------------------------------------------------------------------*/
-/*A class intended for being derived, which can access the
-to_pointer of Generic's
-*/
-
-class ToPointerUser {
-protected:
-	inline Object::ref& to_pointer(Generic& g) F_INLINE {
-		return g.to_pointer;
-	}
-	/*Only for deriving!*/
-	ToPointerUser(void) { }
-};
 
 /*-----------------------------------------------------------------------------
 Utility
