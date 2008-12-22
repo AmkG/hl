@@ -136,11 +136,22 @@ void Semispace::lifo_dealloc_abort(void* pt) {
 void Semispace::traverse_objects(HeapTraverser* ht) const {
 	char* mvpt = (char*) allocstart;
 	char* endpt = (char*) allocpt;
+
 	while(mvpt < endpt) {
 		Generic* tmp = (Generic*)(void*) mvpt;
 		size_t sz = tmp->real_size();
 		ht->traverse(tmp);
 		mvpt += sz;
+	}
+
+	mvpt = (char*) lifoallocpt;
+	endpt = (char*) lifoallocstart;
+
+	while(mvpt < endpt) {
+		gp = (Generic*)(void*) mvpt;
+		step = gp->real_size();
+		gp->~Generic();
+		mvpt += step;
 	}
 }
 
