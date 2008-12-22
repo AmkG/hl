@@ -465,11 +465,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
      * these will hold a fixed Bytecodes that will be used
      * as the continuations for various bytecodes
      */
-    symbols->lookup("$reducto-cont-body")->
+    symbols->lookup("<impl>reducto-cont-body")->
       set_value(inline_assemble(proc, "(reducto-continuation) (continue)"));
-    symbols->lookup("$ccc-fn-body")->
+    symbols->lookup("<impl>ccc-fn-body")->
       set_value(inline_assemble(proc, "(check-vars 3) (continue-on-clos 0)"));
-    symbols->lookup("$composeo-cont-body")->
+    symbols->lookup("<impl>composeo-cont-body")->
       set_value(inline_assemble(proc, "(composeo-continuation ) (continue )"));
 
     return process_running;
@@ -671,7 +671,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push((*clos)[0]);
       stack[0] = (*clos)[1];
       Closure& kclos = *Closure::NewKClosure(proc, 2); 
-      kclos.codereset(proc.global_read(symbols->lookup("$composeo-cont-body")));
+      // !! should really avoid SymbolsTable::lookup() due to
+      // !! increased lock contention
+      kclos.codereset(proc.global_read(symbols->lookup("<impl>composeo-cont-body")));
       // clos is now invalid
       /*continuation*/
       kclos[0] = stack[1];
@@ -862,7 +864,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack[0] = Object::to_ref(f);
       // stack[1] already holds current continuation
       Closure *arg = Closure::NewClosure(proc, 1);
-      arg->codereset(proc.global_read(symbols->lookup("$ccc-fn-body")));
+      // !! should really avoid SymbolsTable::lookup() due to
+      // !! increased lock contention
+      arg->codereset(proc.global_read(symbols->lookup("<impl>ccc-fn-body")));
       (*arg)[0] = Object::to_ref(k); // close other current continuation
       stack[2] = Object::to_ref(arg);
       //(f current-continuation function-that-will-call-current-continuation)
@@ -929,7 +933,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         stack[0] = (*clos)[2]; // f2
         size_t saved_params = params - 2;
         Closure & kclos = *Closure::NewKClosure(proc, saved_params + 3);
-        kclos.codereset(proc.global_read(symbols->lookup("$reducto-cont-body")));
+        // !! should really avoid SymbolsTable::lookup() due to
+        // !! increased lock contention
+        kclos.codereset(proc.global_read(symbols->lookup("<impl>reducto-cont-body")));
         // clos is now invalid
         kclos[0] = stack[0]; // f2
         kclos[1] = stack[1];
@@ -974,7 +980,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
           Closure & nclos = *Closure::NewKClosure(proc, 
                                                   // save only necessary
                                                   clos->size() - NN + 3);
-          nclos.codereset(proc.global_read(symbols->lookup("$reducto-cont-body")));
+          // !! should really avoid SymbolsTable::lookup() due to
+          // !! increased lock contention
+          nclos.codereset(proc.global_read(symbols->lookup("<impl>reducto-cont-body")));
           // clos is now invalid
           SETCLOS(clos); //revalidate clos
           nclos[0] = (*clos)[0];
