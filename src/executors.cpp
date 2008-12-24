@@ -158,14 +158,17 @@ public:
 
 // assemble instructions to push a complex constant on the stack
 // a complex constant is one that resides on the process-local heap
+template <class T>
 class ComplexAs : public AsOp {
 public:
   void assemble(Process & proc);
 };
 
-void ComplexAs::assemble(Process & proc) {
+template <class T>
+void ComplexAs<T>::assemble(Process & proc) {
   proc.stack.pop(); // there should be no sequence
   Object::ref arg = proc.stack.top(); proc.stack.pop();
+  expect_type<T>(arg, "assemble: wrong type for complex argument");
   Bytecode *b = expect_type<Bytecode>(proc.stack.top());
   if (Assembler::isComplexConst(arg)) {
     size_t i = b->closeOver(arg);
@@ -458,7 +461,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     assembler.reg<KClosureRecreateAs>(symbols->lookup("k-closure-recreate"));
     assembler.reg<KClosureReuseAs>(symbols->lookup("k-closure-reuse"));
     assembler.reg<IfAs>(symbols->lookup("if"));
-    assembler.reg<ComplexAs>(symbols->lookup("float"));
+    assembler.reg<ComplexAs<Float> >(symbols->lookup("float"));
 
     /*
      * build and assemble various bytecode sequences
