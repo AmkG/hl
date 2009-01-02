@@ -15,6 +15,8 @@ ExecutorTable Executor::tbl;
 
 // map opcodes to bytecodes
 static std::map<Symbol*,_bytecode_label> bytetb;
+// inverse map for disassembly
+static std::map<_bytecode_label, Symbol*> inv_bytetb;
 
 static _bytecode_label bytecodelookup(Symbol *s){
 	std::map<Symbol*, _bytecode_label>::iterator i = bytetb.find(s);
@@ -37,7 +39,9 @@ public:
 	InitialAssignments const& operator()(
 			char const* s,
 			_bytecode_label l) const{
-		bytetb[symbols->lookup(s)] = l;
+                Symbols *opcode = symbols->lookup(s);
+		bytetb[opcode] = l;
+                inv_bytetb[l] = opcode;
 		return *this;
 	}
 	InitialAssignments const& operator()(
