@@ -395,7 +395,7 @@ transform_arrayed_to_hashed: {
 	/*insert new key*/
 	add_kv_to_array(*known_type<HlArray>(stack.top(2)),
 		*known_type<Cons>(stack.top(1)),
-		4 * LINEAR_LEVEL
+		new_size
 	);
 	{HlTable& T = *known_type<HlTable>(stack.top(3));
 		++T.pairs;

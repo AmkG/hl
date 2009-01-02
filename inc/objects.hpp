@@ -128,13 +128,13 @@ The tagged pointer type
 		ref(intptr_t x) : dat(x) {}
 	public:
 		ref(void) : dat(0) {}
-		inline bool operator==(ref b) {
+		inline bool operator==(ref b) const {
 			return dat == b.dat;
 		}
-		inline bool operator!=(ref b) {
+		inline bool operator!=(ref b) const {
 			return dat != b.dat;
 		}
-		inline bool operator!(void) {
+		inline bool operator!(void) const {
 			return dat == 0;
 		}
 
