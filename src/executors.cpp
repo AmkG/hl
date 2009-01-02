@@ -296,6 +296,9 @@ void Assembler::go(Process & proc) {
   //  - bytecode
 }
 
+void Assembler::goBack(Process & proc) {
+}
+
 intptr_t Assembler::simpleVal(Object::ref sa) {
   if (is_a<int>(sa))
     return as_a<int>(sa);

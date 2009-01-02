@@ -283,6 +283,9 @@ public:
   // do the assembly, leave a Bytecode on the stack, expect a sequence on 
   // the stack
   void go(Process & proc); 
+  // disassemble a sequence
+  // take a Bytecode from the stack, leave a sequence on the stack
+  void goBack(Process & proc);
 
   // count number of comples constants in seq (not recursive)
   static size_t countConsts(Object::ref seq);
