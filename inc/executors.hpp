@@ -204,8 +204,6 @@ struct bytecode_t {
 // a bytecode object contains a table of complex constants such as gensyms
 class Bytecode : public GenericDerivedVariadic<Bytecode> {
 private:
-  // TODO: rearrange to let code be shared between different processes
-  // ?? what exactly does the above comment mean? -- almkglor
   boost::shared_array<bytecode_t> code;
   size_t codeSize;
   size_t nextCode; // next free position in code
