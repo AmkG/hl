@@ -45,3 +45,21 @@
 (float 1.0)
 
 ;^\(\(int 1\) \(if \(int 2\) \(halt\)\) \(float 1.0*\)\)$
+
+; ***
+
+(closure 4
+  (check-vars 2)
+  (continue-on-clos 1))
+(halt)
+
+;^\(\(closure 4 \(check-vars 2\) \(continue-on-clos 1\)\) \(halt\)\)$
+
+; ***
+
+(k-closure 4
+  (check-vars 2)
+  (continue-on-clos 1))
+(halt)
+
+;^\(\(k-closure 4 \(check-vars 2\) \(continue-on-clos 1\)\) \(halt\)\)$

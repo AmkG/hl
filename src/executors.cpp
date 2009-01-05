@@ -129,11 +129,29 @@ void Bytecode::push(const char *s, intptr_t val) {
 class GenClosureAs : public AsOp {
 private:
   const char *to_build;
+  static std::map<Symbol*, Symbol*> names;
+
+  Symbol* operationName(Symbol *s) {
+    if (names.find(s) != names.end())
+      return names[s];
+    else
+      throw_HlError("disassembler: internal error");
+  }
+
 public:
-  GenClosureAs(const char *to_build) : to_build(to_build) {}
+  GenClosureAs(const char *to_build, const char *name) 
+    : to_build(to_build) {
+    names[symbols->lookup(to_build)] = symbols->lookup(name);
+  }
+  ~GenClosureAs() {
+    names.erase(names.find(symbols->lookup(to_build)));
+  }
+
   void assemble(Process & proc);
   size_t disassemble(Process & proc, size_t i);
 };
+
+std::map<Symbol*, Symbol*> GenClosureAs::names;
 
 void GenClosureAs::assemble(Process & proc) {
   // assemble the seq. arg, which must be on the top of the stack
@@ -179,9 +197,9 @@ size_t GenClosureAs::disassemble(Process & proc, size_t i) {
   // stack is
   //  - body seq
   //  - current Bytecode
-  b = expect_type<Bytecode>(proc.stack.top(3));
+  b = expect_type<Bytecode>(proc.stack.top(2));
   bytecode_t next = b->getCode()[i+1];
-  Symbol *opname = inv_bytetb[next.op];
+  Symbol *opname = operationName(inv_bytetb[next.op]);
   size_t N = next.val;
   Cons *c = proc.create<Cons>();
   c->scar(Object::to_ref(opname));
@@ -192,26 +210,30 @@ size_t GenClosureAs::disassemble(Process & proc, size_t i) {
   c2->scdr(proc.stack.top()); proc.stack.pop();
   c->scdr(Object::to_ref(c2));
   proc.stack.push(Object::to_ref(c));
+
+  return i+2;
 }
 
 class ClosureAs : public GenClosureAs {
 public:
-  ClosureAs() : GenClosureAs("build-closure") {}
+  ClosureAs() : GenClosureAs("build-closure", "closure") {}
 };
 
 class KClosureAs : public GenClosureAs {
 public:
-  KClosureAs() : GenClosureAs("build-k-closure") {}
+  KClosureAs() : GenClosureAs("build-k-closure", "k-closure") {}
 };
 
 class KClosureRecreateAs : public GenClosureAs {
 public:
-  KClosureRecreateAs() : GenClosureAs("build-k-closure-recreate") {}
+  KClosureRecreateAs() : GenClosureAs("build-k-closure-recreate", 
+                                      "k-closure-recreate") {}
 };
 
 class KClosureReuseAs : public GenClosureAs {
 public:
-  KClosureReuseAs() : GenClosureAs("build-k-closure-reuse") {}
+  KClosureReuseAs() : GenClosureAs("build-k-closure-reuse", 
+                                   "k-closure-reuse") {}
 };
 
 // assemble instructions to push a complex constant on the stack
