@@ -1,0 +1,13 @@
+#!/bin/sh
+
+g++ -g -Dsingle_threaded -I../../inc\
+	../../src/reader.cpp\
+	../../src/executors.cpp\
+	../../src/heaps.cpp\
+	../../src/symbols.cpp\
+	../../src/symtable.cpp\
+	../../src/types.cpp\
+	../../src/processes.cpp\
+	../../src/globals.cpp\
+	driver.cpp\
+	-o driver -pthread
