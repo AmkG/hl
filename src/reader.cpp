@@ -159,7 +159,9 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
     Float *f;
     Cons *c;
     if (f = dynamic_cast<Float*>(g)) {
+      out.setf(std::ios::showpoint);
       out << f->get();
+      out.unsetf(std::ios::showpoint);
     } else if (c = dynamic_cast<Cons*>(g)) {
       out << "(" << c->car();
       Object::ref r = c->cdr();
