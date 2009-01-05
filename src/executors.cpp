@@ -124,6 +124,7 @@ private:
 public:
   GenClosureAs(const char *to_build) : to_build(to_build) {}
   void assemble(Process & proc);
+  size_t disassemble(Process & proc, size_t i);
 };
 
 void GenClosureAs::assemble(Process & proc) {
@@ -138,7 +139,37 @@ void GenClosureAs::assemble(Process & proc) {
   current->push("const-ref", iconst);
   // build the closure
   current->push(to_build, as_a<int>(nclose));
-};
+}
+
+size_t GenClosureAs::disassemble(Process & proc, size_t i) {
+  Bytecode *b = expect_type<Bytecode>(proc.stack.top(2));
+  bytecode_t bc = b->getCode()[i];
+  Object::ref body = (*b)[bc.val];
+  if (!maybe_type<Bytecode>(body)) {
+    // not a closure
+    return i;
+  }
+  proc.stack.push(body);
+  // disassemble the body
+  assembler.goBack(proc, 0, expect_type<Bytecode>(body)->getLen());
+  // stack is
+  //  - body seq
+  //  - current seq
+  //  - current Bytecode
+  Bytecode *b = expect_type<Bytecode>(proc.stack.top(3));
+  bytecode_t next = b->getCode()[i+1];
+  Symbol *opname = inv_bytetb[next.op];
+  size_t N = next.arg;
+  Cons *c = proc.create<Cons>();
+  c->scar(Object::to_ref(opname));
+  proc.stack.push(Object::to_ref(c));
+  Cons *c2 = proc.create<Cons>();
+  c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
+  c2->scar(as_a<int>(N));
+  c2->scdr(proc.stack.top()); proc.stack.pop();
+  c->scdr(c2);
+  proc.stack.push(Object::to_ref(c));
+}
 
 class ClosureAs : public GenClosureAs {
 public:
@@ -296,7 +327,35 @@ void Assembler::go(Process & proc) {
   //  - bytecode
 }
 
-void Assembler::goBack(Process & proc) {
+void Assembler::goBack(Process & proc, size_t start, size_t end) {
+  while (start < end) {
+    Cons *c;
+    bytecode_t b = expect_type<Bytecode>(proc.stack.top())->getCode()[start];
+    lbl_op_tbl::iterator op = inv_tbl.find(b.op);
+    if (op==inv_tbl.end()) {
+      // default behavior
+      c = proc.create<Cons>();
+      c->scar(Object::to_ref(inv_bytetb[b.op]));
+      proc.stack.push(Object::to_ref(c));
+      if (hasArg(b.op)) {
+        Cons *c2 = proc.create<Cons>();
+        c2->scar(as_a<int>(b.val));
+        c2->scdr(Object::nil());
+        c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
+        c->scdr(Object::to_ref(c2));
+      }
+      start++;
+    } else {
+      start = op->second->disassemble(proc, start);
+      c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
+    }
+    // append c to the current seq
+  }
+}
+
+bool Assembler::hasArg(_bytecode_label lbl) {
+  // TODO: implement
+  return true;
 }
 
 intptr_t Assembler::simpleVal(Object::ref sa) {

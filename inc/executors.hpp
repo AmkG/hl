@@ -228,6 +228,8 @@ public:
 
   bytecode_t* getCode() { return code.get(); }
 
+  size_t getLen() const { return nextCode; }
+
   // close a complex constants
   size_t closeOver(Object::ref obj) {
     if (nextPos >= size())
@@ -261,15 +263,28 @@ public:
   //  - Bytecode object being assembled
   //  - seq being assembled
   virtual void assemble(Process & proc) = 0;
+  // expect on the stack:
+  // - Seq being built
+  // - Bytecode object
+  // i is the index of the instruction to disassemble
+  // return the index of the next instruction to disassemble
+  // leave disassembled instruction on the stack
+  virtual size_t disassemble(Process & proc, size_t i) = 0;
 };
 
 class Assembler {
 private:
   typedef std::map<Symbol*, AsOp*> sym_op_tbl;
+  typedef std::map<_bytecode_label, AsOp*> lbl_op_tbl;
   sym_op_tbl tbl;
+  lbl_op_tbl inv_tbl;
 
   // extracts a value pointer/immediate object, throwing away the type tag
   static intptr_t simpleVal(Object::ref sa);
+
+  // tells if the bytecode takes an int argument
+  bool hasArg(_bytecode_label lbl);
+
 public:
   ~Assembler() { 
     for (sym_op_tbl::iterator i = tbl.begin(); i!=tbl.end(); i++)
@@ -278,14 +293,19 @@ public:
 
   // register a new assembler operation
   template <class T>
-  void reg(Symbol* s) { tbl[s] = new T(); }
+  void reg(Symbol* s, _bytecode_label lbl) { 
+    T *op = new T();
+    tbl[s] = op;
+    inv_tbl[lbl] = op;
+  }
 
   // do the assembly, leave a Bytecode on the stack, expect a sequence on 
   // the stack
   void go(Process & proc); 
   // disassemble a sequence
   // take a Bytecode from the stack, leave a sequence on the stack
-  void goBack(Process & proc);
+  // disassemble form index start to index end (exclusive)
+  void goBack(Process & proc, size_t start, size_t end);
 
   // count number of comples constants in seq (not recursive)
   static size_t countConsts(Object::ref seq);
