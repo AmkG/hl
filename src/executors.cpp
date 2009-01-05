@@ -39,7 +39,7 @@ public:
 	InitialAssignments const& operator()(
 			char const* s,
 			_bytecode_label l) const{
-                Symbols *opcode = symbols->lookup(s);
+                Symbol *opcode = symbols->lookup(s);
 		bytetb[opcode] = l;
                 inv_bytetb[l] = opcode;
 		return *this;
@@ -147,7 +147,22 @@ size_t GenClosureAs::disassemble(Process & proc, size_t i) {
   Object::ref body = (*b)[bc.val];
   if (!maybe_type<Bytecode>(body)) {
     // not a closure
-    return i;
+    // handle (float ...) bytecode here
+    // !! it should be in ComplexAs::disassemble
+    // !! but const-ref is already catched by GenClosureAs
+    if (!maybe_type<Float>(body)) {
+      throw_HlError("can't disassemble: reference to invalid object found");
+    }
+    proc.stack.push(body);
+    proc.stack.push(Object::to_ref(proc.create<Cons>()));
+    Cons *c2 = proc.create<Cons>();
+    Object::ref c = proc.stack.top();
+    scar(c, Object::to_ref(symbols->lookup("float")));
+    scdr(c, Object::to_ref(c2));
+    c2->scar(body);
+    c2->scdr(Object::nil());
+
+    return i+1;
   }
   proc.stack.push(body);
   // disassemble the body
@@ -156,18 +171,18 @@ size_t GenClosureAs::disassemble(Process & proc, size_t i) {
   //  - body seq
   //  - current seq
   //  - current Bytecode
-  Bytecode *b = expect_type<Bytecode>(proc.stack.top(3));
+  b = expect_type<Bytecode>(proc.stack.top(3));
   bytecode_t next = b->getCode()[i+1];
   Symbol *opname = inv_bytetb[next.op];
-  size_t N = next.arg;
+  size_t N = next.val;
   Cons *c = proc.create<Cons>();
   c->scar(Object::to_ref(opname));
   proc.stack.push(Object::to_ref(c));
   Cons *c2 = proc.create<Cons>();
   c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
-  c2->scar(as_a<int>(N));
+  c2->scar(Object::to_ref((int)N));
   c2->scdr(proc.stack.top()); proc.stack.pop();
-  c->scdr(c2);
+  c->scdr(Object::to_ref(c2));
   proc.stack.push(Object::to_ref(c));
 }
 
@@ -197,6 +212,11 @@ template <class T>
 class ComplexAs : public AsOp {
 public:
   void assemble(Process & proc);
+  size_t disassemble(Process & proc, size_t i) {
+    // ComplexAs disassembly is handled by GenClosureAs
+    throw_HlError("disassembler error");
+    return i;
+  }
 };
 
 template <class T>
@@ -220,6 +240,7 @@ private:
   static size_t countToSkip(Object::ref seq);
 public:
   void assemble(Process & proc);
+  size_t disassemble(Process & proc, size_t i);
 };
 
 size_t IfAs::countToSkip(Object::ref seq) {
@@ -251,6 +272,19 @@ void IfAs::assemble(Process & proc) {
   proc.stack.top(2) = seq;
   // now main driver will continue and assemble the if body and then 
   // the rest of the original sequence
+}
+
+size_t IfAs::disassemble(Process & proc, size_t i) {
+  Bytecode *b = expect_type<Bytecode>(proc.stack.top(2));
+  bytecode_t bc = b->getCode()[i];
+  size_t end = i+1+bc.val;
+  assembler.goBack(proc, i+1, end);
+  Cons *c = proc.create<Cons>();
+  c->scar(Object::to_ref(symbols->lookup("if")));
+  c->scdr(proc.stack.top()); proc.stack.pop();
+  proc.stack.push(Object::to_ref(c));
+
+  return end;
 }
 
 Assembler assembler;
@@ -339,7 +373,7 @@ void Assembler::goBack(Process & proc, size_t start, size_t end) {
       proc.stack.push(Object::to_ref(c));
       if (hasArg(b.op)) {
         Cons *c2 = proc.create<Cons>();
-        c2->scar(as_a<int>(b.val));
+        c2->scar(Object::to_ref(b.val));
         c2->scdr(Object::nil());
         c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
         c->scdr(Object::to_ref(c2));
@@ -522,12 +556,14 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ;/*end initializer*/
 
     // initialize assembler operations
-    assembler.reg<ClosureAs>(symbols->lookup("closure"));
-    assembler.reg<KClosureAs>(symbols->lookup("k-closure"));
-    assembler.reg<KClosureRecreateAs>(symbols->lookup("k-closure-recreate"));
-    assembler.reg<KClosureReuseAs>(symbols->lookup("k-closure-reuse"));
-    assembler.reg<IfAs>(symbols->lookup("if"));
-    assembler.reg<ComplexAs<Float> >(symbols->lookup("float"));
+    assembler.reg<ClosureAs>(symbols->lookup("closure"),
+                             THE_BYTECODE_LABEL(const_ref));
+    assembler.reg<KClosureAs>(symbols->lookup("k-closure"), NULL);
+    assembler.reg<KClosureRecreateAs>(symbols->lookup("k-closure-recreate"),
+                                      NULL);
+    assembler.reg<KClosureReuseAs>(symbols->lookup("k-closure-reuse"), NULL);
+    assembler.reg<IfAs>(symbols->lookup("if"), THE_BYTECODE_LABEL(jmp_nil));
+    assembler.reg<ComplexAs<Float> >(symbols->lookup("float"), NULL);
 
     /*
      * build and assemble various bytecode sequences
