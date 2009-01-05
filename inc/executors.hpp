@@ -7,6 +7,7 @@
 #include "types.hpp"
 
 #include <map>
+#include <set>
 
 #include <boost/smart_ptr.hpp>
 
@@ -282,6 +283,7 @@ private:
   // extracts a value pointer/immediate object, throwing away the type tag
   static intptr_t simpleVal(Object::ref sa);
 
+  std::set<_bytecode_label> lbl_with_arg;
   // tells if the bytecode takes an int argument
   bool hasArg(_bytecode_label lbl);
 
@@ -290,6 +292,9 @@ public:
     for (sym_op_tbl::iterator i = tbl.begin(); i!=tbl.end(); i++)
       delete i->second;
   }
+
+  // register opcode s as an opcode that accept an argument 
+  void regArg(const char *s);
 
   // register a new assembler operation
   template <class T>
@@ -311,6 +316,8 @@ public:
   static size_t countConsts(Object::ref seq);
   // tells if an object is a complex one or not
   static bool isComplexConst(Object::ref obj);
+
+
 };
 
 extern Assembler assembler;

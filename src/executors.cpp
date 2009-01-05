@@ -383,13 +383,20 @@ void Assembler::goBack(Process & proc, size_t start, size_t end) {
       start = op->second->disassemble(proc, start);
       c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
     }
-    // append c to the current seq
+    // TODO: append c to the current seq
   }
 }
 
 bool Assembler::hasArg(_bytecode_label lbl) {
-  // TODO: implement
-  return true;
+  if (lbl_with_arg.find(lbl)!=lbl_with_arg.end())
+    return true;
+  else
+    return false;
+}
+
+void Assembler::regArg(const char *s) {
+  lbl_with_arg.insert(lbl_with_arg.begin(), 
+                      bytecodelookup(symbols->lookup(s)));
 }
 
 intptr_t Assembler::simpleVal(Object::ref sa) {
@@ -554,6 +561,26 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       /*assign bultin global*/
       ;/*end initializer*/
+
+    // register opcode that accept an argument
+    assembler.regArg("apply");
+    assembler.regArg("apply-invert-k");
+    assembler.regArg("apply-k-release");
+    assembler.regArg("apply-list");
+    assembler.regArg("car-local-push");
+    assembler.regArg("car-clos-push");
+    assembler.regArg("cdr-local-push");
+    assembler.regArg("cdr-clos-push");
+    assembler.regArg("check-vars");
+    assembler.regArg("closure-ref");
+    assembler.regArg("continue-local");
+    assembler.regArg("continue-on-clos");
+    assembler.regArg("global");
+    assembler.regArg("global-set");
+    assembler.regArg("halt-local-push");
+    assembler.regArg("halt-clos-push");
+    assembler.regArg("int");
+    assembler.regArg("variadic");
 
     // initialize assembler operations
     assembler.reg<ClosureAs>(symbols->lookup("closure"),
