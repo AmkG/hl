@@ -265,7 +265,6 @@ public:
   //  - seq being assembled
   virtual void assemble(Process & proc) = 0;
   // expect on the stack:
-  // - Seq being built
   // - Bytecode object
   // i is the index of the instruction to disassemble
   // return the index of the next instruction to disassemble

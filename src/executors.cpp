@@ -87,6 +87,14 @@ public:
 	}
 };
 
+class RememberToPop {
+private:
+  Process & proc;
+public:
+  RememberToPop(Process & proc) : proc(proc) {}
+  ~RememberToPop() { proc.pop_extra_root(); }
+};
+
 void Bytecode::push(bytecode_t b) {
   if (code.get()==NULL) { // first instruction added
     code.reset(new bytecode_t[64]); // default initial size
@@ -142,7 +150,7 @@ void GenClosureAs::assemble(Process & proc) {
 }
 
 size_t GenClosureAs::disassemble(Process & proc, size_t i) {
-  Bytecode *b = expect_type<Bytecode>(proc.stack.top(2));
+  Bytecode *b = expect_type<Bytecode>(proc.stack.top());
   bytecode_t bc = b->getCode()[i];
   Object::ref body = (*b)[bc.val];
   if (!maybe_type<Bytecode>(body)) {
@@ -156,11 +164,12 @@ size_t GenClosureAs::disassemble(Process & proc, size_t i) {
     proc.stack.push(body);
     proc.stack.push(Object::to_ref(proc.create<Cons>()));
     Cons *c2 = proc.create<Cons>();
-    Object::ref c = proc.stack.top();
+    Object::ref c = proc.stack.top(); proc.stack.pop();
     scar(c, Object::to_ref(symbols->lookup("float")));
     scdr(c, Object::to_ref(c2));
-    c2->scar(body);
+    c2->scar(proc.stack.top()); proc.stack.pop(); // float value
     c2->scdr(Object::nil());
+    proc.stack.push(c); // return value
 
     return i+1;
   }
@@ -169,7 +178,6 @@ size_t GenClosureAs::disassemble(Process & proc, size_t i) {
   assembler.goBack(proc, 0, expect_type<Bytecode>(body)->getLen());
   // stack is
   //  - body seq
-  //  - current seq
   //  - current Bytecode
   b = expect_type<Bytecode>(proc.stack.top(3));
   bytecode_t next = b->getCode()[i+1];
@@ -275,7 +283,7 @@ void IfAs::assemble(Process & proc) {
 }
 
 size_t IfAs::disassemble(Process & proc, size_t i) {
-  Bytecode *b = expect_type<Bytecode>(proc.stack.top(2));
+  Bytecode *b = expect_type<Bytecode>(proc.stack.top());
   bytecode_t bc = b->getCode()[i];
   size_t end = i+1+bc.val;
   assembler.goBack(proc, i+1, end);
@@ -362,6 +370,13 @@ void Assembler::go(Process & proc) {
 }
 
 void Assembler::goBack(Process & proc, size_t start, size_t end) {
+  Object::ref head = Object::nil();
+  proc.push_extra_root(head);
+  RememberToPop p1(proc);
+  Object::ref tail = Object::nil();
+  proc.push_extra_root(tail);
+  RememberToPop p2(proc);
+
   while (start < end) {
     Cons *c;
     bytecode_t b = expect_type<Bytecode>(proc.stack.top())->getCode()[start];
@@ -383,8 +398,22 @@ void Assembler::goBack(Process & proc, size_t start, size_t end) {
       start = op->second->disassemble(proc, start);
       c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
     }
-    // TODO: append c to the current seq
+    proc.stack.push(Object::to_ref(c));
+    if (head==Object::nil()) {
+      head = Object::to_ref(proc.create<Cons>());
+      scar(head, proc.stack.top()); proc.stack.pop();
+      scdr(head, Object::nil());
+      tail = head;
+    } else {
+      Cons *c = proc.create<Cons>();
+      c->scar(proc.stack.top()); proc.stack.pop();
+      c->scdr(Object::nil());
+      scdr(tail, Object::to_ref(c));
+      tail = cdr(tail);
+    }
   }
+  proc.stack.pop(); // remove Bytecode
+  proc.stack.push(head);
 }
 
 bool Assembler::hasArg(_bytecode_label lbl) {
@@ -456,14 +485,6 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 #define SETCLOS(name) name = expect_type<Closure>(stack[0], "internal: SETCLOS expects a Closure in stack[0]")
 
 #define DOCALL() goto call_current_closure;
-
-class RememberToPop {
-private:
-  Process & proc;
-public:
-  RememberToPop(Process & proc) : proc(proc) {}
-  ~RememberToPop() { proc.pop_extra_root(); }
-};
 
 ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init){
   /*REMINDER
