@@ -38,6 +38,15 @@
 
 ; ***
 
+(if
+  (int 1)
+  (int 2)
+  (halt))
+
+;^\(\(if \(int 1\) \(int 2\) \(halt\)\)\)$
+
+; ***
+
 (int 1)
 (if
   (int 2)
@@ -73,3 +82,17 @@
 (halt)
 
 ;^\(\(closure 1 \(k-closure 0 \(if \(halt\)\)\)\) \(halt\)\)$
+
+; ***
+
+(global jk)
+
+;^\(\(global jk\)\)$
+
+; ***
+
+(if
+  (global jk)
+  (global-set kv))
+
+;^\(\(if \(global jk\) \(global-set kv\)\)\)$

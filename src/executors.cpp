@@ -310,6 +310,8 @@ size_t IfAs::disassemble(Process & proc, size_t i) {
   Bytecode *b = expect_type<Bytecode>(proc.stack.top());
   bytecode_t bc = b->getCode()[i];
   size_t end = i+1+bc.val;
+  // duplicate Bytecode reference, 'cause goBack removes the Bytecode
+  proc.stack.push(proc.stack.top()); 
   assembler.goBack(proc, i+1, end);
   Cons *c = proc.create<Cons>();
   c->scar(Object::to_ref(symbols->lookup("if")));
@@ -402,27 +404,40 @@ void Assembler::goBack(Process & proc, size_t start, size_t end) {
   RememberToPop p2(proc);
 
   while (start < end) {
-    Cons *c;
     bytecode_t b = expect_type<Bytecode>(proc.stack.top())->getCode()[start];
     lbl_op_tbl::iterator op = inv_tbl.find(b.op);
     if (op==inv_tbl.end()) {
       // default behavior
-      c = proc.create<Cons>();
+      Cons *c = proc.create<Cons>();
       c->scar(Object::to_ref(inv_bytetb[b.op]));
       proc.stack.push(Object::to_ref(c));
-      if (argType(b.op) != ARG_NONE) {
-        Cons *c2 = proc.create<Cons>();
-        c2->scar(Object::to_ref(b.val));
-        c2->scdr(Object::nil());
-        c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
-        c->scdr(Object::to_ref(c2));
+      switch (argType(b.op)) {
+      case ARG_INT:
+        {
+          Cons *c2 = proc.create<Cons>();
+          c2->scar(Object::to_ref((int)b.val));
+          c2->scdr(Object::nil());
+          scdr(proc.stack.top(), Object::to_ref(c2));
+        }
+        break;
+      case ARG_SYMBOL:
+        {
+          Cons *c2 = proc.create<Cons>();
+          c2->scar(Object::to_ref((Symbol*)b.val));
+          c2->scdr(Object::nil());
+          scdr(proc.stack.top(), Object::to_ref(c2));      
+        }
+        break;
+      default:
+        c->scdr(Object::nil());
+        break;
       }
       start++;
     } else {
       start = op->second->disassemble(proc, start);
-      c = expect_type<Cons>(proc.stack.top()); proc.stack.pop();
     }
-    proc.stack.push(Object::to_ref(c));
+
+    // append instruction at the end
     if (head==Object::nil()) {
       head = Object::to_ref(proc.create<Cons>());
       scar(head, proc.stack.top()); proc.stack.pop();
