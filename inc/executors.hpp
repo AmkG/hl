@@ -202,6 +202,9 @@ struct bytecode_t {
   intptr_t val; // simple value argument (may be invalid)
 };
 
+// type of bytecode_t::val
+enum bytecode_arg_type { ARG_NONE, ARG_INT, ARG_SYMBOL };
+
 // a bytecode object contains a table of complex constants such as gensyms
 class Bytecode : public GenericDerivedVariadic<Bytecode> {
 private:
@@ -282,9 +285,9 @@ private:
   // extracts a value pointer/immediate object, throwing away the type tag
   static intptr_t simpleVal(Object::ref sa);
 
-  std::set<_bytecode_label> lbl_with_arg;
-  // tells if the bytecode takes an int argument
-  bool hasArg(_bytecode_label lbl);
+  std::map<_bytecode_label, bytecode_arg_type> op_args;
+  // tells the argument type of the given bytecode
+  bytecode_arg_type argType(_bytecode_label lbl);
 
 public:
   ~Assembler() { 
@@ -292,8 +295,8 @@ public:
       delete i->second;
   }
 
-  // register opcode s as an opcode that accept an argument 
-  void regArg(const char *s);
+  // register opcode as an opcode that accept an argument of the given type
+  void regArg(_bytecode_label lbl, bytecode_arg_type tp);
 
   // register a new assembler operation
   template <class T>

@@ -38,10 +38,12 @@ class InitialAssignments {
 public:
 	InitialAssignments const& operator()(
 			char const* s,
-			_bytecode_label l) const{
+			_bytecode_label l,
+                        bytecode_arg_type tp = ARG_NONE) const{
                 Symbol *opcode = symbols->lookup(s);
 		bytetb[opcode] = l;
                 inv_bytetb[l] = opcode;
+                assembler.regArg(l, tp);
 		return *this;
 	}
 	InitialAssignments const& operator()(
@@ -408,7 +410,7 @@ void Assembler::goBack(Process & proc, size_t start, size_t end) {
       c = proc.create<Cons>();
       c->scar(Object::to_ref(inv_bytetb[b.op]));
       proc.stack.push(Object::to_ref(c));
-      if (hasArg(b.op)) {
+      if (argType(b.op) != ARG_NONE) {
         Cons *c2 = proc.create<Cons>();
         c2->scar(Object::to_ref(b.val));
         c2->scdr(Object::nil());
@@ -438,16 +440,15 @@ void Assembler::goBack(Process & proc, size_t start, size_t end) {
   proc.stack.push(head);
 }
 
-bool Assembler::hasArg(_bytecode_label lbl) {
-  if (lbl_with_arg.find(lbl)!=lbl_with_arg.end())
-    return true;
+bytecode_arg_type Assembler::argType(_bytecode_label lbl) {
+  if (op_args.find(lbl)!=op_args.end())
+    return op_args[lbl];
   else
-    return false;
+    return ARG_NONE; // default to ARG_NONE
 }
 
-void Assembler::regArg(const char *s) {
-  lbl_with_arg.insert(lbl_with_arg.begin(), 
-                      bytecodelookup(symbols->lookup(s)));
+void Assembler::regArg(_bytecode_label lbl, bytecode_arg_type tp) {
+  op_args[lbl] = tp;
 }
 
 intptr_t Assembler::simpleVal(Object::ref sa) {
@@ -532,44 +533,46 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     InitialAssignments()
       /*built-in functions accessible via $*/
       /*bytecodes*/
-      ("apply",		THE_BYTECODE_LABEL(apply))
-      ("apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k))
-      ("apply-k-release",	THE_BYTECODE_LABEL(apply_k_release))
-      ("apply-list",		THE_BYTECODE_LABEL(apply_list))
-      ("build-closure", THE_BYTECODE_LABEL(build_closure))
-      ("build-k-closure",		THE_BYTECODE_LABEL(build_k_closure))
-      ("build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate))
-      ("build-k-closure-reuse",	THE_BYTECODE_LABEL(build_k_closure_reuse))
+      ("apply",		THE_BYTECODE_LABEL(apply), ARG_INT)
+      ("apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k), ARG_INT)
+      ("apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
+      ("apply-list",		THE_BYTECODE_LABEL(apply_list), ARG_INT)
+      ("build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT)
+      ("build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT)
+      ("build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
+       ARG_INT)
+      ("build-k-closure-reuse",	THE_BYTECODE_LABEL(build_k_closure_reuse), 
+       ARG_INT)
       ("car",			THE_BYTECODE_LABEL(car))
       ("scar",                  THE_BYTECODE_LABEL(scar))
-      ("car-local-push",	THE_BYTECODE_LABEL(car_local_push))
-      ("car-clos-push",	THE_BYTECODE_LABEL(car_clos_push))
+      ("car-local-push",	THE_BYTECODE_LABEL(car_local_push), ARG_INT)
+      ("car-clos-push",	THE_BYTECODE_LABEL(car_clos_push), ARG_INT)
       ("cdr",			THE_BYTECODE_LABEL(cdr))
       ("scdr",                  THE_BYTECODE_LABEL(scdr))
-      ("cdr-local-push",	THE_BYTECODE_LABEL(cdr_local_push))
-      ("cdr-clos-push",	THE_BYTECODE_LABEL(cdr_clos_push))
-      ("check-vars",		THE_BYTECODE_LABEL(check_vars))
-      ("closure-ref",		THE_BYTECODE_LABEL(closure_ref))
+      ("cdr-local-push",	THE_BYTECODE_LABEL(cdr_local_push), ARG_INT)
+      ("cdr-clos-push",	THE_BYTECODE_LABEL(cdr_clos_push), ARG_INT)
+      ("check-vars",		THE_BYTECODE_LABEL(check_vars), ARG_INT)
+      ("closure-ref",		THE_BYTECODE_LABEL(closure_ref), ARG_INT)
       ("composeo",		THE_BYTECODE_LABEL(composeo))
       ("composeo-continuation",	THE_BYTECODE_LABEL(composeo_continuation))
       ("cons",		THE_BYTECODE_LABEL(cons))
-      ("const-ref",     THE_BYTECODE_LABEL(const_ref))
+      ("const-ref",     THE_BYTECODE_LABEL(const_ref), ARG_INT)
       ("continue",		THE_BYTECODE_LABEL(b_continue))
-      ("continue-local",	THE_BYTECODE_LABEL(continue_local))
-      ("continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos))
-      ("global",		THE_BYTECODE_LABEL(global))
-      ("global-set",		THE_BYTECODE_LABEL(global_set))
+      ("continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
+      ("continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
+      ("global",		THE_BYTECODE_LABEL(global), ARG_SYMBOL)
+      ("global-set",		THE_BYTECODE_LABEL(global_set), ARG_SYMBOL)
       ("halt",		THE_BYTECODE_LABEL(halt))
-      ("halt-local-push",	THE_BYTECODE_LABEL(halt_local_push))
-      ("halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push))
-      ("jmp-nil",			THE_BYTECODE_LABEL(jmp_nil))
+      ("halt-local-push",	THE_BYTECODE_LABEL(halt_local_push), ARG_INT)
+      ("halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push), ARG_INT)
+      ("jmp-nil",			THE_BYTECODE_LABEL(jmp_nil), ARG_INT)
       //("if-local",		THE_BYTECODE_LABEL(if_local))
-      ("int",			THE_BYTECODE_LABEL(b_int))
-      ("float",                 THE_BYTECODE_LABEL(b_float))
+      ("int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
+      //("float",                 THE_BYTECODE_LABEL(b_float))
       ("ccc", THE_BYTECODE_LABEL(ccc))
       ("lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("lit-t",		THE_BYTECODE_LABEL(lit_t))
-      ("local",		THE_BYTECODE_LABEL(local))
+      ("local",		THE_BYTECODE_LABEL(local), ARG_INT)
       ("monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("reducto",		THE_BYTECODE_LABEL(reducto))
       ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
@@ -577,14 +580,14 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
 //       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
       ("sv",			THE_BYTECODE_LABEL(sv))
-      ("sv-local-push",	THE_BYTECODE_LABEL(sv_local_push))
-      ("sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push))
+      ("sv-local-push",	THE_BYTECODE_LABEL(sv_local_push), ARG_INT)
+      ("sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push), ARG_INT)
       ("sv-ref",		THE_BYTECODE_LABEL(sv_ref))
-      ("sv-ref-local-push",	THE_BYTECODE_LABEL(sv_ref_local_push))
-      ("sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push))
+      ("sv-ref-local-push",    THE_BYTECODE_LABEL(sv_ref_local_push), ARG_INT)
+      ("sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push), ARG_INT)
       ("sv-set",		THE_BYTECODE_LABEL(sv_set))
-      ("sym",			THE_BYTECODE_LABEL(sym))
-      ("symeval",		THE_BYTECODE_LABEL(symeval))
+      ("sym",			THE_BYTECODE_LABEL(sym), ARG_SYMBOL)
+      ("symeval",		THE_BYTECODE_LABEL(symeval), ARG_SYMBOL)
       ("table-create",		THE_BYTECODE_LABEL(table_create))
       ("table-ref",		THE_BYTECODE_LABEL(table_ref))
       ("table-sref",		THE_BYTECODE_LABEL(table_sref))
@@ -593,8 +596,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //       ("type",		THE_BYTECODE_LABEL(type))
 //       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
 //       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
-      ("variadic",		THE_BYTECODE_LABEL(variadic))
-      ("do-executor",               THE_BYTECODE_LABEL(do_executor))
+      ("variadic",		THE_BYTECODE_LABEL(variadic), ARG_INT)
+      ("do-executor",           THE_BYTECODE_LABEL(do_executor), ARG_SYMBOL)
       ("+",                     THE_BYTECODE_LABEL(plus))
       ("-",                     THE_BYTECODE_LABEL(minus))
       ("*",                     THE_BYTECODE_LABEL(mul))
@@ -604,26 +607,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       /*assign bultin global*/
       ;/*end initializer*/
-
-    // register opcode that accept an argument
-    assembler.regArg("apply");
-    assembler.regArg("apply-invert-k");
-    assembler.regArg("apply-k-release");
-    assembler.regArg("apply-list");
-    assembler.regArg("car-local-push");
-    assembler.regArg("car-clos-push");
-    assembler.regArg("cdr-local-push");
-    assembler.regArg("cdr-clos-push");
-    assembler.regArg("check-vars");
-    assembler.regArg("closure-ref");
-    assembler.regArg("continue-local");
-    assembler.regArg("continue-on-clos");
-    assembler.regArg("global");
-    assembler.regArg("global-set");
-    assembler.regArg("halt-local-push");
-    assembler.regArg("halt-clos-push");
-    assembler.regArg("int");
-    assembler.regArg("variadic");
 
     // initialize assembler operations
     assembler.reg<ClosureAs>(symbols->lookup("closure"),
