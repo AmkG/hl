@@ -463,5 +463,45 @@ inline Object::ref sv_set(Object::ref sv, Object::ref nval) {
 	return nval;
 }
 
+/*-----------------------------------------------------------------------------
+I/O Ports (async)
+-----------------------------------------------------------------------------*/
+
+class IPort : public GenericDerived<IPort> {
+private:
+  // function to be called when input is available
+  Object::ref callback;
+public: 
+  IPort() {}
+  
+  void setCallback(Object::ref fn) { callback = fn; }
+  
+  void traverse_references(GenericTraverser *gt) {
+    gt->traverse(callback);
+  }
+  
+  Object::ref type(void) const {
+    return Object::to_ref(symbol_iport);
+  }
+};
+
+class OPort : public GenericDerived<IPort> {
+private:
+  // function to be called when port is ready to write
+  Object::ref callback;
+public: 
+  OPort() {}
+  
+  void setCallback(Object::ref fn) { callback = fn; }
+  
+  void traverse_references(GenericTraverser *gt) {
+    gt->traverse(callback);
+  }
+  
+  Object::ref type(void) const {
+    return Object::to_ref(symbol_oport);
+  }
+};
+
 #endif //TYPES_H
 

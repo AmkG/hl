@@ -20,6 +20,8 @@ Symbol* symbol_array;
 Symbol* symbol_table;
 Symbol* symbol_container;
 Symbol* symbol_bytecode;
+Symbol* symbol_iport;
+Symbol* symbol_oport;
 
 #include"symbols.hpp"
 
@@ -40,5 +42,7 @@ void initialize_globals(void) {
 	symbol_table = symbols->lookup("<hl>table");
 	symbol_container = symbols->lookup("<hl>container");
         symbol_bytecode = symbols->lookup("<hl>bytecode");
+        symbol_iport = symbols->lookup("<hl>iport");
+        symbol_oport = symbols->lookup("<hl>oport");
 }
 
