@@ -421,6 +421,8 @@ public:
 	*/
 	static void insert(Heap&, ProcessStack&);
 
+	static void keys(Heap&, ProcessStack&);
+
 	Object::ref type(void) const {
 		return Object::to_ref(symbol_table);
 	}

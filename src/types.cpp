@@ -499,3 +499,77 @@ clean_up:
 	return;
 }
 
+/*returns the keys of a table in a list*/
+void HlTable::keys(Heap& hp, ProcessStack& stack) {
+	/*determine the table type*/
+	HlTableType type;
+	{HlTable& t = *expect_type<HlTable>(stack.top());
+		type = t.tbtype;
+		if(type == hl_table_empty) {
+			stack.top() = Object::nil();
+			return;
+		}
+	}
+	/*determine the size of the HlArray implementation*/
+	size_t sz;
+	{HlTable& t = *known_type<HlTable>(stack.top());
+	HlArray& a = *known_type<HlArray>(t.impl);
+		sz = a.size();
+	}
+	/*create a temporary Cons pair
+		car = table
+		cdr = list of keys being built
+	why? because we want to avoid having to
+	push a new item on the stack.  in the
+	future, JITted code might prefer to have
+	a statically-located stack; obviously a
+	statically-located stack would also be
+	statically-sized.
+	*/
+	{Cons& c = *hp.create<Cons>();
+		c.car() = stack.top();
+		stack.top() = Object::to_ref<Generic*>(&c);
+	}
+	switch(type){
+	case hl_table_arrayed:
+		for(size_t i = 0; i < sz; ++i) {
+			HlTable& t = *known_type<HlTable>(
+				car(stack.top())
+			);
+			HlArray& a = *known_type<HlArray>(t.impl);
+			if(a[i]) {
+				Cons& c = *hp.create<Cons>();
+				c.car() = Object::to_ref<int>(i);
+				c.cdr() = cdr(stack.top());
+				cdr(stack.top()) =
+					Object::to_ref<Generic*>(&c);
+			}
+		}
+		stack.top() = cdr(stack.top());
+		return;
+	case hl_table_linear:
+	case hl_table_hashed:
+		for(size_t i = 0; i < sz; ++i) {
+			HlTable& t = *known_type<HlTable>(
+				car(stack.top())
+			);
+			HlArray& a = *known_type<HlArray>(t.impl);
+			if(a[i] && cdr(a[i])) {
+				Cons& c = *hp.create<Cons>();
+				/*re-read*/
+				HlTable& t = *known_tyle<HlTable>(
+					car(stack.top())
+				);
+				HlArray& a = *known_type<HlArray>(t.impl);
+				c.car() = car(a[i]);
+				c.cdr = cdr(stack.top());
+				cdr(stack.top()) =
+					Object::to_ref<Generic*>(&c);
+			}
+		}
+		stack.top() = cdr(stack.top());
+		return;
+	}
+}
+
+
