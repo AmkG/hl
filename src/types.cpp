@@ -557,12 +557,12 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 			if(a[i] && cdr(a[i])) {
 				Cons& c = *hp.create<Cons>();
 				/*re-read*/
-				HlTable& t = *known_tyle<HlTable>(
+				HlTable& t = *known_type<HlTable>(
 					car(stack.top())
 				);
 				HlArray& a = *known_type<HlArray>(t.impl);
 				c.car() = car(a[i]);
-				c.cdr = cdr(stack.top());
+				c.cdr() = cdr(stack.top());
 				cdr(stack.top()) =
 					Object::to_ref<Generic*>(&c);
 			}
