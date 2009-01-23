@@ -107,7 +107,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(table_create)
 	A_BYTECODE(table_ref)
 	A_BYTECODE(table_sref)
-	A_BYTECODE(table_map)
+	A_BYTECODE(table_keys)
 	A_BYTECODE(tag)
 	A_BYTECODE(type)
 	A_BYTECODE(type_local_push)

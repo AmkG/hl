@@ -156,6 +156,10 @@ inline void bytecode_table_sref(Process& proc, ProcessStack& stack) {
   HlTable& T = *expect_type<HlTable>(stack.top(3), "table-sref expects a table");
   HlTable::insert(proc.heap(), stack);
 }
+inline void bytecode_table_keys(Process& proc, ProcessStack& stack) {
+  HlTable& T = *expect_type<HlTable>(stack.top(), "table-keys expects a table");
+  HlTable::keys(proc.heap(), stack);
+}
 // inline void bytecode_tag(Process& proc, ProcessStack& stack){
 // 	/*have to check that the current type tag isn't
 // 	the same as the given type tag

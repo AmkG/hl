@@ -606,7 +606,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("table-create",		THE_BYTECODE_LABEL(table_create))
       ("table-ref",		THE_BYTECODE_LABEL(table_ref))
       ("table-sref",		THE_BYTECODE_LABEL(table_sref))
-      ("table-map",		THE_BYTECODE_LABEL(table_map))
+      ("table-keys",		THE_BYTECODE_LABEL(table_keys))
 //       ("tag",			THE_BYTECODE_LABEL(tag))
 //       ("type",		THE_BYTECODE_LABEL(type))
 //       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
@@ -719,12 +719,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*destructure until stack top is nil*/
       while(stack.top()!=Object::nil()){
         tmp = stack.top();
-        bytecode_car(stack);
+        bytecode_<&car>(stack);
         // we don't expect car to
         // allocate, so tmp should
         // still be valid
         stack.push(tmp);
-        bytecode_cdr(stack);
+        bytecode_<&car>(stack);
       }
       stack.pop();
       DOCALL();
@@ -871,7 +871,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(i);
       // !! too many indirections and conversions
       // !! consider holding a reference to the current Bytecode*
-      Bytecode &b = *expect_type<Bytecode>(bytecode);//clos->code(), "const-ref: bytecode expected");
+      Bytecode &b = *expect_type<Bytecode>(bytecode);
       proc.stack.push(b[i]);
     } NEXT_BYTECODE;
     /*
@@ -1235,8 +1235,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(table_sref): {
       bytecode_table_sref(proc, stack);
     } NEXT_BYTECODE;
-    BYTECODE(table_map): {
-      
+    BYTECODE(table_keys): {
+      bytecode_table_keys(proc, stack);
     } NEXT_BYTECODE;
 //     BYTECODE(type): {
 //       bytecode_<&Generic::type>(proc, stack);
