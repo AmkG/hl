@@ -69,14 +69,6 @@ inline void bytecode_cons(Process& proc, ProcessStack& stack){
 	stack.pop();
 }
 
-inline void bytecode_car(ProcessStack & stack) {
-  stack.top() = car(stack.top());
-}
-
-inline void bytecode_cdr(ProcessStack & stack) {
-  stack.top() = cdr(stack.top());
-}
-
 inline void bytecode_check_vars(ProcessStack& stack, int N){
   if(stack.size() != N)
     throw_HlError("apply: function called with incorrect number of parameters");
