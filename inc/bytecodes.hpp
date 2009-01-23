@@ -136,6 +136,7 @@ inline void bytecode_symeval(Process& proc, ProcessStack& stack) {
   Symbol* sp = as_a<Symbol*>(stack.top());
   stack.top() = proc.global_read(sp);
 }
+/*TODO: consider factoring these*/
 inline void bytecode_table_create(Process& proc, ProcessStack& stack) {
   stack.push(Object::to_ref(proc.heap().create<HlTable>()));
 }
