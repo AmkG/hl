@@ -818,7 +818,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_clos_push_<&car>(stack, *clos, N);
     } NEXT_BYTECODE;
     BYTECODE(cdr): {
-      bytecode_cdr(stack);
+      bytecode_<&cdr>(stack);
     } NEXT_BYTECODE;
     BYTECODE(scdr): {
       bytecode2_<&scdr>(stack);
