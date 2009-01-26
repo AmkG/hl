@@ -555,16 +555,43 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 			);
 			HlArray& a = *known_type<HlArray>(t.impl);
 			if(a[i] && cdr(a[i])) {
+				/*add a list element to the list of keys*/
 				Cons& c = *hp.create<Cons>();
+				c.cdr() = cdr(stack.top());
+				cdr(stack.top()) =
+					Object::to_ref<Generic*>(&c);
 				/*re-read*/
 				HlTable& t = *known_type<HlTable>(
 					car(stack.top())
 				);
 				HlArray& a = *known_type<HlArray>(t.impl);
+				/*add the key to list of keys*/
 				c.car() = car(a[i]);
-				c.cdr() = cdr(stack.top());
-				cdr(stack.top()) =
-					Object::to_ref<Generic*>(&c);
+				/*is it a string?*/
+				if(maybe_type<HlString>(car(a[i]))) {
+					/*create a copy of that string*/
+					HlString& NS = *hp.create<HlString>();
+					/*re-read old string*/
+					HlTable& t = *known_type<HlTable>(
+						car(stack.top())
+					);
+					HlArray& a = *known_type<HlArray>(
+						t.impl
+					);
+					HlString& S = *known_type<HlString>(
+						car(a[i])
+					);
+					NS.impl = S.impl;
+					/*the implementation is already
+					shared at this point
+					*/
+					Cons& c = *known_type<Cons>(
+						cdr(stack.top())
+					);
+					c.car() = Object::to_ref<Generic*>(
+						&NS
+					);
+				}
 			}
 		}
 		stack.top() = cdr(stack.top());
