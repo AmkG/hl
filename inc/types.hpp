@@ -251,11 +251,15 @@ public:
 		stack.top(1) = offset to modify
 	*/
 	static void sref(Heap& hp, ProcessStack& stack);
+
 	/*creates a string from the characters on stack.top(N) to stack.top(1)*/
 	static void stack_create(Heap& hp, ProcessStack& stack, size_t N);
 	Object::ref type(void) const {
 		return Object::to_ref(symbol_string);
 	}
+
+	static Object::ref length(Object::ref);
+	static Object::ref string_ref(Object::ref, Object::ref);
 };
 
 class HlStringImpl : public GenericDerivedVariadic<HlStringImpl> {
@@ -287,6 +291,22 @@ inline UnicodeChar HlString::ref(size_t i) const {
 inline size_t HlString::size(void) const {
 	HlStringImpl& S = *known_type<HlStringImpl>(impl);
 	return S.size();
+}
+
+inline Object::ref HlString::length(Object::ref o) {
+	HlString& S = *expect_type<HlString>(o,
+			"'string-length expects a string");
+	return Object::to_ref((int) S.size());
+}
+
+inline Object::ref HlString::string_ref(Object::ref s, Object::ref i) {
+	HlString& S = *expect_type<HlString>(s,
+			"'string-ref expects a string for first argument");
+	if(!is_a<int>(i)) {
+		throw_HlError("'string-ref expects a number for second argument");
+	}
+	int I = as_a<int>(i);
+	return Object::to_ref(S.ref(I));
 }
 
 /*-----------------------------------------------------------------------------

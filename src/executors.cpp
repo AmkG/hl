@@ -524,7 +524,7 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 
 #define DOCALL() goto call_current_closure;
 
-ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init){
+ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init) {
   /*REMINDER
     All allocations of Generic objects on the
     Process proc *will* invalidate any pointers
@@ -594,6 +594,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //       ("rep",			THE_BYTECODE_LABEL(rep))
 //       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
 //       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+      ("string-create",		THE_BYTECODE_LABEL(string_create), ARG_INT)
+      ("string-length",		THE_BYTECODE_LABEL(string_length))
+      ("string-ref",		THE_BYTECODE_LABEL(string_ref))
+      ("string-sref",		THE_BYTECODE_LABEL(string_sref))
       ("sv",			THE_BYTECODE_LABEL(sv))
       ("sv-local-push",	THE_BYTECODE_LABEL(sv_local_push), ARG_INT)
       ("sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push), ARG_INT)
@@ -669,7 +673,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   }
 #endif
   Closure *clos = expect_type<Closure>(stack[0], "execute: closure expected!");
-  // a reference to the current bytecode *must* be reatained for 
+  // a reference to the current bytecode *must* be retained for 
   // k-closure-recreate and k-closure-reuse to work correctly:
   // they may change the body of the current closure, but we are still
   // executing the old body and if we don't retain it we can't access it from
@@ -1191,6 +1195,22 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 //     BYTECODE(tag): {
 //       bytecode_tag(proc,stack);
 //     } NEXT_BYTECODE;
+    BYTECODE(string_create): {
+      INTPARAM(N); // length of string to create from stack
+      bytecode_string_create( proc, stack, N );
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
+    BYTECODE(string_length): {
+      bytecode_<&HlString::length>( stack );
+    } NEXT_BYTECODE;
+    BYTECODE(string_ref): {
+      bytecode2_<&HlString::string_ref>( stack );
+    } NEXT_BYTECODE;
+    BYTECODE(string_sref): {
+      bytecode_string_sref( proc, stack );
+      // sref *can* allocate, if string is used as key in table...
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
     BYTECODE(sv): {
       bytecode_<&make_sv>(proc, stack);
       SETCLOS(clos); // allocation may invalidate clos

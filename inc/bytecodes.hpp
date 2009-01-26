@@ -341,4 +341,12 @@ inline void bytecode_mod(Process & p, ProcessStack & stack) {
   }
 }
 
+/*consider whether this can be factored out*/
+inline void bytecode_string_create(Heap& hp, ProcessStack& stack, int N) {
+	HlString::stack_create( hp, stack, N );
+}
+inline void bytecode_string_sref( Heap& hp, ProcessStack& stack ) {
+	HlString::sref(hp, stack );
+}
+
 #endif //BYTECODES_H
