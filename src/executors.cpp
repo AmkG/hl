@@ -89,14 +89,6 @@ public:
 	}
 };
 
-class RememberToPop {
-private:
-  Process & proc;
-public:
-  RememberToPop(Process & proc) : proc(proc) {}
-  ~RememberToPop() { proc.pop_extra_root(); }
-};
-
 void Bytecode::push(bytecode_t b) {
   if (code.get()==NULL) { // first instruction added
     code.reset(new bytecode_t[64]); // default initial size
@@ -397,11 +389,9 @@ void Assembler::go(Process & proc) {
 
 void Assembler::goBack(Process & proc, size_t start, size_t end) {
   Object::ref head = Object::nil();
-  proc.push_extra_root(head);
-  RememberToPop p1(proc);
+  Process::ExtraRoot er_head(proc, head);
   Object::ref tail = Object::nil();
-  proc.push_extra_root(tail);
-  RememberToPop p2(proc);
+  Process::ExtraRoot er_tail(proc, tail);
 
   while (start < end) {
     bytecode_t b = expect_type<Bytecode>(proc.stack.top())->getCode()[start];
@@ -654,10 +644,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   // main VM loop
   Object::ref bytecode = Object::nil();
   // add it as an extra root object to scan
-  // must be removed before returning from execute()
-  proc.push_extra_root(bytecode);
-  // this way we're sure to pop it before it becomes an invalid reference
-  RememberToPop dont_forget(proc);
+  Process::ExtraRoot er_bytecode(proc, bytecode);
   // ?? could this approach be used for clos too?
  call_current_closure:
   if(--reductions == 0) {
