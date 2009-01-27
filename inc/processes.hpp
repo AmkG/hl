@@ -84,7 +84,27 @@ private:
 
         /*extra root objects to scan during GC*/
         std::vector<Object::ref*> extra_roots;
+
+        void push_extra_root(Object::ref & root) { 
+          extra_roots.push_back(&root); 
+        }
+
+        void pop_extra_root() { extra_roots.pop_back(); }
+
 public:
+	/*RAII class for extra roots*/
+	class ExtraRoot {
+	private:
+		Process& proc;
+	public:
+		ExtraRoot(Process& nproc, Object::ref& root) : proc(nproc) {
+			proc.push_extra_root(root);
+		}
+		~ExtraRoot() {
+			proc.pop_extra_root();
+		}
+	};
+
 	Process(void)
 		: stat(process_running),
 		  black(0),
@@ -195,12 +215,6 @@ For process-level garbage collection
 	LockedValueHolderRef& mailbox(void);
 
 	ProcessStack stack;
-
-        void push_extra_root(Object::ref & root) { 
-          extra_roots.push_back(&root); 
-        }
-
-        void pop_extra_root() { extra_roots.pop_back(); }
 
 	virtual void scan_root_object(GenericTraverser* gt);
 };

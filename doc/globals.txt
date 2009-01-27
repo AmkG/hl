@@ -1,0 +1,47 @@
+
+Global Variables in `hl` Machine A
+==================================
+
+The `hl` Legal Specifications has a section on [Global
+Variables][1]; this document describes how this specific
+implementation follows the specifications.
+
+[1]: http://hl-language.sourceforge.net/legit-global-vars.html
+
+The exact global variable model supported by this virtual
+machine is actually a stronger model than required by the
+specifications above; this is allowed by the specific, which
+requires the given model or anything stronger.
+
+Specifically, the specifications requires a `<axiom>release`
+operation which will force the executing process to update the
+view of the global variables from its own writes; a subsequent
+`<axiom>acquire` would then allow any process to read a view
+consistent with the writes of the releasing process.
+
+Basically, the specifications model each process as having a
+private read cache and a private write cache of global
+variables.    `<axiom>release` forces the process to serialize
+its write cache with the actual global variables, while
+`<axiom>acquire` forces the process to invalidate its read
+cache.
+
+Differences in This Model
+-------------------------
+
+In this machine, only a read cache exists.  Writes are never
+cached, and are immediately visible to other processes.
+
+This means that `<axiom>release` is a no-op on this machine.
+However, even so, compliant programs should not assume that
+they will always execute on this particular implementation;
+future implementations may require `<axiom>release` to be
+executed correctly, as required by the specifications.
+
+A read cache still exists for each process; `<axiom>acquire`
+works by invalidating the entire read cache.  Thus,
+`<axiom>acquire` has the effect of re-creating new copies of the
+global variable values.  Again, this applies only to this
+implementation, and may not be valid for other implementations.
+
+

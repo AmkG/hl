@@ -95,6 +95,10 @@ DECLARE_BYTECODES
 	A_BYTECODE(rep_clos_push)
 	A_BYTECODE(scar)
 	A_BYTECODE(scdr)
+	A_BYTECODE(string_create)
+	A_BYTECODE(string_length)
+	A_BYTECODE(string_ref)
+	A_BYTECODE(string_sref)
 	A_BYTECODE(sv)
 	A_BYTECODE(sv_local_push)
 	A_BYTECODE(sv_clos_push)
@@ -105,9 +109,9 @@ DECLARE_BYTECODES
 	A_BYTECODE(sym)
 	A_BYTECODE(symeval)
 	A_BYTECODE(table_create)
+	A_BYTECODE(table_keys)
 	A_BYTECODE(table_ref)
 	A_BYTECODE(table_sref)
-	A_BYTECODE(table_map)
 	A_BYTECODE(tag)
 	A_BYTECODE(type)
 	A_BYTECODE(type_local_push)
@@ -128,7 +132,7 @@ END_DECLARE_BYTECODES
 
 typedef void* _bytecode_label;
 #define DISPATCH_BYTECODES \
-        bytecode_t *pc = expect_type<Bytecode>(clos->code())->getCode();\
+        bytecode_t *pc = known_type<Bytecode>(clos->code())->getCode();\
 	goto *(pc->op);
 #define NEXT_BYTECODE goto *((++pc)->op)
 #define BYTECODE(x) BYTECODE_ENUM(x); PASTE_SYMBOLS(label_b_, x)
@@ -140,7 +144,7 @@ typedef void* _bytecode_label;
 
 typedef enum _e_bytecode_label _bytecode_label;
 #define DISPATCH_BYTECODES \
-	bytecode_t *pc = expect_type<Bytecode>(clos->code())->getCode();\
+	bytecode_t *pc = known_type<Bytecode>(clos->code())->getCode();\
 	switch(pc->op)
 #define NEXT_BYTECODE {pc++; continue;}
 #define BYTECODE(x) case BYTECODE_ENUM(x)
