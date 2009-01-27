@@ -684,7 +684,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(apply): {
       INTPARAM(N);
       stack.restack(N);
-      DOCALL();
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*Used by a continuation that would
       like to reuse its closure if possible.
@@ -703,8 +703,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       Object::ref k = stack.top(); stack.pop();
       stack.top(N-1) = k;
       stack.restack(N);
-      DOCALL();
-    } /***/ NEXT_BYTECODE; /***/
+      /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
     /*Used by a continuation that will
       perform an otherwise ordinary call;
       this tries to release the current
@@ -715,8 +715,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*TODO: insert debug checking for is_a<Generic*> here*/
       attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(N);
-      DOCALL();
-    } /***/ NEXT_BYTECODE; /***/
+      /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
     BYTECODE(apply_list): {
       Object::ref tmp;
       stack.restack(3);
@@ -731,8 +731,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         bytecode_<&car>(stack);
       }
       stack.pop();
-      DOCALL();
-    } /***/ NEXT_BYTECODE; /***/
+      /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
     BYTECODE(build_closure): {
       INTPARAM(N);
       Closure* nclos = Closure::NewClosure(proc, N);
@@ -857,7 +857,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*next function*/
       kclos[1] = stack.top(); stack.pop();
       stack[1] = Object::to_ref(&kclos);
-      DOCALL(); // this will revalidate clos
+      // this will revalidate clos
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     BYTECODE(composeo_continuation): {
       stack.push((*clos)[1]);
@@ -865,7 +866,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push(stack[1]);
       attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(3);
-      DOCALL();
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     BYTECODE(cons): {
       bytecode_cons(proc,stack);
@@ -887,7 +888,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_continue): {
       stack.top(2) = stack[1];
       stack.restack(2);
-      DOCALL();
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*
       implements the case where we
@@ -900,7 +901,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push(stack[N]);
       stack.top(2) = stack[1];
       stack.restack(2);
-      DOCALL();
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*
       handles the case where the
@@ -915,7 +916,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*TODO: insert debug checking for is_a<Generic*> here*/
       attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(2);
-      DOCALL();
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     BYTECODE(global): {
       SYMPARAM(S);
@@ -971,68 +972,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_float(proc, stack, f);
     } NEXT_BYTECODE;
     BYTECODE(ccc): {
-
-      // !!! WARNING !!!
-      // This is *not* compatible with the SNAP 'ccc bytecode.
-      // In particular, this passes the continuation *directly*.
-      // However, ALL HL-SIDE FUNCTIONS NEVER EXPECT A
-      // CONTINUATION.  INSTEAD, THEY EXPECT A "REAL"
-      // FUNCTION.
-      // In particular, a continuation accepts EXACTLY TWO
-      // parameters: itself, and the return value.  A "REAL"
-      // function accepts AT LEAST TWO: itself, a continuation,
-      // plus any parameters.  The two types of functions
-      // conflict on the second parameter: continuations
-      // expect a return value, real functions accept a
-      // continuation.
-      // In particular, the function in this form:
-      //   (ccc
-      //     (fn (k)
-      //       (k 0)))
-      // compiles down to:
-      //   (closure 0
-      //     (check-vars 3)
-      //     (local 2)
-      //     (local 1)
-      //     (int 0)
-      //     (apply 3))
-      // Notice that it gives k *3* parameters: k, its
-      // own continuation, and the int 0.
-      // However if we use the ccc bytecode for this, the
-      // function k will expect a single parameter, the
-      // return value.
-      // Please review the code in snap/src/executors.cpp
-      //
-      // In particular, the hl-side ccc will have to be
-      // assembled from:
-      //   (closure 0
-      //     (check-vars 3)
-      //     (closure 0
-      //       (ccc))
-      //     (local 1)
-      //     (local 2)
-      //     (closure 1
-      //       (closure-ref 0)  ; f
-      //       (local 1)        ; k
-      //       (local 1)
-      //       (closure 1       ; the k we pass to the function
-      //         (check-vars 3)
-      //         ; actually performs the call to the
-      //         ; continuation
-      //         (closure-ref 0)
-      //         (local 2)
-      //         (apply 2)))
-      //     (apply 3))
-      //   (global-set ccc)
-      // Thus this bytecode is currently unuseable except
-      // to mark that continuations cannot be used; 'ccc
-      // should do something *equivalent* to:
-      //   (fn (k f)
-      //     (f k
-      //        (fn (_ignored_k val)
-      //          (k f))))
-      // !!! WARNING !!!
-
       // expect current continuation and function on the stack
       Closure *k = expect_type<Closure>(stack[1], "ccc expects a continuation");
       Closure *f = expect_type<Closure>(stack[2], "ccc expects a closure");
@@ -1047,7 +986,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       (*arg)[0] = Object::to_ref(k); // close other current continuation
       stack[2] = Object::to_ref(arg);
       //(f current-continuation function-that-will-call-current-continuation)
-      DOCALL(); // do the call
+      // do the call
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
       bytecode_lit_nil(proc, stack);
@@ -1069,7 +1009,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
          stack[0] = T.lookup(Object::nil());
       }
-      DOCALL();
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*
@@ -1125,7 +1065,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         stack[1] = Object::to_ref(&kclos);
         kclos[2] = Object::to_ref(3);
       }
-      DOCALL();
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     BYTECODE(reducto_continuation): {
       int N = as_a<int>((*clos)[2]);
@@ -1179,7 +1119,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
           kkclos[2] = Object::to_ref(3);
         }
       }
-      DOCALL();
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
 //     BYTECODE(rep): {
 //       bytecode_<&Generic::rep>(stack);
