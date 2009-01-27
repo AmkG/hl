@@ -659,6 +659,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     std::cerr << "Type on stacktop: " << inf.name() << std::endl;
   }
 #endif
+  // TODO: in the future, replace below with maybe_type<Closure>;
+  // if not a Closure, get value for <axiom>call* and manipulate
+  // stack
   Closure *clos = expect_type<Closure>(stack[0], "execute: closure expected!");
   // a reference to the current bytecode *must* be retained for 
   // k-closure-recreate and k-closure-reuse to work correctly:
