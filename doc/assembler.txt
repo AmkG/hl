@@ -1,0 +1,8 @@
+AsOp represents a generic assembly operation
+
+  - assemble: takes a bytecode in s-exp format and generate a set of executable instructions
+  - disassemble: takes an executable bytecode and outputs a bytecode in s-exp format. It also returns the number of bytecodes consumed by the disassembly operation, since sometime there is a 1-to-N mapping between s-exp bytecodes and executable bytecodes.
+
+In theory, every AsOp should assemble and disassemble the same operation, e.g. IfAs should be able to both assemble an 'if and output instructions containing a 'jmp-nil and reverse a 'jmp-nil. In practice, a few instructions, such as 'closure and 'float both generate a 'const-ref instruction, so the disassembler of 'closure (ClosureAs) handles all 'const-ref and thus it also disassembles 'float (ComplexAs) generated instructions.
+
+Assemble contains the main routines for assembling (go) and disassembling (goBack). Both methods map every bytecode, lookup which handler should be used and apply it.
