@@ -122,7 +122,7 @@ void Bytecode::push(const char *s, intptr_t val) {
 // assembly operation
 class GenClosureAs : public AsOp {
 private:
-  const char *to_build;
+  Symbol* s_to_build;
   static std::map<Symbol*, Symbol*> names;
 
   Symbol* operationName(Symbol *s) {
@@ -134,11 +134,11 @@ private:
 
 public:
   GenClosureAs(const char *to_build, const char *name) 
-    : to_build(to_build) {
-    names[symbols->lookup(to_build)] = symbols->lookup(name);
+    : s_to_build(symbols->lookup(to_build)) {
+    names[s_to_build] = symbols->lookup(name);
   }
   ~GenClosureAs() {
-    names.erase(names.find(symbols->lookup(to_build)));
+    names.erase(names.find(s_to_build));
   }
 
   void assemble(Process & proc);
@@ -158,7 +158,7 @@ void GenClosureAs::assemble(Process & proc) {
   // reference to the body
   current->push("const-ref", iconst);
   // build the closure
-  current->push(to_build, as_a<int>(nclose));
+  current->push(s_to_build, as_a<int>(nclose));
 }
 
 size_t GenClosureAs::disassemble(Process & proc, size_t i) {
