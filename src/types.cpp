@@ -499,6 +499,43 @@ clean_up:
 	return;
 }
 
+/*copies a string key*/
+/*sub-function of HlTable::keys*/
+static void maybe_copy_string_key(Heap& hp, ProcessStack& stack) {
+	/*stack top is:
+		stack.top( 1 ) =
+			(tb . ks)
+	where ks is the list of keys
+	what we want to do is to check if
+	the first key (which is the most
+	recently acquired key) is a string,
+	and clone its pimpl (sharing the
+	implementation) if so.
+	*/
+	Cons& ks = *known_type<Cons>(
+		cdr(stack.top())
+	);
+	/*is it a string?*/
+	if(maybe_type<HlString>(ks.car())) {
+		/*create a copy of that string*/
+		HlString& NS = *hp.create<HlString>();
+		/*re-read old string*/
+		Cons& ks = *known_type<Cons>(
+			cdr(stack.top())
+		);
+		HlString& S = *known_type<HlString>(
+			ks.car()
+		);
+		NS.impl = S.impl;
+		/*the implementation is already
+		shared at this point
+		*/
+		ks.car() = Object::to_ref<Generic*>(
+			&NS
+		);
+	}
+}
+
 /*returns the keys of a table in a list*/
 void HlTable::keys(Heap& hp, ProcessStack& stack) {
 	/*determine the table type*/
@@ -537,6 +574,7 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 				car(stack.top())
 			);
 			HlArray& a = *known_type<HlArray>(t.impl);
+			/*value valid?*/
 			if(a[i]) {
 				Cons& c = *hp.create<Cons>();
 				c.car() = Object::to_ref<int>(i);
@@ -548,12 +586,46 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 		stack.top() = cdr(stack.top());
 		return;
 	case hl_table_linear:
+		{/*have to look up pairs*/
+			HlTable& t = *known_type<HlTable>(
+				car(stack.top())
+			);
+			size_t pairs = t.pairs;
+			for(size_t i = 0; i < pairs; ++i) {
+				HlTable& t = *known_type<HlTable>(
+					car(stack.top())
+				);
+				HlArray& a = *known_type<HlArray>(t.impl);
+				/*value valid?*/
+				if(a[i * 2 + 1]) {
+					/*add a list element to the
+					list of keys
+					*/
+					Cons& c = *hp.create<Cons>();
+					c.cdr() = cdr(stack.top());
+					cdr(stack.top()) =
+						Object::to_ref<Generic*>(&c);
+					/*re-read*/
+					HlTable& t = *known_type<HlTable>(
+						car(stack.top())
+					);
+					HlArray& a = *known_type<HlArray>(
+						t.impl
+					);
+					c.car() = a[i * 2];
+					maybe_copy_string_key(hp, stack);
+				}
+			}
+		}
+		stack.top() = cdr(stack.top());
+		return;
 	case hl_table_hashed:
 		for(size_t i = 0; i < sz; ++i) {
 			HlTable& t = *known_type<HlTable>(
 				car(stack.top())
 			);
 			HlArray& a = *known_type<HlArray>(t.impl);
+			/*value valid?*/
 			if(a[i] && cdr(a[i])) {
 				/*add a list element to the list of keys*/
 				Cons& c = *hp.create<Cons>();
@@ -567,31 +639,7 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 				HlArray& a = *known_type<HlArray>(t.impl);
 				/*add the key to list of keys*/
 				c.car() = car(a[i]);
-				/*is it a string?*/
-				if(maybe_type<HlString>(car(a[i]))) {
-					/*create a copy of that string*/
-					HlString& NS = *hp.create<HlString>();
-					/*re-read old string*/
-					HlTable& t = *known_type<HlTable>(
-						car(stack.top())
-					);
-					HlArray& a = *known_type<HlArray>(
-						t.impl
-					);
-					HlString& S = *known_type<HlString>(
-						car(a[i])
-					);
-					NS.impl = S.impl;
-					/*the implementation is already
-					shared at this point
-					*/
-					Cons& c = *known_type<Cons>(
-						cdr(stack.top())
-					);
-					c.car() = Object::to_ref<Generic*>(
-						&NS
-					);
-				}
+				maybe_copy_string_key(hp, stack);
 			}
 		}
 		stack.top() = cdr(stack.top());
