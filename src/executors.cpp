@@ -602,9 +602,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("table-sref",		THE_BYTECODE_LABEL(table_sref))
       ("table-keys",		THE_BYTECODE_LABEL(table_keys))
 //       ("tag",			THE_BYTECODE_LABEL(tag))
-//       ("type",		THE_BYTECODE_LABEL(type))
-//       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
-//       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
+      ("type",		THE_BYTECODE_LABEL(type))
+      ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
+      ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
       ("variadic",		THE_BYTECODE_LABEL(variadic), ARG_INT)
       ("do-executor",           THE_BYTECODE_LABEL(do_executor), ARG_SYMBOL)
       ("+",                     THE_BYTECODE_LABEL(plus))
@@ -1188,17 +1188,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(table_keys): {
       bytecode_table_keys(proc, stack);
     } NEXT_BYTECODE;
-//     BYTECODE(type): {
-//       bytecode_<&Generic::type>(proc, stack);
-//     } NEXT_BYTECODE;
-//     BYTECODE(type_local_push): {
-//       INTPARAM(N);
-//       bytecode_local_push_<&Generic::type>(proc, stack, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(type_clos_push): {
-//       INTPARAM(N);
-//       bytecode_clos_push_<&Generic::type>(proc, stack, clos, N);
-//     } NEXT_BYTECODE;
+    BYTECODE(type): {
+      bytecode_<&type>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(type_local_push): {
+      INTPARAM(N);
+      bytecode_local_push_<&type>(stack, N);
+    } NEXT_BYTECODE;
+    BYTECODE(type_clos_push): {
+      INTPARAM(N);
+      bytecode_clos_push_<&type>(stack, *clos, N);
+    } NEXT_BYTECODE;
     BYTECODE(variadic): {
       INTPARAM(N);
       bytecode_variadic(proc, stack, N);
