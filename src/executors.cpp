@@ -556,6 +556,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("scdr",                  THE_BYTECODE_LABEL(scdr))
       ("cdr-local-push",	THE_BYTECODE_LABEL(cdr_local_push), ARG_INT)
       ("cdr-clos-push",	THE_BYTECODE_LABEL(cdr_clos_push), ARG_INT)
+      ("char",			THE_BYTECODE_LABEL(b_char), ARG_INT)
       ("check-vars",		THE_BYTECODE_LABEL(check_vars), ARG_INT)
       ("closure-ref",		THE_BYTECODE_LABEL(closure_ref), ARG_INT)
       ("composeo",		THE_BYTECODE_LABEL(composeo))
@@ -825,6 +826,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N);
       bytecode_clos_push_<&cdr>(stack, *clos, N);
     } NEXT_BYTECODE;
+    BYTECODE(b_char): {
+      INTPARAM(N);
+      bytecode_char(stack, N);
+    }
     BYTECODE(check_vars): {
       INTPARAM(N);
       bytecode_check_vars(stack, N);

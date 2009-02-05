@@ -66,6 +66,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(cdr)
 	A_BYTECODE(cdr_local_push)
 	A_BYTECODE(cdr_clos_push)
+	A_BYTECODE(b_char)
 	A_BYTECODE(check_vars)
 	A_BYTECODE(closure_ref)
 	A_BYTECODE(composeo)
