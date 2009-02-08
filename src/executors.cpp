@@ -571,10 +571,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("halt",		THE_BYTECODE_LABEL(halt))
       ("halt-local-push",	THE_BYTECODE_LABEL(halt_local_push), ARG_INT)
       ("halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push), ARG_INT)
-      ("jmp-nil",			THE_BYTECODE_LABEL(jmp_nil), ARG_INT)
+      ("jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT) // replacement for 'if
       //("if-local",		THE_BYTECODE_LABEL(if_local))
       ("int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
-      //("float",                 THE_BYTECODE_LABEL(b_float))
       ("ccc", THE_BYTECODE_LABEL(ccc))
       ("lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("lit-t",		THE_BYTECODE_LABEL(lit_t))
@@ -961,10 +960,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_int): {
       INTPARAM(N);
       bytecode_int(proc, stack, N);
-    } NEXT_BYTECODE;
-    BYTECODE(b_float): {
-      FLOATPARAM(f);
-      bytecode_float(proc, stack, f);
     } NEXT_BYTECODE;
     BYTECODE(ccc): {
       // expect current continuation and function on the stack

@@ -84,7 +84,6 @@ DECLARE_BYTECODES
 	A_BYTECODE(jmp_nil)
   //A_BYTECODE(if_local)
 	A_BYTECODE(b_int)
-	A_BYTECODE(b_float)
 	A_BYTECODE(lit_nil)
 	A_BYTECODE(lit_t)
 	A_BYTECODE(local)
