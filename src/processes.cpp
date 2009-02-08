@@ -144,6 +144,10 @@ void Process::global_write(Symbol* S, Object::ref o) {
 	S->set_value(o);
 }
 
+void Process::global_acquire( void ) {
+	global_cache.clear();
+}
+
 /*
  * Heap inheritance
  */

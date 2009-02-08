@@ -113,6 +113,19 @@ public:
 		  global_cache(),
 		  notification_mtx(),
 		  invalid_globals() { }
+
+/*-----------------------------------------------------------------------------
+Global Variable Access
+-----------------------------------------------------------------------------*/
+	/*notifies the process of changes in a particular global*/
+	void notify_global_change(Symbol*);
+	/*gets the value of a global*/
+	Object::ref global_read(Symbol*);
+	/*sets the value of a global*/
+	void global_write(Symbol*, Object::ref);
+	/*clears the cache of global variables*/
+	void global_acquire( void );
+
 /*-----------------------------------------------------------------------------
 For process-level garbage collection
 -----------------------------------------------------------------------------*/
@@ -163,13 +176,6 @@ For process-level garbage collection
 		AppLock l(mtx);
 		return stat == process_dead;
 	}
-
-	/*notifies the process of changes in a particular global*/
-	void notify_global_change(Symbol*);
-	/*gets the value of a global*/
-	Object::ref global_read(Symbol*);
-	/*sets the value of a global*/
-	void global_write(Symbol*, Object::ref);
 
 	/*sets process status to process_dead, and frees its
 	heap.
