@@ -566,11 +566,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("continue",		THE_BYTECODE_LABEL(b_continue))
       ("continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
+      ("f-to-i",		THE_BYTECODE_LABEL(f_to_i))
       ("global",		THE_BYTECODE_LABEL(global), ARG_SYMBOL)
       ("global-set",		THE_BYTECODE_LABEL(global_set), ARG_SYMBOL)
       ("halt",		THE_BYTECODE_LABEL(halt))
       ("halt-local-push",	THE_BYTECODE_LABEL(halt_local_push), ARG_INT)
       ("halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push), ARG_INT)
+      ("i-to-f",		THE_BYTECODE_LABEL(i_to_f))
       ("jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT) // replacement for 'if
       //("if-local",		THE_BYTECODE_LABEL(if_local))
       ("int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
@@ -912,6 +914,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.restack(2);
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+    BYTECODE(f_to_i): {
+      bytecode_<&f_to_i>(stack);
+    } NEXT_BYTECODE;
     BYTECODE(global): {
       SYMPARAM(S);
       bytecode_global(proc, stack, S);
@@ -935,6 +940,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push((*clos)[N]);
       stack.restack(1);
       return process_dead;
+    } NEXT_BYTECODE;
+    BYTECODE(i_to_f): {
+      bytecode_<&i_to_f>(proc, stack);
     } NEXT_BYTECODE;
     BYTECODE(jmp_nil): {
       INTPARAM(N); // number of operations to skip
