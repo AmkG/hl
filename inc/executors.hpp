@@ -51,6 +51,7 @@
 #define A_BYTECODE(x) BYTECODE_ENUM(x),
 #define END_DECLARE_BYTECODES __null_bytecode };
 DECLARE_BYTECODES
+	A_BYTECODE(acquire)
 	A_BYTECODE(apply)
 	A_BYTECODE(apply_invert_k)
 	A_BYTECODE(apply_list)
@@ -92,6 +93,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(monomethod)
 	A_BYTECODE(reducto)
         A_BYTECODE(reducto_continuation)
+	A_BYTECODE(release)
 	A_BYTECODE(rep)
 	A_BYTECODE(rep_local_push)
 	A_BYTECODE(rep_clos_push)

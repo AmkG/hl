@@ -538,6 +538,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     InitialAssignments()
       /*built-in functions accessible via $*/
       /*bytecodes*/
+      ("acquire",		THE_BYTECODE_LABEL(acquire))
       ("apply",		THE_BYTECODE_LABEL(apply), ARG_INT)
       ("apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k), ARG_INT)
       ("apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
@@ -583,6 +584,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("reducto",		THE_BYTECODE_LABEL(reducto))
       ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
+      ("release",		THE_BYTECODE_LABEL(release))
 //       ("rep",			THE_BYTECODE_LABEL(rep))
 //       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
 //       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
@@ -673,6 +675,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   bytecode = clos->code();
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
+    BYTECODE(acquire): {
+      proc.global_acquire();
+    } NEXT_BYTECODE;
     BYTECODE(apply): {
       INTPARAM(N);
       stack.restack(N);
@@ -1118,6 +1123,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         }
       }
       /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
+    BYTECODE(release): {
+      /*On this machine, <bc>release does nothing*/
     } NEXT_BYTECODE;
 //     BYTECODE(rep): {
 //       bytecode_<&Generic::rep>(stack);
