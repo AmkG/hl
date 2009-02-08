@@ -336,6 +336,27 @@ public:
   // Numbers are immutable
 };
 
+/*conversion*/
+Object::ref i_to_f( Object::ref o, Heap& hp ) {
+	#ifdef DEBUG
+		if(!is_a<int>(o)) {
+			throw_HlError("'i-to-f expected int");
+		}
+	#endif
+	return Object::to_ref<Generic*>(
+		Float::mk(hp, (double) as_a<int>(o))
+	);
+}
+
+Object::ref f_to_i( Object::ref o ) {
+	#ifdef DEBUG
+		Float* tmp = expect_type<Float>(o, "f-to-i expected float");
+	#endif
+	return Object::to_ref<int>(
+		(int) known_type<Float>(o)->get()
+	);
+}
+
 /*-----------------------------------------------------------------------------
 Array
 -----------------------------------------------------------------------------*/
