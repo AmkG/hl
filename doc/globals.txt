@@ -10,14 +10,14 @@ implementation follows the specifications.
 
 The exact global variable model supported by this virtual
 machine is actually a stronger model than required by the
-specifications above; this is allowed by the specific, which
-requires the given model or anything stronger.
+specifications above; this is allowed by the specifications,
+which requires the given model or anything stronger.
 
 Specifically, the specifications requires a `<axiom>release`
 operation which will force the executing process to update the
 view of the global variables from its own writes; a subsequent
 `<axiom>acquire` would then allow any process to read a view
-consistent with the writes of the releasing process.
+consistent with the writes of any releasing process.
 
 Basically, the specifications model each process as having a
 private read cache and a private write cache of global
