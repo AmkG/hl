@@ -615,7 +615,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("-",                     THE_BYTECODE_LABEL(minus))
       ("*",                     THE_BYTECODE_LABEL(mul))
       ("/",                     THE_BYTECODE_LABEL(div))
-      ("mod",                     THE_BYTECODE_LABEL(mod))
+      ("mod",			THE_BYTECODE_LABEL(mod))
       /*declare executors*/
       ("is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       /*assign bultin global*/
