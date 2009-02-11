@@ -190,7 +190,8 @@ inline void bytecode_variadic(Process& proc, ProcessStack& stack, int N){
 
 // Math
 
-inline void bytecode_plus(Process & p, ProcessStack & stack) {
+/*integer math*/
+inline void bytecode_iplus(Process & p, ProcessStack & stack) {
   Object::ref a = stack.top(2);
   Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
@@ -198,27 +199,13 @@ inline void bytecode_plus(Process & p, ProcessStack & stack) {
       stack.top() = 
         Object::from_a_scaled_int(Object::to_a_scaled_int(a) +  
                                   Object::to_a_scaled_int(b));
-    }
-    else {
-      Float *f = expect_type<Float>(b, "number expected");
-      stack.top() = 
-        Object::to_ref(Float::mk(p, as_a<int>(a) + f->get()));
+      return;
     }
   }
-  else {
-    Float *f = expect_type<Float>(a, "number expected");
-    if (is_a<int>(b)) {
-      stack.top() = 
-        Object::to_ref(Float::mk(p, f->get() + as_a<int>(b)));
-    }
-    else {
-      Float *f2 = expect_type<Float>(b, "number expected");
-      stack.top() = Object::to_ref(Float::mk(p, f->get() + f2->get()));
-    }
-  }
+  throw_HlError("'i+ expected two integers");
 }
 
-inline void bytecode_minus(Process & p, ProcessStack & stack) {
+inline void bytecode_iminus(Process & p, ProcessStack & stack) {
   Object::ref a = stack.top(2);
   Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
@@ -226,51 +213,25 @@ inline void bytecode_minus(Process & p, ProcessStack & stack) {
       stack.top() = 
         Object::from_a_scaled_int(Object::to_a_scaled_int(a) -  
                                   Object::to_a_scaled_int(b));
-    }
-    else {
-      Float *f = expect_type<Float>(b, "number expected");
-      stack.top() = 
-        Object::to_ref(Float::mk(p, as_a<int>(a) - f->get()));
+      return;
     }
   }
-  else {
-    Float *f = expect_type<Float>(a, "number expected");
-    if (is_a<int>(b)) {
-      stack.top() = 
-        Object::to_ref(Float::mk(p, f->get() - as_a<int>(b)));
-    }
-    else {
-      Float *f2 = expect_type<Float>(b, "number expected");
-      stack.top() = Object::to_ref(Float::mk(p, f->get() - f2->get()));
-    }
-  }
+  throw_HlError("'i- expected two integers");
 }
 
-inline void bytecode_mul(Process & p, ProcessStack & stack) {
+inline void bytecode_imul(Process & p, ProcessStack & stack) {
   Object::ref a = stack.top(2);
   Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
     if (is_a<int>(b)) {
       stack.top() = Object::to_ref(as_a<int>(a) * as_a<int>(b));
-    }
-    else {
-      Float *f = expect_type<Float>(b, "number expected");
-      stack.top() = Object::to_ref(Float::mk(p, as_a<int>(a) * f->get()));
+      return;
     }
   }
-  else {
-    Float *f = expect_type<Float>(a, "number expected");
-    if (is_a<int>(b)) {
-      stack.top() = Object::to_ref(Float::mk(p, f->get() * as_a<int>(b)));
-    }
-    else {
-      Float *f2 = expect_type<Float>(b, "number expected");
-      stack.top() = Object::to_ref(Float::mk(p, f->get() * f2->get()));
-    }
-  }
+  throw_HlError("'i* expected two integers");
 }
 
-inline void bytecode_div(Process & p, ProcessStack & stack) {
+inline void bytecode_idiv(Process & p, ProcessStack & stack) {
   Object::ref a = stack.top(2);
   Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
@@ -279,34 +240,13 @@ inline void bytecode_div(Process & p, ProcessStack & stack) {
       if (x == 0)
         throw_HlError("division by zero");
       stack.top() = Object::to_ref(as_a<int>(a) / x);
-    }
-    else {
-      Float *f = expect_type<Float>(b, "number expected");
-      double x = f->get();
-      if (x == 0.0)
-        throw_HlError("division by zero");
-      stack.top() = Object::to_ref(Float::mk(p, as_a<int>(a) / x));
+      return;
     }
   }
-  else {
-    Float *f = expect_type<Float>(a, "number expected");
-    if (is_a<int>(b)) {
-      int x = as_a<int>(b);
-      if (x == 0)
-        throw_HlError("division by zero");
-      stack.top() = Object::to_ref(Float::mk(p, f->get() / x));
-    }
-    else {
-      Float *f2 = expect_type<Float>(b, "number expected");
-      double x = f2->get();
-      if (x == 0.0)
-        throw_HlError("division by zero");
-      stack.top() = Object::to_ref(Float::mk(p, f->get() / x));
-    }
-  }
+  throw_HlError("'i/ expected two integers");
 }
 
-inline void bytecode_mod(Process & p, ProcessStack & stack) {
+inline void bytecode_imod(Process & p, ProcessStack & stack) {
   Object::ref a = stack.top(2);
   Object::ref b = stack.top(); stack.pop();
   if (is_a<int>(a)) {
@@ -315,11 +255,73 @@ inline void bytecode_mod(Process & p, ProcessStack & stack) {
       if (x == 0)
         throw_HlError("division by zero");
       stack.top() = Object::to_ref(as_a<int>(a) % x);
-    }
-    else {
-      throw_HlError("mod expects two integers");
+      return;
     }
   }
+  throw_HlError("'imod expects two integers");
+}
+
+/*float math*/
+inline void bytecode_fplus(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
+  if (maybe_type<Float>(a)) {
+    if (maybe_type<Float>(b)) {
+      Float* fa = known_type<Float>(a);
+      Float* fb = known_type<Float>(a);
+      stack.top() = 
+        Object::to_ref(Float::mk(p, fa->get() + fb->get()));;
+      return;
+    }
+  }
+  throw_HlError("'f+ expected two floats");
+}
+
+inline void bytecode_fminus(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
+  if (maybe_type<Float>(a)) {
+    if (maybe_type<Float>(b)) {
+      Float* fa = known_type<Float>(a);
+      Float* fb = known_type<Float>(a);
+      stack.top() = 
+        Object::to_ref(Float::mk(p, fa->get() - fb->get()));;
+      return;
+    }
+  }
+  throw_HlError("'f- expected two floats");
+}
+
+inline void bytecode_fmul(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
+  if (maybe_type<Float>(a)) {
+    if (maybe_type<Float>(b)) {
+      Float* fa = known_type<Float>(a);
+      Float* fb = known_type<Float>(a);
+      stack.top() = 
+        Object::to_ref(Float::mk(p, fa->get() * fb->get()));;
+      return;
+    }
+  }
+  throw_HlError("'f* expected two floats");
+}
+
+inline void bytecode_fdiv(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
+  if (maybe_type<Float>(a)) {
+    if (maybe_type<Float>(b)) {
+      Float* fa = known_type<Float>(a);
+      Float* fb = known_type<Float>(a);
+      if(fb->get() == 0.0)
+        throw_HlError("division by zero");
+      stack.top() = 
+        Object::to_ref(Float::mk(p, fa->get() / fb->get()));;
+      return;
+    }
+  }
+  throw_HlError("'f/ expected two floats");
 }
 
 /*consider whether this can be factored out*/

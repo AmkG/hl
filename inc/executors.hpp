@@ -123,11 +123,15 @@ DECLARE_BYTECODES
 	A_BYTECODE(variadic)
 	/*maybe organize by alphabetical order of bytecodes ^^*/
 	A_BYTECODE(do_executor)
-	A_BYTECODE(plus)
-	A_BYTECODE(minus)
-	A_BYTECODE(mul)
-	A_BYTECODE(div)
-	A_BYTECODE(mod)
+	A_BYTECODE(iplus)
+	A_BYTECODE(iminus)
+	A_BYTECODE(imul)
+	A_BYTECODE(idiv)
+	A_BYTECODE(imod)
+	A_BYTECODE(fplus)
+	A_BYTECODE(fminus)
+	A_BYTECODE(fmul)
+	A_BYTECODE(fdiv)
 END_DECLARE_BYTECODES
 
 #ifdef __GNUC__

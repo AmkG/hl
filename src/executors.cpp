@@ -611,11 +611,15 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
       ("variadic",		THE_BYTECODE_LABEL(variadic), ARG_INT)
       ("do-executor",           THE_BYTECODE_LABEL(do_executor), ARG_SYMBOL)
-      ("+",                     THE_BYTECODE_LABEL(plus))
-      ("-",                     THE_BYTECODE_LABEL(minus))
-      ("*",                     THE_BYTECODE_LABEL(mul))
-      ("/",                     THE_BYTECODE_LABEL(div))
-      ("mod",			THE_BYTECODE_LABEL(mod))
+      ("i+",                    THE_BYTECODE_LABEL(iplus))
+      ("i-",                    THE_BYTECODE_LABEL(iminus))
+      ("i*",                    THE_BYTECODE_LABEL(imul))
+      ("i/",                    THE_BYTECODE_LABEL(idiv))
+      ("imod",			THE_BYTECODE_LABEL(imod))
+      ("f+",                    THE_BYTECODE_LABEL(fplus))
+      ("f-",                    THE_BYTECODE_LABEL(fminus))
+      ("f*",                    THE_BYTECODE_LABEL(fmul))
+      ("f/",                    THE_BYTECODE_LABEL(fdiv))
       /*declare executors*/
       ("is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       /*assign bultin global*/
@@ -1246,20 +1250,36 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         throw_HlError(err.c_str());
       }
     } NEXT_BYTECODE;
-    BYTECODE(plus): {
-      bytecode_plus(proc, stack);
+    BYTECODE(iplus): {
+      /*currently, integer maths don't actually
+      need access to the Process, but we may
+      want to implement bigint's in the future.
+      */
+      bytecode_iplus(proc, stack);
     } NEXT_BYTECODE;
-    BYTECODE(minus): {
-      bytecode_minus(proc, stack);
+    BYTECODE(iminus): {
+      bytecode_iminus(proc, stack);
     } NEXT_BYTECODE;
-    BYTECODE(mul): {
-      bytecode_mul(proc, stack);
+    BYTECODE(imul): {
+      bytecode_imul(proc, stack);
     } NEXT_BYTECODE;
-    BYTECODE(div): {
-      bytecode_div(proc, stack);
+    BYTECODE(idiv): {
+      bytecode_idiv(proc, stack);
     } NEXT_BYTECODE;
-    BYTECODE(mod): {
-      bytecode_mod(proc, stack);
+    BYTECODE(imod): {
+      bytecode_imod(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(fplus): {
+      bytecode_fplus(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(fminus): {
+      bytecode_fminus(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(fmul): {
+      bytecode_fmul(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(fdiv): {
+      bytecode_fdiv(proc, stack);
     } NEXT_BYTECODE;
   }
   // execution shouldn't reach this point
