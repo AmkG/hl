@@ -96,12 +96,30 @@ public:
 	class ExtraRoot {
 	private:
 		Process& proc;
+		Object::ref val;
 	public:
-		ExtraRoot(Process& nproc, Object::ref& root) : proc(nproc) {
-			proc.push_extra_root(root);
+		ExtraRoot(Process& nproc) : proc(nproc), val() {
+			proc.push_extra_root(val);
 		}
 		~ExtraRoot() {
 			proc.pop_extra_root();
+		}
+		inline operator Object::ref const&(void) const {
+			return val;
+		}
+		inline operator Object::ref&(void) {
+			return val;
+		}
+		inline ExtraRoot& operator=(Object::ref const& nval) {
+			val = nval;
+			return *this;
+		}
+		inline ExtraRoot& operator=(ExtraRoot const& n) {
+			val = n.val;
+			return *this;
+		}
+		inline bool operator==(Object::ref const& o) const {
+			return val == o;
 		}
 	};
 

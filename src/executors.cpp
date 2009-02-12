@@ -388,10 +388,9 @@ void Assembler::go(Process & proc) {
 }
 
 void Assembler::goBack(Process & proc, size_t start, size_t end) {
-  Object::ref head = Object::nil();
-  Process::ExtraRoot er_head(proc, head);
-  Object::ref tail = Object::nil();
-  Process::ExtraRoot er_tail(proc, tail);
+  Process::ExtraRoot head(proc);
+  Process::ExtraRoot tail(proc);
+  head = tail = Object::nil();
 
   while (start < end) {
     bytecode_t b = expect_type<Bytecode>(proc.stack.top())->getCode()[start];
@@ -650,9 +649,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     return process_running;
   }
   // main VM loop
-  Object::ref bytecode = Object::nil();
-  // add it as an extra root object to scan
-  Process::ExtraRoot er_bytecode(proc, bytecode);
+  // add bytecode as an extra root object to scan
+  Process::ExtraRoot bytecode(proc);
   // ?? could this approach be used for clos too?
  call_current_closure:
   if(--reductions == 0) {
