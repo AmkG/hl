@@ -727,7 +727,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         // allocate, so tmp should
         // still be valid
         stack.push(tmp);
-        bytecode_<&car>(stack);
+        bytecode_<&cdr>(stack);
       }
       stack.pop();
       /***/ DOCALL(); /***/
