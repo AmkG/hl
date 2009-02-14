@@ -268,7 +268,7 @@ inline void bytecode_fplus(Process & p, ProcessStack & stack) {
   if (maybe_type<Float>(a)) {
     if (maybe_type<Float>(b)) {
       Float* fa = known_type<Float>(a);
-      Float* fb = known_type<Float>(a);
+      Float* fb = known_type<Float>(b);
       stack.top() = 
         Object::to_ref(Float::mk(p, fa->get() + fb->get()));;
       return;
@@ -283,7 +283,7 @@ inline void bytecode_fminus(Process & p, ProcessStack & stack) {
   if (maybe_type<Float>(a)) {
     if (maybe_type<Float>(b)) {
       Float* fa = known_type<Float>(a);
-      Float* fb = known_type<Float>(a);
+      Float* fb = known_type<Float>(b);
       stack.top() = 
         Object::to_ref(Float::mk(p, fa->get() - fb->get()));;
       return;
@@ -298,7 +298,7 @@ inline void bytecode_fmul(Process & p, ProcessStack & stack) {
   if (maybe_type<Float>(a)) {
     if (maybe_type<Float>(b)) {
       Float* fa = known_type<Float>(a);
-      Float* fb = known_type<Float>(a);
+      Float* fb = known_type<Float>(b);
       stack.top() = 
         Object::to_ref(Float::mk(p, fa->get() * fb->get()));;
       return;
@@ -313,7 +313,7 @@ inline void bytecode_fdiv(Process & p, ProcessStack & stack) {
   if (maybe_type<Float>(a)) {
     if (maybe_type<Float>(b)) {
       Float* fa = known_type<Float>(a);
-      Float* fb = known_type<Float>(a);
+      Float* fb = known_type<Float>(b);
       if(fb->get() == 0.0)
         throw_HlError("division by zero");
       stack.top() = 
