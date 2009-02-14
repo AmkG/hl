@@ -2,7 +2,7 @@
 (global-set foo)
 (int 1)
 (global foo)
-(+)
+(i+)
 (global-set foo)
 (closure 0
   (check-vars 2)
