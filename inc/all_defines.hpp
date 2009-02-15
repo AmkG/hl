@@ -21,7 +21,7 @@ extern Symbol* symbol_pid;
 extern Symbol* symbol_fn;
 extern Symbol* symbol_string;
 extern Symbol* symbol_unspecified;
-extern Symbol* symbol_num;
+extern Symbol* symbol_float;
 extern Symbol* symbol_array;
 extern Symbol* symbol_table;
 extern Symbol* symbol_container;

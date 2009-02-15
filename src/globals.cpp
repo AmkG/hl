@@ -15,7 +15,7 @@ Symbol* symbol_pid;
 Symbol* symbol_fn;
 Symbol* symbol_string;
 Symbol* symbol_unspecified;
-Symbol* symbol_num;
+Symbol* symbol_float;
 Symbol* symbol_array;
 Symbol* symbol_table;
 Symbol* symbol_container;
@@ -37,7 +37,7 @@ void initialize_globals(void) {
 	symbol_fn = symbols->lookup("<hl>fn");
 	symbol_string = symbols->lookup("<hl>string");
 	symbol_unspecified = symbols->lookup("<hl>unpsecified");
-	symbol_num = symbols->lookup("<hl>num");
+	symbol_float = symbols->lookup("<hl>float");
 	symbol_array = symbols->lookup("<hl>array");
 	symbol_table = symbols->lookup("<hl>table");
 	symbol_container = symbols->lookup("<hl>container");

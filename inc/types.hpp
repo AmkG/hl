@@ -331,7 +331,7 @@ public:
   }
   inline double get() { return val; }
   Object::ref type(void) const {
-    return Object::to_ref(symbol_num);
+    return Object::to_ref(symbol_float);
   }
   // Numbers are immutable
 };
