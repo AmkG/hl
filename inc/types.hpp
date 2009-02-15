@@ -11,8 +11,6 @@ Defines a set of types for use on the hl-side.
 #include"heaps.hpp"
 #include"processes.hpp"
 
-class ProcessStack;
-
 /*-----------------------------------------------------------------------------
 Utility
 -----------------------------------------------------------------------------*/
@@ -51,26 +49,6 @@ template<class T>
 static inline T* maybe_type(Object::ref x) {
 	if(!is_a<Generic*>(x)) return NULL;
 	return dynamic_cast<T*>(as_a<Generic*>(x));
-}
-
-/*-----------------------------------------------------------------------------
-Types
------------------------------------------------------------------------------*/
-
-extern inline Object::ref type(Object::ref ob) {
-	if(is_a<Generic*>(ob)) {
-		return as_a<Generic*>(ob)->type();
-	}
-	/*maybe some way of putting this in tag_traits?*/
-	if(is_a<Symbol*>(ob)) {
-		return Object::to_ref(symbol_sym);
-	}
-	if(is_a<int>(ob)) {
-		return Object::to_ref(symbol_int);
-	}
-	if(is_a<UnicodeChar>(ob)) {
-		return Object::to_ref(symbol_char);
-	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -545,6 +523,70 @@ public:
     return Object::to_ref(symbol_oport);
   }
 };
+
+/*-----------------------------------------------------------------------------
+Tagged types
+-----------------------------------------------------------------------------*/
+
+class HlTagged : public GenericDerived<HlTagged> {
+public:
+	/*NOTE! these two fields should be immutable after construction.
+	This is because it would then allow is-comparison to be performed
+	recursively wtihout worrying about cycles.
+	*/
+	Object::ref o_type;
+	Object::ref o_rep;
+
+	bool is(Object::ref o) const {
+		HlTagged* htp = maybe_type<HlTagged>(o);
+		if(htp) {
+			/*!!WARNING: deep recursion might overflow C-stack!
+			TODO: figure out a non-recursive algo
+			*/
+			return ::is(o_type, htp->o_type) &&
+				::is(o_rep, htp->o_rep);
+		} else return false;
+	}
+	void enhash(HashingClass* hc) const {
+		hc->enhash(hash_is(o_type));
+		hc->enhash(hash_is(o_rep));
+	}
+
+	void traverse_references(GenericTraverser* gt) {
+		gt->traverse(o_type);
+		gt->traverse(o_rep);
+	}
+	Object::ref type(void) const {
+		return o_type;
+	}
+};
+
+/*-----------------------------------------------------------------------------
+Types
+-----------------------------------------------------------------------------*/
+
+extern inline Object::ref type(Object::ref ob) {
+	if(is_a<Generic*>(ob)) {
+		return as_a<Generic*>(ob)->type();
+	}
+	/*maybe some way of putting this in tag_traits?*/
+	if(is_a<Symbol*>(ob)) {
+		return Object::to_ref(symbol_sym);
+	}
+	if(is_a<int>(ob)) {
+		return Object::to_ref(symbol_int);
+	}
+	if(is_a<UnicodeChar>(ob)) {
+		return Object::to_ref(symbol_char);
+	}
+}
+
+extern inline Object::ref rep(Object::ref ob) {
+	HlTagged* htp = maybe_type<HlTagged>(ob);
+	if(htp) {
+		return htp->o_rep;
+	} else return ob;
+}
 
 #endif //TYPES_H
 
