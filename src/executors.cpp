@@ -584,9 +584,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("reducto",		THE_BYTECODE_LABEL(reducto))
       ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
       ("release",		THE_BYTECODE_LABEL(release))
-//       ("rep",			THE_BYTECODE_LABEL(rep))
-//       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
-//       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+      ("rep",			THE_BYTECODE_LABEL(rep))
+      ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
+      ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
       ("string-create",		THE_BYTECODE_LABEL(string_create), ARG_INT)
       ("string-length",		THE_BYTECODE_LABEL(string_length))
       ("string-ref",		THE_BYTECODE_LABEL(string_ref))
@@ -604,7 +604,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("table-ref",		THE_BYTECODE_LABEL(table_ref))
       ("table-sref",		THE_BYTECODE_LABEL(table_sref))
       ("table-keys",		THE_BYTECODE_LABEL(table_keys))
-//       ("tag",			THE_BYTECODE_LABEL(tag))
+      ("tag",			THE_BYTECODE_LABEL(tag))
       ("type",		THE_BYTECODE_LABEL(type))
       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
@@ -1129,20 +1129,20 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(release): {
       /*On this machine, <bc>release does nothing*/
     } NEXT_BYTECODE;
-//     BYTECODE(rep): {
-//       bytecode_<&Generic::rep>(stack);
-//     } NEXT_BYTECODE;
-//     BYTECODE(rep_local_push): {
-//       INTPARAM(N);
-//       bytecode_local_push_<&Generic::rep>(stack, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(rep_clos_push): {
-//       INTPARAM(N);
-//       bytecode_clos_push_<&Generic::rep>(stack, clos, N);
-//     } NEXT_BYTECODE;
-//     BYTECODE(tag): {
-//       bytecode_tag(proc,stack);
-//     } NEXT_BYTECODE;
+    BYTECODE(rep): {
+      bytecode_<rep>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(rep_local_push): {
+      INTPARAM(N);
+      bytecode_local_push_<rep>(stack, N);
+    } NEXT_BYTECODE;
+    BYTECODE(rep_clos_push): {
+      INTPARAM(N);
+      bytecode_clos_push_<rep>(stack, *clos, N);
+    } NEXT_BYTECODE;
+    BYTECODE(tag): {
+      bytecode_tag(proc,stack);
+    } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack
       bytecode_string_create( proc, stack, N );

@@ -134,49 +134,16 @@ inline void bytecode_table_keys(Process& proc, ProcessStack& stack) {
   HlTable& T = *expect_type<HlTable>(stack.top(), "table-keys expects a table");
   HlTable::keys(proc.heap(), stack);
 }
-// inline void bytecode_tag(Process& proc, ProcessStack& stack){
-// 	/*have to check that the current type tag isn't
-// 	the same as the given type tag
-// 	(cref. ac.scm line 801 Anarki, line 654 Arc2)
-// 	*/
-// 	Generic* ntype = stack.top(2);
-// 	Generic* nrep = stack.top(1);
-// 	/*determine if rep is built-in type or not
-// 	We do this to avoid allocating - 'type on
-// 	built-in objects has to allocate the symbol.
-// 	*/
-// 	Tagged* tp = dynamic_cast<Tagged*>(nrep);
-// 	if(tp == NULL){
-// 		/*not a tagged type - check atom type instead*/
-// 		Symbol* s = dynamic_cast<Symbol*>(ntype);
-// 		if(s == NULL){
-// 			/*new type isn't a symbol - tag it*/
-// 			goto validtag;
-// 		} else {
-// 			/*check if new tag's atom is the same
-// 			as atom type of object
-// 			*/
-// 			if(s->a == nrep->type_atom()){
-// 				goto invalidtag;
-// 				/*hot path - most execution routes here*/
-// 			} else	goto validtag;
-// 		}
-// 	/*tagged representation - check if (is ntype (type nrep))*/
-// 	} else if(tp->type(proc)->is(ntype)){
-// 		goto invalidtag;
-// 	} else	goto validtag;
-// invalidtag:
-// 	/*return representation as-is*/
-// 	stack.top(2) = nrep;
-// 	stack.pop();
-// 	return;
-// validtag:
-// 	tp = proc.create<Tagged>();
-// 	tp->type_o = ntype;
-// 	tp->rep_o = nrep;
-// 	stack.top(2) = tp;
-// 	stack.pop();
-// }
+
+inline void bytecode_tag(Process& proc, ProcessStack& stack){
+	/*unlike Arc, we allow the user to tag anything she or he wants.*/
+	HlTagged* tp = proc.heap().create<HlTagged>();
+	tp->o_type = stack.top(2);
+	tp->o_rep = stack.top(1);
+	stack.pop();
+	stack.top() = Object::to_ref<Generic*>(tp);
+}
+
 inline void bytecode_variadic(Process& proc, ProcessStack& stack, int N){
   int i = stack.size();
   stack.push(Object::nil());
