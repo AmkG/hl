@@ -228,6 +228,20 @@ inline void bytecode_imod(Process & p, ProcessStack & stack) {
   throw_HlError("'imod expects two integers");
 }
 
+inline void bytecode_iless(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
+  if (is_a<int>(a)) {
+    if (is_a<int>(b)) {
+      stack.top() =
+        as_a<int>(a) < as_a<int>(b) ?          Object::t() :
+        /*otherwise*/                          Object::nil() ;
+      return;
+    }
+  }
+  throw_HlError("'i< expects two integers");
+}
+
 /*float math*/
 inline void bytecode_fplus(Process & p, ProcessStack & stack) {
   Object::ref a = stack.top(2);
@@ -289,6 +303,22 @@ inline void bytecode_fdiv(Process & p, ProcessStack & stack) {
     }
   }
   throw_HlError("'f/ expected two floats");
+}
+
+inline void bytecode_fless(Process & p, ProcessStack & stack) {
+  Object::ref a = stack.top(2);
+  Object::ref b = stack.top(); stack.pop();
+  if (maybe_type<Float>(a)) {
+    if (maybe_type<Float>(b)) {
+      Float* fa = known_type<Float>(a);
+      Float* fb = known_type<Float>(b);
+      stack.top() =
+        fa->get() < fb->get() ?                Object::t() :
+        /*otherwise*/                          Object::nil() ;
+      return;
+    }
+  }
+  throw_HlError("'f< expects two floats");
 }
 
 /*consider whether this can be factored out*/

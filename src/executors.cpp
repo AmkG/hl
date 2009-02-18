@@ -615,10 +615,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("i*",                    THE_BYTECODE_LABEL(imul))
       ("i/",                    THE_BYTECODE_LABEL(idiv))
       ("imod",			THE_BYTECODE_LABEL(imod))
+      ("i<",                    THE_BYTECODE_LABEL(iless))
       ("f+",                    THE_BYTECODE_LABEL(fplus))
       ("f-",                    THE_BYTECODE_LABEL(fminus))
       ("f*",                    THE_BYTECODE_LABEL(fmul))
       ("f/",                    THE_BYTECODE_LABEL(fdiv))
+      ("f<",                    THE_BYTECODE_LABEL(fless))
       /*declare executors*/
       ("is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       /*assign bultin global*/
@@ -1267,6 +1269,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(imod): {
       bytecode_imod(proc, stack);
     } NEXT_BYTECODE;
+    BYTECODE(iless): {
+      bytecode_iless(proc, stack);
+    }
     BYTECODE(fplus): {
       bytecode_fplus(proc, stack);
     } NEXT_BYTECODE;
@@ -1279,6 +1284,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(fdiv): {
       bytecode_fdiv(proc, stack);
     } NEXT_BYTECODE;
+    BYTECODE(fless): {
+      bytecode_fless(proc, stack);
+    }
   }
   // execution shouldn't reach this point
   throw_HlError("internal: end of execute() reached");
