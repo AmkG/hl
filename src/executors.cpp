@@ -1271,7 +1271,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(iless): {
       bytecode_iless(proc, stack);
-    }
+    } NEXT_BYTECODE;
     BYTECODE(fplus): {
       bytecode_fplus(proc, stack);
     } NEXT_BYTECODE;
@@ -1286,7 +1286,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(fless): {
       bytecode_fless(proc, stack);
-    }
+    } NEXT_BYTECODE;
   }
   // execution shouldn't reach this point
   throw_HlError("internal: end of execute() reached");
