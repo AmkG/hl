@@ -607,8 +607,6 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 					scdr(stack.top(),
 						Object::to_ref<Generic*>(&c)
 					);
-					Object::ref tmp1 = cdr(stack.top());
-					Object::ref tmp2 = Object::to_ref<Generic*>(&c);
 					/*re-read*/
 					HlTable& t = *known_type<HlTable>(
 						car(stack.top())
