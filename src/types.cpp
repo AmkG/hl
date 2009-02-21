@@ -579,8 +579,9 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 				Cons& c = *hp.create<Cons>();
 				c.car() = Object::to_ref<int>(i);
 				c.cdr() = cdr(stack.top());
-				cdr(stack.top()) =
-					Object::to_ref<Generic*>(&c);
+				scdr(stack.top(),
+					Object::to_ref<Generic*>(&c)	
+				);
 			}
 		}
 		stack.top() = cdr(stack.top());
@@ -603,8 +604,11 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 					*/
 					Cons& c = *hp.create<Cons>();
 					c.cdr() = cdr(stack.top());
-					cdr(stack.top()) =
-						Object::to_ref<Generic*>(&c);
+					scdr(stack.top(),
+						Object::to_ref<Generic*>(&c)
+					);
+					Object::ref tmp1 = cdr(stack.top());
+					Object::ref tmp2 = Object::to_ref<Generic*>(&c);
 					/*re-read*/
 					HlTable& t = *known_type<HlTable>(
 						car(stack.top())
@@ -630,8 +634,9 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 				/*add a list element to the list of keys*/
 				Cons& c = *hp.create<Cons>();
 				c.cdr() = cdr(stack.top());
-				cdr(stack.top()) =
-					Object::to_ref<Generic*>(&c);
+				scdr(stack.top(),
+					Object::to_ref<Generic*>(&c)
+				);
 				/*re-read*/
 				HlTable& t = *known_type<HlTable>(
 					car(stack.top())
