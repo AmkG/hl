@@ -93,6 +93,11 @@ public:
   Object::ref len();
 };
 
+/*
+ * WARNING: It's possible to write something like:
+ * car(foo) = 42;
+ * THIS IS WRONG.  Avoid.
+ * */
 extern inline Object::ref car(Object::ref x) {
 	if(!x) return x;
         return expect_type<Cons>(x,"'car expects a Cons cell")->car();
