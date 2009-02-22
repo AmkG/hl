@@ -98,11 +98,11 @@ public:
  * car(foo) = 42;
  * THIS IS WRONG.  Avoid.
  * */
-extern inline Object::ref car(Object::ref x) {
+extern inline Object::ref const& car(Object::ref const& x) {
 	if(!x) return x;
         return expect_type<Cons>(x,"'car expects a Cons cell")->car();
 }
-extern inline Object::ref cdr(Object::ref x) {
+extern inline Object::ref const& cdr(Object::ref const& x) {
 	if(!x) return x;
 	return expect_type<Cons>(x,"'cdr expects a Cons cell")->cdr();
 }
