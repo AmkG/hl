@@ -28,6 +28,7 @@ extern Symbol* symbol_container;
 extern Symbol* symbol_bytecode;
 extern Symbol* symbol_iport;
 extern Symbol* symbol_oport;
+extern Symbol* symbol_binobj;
 
 #ifndef single_threaded
 	extern bool single_threaded;

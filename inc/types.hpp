@@ -5,6 +5,7 @@ Defines a set of types for use on the hl-side.
 */
 
 #include<cstring>
+#include<boost/shared_ptr.hpp>
 
 #include"objects.hpp"
 #include"specializeds.hpp"
@@ -592,6 +593,35 @@ extern inline Object::ref rep(Object::ref ob) {
 		return htp->o_rep;
 	} else return ob;
 }
+
+/*-----------------------------------------------------------------------------
+Binary Objects
+-----------------------------------------------------------------------------*/
+
+/*Binary objects are just shared immutable arrays
+of bytes.
+*/
+class BinObj : public GenericDerived<BinObj> {
+private:
+	boost::shared_ptr<std::vector<unsigned char> > pdat;
+public:
+	static inline BinObj* create(Heap& hp, boost::shared_ptr<std::vector<unsigned char> > const& np) {
+		BinObj* rv = hp.create<BinObj>();
+		rv->pdat = np;
+		return rv;
+	}
+	unsigned char const& operator[](size_t i) const {
+		return (*pdat)[i];
+	}
+	size_t size(void) const {
+		return pdat->size();
+	}
+
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_binobj);
+	}
+
+};
 
 #endif //TYPES_H
 
