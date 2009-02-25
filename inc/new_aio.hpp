@@ -98,6 +98,8 @@ public:
 Shared across Implementations
 -----------------------------------------------------------------------------*/
 
+/*implementations in src/new_aio.cpp*/
+
 class ProcessInvoker {
 private:
 	Process* P;
