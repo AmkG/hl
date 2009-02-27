@@ -8,6 +8,8 @@ by concrete implementation in the src/ file.
 #include<string>
 #include<stdexcept>
 
+#include<stdint.h>
+
 #include<boost/shared_ptr.hpp>
 
 class Process;
@@ -39,6 +41,16 @@ class ProcessInvoker;
 /*Could use a Maybe T type I suppose though*/
 class IOError : public std::runtime_error {
 };
+/*
+Errors are caught only on:
+1. opening a file
+2. seeking
+3. closing
+
+In all other cases, errors are caught at the time
+that events are triggered; they are reported by
+sending messages to the process being informed.
+*/
 
 /*-----------------------------------------------------------------------------
 Implementation-specific
@@ -71,8 +83,11 @@ boost::shared_ptr<IOPort> infile(std::string);
 boost::shared_ptr<IOPort> outfile(std::string);
 boost::shared_ptr<IOPort> appendfile(std::string);
 
+void close(boost::shared_ptr<IOPort>);
+
 class Event {
 public:
+	virtual void seek(uint64_t) =0;
 
 	virtual ~Event() { }
 };
@@ -118,6 +133,14 @@ public:
 	);
 	void system_respond(
 		boost::shared_ptr<Event>, int term_code
+	);
+
+	/*call for errors*/
+	void io_error_respond(
+		boost::shared_ptr<IOPort>, std::string
+	);
+	void other_error_respond(
+		boost::shared_ptr<Event>, std::string
 	);
 };
 
