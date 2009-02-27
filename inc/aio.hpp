@@ -142,6 +142,10 @@ public:
 	void other_error_respond(
 		boost::shared_ptr<Event>, std::string
 	);
+
+	/*TODO: integrate with workers.cpp so that existing ProcessInvoker's
+	are part of the root set.
+	*/
 };
 
 
