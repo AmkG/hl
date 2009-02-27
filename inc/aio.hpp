@@ -14,7 +14,7 @@ class Process;
 class Symbol;
 
 /*
-The "new" AIO is based on event objects.  Event
+The AIO is based on event objects.  Event
 objects are just passive requests; in order to
 "arm" an event, it should be added to the global
 event waiting set object.
@@ -98,7 +98,7 @@ public:
 Shared across Implementations
 -----------------------------------------------------------------------------*/
 
-/*implementations in src/new_aio.cpp*/
+/*implementations in src/aio.cpp*/
 
 class ProcessInvoker {
 private:
