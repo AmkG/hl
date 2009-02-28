@@ -93,6 +93,7 @@ public:
 };
 
 boost::shared_ptr<Event> system_event(boost::shared_ptr<ProcessInvoker>,std::string);
+/*sleep unit is milliseconds*/
 boost::shared_ptr<Event> sleep_event(boost::shared_ptr<ProcessInvoker>,size_t);
 
 /*used as a Singleton, although we don't enforce it*/
