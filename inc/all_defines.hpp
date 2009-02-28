@@ -11,6 +11,7 @@ and should only be included once
 
 class SymbolsTable;
 class Symbol;
+class AllWorkers;
 
 extern boost::scoped_ptr<SymbolsTable> symbols;
 extern Symbol* symbol_sym;
@@ -29,6 +30,7 @@ extern Symbol* symbol_bytecode;
 extern Symbol* symbol_iport;
 extern Symbol* symbol_oport;
 extern Symbol* symbol_binobj;
+extern boost::scoped_ptr<AllWorkers> workers;
 
 #ifndef single_threaded
 	extern bool single_threaded;
