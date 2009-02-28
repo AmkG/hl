@@ -28,6 +28,10 @@ Symbol* symbol_binobj;
 
 boost::scoped_ptr<SymbolsTable> symbols;
 
+#include"workers.hpp"
+
+boost::scoped_ptr<AllWorkers> workers;
+
 void initialize_globals(void) {
 	symbols.reset(new SymbolsTable());
 	symbol_sym = symbols->lookup("<hl>sym");
@@ -46,5 +50,6 @@ void initialize_globals(void) {
         symbol_iport = symbols->lookup("<hl>iport");
         symbol_oport = symbols->lookup("<hl>oport");
         symbol_binobj = symbols->lookup("<hl>binobj");
+	workers.reset(new AllWorkers());
 }
 
