@@ -6,6 +6,7 @@ g++ -Dsingle_threaded -I../../inc\
     ../../src/executors.cpp\
     ../../src/reader.cpp\
     ../../src/symbols.cpp\
+    ../../src/symtable.cpp\
     ../../src/types.cpp\
     ../../src/globals.cpp\
     test1.cpp -o test1
