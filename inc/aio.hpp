@@ -128,11 +128,11 @@ private:
 	ProcessInvoker(void); //disallowed
 
 public:
-	void read_respond(
+	void io_respond(
 		boost::shared_ptr<IOPort>, std::vector<unsigned char> const&
 	);
-	void write_respond(
-		boost::shared_ptr<IOPort>, std::vector<unsigned char> const&
+	void nil_respond(
+		boost::shared_ptr<IOPort>
 	);
 	void accept_respond(
 		boost::shared_ptr<IOPort> socket, boost::shared_ptr<IOPort> new_socket
