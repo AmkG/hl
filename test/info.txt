@@ -1,0 +1,11 @@
+This directory contains tests for various components of hl.
+
+Each directory contains its own "info.txt" file.  This file
+describes how to perform the tests in that directory.
+
+Most of these directories make sense only in the context of
+the developer's dev environment: They tend to assume GNU,
+probably assume GNU/Linux, and they all need GCC.  More
+portable tests are probably possible but we're still at the
+stage at which we're trying to get `hl` to run at all.
+

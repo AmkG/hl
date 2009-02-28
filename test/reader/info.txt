@@ -1,0 +1,17 @@
+
+The test in this directory tests the C++-side reader, which
+reads in the bytecode sequences.
+
+To run the tests in this directory:
+
+	./compile_test1
+	./dotest.pl ./test1 tests/
+
+The tests should display some "Test X ...ok" messages if no
+failures occur.  If failures occur, the test will display
+the exact failed test.
+
+On almkglor's GNU/Linux system, tests fail in inputting some
+floating point numbers.  It is possible that this is due to
+locale settings.
+

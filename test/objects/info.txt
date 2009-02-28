@@ -1,0 +1,44 @@
+
+This directory tests the tagged pointer type, `Object::ref`.
+The tagged pointer type is a type that works as a discriminated
+union of pointer to heap object, integer, unicode character,
+and pointer to symbol.
+
+To run the tests in this directory:
+
+	# THIS COMMAND SHOULD FAIL
+	./compile_test fail_compile.cpp
+	# THIS COMMAND SHOULD FAIL
+	#
+	./compile_test inclusion_test.cpp # just test include file
+	./compile_test instantiation_test.cpp
+	./a.out
+	./compile_test tnil.cpp
+	./a.out
+	./compile_test unicode_char_test.cpp
+	./a.out
+
+Compilation for `fail_compile.cpp` should fail.  Some of the
+other tests will display `Passed!" on execution, some do not.
+Only two of the tests use `assert()` to check for failure.
+
+	instantiation_test.cpp
+
+This should display "x = 1" and "y.dat = A" on two separate
+lines.  It tests whether it is possible to check the known type
+as well as extract the original object from an `Object::ref`.
+
+	tnil.cpp
+
+This uses `assert()` to check failure.  It tests that an
+`Object::ref` can be used in a boolean context, that
+`Object::t()` (corresponding to an hl-side `t`) is a true
+value not equal to anything else, and that `Object::nil()`
+(corresponding to an hl-side `nil`) is a false value.
+
+	unicode_char_test.cpp
+
+This uses `assert()` to check failure.  It tests the use
+of characters in `Object::ref`, and that the program can
+check the type for characters.
+

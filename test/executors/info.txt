@@ -1,0 +1,42 @@
+
+This tests the bytecode interpreter ("executor").  Since it
+assembles bytecode sequences, it also implicitly tests the
+assembler.
+
+In practice, much of the current testing (February 28, 2009)
+ends here: the bytecode interpreter is effectively the part
+that integrates the most of the existing `hl` codebase.
+
+In order to run the tests in this directory:
+
+	./compile_test
+	../reader/dotest.pl ./run_bytecode tests/
+
+The test should display a bunch of "Test X ...ok" messages.
+If there are any errors, the test will show the failing test.
+
+This appears to work on any GNU/Linux system.
+
+The `tests/` directory contains several tests for the
+bytecode interpreter.  The format of the test files is
+described in `doc/dotest.txt`.
+
+The `tests/` directory contains the following files:
+
+	globals.test
+
+Tests for global variable setting and reading.
+
+	math.test
+
+Tests for mathematics with integers and floats.
+
+	t1.test
+
+Various tests for various random bytecodes.
+
+	t2.test
+
+Tests for `reducto` and fail-test for assembly syntax.
+(specifically, `(float asymbol)`)
+
