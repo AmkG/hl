@@ -109,6 +109,11 @@ public:
 	~EventSet();
 };
 
+/*called at the initialization/cleanup of each thread*/
+/*NOT called on main process thread*/
+void aio_thread_initialize(void);
+void aio_thread_deinitialize(void);
+
 /*-----------------------------------------------------------------------------
 Shared across Implementations
 -----------------------------------------------------------------------------*/
