@@ -129,7 +129,7 @@ private:
 
 public:
 	void io_respond(
-		boost::shared_ptr<IOPort>, std::vector<unsigned char> const&
+		boost::shared_ptr<IOPort>, boost::shared_ptr<std::vector<unsigned char> >&
 	);
 	void nil_respond(
 		boost::shared_ptr<IOPort>
