@@ -6,6 +6,7 @@ by concrete implementation in the src/ file.
 */
 
 #include<string>
+#include<vector>
 #include<stdexcept>
 
 #include<stdint.h>
@@ -124,6 +125,8 @@ Shared across Implementations
 class ProcessInvoker {
 private:
 	Process* P;
+	ProcessInvoker(void); //disallowed
+
 public:
 	void read_respond(
 		boost::shared_ptr<IOPort>, std::vector<unsigned char> const&
@@ -148,6 +151,9 @@ public:
 	void other_error_respond(
 		boost::shared_ptr<Event>, std::string
 	);
+
+	explicit ProcessInvoker(Process*);
+	~ProcessInvoker(void);
 
 	/*TODO: integrate with workers.cpp so that existing ProcessInvoker's
 	are part of the root set.
