@@ -107,6 +107,12 @@ public:
 	void add_event(boost::shared_ptr<Event>);
 	void remove_event(boost::shared_ptr<Event>);
 
+	/*"host" is the process which performed the
+ 	'event-wait or 'event-poll bytecode.
+ 	*/
+	void poll(Process& host);
+	void wait(Process& host);
+
 	EventSet(void);
 	~EventSet();
 };
@@ -128,27 +134,42 @@ private:
 	ProcessInvoker(void); //disallowed
 
 public:
+	/*"host" parameter is just a heap that can be used to
+	conveniently construct the response before actually
+	sending it to the target process.  It is *not* the
+	target process: it's just used as a scratch heap.
+	Reusing an existing process (specifically the process
+	that called the event waiting/polling) reduces
+	allocation overhead.
+	*/
 	void io_respond(
+		Process& host,
 		boost::shared_ptr<IOPort>, boost::shared_ptr<std::vector<unsigned char> >&
 	);
 	void nil_respond(
+		Process& host,
 		boost::shared_ptr<IOPort>
 	);
 	void accept_respond(
+		Process& host,
 		boost::shared_ptr<IOPort> socket, boost::shared_ptr<IOPort> new_socket
 	);
 	void sleep_respond(
+		Process& host,
 		boost::shared_ptr<Event>, size_t
 	);
 	void system_respond(
+		Process& host,
 		boost::shared_ptr<Event>, int term_code
 	);
 
 	/*call for errors*/
 	void io_error_respond(
+		Process& host,
 		boost::shared_ptr<IOPort>, std::string
 	);
 	void other_error_respond(
+		Process& host,
 		boost::shared_ptr<Event>, std::string
 	);
 
