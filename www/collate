@@ -1,0 +1,72 @@
+#!/bin/sh
+
+cat > $2 <<ENDHTML
+<html>
+<head>
+<title>
+ENDHTML
+
+# title
+head -n +1 $1 >> $2
+echo - hl programming language >> $2
+
+cat >> $2 <<ENDHTML
+</title>
+<link rel=stylesheet href='hl.css' type=text/css />
+</head>
+<body>
+<table>
+  <tr><td valign=top id="left">
+  <a id="openparen" href='http://hl-language.sourceforge.net/'><img border=0 src='hl.png'><br></a>
+  <div id="links">
+  <a href='http://hl-language.sourceforge.net/goals.html'>Goals</a><br>
+  <a href='http://hl-language.sourceforge.net/book.html'>Documentation</a><br>
+  <a href='http://github.com/AmkG/hl/commits/'>Repository</a><br>
+  <a href='http://sourceforge.net/forum/forum.php?forum_id=883002'>Forum</a><br>
+  <a href='http://hl-language.blogspot.com/'>Blog</a><br>
+  </div>
+  <br>hosted by:<br>
+  <a href='http://sourceforge.net/'>
+    <img style="border:0;width=:88px;height:31px" src="http://sourceforge.net/sflogo.php?group_id=86503&amp;type=5" alt="SourceForge.net" />
+  </a>
+  </td>
+  <td valign="top" id="right"><div id="content">
+  <!-- Insert content here -->
+ENDHTML
+
+# crumbs
+echo "<div><small>" >> $2
+head -n +2 $1 | tail -n -1 | ./crumbs >> $2
+echo "&raquo; <b>`echo $1 | cut -d "." -f -1`</b></small></div>" >> $2
+
+# body
+tail -n +3 $1 | markdown >> $2
+
+# generation
+echo '<div id="genline">updated ' >> $2
+date >> $2
+echo '</div>' >> $2
+
+cat >> $2 <<ENDHTML
+  <!-- End of content -->
+  </div>
+  <table>
+    <tr>
+      <td align=center><a href='#openparen'><img border=0 src='close-hl.png'></a></td>
+      <td align=center>
+        <small>
+          <i>Copyright 2008-2009 Alan Manuel K. Gloria, Stefano Dissegna</i>
+          &middot;
+          hosted by <a href='http://sourceforge.net/'>SourceForge.net</a>
+        </small>
+      </td>
+    </tr>
+  </table>
+  </td>
+  </tr>
+</table>
+</body>
+</html>
+
+ENDHTML
+

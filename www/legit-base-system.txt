@@ -1,0 +1,125 @@
+Base System - Legal - HL Book
+index book legit
+
+`HL` Legal Specifications: Base System
+======================================
+
+The `hl` base system is composed of three layers.
+
+1.  `<axiom>` The Axiomatic layer.  The axiomatic layer may be
+    considered as equivalent to the classic Lisp basemost axioms,
+    implemented directly in `eval`.  The compiler included with
+    each compliant `hl` virtual machine should support these
+    members.
+2.  `<common>` The Common layer.  This includes certain basic
+    operations whose actual implementation may vary between `hl`
+    virtual machines, and yet may be generically useful among
+    concrete implementations of the final layer below.
+3.  `<hl>` The Standard layer.  This is the standard `hl` library.
+    It is expected that the library will be useful and efficient
+    enough that users will directly use the standard `hl` library
+    without having to descend to the lower layers, Common and
+    Axiomatic.
+
+Each layer defines symbols with particular meanings.  The symbols
+in each layer must have specific prefixes: `<axiom>` for
+Axiomatic, `<common>` for Common, and `<hl>` for Standard.
+
+Symbols for each Layer
+----------------------
+
+Symbols in `<axiom>` are all special forms, i.e. the
+implementation's compiler should recognize them immediately and
+compile them to their equivalent bytecodes.  In particular,
+macros that are assigned to these symbols's global variable slot
+will be ignored by the compiler.
+
+Symbols in `<common>` are all global variables with function
+contents.  The users of `hl` cannot rely on certain functions in
+`<common>` to be serializable or portable; the result of
+`(<common>disassemble (<common>code-of _))` may be `nil`, if `_`
+is one of the non-serializable function from `<common>`.  In
+other words, a function in `<common>` might not be implemented
+using `hl` bytecode.
+
+Symbols in `<hl>` are all global variables with function or macro
+contents.  All contents of `<hl>` are specified as being
+serializable and portable.
+
+Coupling of Axiomatic and Common
+--------------------------------
+
+We expect to have tight coupling between the Axiomatic and Common
+layers, such that an implementation may include extensions to
+these specifications, provided that these extensions are used only
+in the implementation of Common, and will not be used by Standard.
+For instance, Common includes a function to determine if a symbol
+begins with a the character `<`, and has a character `>`
+elsewhere; it is legitimate for an implementation to implement
+this in the Axiomatic layer as a special form.
+
+Unimplementable Common
+----------------------
+
+Most functions in Common are expected to be implementable using
+only the specified Axiomatic.  However, an implementation can
+legitimately implement Common in the underlying implementation
+directly, particularly if this is significantly more efficient
+than using Axiomatic.  Care must be taken that injections will
+not be able to see these extensions in action.
+
+Some functions in Common are known to be unimplementable using
+only Axiomatic.  Such functions can only be implemented using
+extensions to the specifications; one requirement is that such
+functions cannot be interrupted (i.e. injecting a function into a
+process will not find such functions running or runnable).
+
+Reserved Axiomatic and Common
+-----------------------------
+
+Symbols in `<axiom>` and `<common>` that are not specified are
+reserved for future versions of the specifications.  However,
+current implementations using the current version of the
+specifications are allowed to use these symbols internally as
+extensions, provided those extensions do not become part of
+portable bytecode sequences.  In particular, a continuation
+provided by a `<common>` function to user code cannot contain
+references to these extensions; such continuations should
+never escape `<common>`.
+
+It should be understood, however, than an implementation should
+be prepared to change its extensions when a new version of these
+specifications defines a name used in its extension.
+
+Implementable Standard
+----------------------
+
+All functions and macros in Standard are expected to be
+implementable using only the specified Common and Axiomatic.
+However, an implementation cannot legitimately implement Standard
+in the underlying implementation directly, or by extensions to
+Common and Axiomatic.
+
+If a specified Standard function cannot be implemented using only
+Common and Axiomatic, it should be considered an error in the
+specifications.  Please report such errors to the `hl` designers.
+
+Standard Decoupling
+-------------------
+
+The decoupling of the Common and Axiomatic layers from Standard
+exists so that users of `hl`, the language, may fork the Standard
+library to change various portions of the interface, without
+having to reimplement significant portions of Common, and to be
+able to rely on tight coupling between Axiomatic and Common for
+efficiency.
+
+Links
+-----
+
+* In [`HL` Legal Specifications](legit.html):
+    * [Axiomatic Layer](legit-axioms.html)
+    * [Common Layer](legit-common.html)
+    * [Standard Layer](legit-standard.html)
+
+

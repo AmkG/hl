@@ -1,0 +1,4 @@
+#! /bin/sh
+
+rsync -avP -e ssh *.html *.css *.png .htaccess \
+	almkglor,hl-language@web.sourceforge.net:htdocs/

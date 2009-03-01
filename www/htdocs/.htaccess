@@ -1,0 +1,4 @@
+
+ExpiresActive On
+ExpiresByType text/html "now plus 1 hour"
+

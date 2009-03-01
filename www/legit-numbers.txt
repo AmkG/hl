@@ -1,0 +1,248 @@
+Mathematics - Legal - HL Book
+index book legit
+
+`HL` Legal Specifications: Mathematics
+======================================
+
+Classically, computers have been used for simple arithmetical
+computations of number.  For this reason, the `hl` virtual
+machine must also specify some operations of mathematics, as
+well as built-in numeric types.
+
+The `hl` specifications define two numeric types - limited-range
+integers, and limited-range, limited-precision, exact floating
+point numbers.  We also define a set of basic operations for
+these types, including conversions between these types.  Both
+numeric types are immutable.
+
+Integer Type
+------------
+
+The `<hl>int` built-in type is a signed limited-range integral
+type.  Implementations are required to provide an integer type
+of at least 24 bits including sign; this means that the
+implementation should provide a maximum of at least
+8,388,607, and a minimum of at least -8,308,608.  An
+implementation may provide an integer type which supports a
+larger range.
+
+Integers are introduced directly into the emitted bytecode by
+the compiler; integers are introduced by the `int` bytecode,
+whose argument is an integer.
+
+Integers are immutable types.
+
+> ### TODO
+>
+> Currently, it is intended that future revisions of the
+> specifications will either define a built-in "BigInt" type, or
+> will be complete enough to support an *efficient* "BigInt"
+> library written in `hl`.  A "BigInt" type is an integral type
+> whose range is limited only by the available memory of the
+> physical host machine.
+>
+> The tradeoffs lie in the implementability of the
+> specifications.  If "BigInt" is not a built-in in the
+> specifications of the virtual machine, it is one less thing
+> that new implementations (and these specifications, too) have
+> to worry about; on the other hand, if the goal is an
+> *efficient* implementation, then having "BigInt" implemented
+> in a library *may* mean that implementors need to implement
+> serious optimization of the library code.
+
+Integer Type Operations
+-----------------------
+
+Integer operations are performed at the lowest level by the
+[Axiomatic layer](legit-axioms.html).  Integer operations always
+require integers as input.  There are 5 operations,
+corresponding to addition, subtraction, multiplication,
+division, and remainder.  These axiomatic special forms are
+compiled down to their equivalent bytecodes; they evaluate all
+their arguments.
+
+`<axiom>i+` adds two integers, `<axiom>i-` subtracts two
+integers, `<axiom>i*` multiplies two integers, `<axiom>i/`
+divides two integers, and `<axiom>imod` takes the remainder of
+dividing two integers.  If the inputs given to these axiomatic
+special forms are of the incorrect type, the result is
+undefined, with the preferred behavior being an error of type
+`<hl>type`.
+
+Division by zero (of both `<axiom>i/` and `<axiom>imod`) results
+in undefined behavior, with the preferred behavior being an
+error of type `<hl>value`.
+
+Floating-point Type
+-------------------
+
+The `<hl>float` built-in type is a signed, limited-precision,
+limited-range floating-point type.  Its precision and range is
+currently unspecified, but floating point types must at least be
+able to express some numbers from `N / (2 ** M)`, where N and M
+are signed integers of unspecified range and `x ** y` means "`x`
+raised to the `y`th power".
+
+> ### TODO
+>
+> In the future, we may really need to specify just what the
+> precision and range of the floating-point type is.  For now,
+> we informally specify a preference for the IEEE 64-bit
+> floating-point type.
+
+Floats are introduced directly into the emitted code by the
+compiler; floats are introduced by the `float` bytecode, whose
+argument is a floating-point type.
+
+Floats are immutable types.
+
+Floating-point Type Operations
+------------------------------
+
+Like the other mathematical operations, floating-point
+operations are performed at the [Axiomatic
+layer](legit-axioms.html).  There are four floating-point
+operations, corresponding to addition, subtraction,
+multiplication and division.  These special forms are compiled
+down to their equivalent bytecodes; they evaluate all their
+arguments.
+
+`<axiom>f+` adds two floating-point numbers, `<axiom>f-`
+subtracts two floating-point numbers, `<axiom>f*` multiples two
+floating-point numbers, and `<axiom>f/` divides two
+floating-point numbers.
+
+Division by zero from `<axiom>f/` results in undefined behavior,
+with the preferred behavior being an error of type `<hl>value`.
+
+Numeric Conversion
+------------------
+
+The numeric operations defined in Axiomatic do not allow mixing
+of numbers of different types.  However, there are some
+axiomatic special forms which perform conversion between integer
+and floating-point types.
+
+`<axiom>i-to-f` converts an integer to a floating point type,
+while `<axiom>f-to-i` converts a floating point type to an
+integer.  Conversion from floating point type to integer type
+performs truncation (roundoff towards zero).  Both special
+forms accept a single object of the specified type.
+
+Standard Layer Mathematics
+--------------------------
+
+At the [Standard layer](legit-standard.html), the strict typing
+of mathematical operations is relaxed.  Functions defined in the
+Standard layer use polymorphism in order to perform mathematical
+operations on numbers of various types.
+
+For addition, subtraction, multiplication, and division,
+integers are automatically promoted to floats if one of the
+arguments is a float.  Taking the remainder works only for
+integers.
+
+Further, the Standard layer defines operations to negate and
+take the reciprocal of a single number.
+
+The Standard layer also defines a set of "hooks" which another
+library can further polymorph (for example, by using the
+Standard macro `defm` or `<hl>defm`).  These "base" functions
+may be used directly, but there is generally no need to do so.
+
+Standard Layer Mathematics: Reductors and Dispatchers
+-----------------------------------------------------
+
+The Standard layer divides each operation into two parts: a
+reductor and a dispatcher.  The dispatcher (or "base") function
+dispatches based on the type of its inputs and accepts exactly
+two arguments; the reductor accepts at least one argument and
+performs left-to-right reduction on its argument list.
+Reductors are named directly by their operation, while
+dispatchers are prepended with "base".
+
+    operation       | reductor    | dispatcher
+    ----------------+-------------+-----------
+    addition        |      +      |   base+
+    subtraction     |      -      |   base-
+    multiplication  |      *      |   base*
+    division        |      /      |   base/
+    modulo          |     mod     |   base-mod
+
+For example, the `+` or addition operation is handled by the
+reductor `<hl>+`, which then calls the dispatcher `<hl>base+`.
+If `<hl>+` is invoked with exactly two arguments, it is
+equivalent to a call to `<hl>base+`.  If `<hl>+` is called
+with more than two arguments, it performs reduction using
+`<hl>base+`:
+
+    (using <hl>v1)
+    (+ a b)         := (base+ a b)
+    (+ a b c)       := (base+ (base+ a b) c)
+    (+ a b c d)     := (base+ (base+ (base+ a b) c) d)
+
+The reductors are not intended to be overloadable by
+polymorphing them.  Dispatchers *are* intended to be
+overloadable by polymorphism, preferably by `<hl>defm`.
+Dispatchers are the functions responsible for correctly
+promoting integers to floats; for example, if `<hl>base+` is
+called with the first argument of type `<hl>int` and the second
+argument of type `<hl>float`, it is equivalent to:
+
+    (using <hl>v1)
+    (base 1 1.0)    := (<axiom>+ (<axiom>i-to-f 1) 1.0)
+
+> ### TODO
+>
+> As long as polymorphism only supports monomethods (i.e.
+> functions that dispatch only on their first parameters),
+> user-side polymorphing the dispatchers will not probably be
+> very useful.  For implementors: the trick is to use
+> double-dispatch.  Unfortunately, the specifications do not
+> mention names for double-dispatching, so any attempt to
+> overload mathematical operations at this time will either be
+> implementation-specific or will have to wait until
+> multimethods are implemented.
+>
+> The plan is that multimethods (i.e. functions that dispatch on
+> the types of any arguments) will be eventually defined in
+> the future.
+
+When a reductor is invoked with a single argument, the behavior
+of the operation depends on the operation.  For addition,
+multiplication, and modulo, the result is the single argument.
+For subtraction, the argument is passed to the dispatcher
+function `<hl>base-neg`, which negates the argument.  For
+division, the argument is passed to the dispatcher function
+`<hl>base-reciprocal`, which produces the reciprocal of the
+argument (for an integer argument, this will always result in
+0):
+
+    (using <hl>v1)
+    (+ a)            := a
+    (- a)            := (<hl>base-neg a)
+    (* a)            := a
+    (/ a)            := (<hl>base-reciprocal a)
+    (mod a)          := a
+
+Both `<hl>base-neg` and `<hl>base-reciprocal` are intended to be
+overloadable.
+
+The default behavior for `<hl>base-neg` and
+`<hl>base-reciprocal` are:
+
+    (using <hl>v1)
+    (base-neg a)          := (base- 0 a)
+    (base-reciprocal a)   := (base/ 1 a)
+
+In Standard, division by zero (for division and modulo) results
+in an error of type `<hl>value`.  The default behavior for all
+dispatchers, when given objects of types it cannot handle, is to
+throw an error of type `<hl>type`.
+
+
+See Also
+--------
+
+* [`HL` Legal Specifications](legit.html)
+

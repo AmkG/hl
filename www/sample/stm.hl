@@ -1,0 +1,205 @@
+
+(in-package stm)
+; define interfaces, then used libraries
+(interface v1
+  atomic-ref w/stm)
+(using <hl>v1)
+
+; constructor for atomic-ref-type
+(def (atomic-ref (o val))
+  (tag 'atomic-ref-type
+       (process (atomic-ref-proc val (uniq)))))
+
+; process for atomic-ref
+(def (atomic-ref-proc val write-id)
+  (<==
+    ; only perform a read
+    ; (e.g. when first read in a w/stm form,
+    ; or for debugging outside w/stm)
+    ('read reader tid)
+      (do (==> reader tid val write-id)
+          (atomic-ref-proc val write-id))
+    ; verify that the view is consistent.
+    ; verifier is a process which receives
+    ;     'decision messages, collates those
+    ;     messages, then returns the collated
+    ;     decision back to the atomic
+    ;     reference processes.
+    ; to-write is either a scanner whose 'car
+    ;     is the value to write, or nil
+    ;     indicating that this reference
+    ;     should not be updated
+    ; check-write-id is the write-id that was
+    ;     expected by the client.
+    ('verify verifier tid to-write check-write-id)
+          ; let the verifier decide, then wait
+          ; for verifier's decision.
+      (do (==> verifier 'decision tid (my-pid) (is write-id check-write-id))
+          ; determine decision by verifier
+          ; however, don't block 'verify message
+          ; in case another w/stm form tries to
+          ; verify this too
+          (restartable:<==
+            ('decision ,tid ,verifier decision)
+              (if (and decision to-write)
+                  (atomic-ref-proc (car to-write) (uniq))
+                  (atomic-ref-proc val write-id))
+            ; another w/stm form is trying to verify
+            ; this reference.  can't block it because
+            ; the references in the current
+            ; verification might have received the
+            ; other verification first, meaning
+            ; deadlock.
+            ; instead, fail the other verification
+            ; summarily unless both this and the
+            ; other verification are both simple
+            ; reads.
+            ; reason:
+            ; we must immediately give a decision,
+            ; in order to prevent deadlock.  However,
+            ; in some cases we can't finalize a
+            ; decision.
+            ('verify other-verifier other-tid other-to-write other-check-write-id)
+              (do (==> other-verifier other-tid (my-pid)
+                       (if (or to-write other-to-write)
+                           ; One of the transactions is a write:
+                           ; just fail the second verification
+                           nil
+                           (is other-check-write-id write-id)))
+                  (restart))))
+    ; ignore other decisions
+    ('decision other-tid other-verifier eh?)
+      (atomic-ref-proc cal write-id)))
+
+; w/stm context uses two process-local tables,
+; open-atomic-refs and written
+
+; macro for w/stm
+(mac (w/stm . body)
+  `(w/stm-f (fn () ,@body)))
+
+; implementation of w/stm
+(def (w/stm-f bf)
+  (let pl (process-locals)
+    (if pl!open-atomic-refs
+        ; already in a w/stm context
+        (bf)
+        ; not yet, create one and guard
+        ; it with dynamic-wind
+        (restartable:with (open-atomic-refs (table)
+                           written          (table))
+          (dynamic-wind
+            (fn ()
+              (= pl!open-atomic-refs  open-atomic-refs
+                 pl!written           written
+                 pl!restart           restart))
+            (fn ()
+              (bf)
+              (commit))
+            (fn ()
+              (wipe pl!open-atomic-refs
+                    pl!written
+                    pl!restart)))))))
+
+; (ob), where ob is an atomic-ref
+(defcall atomic-ref-type (ob)
+  (with (pid ob
+         pl  (process-locals))
+    ; check if we're in a w/stm context
+    (if pl!open-atomic-refs
+        ; open the atomic reference
+        ; in a consistent view if we
+        ; are in a w/stm context
+        (open-ref pid pl)
+        (w/uniq tid
+          (==> pid 'read (my-pid) tid)
+          (<==
+            (,tid val ignored)
+              val)))))
+
+; (= (ob) val), where ob is an atomic-ref
+(defm (sref (t ob atomic-ref-type) val)
+  (with (pid ob
+         pl  (process-locals))
+    ; fail if we aren't in a w/stm context
+    (unless pl!open-atomic-refs
+      (err 'sref/atomic-ref
+           "attempt to write to atomic reference outside of 'w/stm form"))
+    ; open the reference before we update
+    ; our *local* copy
+    (open-ref pid pl)
+    (assert (pl!written pid))
+    ; update local copy
+    (= (car (pl!open-atomic-refs pid))
+       val)
+    val))
+
+; open an atomic reference from within
+; a w/stm form
+(def (open-ref pid pl)
+  (let open-atomic-refs pl!open-atomic-refs
+    (aif open-atomic-refs.pid
+         ; already cached, return cached
+         ; value.
+         (car it)
+         ; not already cached: must read
+         ; it first.
+         (with (me      (my-pid)
+                tid     (uniq))
+           (==> pid 'read me tid)
+           (<==
+             (,tid val write-id)
+                   ; If the cache is currently empty
+                   ; we don't need to verify other
+                   ; atomic references
+               (do (if (empty open-atomic-refs)
+                       (= open-atomic-refs.pid
+                          (cons val write-id))
+                       (do (= open-atomic-refs.pid
+                              (cons val write-id))
+                           (each (pid . (val . write-id)) open-atomic-refs
+                             ; read only, so to-write is nil
+                             (==> 'verify me tid nil write-id))
+                           (let decision t
+                             ; collate decision
+                             (each (pid . smth) open-atomic-refs
+                               (<==
+                                 ('decision ,tid ,pid new-decision)
+                                   (zap and decision new-decision)))
+                             ; inform final decision
+                             (each (pid . smth) open-atomic-refs
+                               (==> 'decision tid me decision))
+                             ; choose to restart if we have to
+                             (unless decision
+                               (pl!restart)))))
+                   val))))))
+
+; commit any changed variables
+(def (commit)
+  (withs (pl  (process-locals)
+          tid (uniq)
+          open-atomic-refs pl!open-atomic-refs
+          written          pl!written
+          restart          pl!restart
+          decision         t)
+    ; do nothing if no stm references
+    ; were actually written.
+    (unless (empty written)
+      ; verify
+      (each (pid . smth) open-atomic-refs
+        (==> 'verify me tid
+             (if written.pid smth nil)
+             (cdr smth)))
+      ; collate
+      (each (pid . smth) open-atomic-refs
+        (<==
+          ('decision ,tid ,pid new-decision)
+            (zap and decision new-decision)))
+      ; inform
+      (each (pid . smth) open-atomic-refs
+        (==> pid 'decision tid me decision))
+      ; maybe restart
+      (unless decision
+        (pl!restart)))))
+
+

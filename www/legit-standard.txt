@@ -1,0 +1,7 @@
+Standard - Legal - HL Book
+index book legit legit-base-system
+
+(Not yet created: go back to the [`HL` Base
+System](legit-base-system.html) specifications,
+or to the [`HL` Legal Specifications](legit.html).)
+
