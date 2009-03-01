@@ -110,8 +110,8 @@ public:
 	/*"host" is the process which performed the
  	'event-wait or 'event-poll bytecode.
  	*/
-	void poll(Process& host);
-	void wait(Process& host);
+	void event_poll(Process& host);
+	void event_wait(Process& host);
 
 	EventSet(void);
 	~EventSet();
