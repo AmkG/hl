@@ -188,7 +188,7 @@
     (unless (empty written)
       ; verify
       (each (pid . smth) open-atomic-refs
-        (==> 'verify me tid
+        (==> pid 'verify me tid
              (if written.pid smth nil)
              (cdr smth)))
       ; collate
