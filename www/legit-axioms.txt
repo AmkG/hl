@@ -1,0 +1,19 @@
+Axiomatic - Legal - HL Book
+index book legit legit-base-system
+
+`HL` Legal Specifications: Axiomatic Layer
+==========================================
+
+The lowest layer of the base system is the Axiomatic layer, which
+is composed completely of non-overrideable special forms.  These
+special forms are recognized by a compliant `hl` compiler.
+
+All members of the Axiomatic Layer begin with the prefix
+`<axiom>`.
+
+Links
+-----
+
+* In [`HL` Legal Specifications](legit.html)
+    * [Base System](legit-base-system.html)
+

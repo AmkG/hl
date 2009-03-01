@@ -1,0 +1,351 @@
+Global Variables - Legal - HL Book
+index book legit
+
+`HL` Legal Specifications: Global Variables
+===========================================
+
+As a LISP-1, `hl` implements function definitions exactly as
+global variable assignments.  Since `hl` is intended to allow
+the dynamic redefinition of functions, it should also support
+the dynamic *reassignment* of global variables.
+
+However, in a massively multiprocess virtual machine, the entire
+set of global variables effectively become a "shared" data
+structure.  Thus, access to the global variables must generally
+require some kind of locking scheme.
+
+Since global function definitions are implemented as global
+variables, it is also necessary that reading from global
+variables be very efficient; otherwise, performance will suffer
+significantly.
+
+This document describes the necessary memory model for access to
+the shared global variables.
+
+> ### Note for Implementors
+>
+> This document describes the **weakest** memory model that
+> **users** of the virtual machine can rely on.  If you are able
+> to provide better performance by using a different strategy
+> for implementing global variables, and this strategy provides
+> a stronger model, than please use it according to your
+> judgement.  As long as a model is not weaker than the model
+> described here, it is a possible model.
+
+General Model
+-------------
+
+Each global variable is a mapping between a symbol and a value.
+Global variables may be read by a processes by having the
+process acquire a copy of the value by providing the symbol.
+In the case of global variables, by "copy" we mean a deep copy,
+i.e. the data structures that are referred to by the value
+object are themselves also copied.  This usage of "copy" holds
+for all sections of this document where we discuss global
+variables.
+
+It is possible for a global variable to have no value binding.
+If so, the global variable is an "*unbound*" variable.  Reading
+an unbound variable will throw an error within the process.
+
+The global variable's value binding may be modified by having
+the process provide the symbol and the new value.  A copy of the
+value is created and is made into the binding for that global
+variable.
+
+Notice that copies of values are written to and read from global
+variables.  The actual values *stored* by global variables are
+immutable, although the global variable itself is mutable.
+
+Global Variables Within a Process
+---------------------------------
+
+A global variable that is used only within a single process
+respects a sequential ordering when read from and written to.
+Both reads and writes may be cached.
+
+At each read, the global variable's contents **may** be copied
+from the value bound to the global variable.  It is possible,
+however, for the virtual machine to provide the "**same**" value
+as the most recent read value, provided that no write within the
+same process has intervened; note that this is not an assurance,
+only a possibility.  When the virtual machine provides the
+"same" value, it may be exactly the same object, if the object
+is mutable.
+
+At each write, the value to write **is** copied.  The copy is
+then assigned to the global variable.  When the global variable
+is subsequently read, it is possible, however, for the virtual
+machine to provide the "**same**" value as the value to write,
+not a copy.  Again, this is not an assurance, only a
+possibility.
+
+> ### Important!
+>
+> For a mutable object, modifying that object **after** writing
+> it to the global variable will **not** change the global
+> variable.  In effect, a "snapshot" of the object is
+> immediately made upon encountering a write command.
+
+Let us assume here that the global variable is not accessed by
+any other process.  When a single process executes a read
+followed by a read, the second value read may be the same object
+from the previous read, or it may be a copy of that object.
+When a single process executes a write followed by a read, the
+read value may be the same object as the previous write, or it
+may be a copy of that object.
+
+Once a process writes to a global variable, all reads from
+within that process will see the most recent write, until the
+next write to that variable.
+
+Global variables within a process obey a sequential ordering
+even when multiple global variables are involved.  For instance,
+consider the following sequence for the global variables `foo`
+and `bar`:
+
+	(set foo 1)
+	(set bar 2)
+	...
+	(set foo 3)
+	foo             => 3
+	bar             => 2
+	(set bar 4)
+	foo             => 3
+	bar             => 4
+
+Global Variables Across Processes
+---------------------------------
+
+Processes have individual heaps, and nothing can cause a process
+to acquire an object that belongs to the heap of another
+process.  For this reason, objects that are assigned to global
+variables are copied to and from the global variable.
+
+Global variable access is not normally synchronized across
+process boundaries, even when a message is used to synchronize
+the processes.  However, some special forms force
+synchronization, and launching a new process implicitly
+synchronizes the new process with the launching process.
+
+Writes and reads across different processes may be actually
+performed in a different order than from what you would expect,
+even when a message is used to ensure the order of the when the
+commands are encountered within a process.
+
+When two processes, `W` and `R`, interact such that `W` writes
+to some global variable, and `R` reads from that global
+variable, the order in which the writes and the reads are
+performed is undefined.  For example, consider the following
+code:
+
+	Preconditions:
+	           (set foo 0)
+	           (set bar 1)
+	Process W                  Process R
+	(set foo 2)                foo        => ??
+	(set bar 3)                bar        => ??
+
+In the above code, process `R` may perform reads before the
+variables are written by process `W`.
+
+Even if a message is used to ensure that process `R` encounters
+the read at a later actual time than process `W` encounters the
+write, reading may have been done "early", such that the actual
+read was in fact already done before process `R` received a
+message.  Similarly, writing may be done "late", such that the
+actual write may be done after process `W` sends the message.
+
+	Preconditions:
+	           (set foo 0)
+	           (set bar 1)
+	Process W                  Process R
+	(set foo 2)
+	(set bar 3)
+	(send R t)  =============> (recv)
+	                           foo        => ??
+	                           bar        => ??
+
+Importantly, it is possible for process R to read `foo` as `0`
+while `bar` is `3`: that is, it is possible for process R to
+see the global variable write to `bar` before it sees the write
+to `foo`.  This can occur regardless of the order in which
+process `R` encounters the read commands.
+
+	Preconditions:
+	           (set foo 0)
+	           (set bar 1)
+	Process W                  Process R
+	(set foo 2)
+	(set bar 3)
+	(send R t)  =============> (recv)
+	                           bar        => 3 (possibly!)
+	                           foo        => 0 (possibly!)
+
+Conceptually, you may consider each process as having a "write
+cache" and a "read cache".  Upon encountering a write command,
+the machine copies the value to write and stores it in some
+location, with a note to update the actual global variable.
+Also, the machine may cache a previous read from the actual
+global variable, so that the "current" read value is not updated
+from the global variable.
+
+> ### Note for Implementors
+>
+> Again, this is not necessarily how you *should* do it; you
+> are, however, allowed to do it this way if your design works
+> better with this.
+
+On the other hand, if process `R` is started by process `W`
+after writing the global variables, definitely process `R` will
+be able to read the values written by process `W`.
+
+	Preconditions:
+	           (set foo 0)
+	           (set bar 1)
+	Process W                  Process R
+	(set foo 2)
+	(set bar 3)
+	(new-process R-func)  ===> foo        => 2
+	                           bar        => 3
+
+Conceptually, you may consider process `W` as "giving" the new
+process `R` a copy of its write cache to be used as its starting
+read cache.
+
+Global Variable Barriers
+------------------------
+
+In order to properly allow processes to communicate to each
+other with global variables, global variable barriers are
+provided.  These barriers prevent certain reorderings of global
+variable writes and reads when multiple processes are involved.
+
+These two barriers are special forms in the `<axiom>` package,
+and are defined as part of the [Axiomatic
+Layer](legit-axioms.html) of the `hl` base system.
+
+	(<axiom>acquire)
+
+Ensures that all reads that are encountered after this barrier
+are executed after this barrier.  Conceptually, you may consider
+this barrier as clearing the read cache, thus forcing the
+process to read directly from the global variable.
+
+`<axiom>acquire` is a special form which accepts no parameters
+and does not modify the flow of execution.
+
+	(<axiom>release)
+
+Ensures that all writes that were encountered before this
+barrier are executed before execution of this barrier completes.
+Conceputally, you may consider this barrier as committing the
+write cache.
+
+`<axiom>release` is a special form which accepts no parameters
+and does not modify the flow of execution.
+
+If a global variable contains a mutable object, it is possible
+that a read before `<axiom>acquire` will return the "same" value
+as a read after `<axiom>acquire`, provided that the machine
+somehow confirms that the global variable was not modified and
+protected by a `<axiom>release`.  It is also possible that the
+read will return a different value.
+
+These global variable barriers also serialize the execution of
+the global variable writes and reads with respect to messages.
+That is, it can be used to ensure that global variables are
+correctly updated and read when processes use messages.
+
+	Preconditions:
+	           (set foo 0)
+	           (set bar 1)
+	Process W                  Process R
+	(set foo 2)
+	(set bar 3)
+	(release)
+	(send R t)  =============> (recv)
+	                           (acquire)
+	                           foo        => 2
+	                           bar        => 3
+
+Mutable Objects
+---------------
+
+As mentioned above, objects that are assigned to global
+variables are copied.  This copying operation is a complete,
+deep copy operation.  This copying is always performed at the
+point where the write command is actually encountered,
+regardless of when the actual write is performed.
+
+Copying is done only when setting global variables.  For local
+variables, copying is **never** done.
+
+Because of the semantics of global variable assignment, objects
+that are assigned to different global variables will never share
+structure, but it is possible (and **not assured**) that a
+single process's view of the global variables will see them as
+shared.
+
+As an example, consider the following sequence within a single
+process:
+
+	(set foo (cons nil nil))
+	(set bar (cons nil foo))
+	(scar (cdr bar) t)
+	(car foo)                 => ??
+	(car (cdr bar))           => ??
+	(is (cdr bar) foo)        => ??
+
+The `(car foo)` command may "see" the data as shared (and thus
+it might see that `foo` was changed), or it might not.
+
+When considered across process boundaries:
+
+	Process W                  Process R
+	(set foo (cons nil nil))
+	(set bar (cons nil foo))
+	(scar (cdr bar) t)
+	(release)
+	(send R t)  ============>  (recv)
+	                           (acquire)
+	                           (car foo)           => nil
+	                           (car (cdr bar))     => nil
+	                           (is (cdr bar) foo)  => nil
+
+The `<axiom>release` special form ensures that the copy of the
+`cons` cell created in the initial assignment `(set bar (cons
+nil foo))` is the value that gets assigned.  Since the copy was
+created at the initial assignment, that copy was not modified by
+the subsequent `scar`.
+
+As mentioned also, each global variable is independent of the
+other global variables, and there is no sharing of structure,
+since assignment to a global variable requires copying the
+assigned value.
+
+Global Variable Lock
+--------------------
+
+> *Main document: [Global Variable Lock](legit-gvl.html)*
+
+The [Common Layer](legit-common.html) also provides a [Global
+Variable Lock](legit-gvl.html) or **GVL**.  This feature acts as
+a global mutual-exclusion lock, intended for use with the global
+variables.
+
+The [Standard Layer](legit-standard.html) makes use of the GVL
+automatically for the definitional macros, such as `def`, `mac`,
+`defm`, and `defcall`.
+
+This is a single, shared lock, and excessive usage of this
+resource can cause contention.  In addition, it is **not**
+guaranteed to be fair, and excessive usage can cause livelock of
+a process.
+
+Links
+-----
+
+* In [`HL` Legal Specifications](legit.html):
+    * [Global Variable Lock](legit-gvl.html)
+

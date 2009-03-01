@@ -1,0 +1,37 @@
+Development Status
+index
+
+Development Status
+==================
+
+The current status for the [`hl` project][1] is "**being
+built**".  Currently, these are what we are working on:
+
+* <img src='done.png'> Tagged pointers.  **Done.**
+* <img src='done.png'> Bytecode interpreter.  **Done.**
+* <img src='done.png'> Garbage Collector.  **Done.**
+* <img src='done.png'> Strings.  **Done.**
+* <img src='done.png'> Tables.  **Done.**
+* <img src='doing.png'> Thread Pool.  *Doing...*
+* <img src='doing.png'> Asynchronous I/O.  *Doing...*
+* <img src='undone.png'> Signal Handling.  <small>not
+  started</small>
+* <img src='undone.png'> Runtime Executable.  <small>not
+  started</small>
+* <img src='undone.png'> Expression Compiler.  <small>not
+  started</small>
+* <img src='undone.png'> Common Layer of [base
+  system](legit-base-system.html).  <small>not started</small>
+* <img src='undone.png'> Standard Layer of [base
+  system](legit-base-system.html).  <small>not started</small>
+* <img src='doing.png'> Documentation.  [*Doing...*](book.html)
+
+More steps may be added, moved, and inserted in the future as we
+find out things we may have missed now.  Hopefully they won't be
+too many.
+
+<small>(icons from [www.famfamfam.com silk][2])</small>
+
+[1]: http://github.com/AmkG/hl/commits/
+[2]: http://www.famfamfam.com/lab/icons/silk/
+

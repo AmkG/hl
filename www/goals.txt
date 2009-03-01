@@ -1,0 +1,49 @@
+Goals
+index
+
+What `hl` wants
+===============
+
+* `hl` wants to be a Lisplike: it has **macros.**  Support for
+  hygienic macros is being considered (once we figure out what
+  it is and why it's not non-hygienic), but `hl` definitely has
+  non-hygienic macros.  It wants to be a *hot Lisplike.*
+* `hl` wants to be **paradigm-agnostic.**  You think functional
+  programming is the best thing since sliced bread?  Go ahead;
+  it has its advantages.  You can't think in terms of monads?
+  Then mutate the data structures as much as you want.  `hl`
+  seeks to support what you want: it wants to be a *hacker's
+  language.*
+* `hl` wants to have **process-based concurrency.**  This allows
+  it to adapt to the new multicore processors, while still
+  meeting its other goals - especially goals that conflict with
+  the pure functional paradigm.  It wants to be able to handle
+  *huge loads.*
+* `hl` wants to try out the **actor model.**  Not just bland
+  process-based concurrency, but having your objects **be**
+  independently-running processes.  This means that `hl` will
+  garbage collect processes that are waiting for something to
+  do, but which everyone else has forgotten: processes are just
+  another data structure!  In other words, it wants to support
+  *hoards of lambdas.*
+* `hl` wants to support **free and open source.**  Not just the
+  implementation: `hl` wants to make it easy to **integrate other
+  people's libraries** to your own project - libraries which may
+  have been written in a **paradigm you are unaware of,** or are
+  even **hostile to.**  It would like to gain a *huge set of
+  libraries.*
+* `hl` wants to support **generic programming.**  The type of
+  objects - whether built-in or user-defined - is just a name;
+  what's important is **what operations the type supports.**
+  `hl` wants to have a type system based on capabilities,
+  ducking the issue of inheritance; it wants to be *high-level.*
+
+What do *you* want?
+-------------------
+
+Want to learn more?  Try reading through the [`hl`
+documentation](book.html).  Want to know how we're doing so far?
+Look through the [development status](dev-status.html).  Have
+some feedback or other questions?  [Mail
+me](mailto:almkglor@gmail.com).
+

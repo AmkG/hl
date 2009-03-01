@@ -1,0 +1,28 @@
+
+Webpage source files are all `*.txt` files.  All `*.txt` files
+in this directory will be automatically built by the `Makefile`.
+The source files themselves have a specific format.
+
+The first line of the source is the title line.  This forms the
+title line of the webpage built from that source.
+
+The second line of the source is the crumbs line.  This line is
+a series of space-separated names.  The names must correspond to
+actual `.txt` files in this directory.  For example, the crumbs
+line for `legit-global-vars.txt` is `index book legit`.  This
+means that the crumbs line is to the webpage generated for
+`index.txt`, then the webpage for `book.txt`, and finally to the
+webpage for `legit.txt`.  The crumbs line is the line at the top
+of the webpage which shows the "higher" hierarchies of the web
+site.
+
+The content itself is in [Markdown Syntax][1].  Links to other
+pages within the site have to use the `.html` extensions.
+
+There is *no* checking if links within the site are valid: make
+sure to double check because broken links to within-site pages
+are just **bad**, **bad**, **bad**.
+
+<!-- Links -->
+[1]: http://daringfireball.net/projects/markdown/syntax
+

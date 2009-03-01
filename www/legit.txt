@@ -1,0 +1,19 @@
+Legal - HL Book
+index book
+
+`HL` Legal Specifications
+=========================
+
+* [The Base System](legit-base-system.html)
+    * [Axiomatic](legit-axioms.html)
+    * [Common](legit-common.html)
+    * [Standard](legit-standard.html)
+* [Global Variables](legit-global-vars.html)
+    * [Global Variable Lock](legit-gvl.html)
+* [Mathematics](legit-numbers.html)
+
+Links
+-----
+
+* [The `HL` Book](book.html)
+

@@ -1,0 +1,242 @@
+Global Variable Lock - Legal - HL Book
+index book legit legit-global-vars
+
+Global Variable Lock
+====================
+
+The [Common Layer](legit-common.html) includes a resource known
+as the Global Variable Lock, or GVL.  This resource acts as a
+mutual exclusion lock that protects the global variables.
+
+The Common Layer provides a pair of functions that are used to
+acquire and release this resource.  These functions are not
+portable across machines, and should always be referred to by
+name.
+
+The [Standard Layer](legit-standard.html) includes a `w/gvl`
+macro form that automatically acquires the GVL within the scope
+of the form.
+
+The GVL is not fair.  When there is high contention on the lock,
+it is possible for a single process to be unfairly blocked for
+an extend period of time, while other processes are able to
+acquire the lock and execute.
+
+GVL Operation
+-------------
+
+The GVL is a mutex lock provided by the Common Layer.  Only one
+process at a time can acquire or "have" the GVL; if a process
+`R` attempts to acquire the GVL while another process `O` holds
+it, then process `R` will be blocked until `O` releases the
+lock.
+
+The purpose of the GVL is to support synchronization of access
+to the global variables.  For this reason, acquiring and
+releasing the GVL automatically inserts global variable
+barriers, as described in the document [Global
+Variables](legit-global-vars.html).
+
+GVL Acquire and Release
+-----------------------
+
+Two functions in the Common Layer allow acquisition and release
+of the GVL, `<common>acquire-gvl` and `<common>release-gvl`.
+
+Both functions described here are non-portable across machines.
+Attempting to store these functions directly into a local
+variable will cause undefined behavior if a function or
+continuation containing that variable is transmitted to another
+virtual machine and that function is entered.  Attempting to
+store these functions directly into some other structure, and
+transmitting that structure, as well as transmitting the
+function themselves, will cause undefined behavior if those
+structures are accessed or those functions are invoked.
+Wrapping functions that refer to the global variable containing
+these two functions should be used instead.
+
+	(<common>acquire-gvl)
+
+`<common>acquire-gvl` acquires the GVL.  This function blocks
+until the current process has acquired the GVL; upon returning,
+the process already acquires the GVL, and will prevent other
+processes from executing when those processes attempt to acquire
+the GVL.
+
+The function will automatically execute the special form
+`(<axiom>acquire)` after acquiring the lock and just before
+returning.  It will then return `nil`.
+
+Calling this function when the current process already has the
+GVL will result in undefined behavior.
+
+	(<common>release-gvl)
+
+`<common>release-gvl` releases the GVL.  This function does not
+block, except in the case of undefined behavior (where the
+behavior, obviously, is undefined).  Upon returning, other
+processses may subsequently continue if they were blocked while
+attempting to acquire the lock.
+
+The function will automatically execute the special form
+`(<axiom>release)` before releasing the lock.  It will then
+return `nil`.
+
+Calling this function when the current process does not already
+have the GVL will result in undefined behavior.
+
+`w/gvl` Macro
+-------------
+
+The [Standard Layer](legit-standard.html) also includes a macro
+form, `w/gvl`.  This macro form is a body-type macro, whose
+sub-elements are individual expressions to be executed in order.
+This macro form automatically performs a call to
+`<common>acquire-gvl` upon entry of the macro form, then
+executes the sub-expressions.  When a continuation outside the
+`w/gvl` form is activated (i.e. when control flow leaves the
+macro form), it automatically performs a call to
+`<common>release-gvl`.
+
+    (w/gvl
+      ; will now have the GVL
+      (zap + global 1)
+      (if (err-condition)
+          (err-throw t))) ; !! Will still release GVL
+
+This macro is not safely recontinuable - when a continuation
+outside of this macro has been activated, invoking any
+continuations that were created inside this macro will result in
+undefined behavior.
+
+    (let k (w/gvl (ccc idfn))
+      (if k (k nil))) ; !!!!UNDEFINED BEHAVIOR!!!!
+
+This macro is nestable.  If control flow enters this macro form
+while execution is already in the context of another w/gvl form,
+the `<common>acquire-gvl` and `<common>release-gvl` functions
+are not invoked.  However, control flow will enter into the body
+of the function as normal.
+
+    (def (example)
+      (w/gvl
+        (zap + global 1)))
+    (w/gvl
+      (zap + global 1)
+      (example)) ; w/gvl in (example) will act like a 'do
+
+The macro expands to a protected call to `w/gvl-f`:
+
+    (macex '(w/gvl (foo) (bar)))
+    => ((<axiom>symeval '<hl>w/gvl-f)
+        (<hl>fn nil (<User>foo) (<User>bar)))
+
+Where `w/gvl-f` is a function which implements the behavior of
+`w/gvl` as defined above.  This function is not portable across
+machines and should not be directly referred to in user code.
+
+Definition Macros in Standard
+-----------------------------
+
+The definitional macros in the [Standard
+Layer](legit-standard.html), such as `def`, `mac`, `defm`, and
+`defcall` automatically protect their definitions with the
+`w/gvl` macro.
+
+In the cases of `defm` and `defcall`, the entire
+read-modify-write is done within a `w/gvl` form.
+
+Deadlock
+--------
+
+Since the GVL is an explicit lock, normal precautions to prevent
+deadlock should be explicitly applied by users of the lock.  For
+example, it is possible to deadlock if you have acquired the
+lock, then wait for a message from another process.  If the
+other processes that would send the message attempts to acquire
+the GVL before it can send the message, your process will never
+awaken.
+
+Reference Implementation
+------------------------
+
+Below is a reference implementation for the Common Layer
+functions.  It assumes that it is tied directly to the concrete
+machine implementation, and thus uses the VM-implementation-
+specific `<impl>` prefix.
+
+    (in-package impl)
+    (using <axiom>v1)
+    
+    ; to protect against undefined <axiom>recv behavior when
+    ; it is not the only expression in the function.
+    (set <common>recv
+      (lambda ()
+        (recv)))
+    (set <impl>gvl-p
+      (new-process
+        (lambda ()
+          ((rlambda acquired (owner pendings)
+             (send owner (my-pid))
+             ((rlambda check-release (req pendings)
+                (if (is owner req)
+                    (if pendings
+                        (acquired (car pendings) (cdr pendings))
+                        (acquired (<common>recv) '()))
+                    (check-release
+                      (<common>recv)
+                      (cons req pendings))))
+              (<common>recv) pendings))
+           (<common>recv) '()))))
+    (set <common>acquire-gvl
+      (lambda ()
+        (send <impl>gvl-p (my-pid))
+        ((rlambda waiting (msg pending)
+           (if (is msg <impl>gvl-p)
+               ((rlambda resend (pending)
+                  (if pending
+                      ((lambda ()
+                         (send (my-pid) (car pending))
+                         (resend (cdr pending))))
+                      (<axiom>acquire)))
+                pending)
+               (waiting (<common>recv) (cons msg pending))))
+         (<common>recv) '())))
+    (set <common>release-gvl
+      (lambda ()
+        (<axiom>release)
+        (send <impl>gvl-p (my-pid))
+        nil))
+
+Below is a reference implementation of `w/gvl`:
+
+    (in-package hl)
+
+    (mac (w/gvl . body)
+      `(symeval!w/gvl-f (fn () ,@body)))
+
+    (def (w/gvl-f bf)
+      (let pl (process-locals)
+        (if pl!w/gvl-f
+            (bf)
+            (let first t
+              (dynamic-wind
+                (fn ()
+                  ; protect against re-entry
+                  (unless first
+                    (err '<hl>continue
+                         "attempt to recontinue 'w/gvl form"))
+                  (wipe first)
+                  (assert pl!w/gvl-f)
+                  (<common>acquire-gvl))
+                bf
+                (fn ()
+                  (<common>release-gvl)
+                  (wipe pl!w/gvl-f)))))))
+
+Links
+-----
+
+* In [`HL` Legal Specifications](legit.html):
+    * [Global Variables](legit-global-vars.html)
+

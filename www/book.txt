@@ -1,0 +1,46 @@
+HL Book
+index
+
+The `HL` Book
+=============
+
+The `HL` Book is split into three sections, Legal, Moral, and
+Practical.
+
+1.  [The Legal Specifications](legit.html)
+    - What you *can* do.
+2.  The Moral Style Guide
+    - What you *should* do.
+3.  The Practical Reference
+    - What you *want to* do.
+
+The Legal Specifications
+------------------------
+
+The [`HL` Legal Specifications](legit.html) is the prose
+specifications for the `hl` virtual machine.  An `hl`
+implementation is a compliant `hl` implementation if it follows
+the prose specifications.
+
+The Moral Style Guide
+---------------------
+
+The `HL` Moral Style Guide is a set of recommended coding style
+practices in order to ease the interchange of source code among
+programmers using `hl`.  An `hl` programmer is a good programmer
+if he or she follows the coding style.  An `hl` programmer is an
+excellent programmer if she or he is able to recognize and
+articulate when the recommended coding style is lacking and/or
+should not be used.
+
+The Practical Reference
+-----------------------
+
+The `HL` Practical Reference is a set of manuals for using
+various common libraries included in an `hl` implementation.
+An `hl` community is a good community if it can create libraries
+which work seamlessly with the common libraries to extend them,
+and if it is able to point out flaws in the libraries and correct
+them.
+
+

@@ -1,0 +1,30 @@
+Top
+
+<!-- empty line above is necessary for crumbs line -->
+
+About `hl`
+==========
+
+`hl` is a general-purpose Lisplike language with an emphasis on getting
+code written by diverse people, with diverse programming styles, easily
+shared; in particular, it allows various libraries to provide their own
+syntax without conflicting with other libraries.  The `hl` project is an
+open source project (under an MIT license) which will provide a virtual
+machine with a process-based concurrency model for `hl`.
+
+The current state of this project is "[**being built**](dev-status.html)".
+However, a draft document about `hl` is [currently
+available](book.html).  You may also be interested in the [goals for the
+project](goals.html).  Since it's being built we don't have a
+distributable package yet but you may be interested in perusing the
+[source code repository](http://github.com/AmkG/hl/commits/).
+
+<small>This project is under the dictatorship of Alan Manuel K. Gloria,
+who would like to dictate only the bit about the axioms and standard
+library as much as possible.  Stefano Dissegna is credited for the
+enormous work in adapting the interpreter from a previous project,
+[SNAP](http://github.com/AmkG/snap/commits/master), revamping and
+improving that interpreter, as well as convincing Alan to do this
+project in the first place.  If you're interested in the project,
+contact [Alan Manuel K. Gloria](mailto:almkglor@gmail.com).</small>
+

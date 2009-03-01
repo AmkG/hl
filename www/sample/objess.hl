@@ -1,0 +1,126 @@
+
+; prototype-based object system using processes
+; to encapsulate object state
+
+(in-package objess)
+(using <hl>v1)
+(interface v1
+  objess
+  this
+  set-slot
+  clone
+  async)
+(interface v1-types
+  v1
+  objess-method
+  objess-async-method
+  objess-resync-method)
+
+; create type for 'this
+
+(mac (protect-this . body)
+  `(let this ((process-locals) 'this-var)
+     (if this
+         (do ,@body)
+         (err 'this "attempt to use 'this outside of objess"))))
+
+(defcall this-type (this k)
+  (protect-this
+    this.k))
+(defm (sref (t this this-type) v k)
+  (protect-this
+    (sref this v k)))
+(defm (scanner (t this this-type))
+  (protect-this
+    (scanner this)))
+(defm (unscan (t this this-type) s)
+  (protect-this
+    (unscan this s)))
+
+; I assume we won't iterate over 'this often, so don't bother
+; defining base-each and/or base-collect-on
+
+(def this (tag 'this-type nil))
+
+(def (objess . rest)
+  (let tb (table)
+    (= tb!set-slot set-slot-fn)
+    (= tb!clone    clone-fn)
+    (fill-table tb rest)
+    (objess-construct tb)))
+
+(def (set-slot-fn k v)
+  (let this ((process-locals) 'this-var)
+    (sref this v k)))
+(def (clone-fn)
+  (objess-construct ((process-locals) 'this-var)))
+
+(def (objess-construct tb)
+  (tag 'objess
+       (process
+         (= ((process-locals) 'this-var) tb)
+         (always:<==
+           (k caller tid args)
+             (invoke (((process-locals) 'this-var) k)
+                     caller tid args)))))
+
+(def (invoke f caller tid args)
+  (==>1 caller
+    (cons tid
+      (on-err
+        (fn (k e)
+          (list k e))
+        (fn ()
+          (list (apply f args)))))))
+
+(defcall objess (ob k)
+  (let pid (rep ob)
+    (tag 'objess-method
+         (cons pid k))))
+
+(defcall objess-method (ob . args)
+  (with ((pid . k) (rep ob)
+         tid       (uniq))
+    (==> pid k (my-pid) tid args)
+    (<==
+      (,tid v)
+        v
+      (,tid k e)
+        (do (err-throw e)
+            ; debugability
+            (k nil)))))
+
+(def (async f)
+  (err 'async "not a synchronous objess method")
+  (list f))
+(defm (async (t ob objess-method))
+  (tag 'objess-async-method
+       (rep ob)))
+
+(defcall objess-async-method (ob .args)
+  (withs ((pid . k)  (rep ob)
+          tid        (uniq)
+          waiter     (objess-waiter tid))
+    (==> pid k waiter tid args)
+    (tag 'objess-resync-method
+         waiter)))
+
+(defcall objess-resync-method (ob)
+  (with (pid (rep ob)
+         tid (uniq))
+    (==> pid 'wait (my-pid) tid)
+    (<==
+      (,tid v)
+        v
+      (,tid k e)
+        (do (err-throw e)
+            (k nil)))))
+
+(def (objess-waiter tid)
+  (process:<==
+    (,tid . rest)
+      (always:<==
+        ('wait caller tid)
+          (==>1 caller (cons tid rest)))))
+
+
