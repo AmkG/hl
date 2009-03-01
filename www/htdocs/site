@@ -1,4 +1,9 @@
 #! /bin/sh
 
+# This script uploads the website to sourceforge.
+# It probably does not make sense for anyone else
+# other than almkglor, who currently is the only
+# one who can build the site.
+
 rsync -avP -e ssh *.html *.css *.png .htaccess \
 	almkglor,hl-language@web.sourceforge.net:htdocs/

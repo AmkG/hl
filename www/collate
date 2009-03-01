@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# This script builds a single webpage file.  Its first
+# parameter is the source txt file, in markdown format
+# with a few info lines at the top (see NOTES file for
+# more info).  The second parameter is the destination
+# html file.
+
 cat > $2 <<ENDHTML
 <html>
 <head>

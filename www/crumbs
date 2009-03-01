@@ -1,5 +1,8 @@
 #! /usr/bin/awk -f
 
+# This file is used by "collate" to process the crumbs line of
+# the sources.
+
 BEGIN {OFS = ""; ORS = "";}
 
 {
