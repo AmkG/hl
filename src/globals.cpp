@@ -37,7 +37,7 @@ void initialize_globals(void) {
 	symbol_pid = symbols->lookup("<hl>pid");
 	symbol_fn = symbols->lookup("<hl>fn");
 	symbol_string = symbols->lookup("<hl>string");
-	symbol_unspecified = symbols->lookup("<hl>unpsecified");
+	symbol_unspecified = symbols->lookup("<hl>unspecified");
 	symbol_float = symbols->lookup("<hl>float");
 	symbol_array = symbols->lookup("<hl>array");
 	symbol_table = symbols->lookup("<hl>table");
