@@ -1,0 +1,23 @@
+
+This directory tests very basic garbage collector
+functionality; strictly, the tests in `../types/` are
+effectively a superset of this, but if tests fail in both
+this directory and in `../types/`, it may be easier to find
+the bug here.
+
+To run the tests in this directory:
+
+	./compile_test inclusion_test.cpp
+	# notice we don't execute inclusion_test.cpp
+	./compile_test instantiation_test.cpp
+	./a.out
+
+`inclusion_test.cpp` is intended to check for compilation
+errors in the headers.  `instantiation_test.cpp` is intended
+for testing that garbage collection works for small-scale
+allocation.  The test should output some adresses of data
+structures at various stages of allocation; exactly
+understanding those numbers requires knowledge of almkglor's
+`heaps.cpp`.  The test includes some `assert()`'s though.
+
+

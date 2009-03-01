@@ -1,0 +1,36 @@
+
+This directory contains tests for the threading middleware
+that lives between `hl` and the operating system.
+
+To run the tests in this directory:
+
+	./compile_test inclusion_test.cpp # ignore executable from this file
+	./compile_test producer_consumer_test.cpp
+	./a.out
+
+The `inclusion_test.cpp` file simply checks that the include
+file is sane.
+
+`producer_consumer_test.cpp` tests the threading middleware
+by running two tests.  It involves a queue and a number of
+producers and consumers.  Producers produce a set of numbers
+in a range, in sequence.  Consumers consume a set amount of
+numbers from the queue and print them.
+
+In `test 1`, it sets up one producer and one consumer.  The
+producer produces the numbers 1 to 10 in sequence, which the
+consumer should consume before exiting.
+
+In `test 2`, it sets up two producers and two consumers.
+One producer produces 1 to 10, and the other produces 11 to
+20.  The two consumers each consume 10 numbers before
+exiting.  Because the producers produce at the same time,
+the numbers are not necessarily in sequence, but numbers
+within one range should be in sequence (i.e. 11 might
+appear before 1, but 12 will never appear before 11).
+
+The producer-consumer test should probably be run several
+times to check for race conditions, although of course this
+is dubious since we might never get race conditions in the
+test runs.
+

@@ -1,0 +1,20 @@
+
+This directory tests the `hl` bytecode disassembler.
+This tests the disassembler by assembling a bytecode
+sequence, then disassembling that bytecode sequence and
+checking that it's still (mostly) the same.
+
+To run the tests in this directory:
+
+	./compile_driver
+	../reader/dotest.pl ./driver tests/
+
+The above test should print a bunch of "Test X ...ok"
+messages.  If any fail, the test will show which one failed.
+
+Inside the `tests/` directory is some sample `hl` bytecode
+sequences together with expected disassembly.  The format
+of the test files is described briefly in `doc/dotest.txt`.
+
+The test seems to work on any GNU/Linux system.
+

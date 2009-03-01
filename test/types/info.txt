@@ -1,0 +1,28 @@
+
+This test directory tests various hl-side types, as defined
+in `inc/types.hpp`.
+
+To run the tests in this directory:
+
+	./compile_test inclusion_test.cpp # ignore executable of this test
+	./compile_test keys_table_test.cpp
+	./a.out
+	./compile_test string_test.cpp
+	./a.out
+	./compile_test tables_test.cpp
+	./a.out
+
+The first test is simply a sanity test of the include file
+for types.  The last three tests all use `assert()` to check
+for errors.
+
+`keys_table_test.cpp` is an incomplete test of getting table
+keys.
+
+`string_test.cpp` is a comprehensive test of strings.
+
+`tables_test.cpp` is a mostly-complete test of tables,
+including lookup, insertion, and deletion.
+
+This test appears to run on GNU/Linux systems.
+
