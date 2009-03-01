@@ -27,8 +27,8 @@ extern Symbol* symbol_array;
 extern Symbol* symbol_table;
 extern Symbol* symbol_container;
 extern Symbol* symbol_bytecode;
-extern Symbol* symbol_iport;
-extern Symbol* symbol_oport;
+extern Symbol* symbol_ioport;
+extern Symbol* symbol_event;
 extern Symbol* symbol_binobj;
 extern boost::scoped_ptr<AllWorkers> workers;
 

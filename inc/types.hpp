@@ -494,41 +494,28 @@ inline Object::ref sv_set(Object::ref sv, Object::ref nval) {
 I/O Ports (async)
 -----------------------------------------------------------------------------*/
 
-class IPort : public GenericDerived<IPort> {
-private:
-  // function to be called when input is available
-  Object::ref callback;
-public: 
-  IPort() {}
-  
-  void setCallback(Object::ref fn) { callback = fn; }
-  
-  void traverse_references(GenericTraverser *gt) {
-    gt->traverse(callback);
-  }
-  
+class IOPort;
+
+class HlIOPort : public GenericDerived<HlIOPort> {
+public:
+  boost::shared_ptr<IOPort> p;
+
   Object::ref type(void) const {
-    return Object::to_ref(symbol_iport);
+    return Object::to_ref(symbol_ioport);
   }
 };
 
-class OPort : public GenericDerived<IPort> {
-private:
-  // function to be called when port is ready to write
-  Object::ref callback;
-public: 
-  OPort() {}
-  
-  void setCallback(Object::ref fn) { callback = fn; }
-  
-  void traverse_references(GenericTraverser *gt) {
-    gt->traverse(callback);
-  }
-  
+class Event;
+
+class HlEvent : public GenericDerived<HlEvent> {
+public:
+  boost::shared_ptr<Event> p;
+
   Object::ref type(void) const {
-    return Object::to_ref(symbol_oport);
+    return Object::to_ref(symbol_event);
   }
 };
+
 
 /*-----------------------------------------------------------------------------
 Tagged types

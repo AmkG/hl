@@ -20,8 +20,8 @@ Symbol* symbol_array;
 Symbol* symbol_table;
 Symbol* symbol_container;
 Symbol* symbol_bytecode;
-Symbol* symbol_iport;
-Symbol* symbol_oport;
+Symbol* symbol_ioport;
+Symbol* symbol_event;
 Symbol* symbol_binobj;
 
 #include"symbols.hpp"
@@ -47,8 +47,8 @@ void initialize_globals(void) {
 	symbol_table = symbols->lookup("<hl>table");
 	symbol_container = symbols->lookup("<hl>container");
         symbol_bytecode = symbols->lookup("<hl>bytecode");
-        symbol_iport = symbols->lookup("<hl>iport");
-        symbol_oport = symbols->lookup("<hl>oport");
+        symbol_ioport = symbols->lookup("<hl>ioport");
+        symbol_event = symbols->lookup("<hl>event");
         symbol_binobj = symbols->lookup("<hl>binobj");
 	workers.reset(new AllWorkers());
 }
