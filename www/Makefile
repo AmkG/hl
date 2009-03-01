@@ -4,6 +4,9 @@
 # In order to upload the site to sourceforge, use "make upload"
 # Of course, only almkglor currently has the right to upload
 # onto the website...
+# Building this website requires markdown, as the sources
+# require markdown.  Make sure it's named "markdown" and that
+# it's on your path too.
 
 .PHONY : all
 .PHONY : upload
