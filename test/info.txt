@@ -9,3 +9,9 @@ probably assume GNU/Linux, and they all need GCC.  More
 portable tests are probably possible but we're still at the
 stage at which we're trying to get `hl` to run at all.
 
+The most interesting test directory would be `executors/`.
+This directory tests the project's bytecode interpreter.  The
+interpreter is going to be quite a core component, and often
+is the part where everything is then "integrated".  Soon we
+will put up some documentation on the bytecodes.
+
