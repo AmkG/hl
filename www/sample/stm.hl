@@ -178,6 +178,7 @@
 (def (commit)
   (withs (pl  (process-locals)
           tid (uniq)
+          me  (my-pid)
           open-atomic-refs pl!open-atomic-refs
           written          pl!written
           restart          pl!restart
