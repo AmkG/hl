@@ -94,7 +94,7 @@ void ProcessInvoker::accept_respond(
 
 }
 
-void connect_respond(
+void ProcessInvoker::connect_respond(
 		Process& host,
 		boost::shared_ptr<Event> event,
 		boost::shared_ptr<IOPort> new_socket) {
@@ -112,8 +112,7 @@ void connect_respond(
 
 }
 
-
-void sleep_respond(
+void ProcessInvoker::sleep_respond(
 		Process& host,
 		boost::shared_ptr<Event> event,
 		size_t time) {
