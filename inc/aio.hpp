@@ -96,6 +96,8 @@ public:
 boost::shared_ptr<Event> system_event(boost::shared_ptr<ProcessInvoker>,std::string);
 /*sleep unit is milliseconds*/
 boost::shared_ptr<Event> sleep_event(boost::shared_ptr<ProcessInvoker>,size_t);
+/*connect to host's port*/
+boost::shared_ptr<Event> connect_event(boost::shared_ptr<ProcessInvoker>,std::string,int);
 
 /*used as a Singleton, although we don't enforce it*/
 class EventSetImpl;
@@ -153,6 +155,10 @@ public:
 	void accept_respond(
 		Process& host,
 		boost::shared_ptr<IOPort> socket, boost::shared_ptr<IOPort> new_socket
+	);
+	void connect_respond(
+		Process& host,
+		boost::shared_ptr<Event>, boost::shared_ptr<IOPort> new_socket
 	);
 	void sleep_respond(
 		Process& host,
