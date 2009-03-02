@@ -61,3 +61,71 @@ void ProcessInvoker::io_respond(
 
 }
 
+void ProcessInvoker::nil_respond(
+		Process& host,
+		boost::shared_ptr<IOPort> port) {
+	Heap& hp = host; ProcessStack& stack = host.stack;
+	/*build objects*/
+	HlIOPort* io = hp.create<HlIOPort>();
+	io->p = port;
+	stack.push(Object::to_ref<Generic*>(io));
+	stack.push(Object::nil());
+	bytecode_cons(host, stack);
+
+	send_message_to(P, stack);
+
+}
+
+void ProcessInvoker::accept_respond(
+		Process& host,
+		boost::shared_ptr<IOPort> socket,
+		boost::shared_ptr<IOPort> new_socket){
+	Heap& hp = host; ProcessStack& stack = host.stack;
+	/*build objects*/
+	HlIOPort* io = hp.create<HlIOPort>();
+	io->p = socket;
+	stack.push(Object::to_ref<Generic*>(io));
+	io = hp.create<HlIOPort>();
+	io->p = new_socket;
+	stack.push(Object::to_ref<Generic*>(io));
+	bytecode_cons(host, stack);
+
+	send_message_to(P, stack);
+
+}
+
+void connect_respond(
+		Process& host,
+		boost::shared_ptr<Event> event,
+		boost::shared_ptr<IOPort> new_socket) {
+	Heap& hp = host; ProcessStack& stack = host.stack;
+	/*build objects*/
+	HlEvent* ev = hp.create<HlEvent>();
+	ev->p = event;
+	stack.push(Object::to_ref<Generic*>(ev));
+	HlIOPort* io = hp.create<HlIOPort>();
+	io->p = new_socket;
+	stack.push(Object::to_ref<Generic*>(io));
+	bytecode_cons(host, stack);
+
+	send_message_to(P, stack);
+
+}
+
+
+void sleep_respond(
+		Process& host,
+		boost::shared_ptr<Event> event,
+		size_t time) {
+	Heap& hp = host; ProcessStack& stack = host.stack;
+	/*build objects*/
+	HlEvent* ev = hp.create<HlEvent>();
+	ev->p = event;
+	stack.push(Object::to_ref<Generic*>(ev));
+	stack.push(Object::to_ref<int>(time));
+	bytecode_cons(host, stack);
+
+	send_message_to(P, stack);
+
+}
+
