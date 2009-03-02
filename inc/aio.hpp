@@ -174,11 +174,11 @@ public:
 	/*call for errors*/
 	void io_error_respond(
 		Process& host,
-		boost::shared_ptr<IOPort>, std::string
+		boost::shared_ptr<IOPort>, std::string const&
 	);
 	void other_error_respond(
 		Process& host,
-		boost::shared_ptr<Event>, std::string
+		boost::shared_ptr<Event>, std::string const&
 	);
 
 	explicit ProcessInvoker(Process*);
