@@ -7,6 +7,7 @@
 #include"processes.hpp"
 #include"workers.hpp"
 #include"bytecodes.hpp"
+#include"symbols.hpp"
 
 /*Generic code for AIO*/
 /*This contains code that is shared across AIO implementations*/
@@ -126,5 +127,55 @@ void ProcessInvoker::sleep_respond(
 
 	send_message_to(P, stack);
 
+}
+
+void ProcessInvoker::io_error_respond(
+		Process& host,
+		boost::shared_ptr<IOPort> port,
+		std::string const& msg) {
+	Heap& hp = host; ProcessStack& stack = host.stack;
+	/*build objects*/
+	HlIOPort* io = hp.create<HlIOPort>();
+	io->p = port;
+	stack.push(Object::to_ref<Generic*>(io));
+	/*slow lookup is OK, we don't expect error handling
+	to be fast.
+	*/
+	stack.push(Object::to_ref(symbols->lookup("<hl>i/o")));
+	/*assume ASCII string for now*/
+	for(size_t i = 0; i < msg.size(); ++i) {
+		stack.push(Object::to_ref(UnicodeChar(msg[i])));
+	}
+	HlString::stack_create(hp, stack, msg.size());
+
+	bytecode_tag(host, stack);
+	bytecode_cons(host, stack);
+
+	send_message_to(P, stack);
+}
+
+void ProcessInvoker::other_error_respond(
+		Process& host,
+		boost::shared_ptr<Event> event,
+		std::string const& msg) {
+	Heap& hp = host; ProcessStack& stack = host.stack;
+	/*build objects*/
+	HlEvent* ev = hp.create<HlEvent>();
+	ev->p = event;
+	stack.push(Object::to_ref<Generic*>(ev));
+	/*slow lookup is OK, we don't expect error handling
+	to be fast.
+	*/
+	stack.push(Object::to_ref(symbols->lookup("<hl>i/o")));
+	/*assume ASCII string for now*/
+	for(size_t i = 0; i < msg.size(); ++i) {
+		stack.push(Object::to_ref(UnicodeChar(msg[i])));
+	}
+	HlString::stack_create(hp, stack, msg.size());
+
+	bytecode_tag(host, stack);
+	bytecode_cons(host, stack);
+
+	send_message_to(P, stack);
 }
 
