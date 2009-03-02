@@ -146,7 +146,8 @@ public:
 	*/
 	void io_respond(
 		Process& host,
-		boost::shared_ptr<IOPort>, boost::shared_ptr<std::vector<unsigned char> >&
+		boost::shared_ptr<IOPort>,
+		boost::shared_ptr<std::vector<unsigned char> >&
 	);
 	void nil_respond(
 		Process& host,
@@ -154,7 +155,8 @@ public:
 	);
 	void accept_respond(
 		Process& host,
-		boost::shared_ptr<IOPort> socket, boost::shared_ptr<IOPort> new_socket
+		boost::shared_ptr<IOPort> socket,
+		boost::shared_ptr<IOPort> new_socket
 	);
 	void connect_respond(
 		Process& host,
