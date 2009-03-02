@@ -6,11 +6,25 @@
 #include"objects.hpp"
 #include"processes.hpp"
 #include"workers.hpp"
+#include"bytecodes.hpp"
 
 /*Generic code for AIO*/
 /*This contains code that is shared across AIO implementations*/
 
-static inline void send_message_to(Process* p, ValueHolderRef& v) {
+/*internal function for sending a message to a process*/
+/*
+preconditions:
+	stack.top() = message to send
+postconditions:
+	stack.top() has been popped
+*/
+static inline void send_message_to(Process* p, ProcessStack& stack) {
+	/*prepare message*/
+	ValueHolderRef m;
+	ValueHolder::copy_object(m, stack.top());
+	send_message_to(P, m);
+	stack.pop();
+
 	bool is_waiting = 0;
 	/*keep sending until we definitely go through any locks or whatnot*/
 	while(!p->receive_message(v, is_waiting)) /*do nothing*/;
@@ -27,12 +41,25 @@ ProcessInvoker::~ProcessInvoker() {
 }
 
 void ProcessInvoker::io_respond(
+		Process& host,
 		boost::shared_ptr<IOPort> port,
-		std::vector<unsigned char> const& dat) {
-	/*Create a heap to build the response from*/
-	Process hp; ProcessStack& stack = hp.stack;
+		boost::shared_ptr<std::vector<unsigned char> >& dat) {
+	Heap& hp = host; ProcessStack& stack = host.stack;
 	/*build objects*/
-	/*TODO: first define hl-side type for IO port and events*/
+	HlIOPort* io = hp.create<HlIOPort>();
+	io->p = port;
+	stack.push(Object::to_ref<Generic*>(io));
+	/*any data?*/
+	if(!dat || dat->size() == 0) {
+		stack.push(Object::nil());
+	} else {
+		BinObj* e = hp.create<BinObj>();
+		e->p.swap(dat);
+		stack.push(Object::to_ref<Generi*>(e));
+	}
+	bytecode_cons(host, stack);
+
+	send_message_to(P, stack);
 
 }
 
