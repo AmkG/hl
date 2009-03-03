@@ -34,10 +34,8 @@ static inline void send_message_to(Process* P, ProcessStack& stack) {
 }
 
 ProcessInvoker::ProcessInvoker(Process* nP) : P(nP) {
-	/*TODO: notify workers of one more process-gc root*/
 }
 ProcessInvoker::~ProcessInvoker() {
-	/*TODO: notify workers of loss of root*/
 }
 
 void ProcessInvoker::io_respond(
