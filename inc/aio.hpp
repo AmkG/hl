@@ -102,16 +102,7 @@ boost::shared_ptr<Event> connect_event(boost::shared_ptr<ProcessInvoker>,std::st
 class ProcessInvokerScanner;
 
 /*used as a Singleton, although we don't enforce it*/
-/*PROMISE: We will only ever create one instance
-of this object, and it will only be created in the
-main program thread at initialization (note however
-that other threads may have been launched; any
-other launched threads, if present at the time this
-object is instantiated, will not be worker threads).
-This means that none of the other functions here,
-and none of the objects, will be instantiated before
-this object is instantiated.
-*/
+/*specific AIO implementation has to enforce Singleton-ness*/
 class EventSetImpl;
 class EventSet {
 private:
@@ -127,11 +118,6 @@ public:
 	void event_poll(Process& host);
 	void event_wait(Process& host);
 
-	/*Since this object is only instantiated once, at
-	initialization (and we are *assured* of it being
-	instantiated), it is appropriate to use the
-	constructor for any OS-specific initialization.
-	*/
 	EventSet(void);
 	~EventSet();
 
@@ -146,6 +132,15 @@ public:
 	*/
 	void scan_process_invokers(ProcessInvokerScanner*);
 };
+
+/*get *the* EventSet*/
+EventSet& the_event_set(void);
+/*PROMISE: we won't call the above function unless
+we have called aio_initialize() below, once, first.
+*/
+/*initialize and clean-up aio (including creation of *the* EventSet)*/
+void aio_initialize(void);
+void aio_deinitialize(void);
 
 /*called at the initialization/cleanup of each thread*/
 /*NOT called on main process thread*/
