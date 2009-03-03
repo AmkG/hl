@@ -153,7 +153,7 @@ Shared across Implementations
 
 class ProcessInvokerScanner {
 public:
-	virtual void traverse(ProcessInvoker&) =0;
+	virtual void traverse(ProcessInvoker const&) =0;
 	virtual ~ProcessInvokerScanner() { }
 };
 
