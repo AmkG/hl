@@ -60,4 +60,18 @@ void Symbol::set_value(Object::ref o) {
 	}
 }
 
+void Symbol::clean_notification_list(std::set<Process*> const& dead) {
+	size_t j = 0;
+	for(size_t i = 0; i < notification_list.size(); ++i) {
+		/*not counted among the dead?*/
+		if(dead.count(notification_list[i]) == 0) {
+			if(i != j) {
+				notification_list[j] = notification_list[i];
+			}
+			++j;
+		}
+	}
+	notification_list.resize(j);
+}
+
 
