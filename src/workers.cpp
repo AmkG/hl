@@ -427,10 +427,7 @@ public:
 		}
 	}
 	void traverse(Symbol* sp) {
-		/*TODO: in the future, when we actually implement
-		notifications for global variable writes, insert
-		code here.
-		*/
+		sp->clean_notification_list(dead);
 	}
 };
 

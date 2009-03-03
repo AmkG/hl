@@ -8,6 +8,7 @@
 #include<vector>
 #include<string>
 #include<map>
+#include<set>
 
 class SymbolsTable;
 
@@ -24,9 +25,17 @@ class Symbol {
 	std::vector<Process*> notification_list;
 
 public:
+
 	void copy_value_to(ValueHolderRef&);
 	void copy_value_to_and_add_notify(ValueHolderRef&, Process*);
 	void set_value(Object::ref);
+
+	/*removes from the notification list all processes in the
+	given set of dead processes.
+	Not thread safe, intended for use during soft-stop.
+	*/
+	void clean_notification_list(std::set<Process*> const& dead);
+
 	std::string getPrintName() { return printname; } // for debugging
 	/*WARNING! not thread safe. intended for use during soft-stop*/
 	void traverse_objects(HeapTraverser* ht) {

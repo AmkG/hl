@@ -9,18 +9,18 @@ as the Global Variable Lock, or GVL.  This resource acts as a
 mutual exclusion lock that protects the global variables.
 
 The Common Layer provides a pair of functions that are used to
-acquire and release this resource.  These functions are not
-portable across machines, and should always be referred to by
-name.
+acquire and release this resource.  The Common Layer also
+provides a utility higher-order function which executes another
+function while owning the lock.  These functions are not portable
+across machines, and should always be referred to by name.
 
 The [Standard Layer](legit-standard.html) includes a `w/gvl`
-macro form that automatically acquires the GVL within the scope
-of the form.
+macro form that calls the Common Layer GVL owning function.
 
-The GVL is not fair.  When there is high contention on the lock,
-it is possible for a single process to be unfairly blocked for
-an extend period of time, while other processes are able to
-acquire the lock and execute.
+**The GVL is not fair**.  When there is high contention on the
+lock, it is possible for a single process to be unfairly blocked
+for an extended period of time, while other processes are able
+to acquire the lock and execute.
 
 GVL Operation
 -------------
@@ -85,18 +85,61 @@ return `nil`.
 Calling this function when the current process does not already
 have the GVL will result in undefined behavior.
 
+GVL Scope
+---------
+
+The [Common Layer](legit-standard.html) also includes a
+higher-order function that calls another function while owning
+the lock.  Acquisition and release of the lock is protected by
+a `dynamic-wind` form.
+
+	(<common>call-w/gvl f)
+
+The given object `f` must be of any callable type that accepts a
+call without any parameters.  The given object `f` is called a
+function from here onwards, but implementations should support
+any callable type.
+
+This function is not normally recontinuable - when any
+continuation outside this form has been activated, then calling
+a continuation inside this form will result in undefined
+behavior:
+
+    (let k
+         (<common>call-w/gvl
+           (fn ()
+             (ccc idfn)))
+      (if k (k nil))) ; !!!!UNDEFINED BEHAVIOR!!!!
+
+Calls to this function may be nested, i.e. the function called
+by this function may directly or indirectly call this function
+again.  When this function is called while already in the scope
+of the GVL ownership, this function simply calls the given
+function without any additional protection.
+
+    (def (example)
+      (<common>call-w/gvl
+        (fn ()
+          (zap + global 1))))
+    
+    (<common>call-w/gvl
+      (fn ()
+        (zap + global 1)
+        (example))) ; call-w/gvl in (example) will act like 'do
+
+In order to determine if the current process already owns the
+GVL, the implementation may use a slot in the `process-locals`
+table provided by the Common Layer.  Attempting to replace the
+process-locals table while within the execution context of this
+function will result in undefined behavior.
+
 `w/gvl` Macro
 -------------
 
 The [Standard Layer](legit-standard.html) also includes a macro
 form, `w/gvl`.  This macro form is a body-type macro, whose
 sub-elements are individual expressions to be executed in order.
-This macro form automatically performs a call to
-`<common>acquire-gvl` upon entry of the macro form, then
-executes the sub-expressions.  When a continuation outside the
-`w/gvl` form is activated (i.e. when control flow leaves the
-macro form), it automatically performs a call to
-`<common>release-gvl`.
+This macro form wraps the `<common>call-w/gvl` function.
 
     (w/gvl
       ; will now have the GVL
@@ -104,36 +147,15 @@ macro form), it automatically performs a call to
       (if (err-condition)
           (err-throw t))) ; !! Will still release GVL
 
-This macro is not safely recontinuable - when a continuation
-outside of this macro has been activated, invoking any
-continuations that were created inside this macro will result in
-undefined behavior.
-
-    (let k (w/gvl (ccc idfn))
-      (if k (k nil))) ; !!!!UNDEFINED BEHAVIOR!!!!
-
-This macro is nestable.  If control flow enters this macro form
-while execution is already in the context of another w/gvl form,
-the `<common>acquire-gvl` and `<common>release-gvl` functions
-are not invoked.  However, control flow will enter into the body
-of the function as normal.
-
-    (def (example)
-      (w/gvl
-        (zap + global 1)))
-    (w/gvl
-      (zap + global 1)
-      (example)) ; w/gvl in (example) will act like a 'do
-
-The macro expands to a protected call to `w/gvl-f`:
+The macro expands to a protected call to `<common>call-w/gvl`:
 
     (macex '(w/gvl (foo) (bar)))
-    => ((<axiom>symeval '<hl>w/gvl-f)
+    => ((<axiom>symeval '<common>call-w/gvl)
         (<hl>fn nil (<User>foo) (<User>bar)))
 
-Where `w/gvl-f` is a function which implements the behavior of
-`w/gvl` as defined above.  This function is not portable across
-machines and should not be directly referred to in user code.
+Because this macro expands to a call to `<common>call-w/gvl`, it
+inherits the warnings, capabilities and limitations of that
+function.
 
 Definition Macros in Standard
 -----------------------------
@@ -208,31 +230,33 @@ specific `<impl>` prefix.
         (send <impl>gvl-p (my-pid))
         nil))
 
-Below is a reference implementation of `w/gvl`:
+Below is a reference implementation of `call-w/gvl`:
 
-    (in-package hl)
+    (in-package impl)
+    (using <axiom>v1)
 
-    (mac (w/gvl . body)
-      `(symeval!w/gvl-f (fn () ,@body)))
-
-    (def (w/gvl-f bf)
-      (let pl (process-locals)
-        (if pl!w/gvl-f
-            (bf)
-            (let first t
-              (dynamic-wind
-                (fn ()
-                  ; protect against re-entry
-                  (unless first
-                    (err '<hl>continue
-                         "attempt to recontinue 'w/gvl form"))
-                  (wipe first)
-                  (assert pl!w/gvl-f)
-                  (<common>acquire-gvl))
-                bf
-                (fn ()
-                  (<common>release-gvl)
-                  (wipe pl!w/gvl-f)))))))
+    (set <common>call-w/gvl
+      (lambda (bf)
+        ((lambda (pl)
+          (if (pl '<impl>w/gvl-f)
+              (bf)
+              ((lambda (first)
+                (<common>dynamic-wind
+                  (fn ()
+                    ; protect against re-entry
+                    (if first
+                        (set first nil)
+                        (error
+                          (tag '<hl>continue
+                            "attempt to recontinue 'w/gvl form")))
+                    (sref pl t '<impl>w/gvl-f))
+                    (<common>acquire-gvl))
+                  bf
+                  (fn ()
+                    (<common>release-gvl)
+                    (sref pl nil '<impl>w/gvl-f))))
+               t)))
+         (process-locals))))
 
 Links
 -----
