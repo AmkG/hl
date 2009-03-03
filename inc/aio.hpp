@@ -99,6 +99,8 @@ boost::shared_ptr<Event> sleep_event(boost::shared_ptr<ProcessInvoker>,size_t);
 /*connect to host's port*/
 boost::shared_ptr<Event> connect_event(boost::shared_ptr<ProcessInvoker>,std::string,int);
 
+class ProcessInvokerScanner;
+
 /*used as a Singleton, although we don't enforce it*/
 /*PROMISE: We will only ever create one instance
 of this object, and it will only be created in the
@@ -132,6 +134,17 @@ public:
 	*/
 	EventSet(void);
 	~EventSet();
+
+	/*This member function is called on the global
+	event set by the thread pool.  This function
+	should then call the traverse() member function
+	of the given ProcessInvokerScanner on each
+	process invoker of each live event.
+	This call is assuredly made when only one thread
+	is running, and thus does not require any special
+	threading protection.
+	*/
+	void scan_process_invokers(ProcessInvokerScanner*);
 };
 
 /*called at the initialization/cleanup of each thread*/
@@ -143,14 +156,21 @@ void aio_thread_deinitialize(void);
 Shared across Implementations
 -----------------------------------------------------------------------------*/
 
+class ProcessInvokerScanner {
+public:
+	virtual void traverse(ProcessInvoker&) =0;
+	virtual ~ProcessInvokerScanner() { }
+};
+
 /*implementations in src/aio.cpp*/
 
 class ProcessInvoker {
 private:
-	Process* P;
 	ProcessInvoker(void); //disallowed
 
 public:
+	Process* P;
+
 	/*"host" parameter is just a heap that can be used to
 	conveniently construct the response before actually
 	sending it to the target process.  It is *not* the
@@ -199,9 +219,6 @@ public:
 	explicit ProcessInvoker(Process*);
 	~ProcessInvoker(void);
 
-	/*TODO: integrate with workers.cpp so that existing ProcessInvoker's
-	are part of the root set.
-	*/
 };
 
 
