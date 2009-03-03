@@ -6,6 +6,7 @@
 #include"mutexes.hpp"
 #include"lockeds.hpp"
 #include"symbols.hpp"
+#include"aio.hpp"
 
 #include<boost/noncopyable.hpp>
 
@@ -434,6 +435,26 @@ public:
 };
 
 /*
+ * Scan event set for processes waiting on I/O and other OS events
+ */
+class EventSetScanner : public ProcessInvokerScanner {
+private:
+	std::vector<Worker*>* Wsp;
+	int i;
+
+public:
+	explicit EventSetScanner(std::vector<Worker*>& Ws)
+		: Wsp(&Ws), i(0) { }
+
+	void traverse(ProcessInvoker const& PI) {
+		std::set<Process*>& gray_set = (*Wsp)[i]->gray_set;
+		gray_set.insert(PI.P);
+		++i;
+		if(i >= Wsp->size()) i = 0;
+	}
+};
+
+/*
  * Actual work
  */
 
@@ -454,8 +475,13 @@ WorkerLoop:
 			}
 			{SoftStop ss(parent);
 				/*all other threads are now suspended*/
+				/*scan global variables*/
 				SymbolProcessScanner ssc(parent->Ws);
 				symbols->traverse_symbols(&ssc);
+				/*scan aio event set*/
+				EventSetScanner ess(parent->Ws);
+				the_event_set().scan_process_invokers(&ess);
+				/*initialize marking state*/
 				for(size_t i; i < parent->total_workers; ++i) {
 					parent->gray_workers++; // N
 					parent->Ws[i]->gray_done = 0;
