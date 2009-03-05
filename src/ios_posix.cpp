@@ -12,6 +12,11 @@
 
 /*
 POSIX-based asynchronous I/O and signal handling
+
+Note that we don't program to the letter of the POSIX
+specs: AFAIK no actual OS conforms perfectly to POSIX.
+Preferably we try to be somewhat more resilient and
+try to be more defensive when making system calls.
 */
 
 /*self-pipe trick with SIGCHLD*/
@@ -95,6 +100,47 @@ static void sigchld_handler(int) {
 	*/
 }
 
+/*FD_CLOEXEC Known Issues:
+Normally FD's will remain open across fork() and exec() calls.
+This is useful when piping.  Unfortunately, we rarely even
+want to use piping; almost definitely we will pipe only a few
+FD's.
+
+Thus, in the general case, when acquiring FD's from the OS,
+we must very soon force them to FD_CLOEXEC.  However, this
+has problems in a multithreaded implementation which fork()s.
+It's possible for one thread to fork()+exec() while another
+thread has just, say, called socket().  In this case the
+returned socket will *not* have FD_CLOEXEC and will remain
+open in the child process, reducing the number of useable
+FD's in the process, as well as other weird stuff like tape
+drives not rewinding...
+
+This can be solved in many ways:
+1.  Ignore CLOEXEC.  After fork() and before exec(), close
+everything except for any redirections we want.  This means
+about sysconf(_SC_OPEN_MAX) calls to close().  Now suppose
+_SC_OPEN_MAX is 65,536...
+2.  Like above.  But we just keep closing until we get N
+consecutive EBADF failures for close(), where N is some big
+number.  Hackish solution which depends on the probability
+that FD numbers will skip at most N consecutive values.
+3.  Keep track of the largest ever FD we ever see from any
+source.  Just loop up to that instead of
+sysconf(_SC_OPEN_MAX), which should be faster because the
+largest FD will be much smaller than _SC_OPEN_MAX.  However
+when multithreaded we have to rely on locks to keep track
+of the largest seen FD anyway, so....
+4.  Protect all open()+fcntl()/socket()+fcntl/pipe()+fcntl(),
+as well as fork(), with a mutex.  While fork() will also
+duplicate the mutex in the child, we do an exec() soon
+anwyay, so the child's mutex copy gets implicitly deleted.
+
+#4 above seems the best solution but it *might* mean that
+some LIBC and other third-party library routines can't be
+safely used (since they would internally open some FD's,
+which we can't protect with a mutex).
+*/
 static void force_cloexec(int fd) {
 	int flag;
 	do {
