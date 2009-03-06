@@ -41,6 +41,8 @@ class ProcessInvoker;
 /*Errors in I/O should throw this class*/
 /*Could use a Maybe T type I suppose though*/
 class IOError : public std::runtime_error {
+public:
+	IOError(std::string const& a) : std::runtime_error(a) { }
 };
 /*
 Errors are caught only on:
