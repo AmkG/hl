@@ -60,7 +60,7 @@ Implementation-specific
 /*I/O Ports*/
 class IOPort {
 public:
-	void close(void);
+	virtual void close(void) =0;
 
 	/*If the read completed immediately, return a null
 	pointer and put a value into now_read.  Otherwise,
