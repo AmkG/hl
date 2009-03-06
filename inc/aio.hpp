@@ -62,10 +62,21 @@ class IOPort {
 public:
 	void close(void);
 
+	/*If the read completed immediately, return a null
+	pointer and put a value into now_read.  Otherwise,
+	put a null pointer into now_read and return an
+	event.
+	*/
 	virtual boost::shared_ptr<Event> read(
 		boost::shared_ptr<ProcessInvoker>, size_t
+		boost::shared_ptr<std::vector<unsigned char> >& now_read
 	) =0;
-	virtual boost::shared_ptr<Event> write(boost::shared_ptr<ProcessInvoker>,
+
+	/*return a null pointer if data-writing was successfully
+	completed.
+	*/
+	virtual boost::shared_ptr<Event> write(
+		boost::shared_ptr<ProcessInvoker>,
 		std::vector<unsigned char> const&
 	) =0;
 	virtual boost::shared_ptr<Event> accept(
