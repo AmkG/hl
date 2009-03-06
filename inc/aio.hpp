@@ -47,6 +47,9 @@ Errors are caught only on:
 1. opening a file
 2. seeking
 3. closing
+4. creating a read event
+5. creating a write event
+6. creating an accept event
 
 In all other cases, errors are caught at the time
 that events are triggered; they are reported by
