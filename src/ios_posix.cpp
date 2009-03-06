@@ -20,7 +20,7 @@ try to be more defensive when making system calls.
 */
 
 /*self-pipe trick with SIGCHLD*/
-int sigchld_wr, sigchld_rd;
+static int sigchld_wr, sigchld_rd;
 /*PLANNED (not yet implemented)
 When compiled single_threaded, signal handlers also
 write to sigchld_wr, in order to (hopefully!)
@@ -164,4 +164,5 @@ static void force_cloexec(int fd) {
 		exit(1);
 	}
 }
+
 
