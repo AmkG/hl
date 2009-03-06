@@ -100,6 +100,9 @@ static void sigchld_handler(int) {
 	*/
 }
 
+/*empty signal handler, used for e.g. SIGPIPE*/
+static void nihilistic_handler(int) { return; }
+
 /*FD_CLOEXEC Known Issues:
 Normally FD's will remain open across fork() and exec() calls.
 This is useful when piping.  Unfortunately, we rarely even
@@ -165,4 +168,62 @@ static void force_cloexec(int fd) {
 	}
 }
 
+void aio_initialize(void) {
+	int rv;
+
+	/*---------------------------------------------------------------------
+	setup self-pipe
+	---------------------------------------------------------------------*/
+	int pipefds[2];
+	errno = 0;
+	rv = pipe(pipefds);
+	if(rv < 0) {
+		if(errno == ENFILE) {
+			std::cerr << "aio_initialize: too many open "
+				<< "files during self-pipe "
+				<< "initialization, oh noes!"
+				<< std::endl;
+		} else {
+			std::cerr << "aio_initialize: Unexpected error "
+				<< "during self-pipe initialization"
+				<< std::endl;
+		}
+		exit(1);
+	}
+	force_cloexec(pipefds[0]);
+	force_cloexec(pipefds[1]);
+	sigchld_rd = pipefds[0]; sigchld_wr = pipefds[1];
+
+	/*---------------------------------------------------------------------
+	setup SIGCHLD and SIGPIPE
+	---------------------------------------------------------------------*/
+	struct sigaction sa;
+	/*SIGCHLD*/
+	sigfillset(&sa.sa_mask); /*block everything inside handler*/
+	sa.sa_flags = 0;
+	sa.sa_handler = &sigchld_handler;
+	rv = sigaction(SIGCHLD, &sa, 0);
+	if(rv < 0) {
+		std::cerr << "aio_initialize: Unexpected error during "
+			<< "SIGCHLD handler setup."
+			<< std::endl;
+		exit(1);
+	}
+	/*SIGPIPE*/
+	sigfillset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = &nihilistic_handler;
+	rv = sigaction(SIGPIPE, &sa, 0);
+	if(rv < 0) {
+		std::cerr << "aio_initialize: Unexpected error during "
+			<< "SIGPIPE handler setup."
+			<< std::endl;
+		exit(1);
+	}
+
+}
+
+void aio_deinitialize(void) {
+	/*TODO: figure out what to clean up, if any*/
+}
 
