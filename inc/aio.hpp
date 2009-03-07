@@ -26,8 +26,9 @@ Events are:
 1.  Write-to-I/O event
 2.  Read-from-I/O event
 3.  Accept-from-I/O Socket event
-4.  Sleep Event
-5.  System Event (i.e. spawn child OS process)
+4.  Connect-to-host-socket event
+5.  Sleep Event
+6.  System Event (i.e. spawn child OS process)
 */
 
 /*Details are handled by the AIO implementation
