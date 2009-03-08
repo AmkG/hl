@@ -500,6 +500,11 @@ class HlIOPort : public GenericDerived<HlIOPort> {
 public:
   boost::shared_ptr<IOPort> p;
 
+  bool is(Object::ref o) const {
+    HlIOPort* p = maybe_type<HlIOPort>(o);
+    return p && p->p == p;
+  }
+
   Object::ref type(void) const {
     return Object::to_ref(symbol_ioport);
   }
@@ -510,6 +515,11 @@ class Event;
 class HlEvent : public GenericDerived<HlEvent> {
 public:
   boost::shared_ptr<Event> p;
+
+  bool is(Object::ref o) const {
+    HlEvent* p = maybe_type<HlEvent>(o);
+    return p && p->p == p;
+  }
 
   Object::ref type(void) const {
     return Object::to_ref(symbol_event);
