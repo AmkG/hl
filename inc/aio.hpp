@@ -74,7 +74,7 @@ public:
 	event.
 	*/
 	virtual boost::shared_ptr<Event> read(
-		boost::shared_ptr<ProcessInvoker>, size_t
+		boost::shared_ptr<ProcessInvoker>, size_t,
 		boost::shared_ptr<std::vector<unsigned char> >& now_read
 	) =0;
 
@@ -193,39 +193,35 @@ public:
 	*/
 	void io_respond(
 		Process& host,
-		boost::shared_ptr<IOPort>,
+		boost::shared_ptr<Event>&,
 		boost::shared_ptr<std::vector<unsigned char> >&
 	);
 	void nil_respond(
 		Process& host,
-		boost::shared_ptr<IOPort>
+		boost::shared_ptr<Event>&
 	);
 	void accept_respond(
 		Process& host,
-		boost::shared_ptr<IOPort> socket,
-		boost::shared_ptr<IOPort> new_socket
+		boost::shared_ptr<Event>&,
+		boost::shared_ptr<IOPort>& new_socket
 	);
 	void connect_respond(
 		Process& host,
-		boost::shared_ptr<Event>, boost::shared_ptr<IOPort> new_socket
+		boost::shared_ptr<Event>&, boost::shared_ptr<IOPort>& new_socket
 	);
 	void sleep_respond(
 		Process& host,
-		boost::shared_ptr<Event>, size_t
+		boost::shared_ptr<Event>&, size_t
 	);
 	void system_respond(
 		Process& host,
-		boost::shared_ptr<Event>, int term_code
+		boost::shared_ptr<Event>&, int term_code
 	);
 
 	/*call for errors*/
-	void io_error_respond(
+	void error_respond(
 		Process& host,
-		boost::shared_ptr<IOPort>, std::string const&
-	);
-	void other_error_respond(
-		Process& host,
-		boost::shared_ptr<Event>, std::string const&
+		boost::shared_ptr<Event>&, std::string const&
 	);
 
 	explicit ProcessInvoker(Process*);
