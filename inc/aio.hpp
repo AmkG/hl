@@ -74,7 +74,7 @@ public:
 	event.
 	*/
 	virtual boost::shared_ptr<Event> read(
-		boost::shared_ptr<ProcessInvoker>, size_t,
+		boost::shared_ptr<ProcessInvoker> const&, size_t,
 		boost::shared_ptr<std::vector<unsigned char> >& now_read
 	) =0;
 
@@ -83,7 +83,7 @@ public:
 	*/
 	virtual boost::shared_ptr<Event> write(
 		boost::shared_ptr<ProcessInvoker>,
-		std::vector<unsigned char> const&
+		boost::shared_ptr<std::vector<unsigned char> >&
 	) =0;
 	virtual boost::shared_ptr<Event> accept(
 		boost::shared_ptr<ProcessInvoker>
