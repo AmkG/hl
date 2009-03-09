@@ -30,8 +30,11 @@ More steps may be added, moved, and inserted in the future as we
 find out things we may have missed now.  Hopefully they won't be
 too many.
 
-<small>(icons from [www.famfamfam.com silk][2])</small>
+Want to pester us?  Try doing it on [the forum][2]
+
+<small>(icons from [www.famfamfam.com silk][3])</small>
 
 [1]: http://github.com/AmkG/hl/commits/
-[2]: http://www.famfamfam.com/lab/icons/silk/
+[2]: http://hl.webhop.net/
+[3]: http://www.famfamfam.com/lab/icons/silk/
 
