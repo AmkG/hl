@@ -45,5 +45,6 @@ Want to learn more?  Try reading through the [`hl`
 documentation](book.html).  Want to know how we're doing so far?
 Look through the [development status](dev-status.html).  Have
 some feedback or other questions?  [Mail
-me](mailto:almkglor@gmail.com).
+me](mailto:almkglor@gmail.com), or write a post on [the
+forum](http://hl.webhop.net/).
 
