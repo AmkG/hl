@@ -7,8 +7,35 @@
 #include<signal.h>
 #include<fcntl.h>
 
+#include<boost/noncopyable.hpp>
+#include<boost/enable_shared_from_this.hpp>
+
 // used for error reporting before aborting
 #include<iostream>
+
+/*
+Choose either USE_POSIX_POLL or USE_POSIX_SELECT
+
+Generally, we would prefer to use poll() rather
+than select()
+*/
+#ifdef USE_POSIX_POLL
+	#ifdef USE_POSIX_SELECT
+		#error Please select only one of USE_POSIX_POLL or USE_POSIX_SELECT
+	#else
+		#include<poll.h>
+	#endif
+#else
+	#ifndef USE_POSIX_SELECT
+		#error Please select either USE_POSIX_POLL or USE_POSIX_SELECT
+	#else
+		#include<sys/select.h>
+	#endif
+#endif
+
+#ifdef USE_POSIX_POLL
+	#error Support for poll() not yet implemented!
+#endif
 
 /*
 POSIX-based asynchronous I/O and signal handling
@@ -18,6 +45,243 @@ specs: AFAIK no actual OS conforms perfectly to POSIX.
 Preferably we try to be somewhat more resilient and
 try to be more defensive when making system calls.
 */
+
+/*-----------------------------------------------------------------------------
+Concrete IOPort and Event class declarations
+-----------------------------------------------------------------------------*/
+
+class WriteEvent;
+class ReadEvent;
+class AcceptEvent;
+class ConnectEvent;
+class SleepEvent;
+class SystemEvent;
+
+/*Concrete IOPort type*/
+class PosixIOPort : public IOPort, boost::noncopyable {
+private:
+	int fd;
+	bool readable;
+	bool writeable;
+	bool listener;
+	bool closed;
+
+	PosixIOPort(void); // disallowed!
+
+	/*Use a factory, not this!*/
+	PosixIOPort(int nfd, bool nr, bool nw, bool nl) 
+		: fd(nfd),
+		readable(nr),
+		writeable(nw),
+		listener(nl),
+		closed(0) { }
+
+public:
+	static inline PosixIOPort* r_able(int nfd) {
+		return new PosixIOPort(nfd, 1, 0, 0);
+	}
+	static inline PosixIOPort* w_able(int nfd) {
+		return new PosixIOPort(nfd, 0, 1, 0);
+	}
+	static inline PosixIOPort* rw_able(int nfd) {
+		return new PosixIOPort(nfd, 1, 1, 0);
+	}
+
+	void close(void) {
+		if(!closed) {
+			int rv;
+			do {
+				errno = 0;
+				rv = ::close(fd);
+			} while(rv < 0 && errno == EINTR);
+			closed = 1;
+			/*I/O error reported only at close time T.T */
+			if(rv < 0) {
+				throw IOError(std::string("I/O Error at close"));
+			}
+		}
+	}
+
+	/*TODO: definitions for these*/
+	boost::shared_ptr<Event> read(
+			boost::shared_ptr<ProcessInvoker> const&,
+			size_t,
+			boost::shared_ptr<std::vector<unsigned char> >&
+	);
+	boost::shared_ptr<Event> write(
+		boost::shared_ptr<ProcessInvoker>,
+		boost::shared_ptr<std::vector<unsigned char> >&
+	);
+	boost::shared_ptr<Event> accept(
+		boost::shared_ptr<ProcessInvoker>
+	);
+
+	/*on dtor, try to close anyway*/
+	~PosixIOPort() {
+		if(!closed) {
+			int rv;
+			do {
+				errno = 0;
+				rv = ::close(fd);
+			} while(rv < 0 && errno == EINTR);
+			/*ignore errors*/
+		}
+	}
+
+	friend class WriteEvent;
+	friend class ReadEvent;
+	friend class AcceptEvent;
+};
+
+class IOEvent : public Event, public boost::enable_shared_from_this<IOEvent> {
+protected:
+	/*These are included here for reuse of send_*() member function*/
+	boost::shared_ptr<ProcessInvoker> proc;
+
+	explicit IOEvent(
+		boost::shared_ptr<ProcessInvoker> const& nproc
+	) : proc(nproc) { }
+
+	void send_error(Process& host, char const* s) {
+		boost::shared_ptr<Event> tmp(
+			boost::static_pointer_cast<Event>(shared_from_this())
+		);
+		std::string tmps(s);
+		proc->error_respond(
+			host,
+			tmp,
+			tmps
+		);
+	}
+
+	void send_nil(Process& host) {
+		boost::shared_ptr<Event> tmp(
+			boost::static_pointer_cast<Event>(shared_from_this())
+		);
+		proc->nil_respond(host, tmp);
+	}
+
+public:
+	#ifdef USE_POSIX_SELECT
+		virtual void add_select_event(
+			fd_set& rd, fd_set& wr, fd_set& ex
+		) const =0;
+		virtual void remove_select_event(
+			fd_set& rd, fd_set& wr, fd_set& ex
+		) const =0;
+		/*return true if detected in select event*/
+		virtual bool is_in_select_event(
+			fd_set& rd, fd_set& wr, fd_set& ex
+		) const =0;
+		virtual int get_fd(void) const =0;
+	#endif
+
+	/*return true if event completed successfully and
+	we can remove the event from the event set.
+	false means we haven't completed yet.
+	*/
+	virtual bool perform_event(Process& host) =0;
+};
+
+class WriteEvent : public IOEvent {
+private:
+	int fd;
+	boost::shared_ptr<std::vector<unsigned char> > dat;
+	size_t start_write;
+
+	WriteEvent(void); // disallowed!
+	WriteEvent(
+		boost::shared_ptr<ProcessInvoker> const& nproc,
+		PosixIOPort& o,
+		boost::shared_ptr<std::vector<unsigned char> > const& ndat
+	) : IOEvent(nproc), fd(o.fd), dat(ndat), start_write(0) { }
+
+public:
+	#ifdef USE_POSIX_SELECT
+		void add_select_event(fd_set& rd, fd_set& wr, fd_set& ex) const {
+			FD_SET(fd, &wr);
+		}
+		void remove_select_event(fd_set& rd, fd_set& wr, fd_set& ex) const {
+			FD_CLR(fd, &wr);
+		}
+		bool is_in_select_event(fd_set& rd, fd_set& wr, fd_set& ex) const {
+			return FD_ISSET(fd, &wr);
+		}
+		/*Needed to get max FD.*/
+		int get_fd(void) const { return fd; }
+	#endif
+
+	bool perform_event(Process& host) {
+		std::vector<unsigned char>& data = *dat;
+		ssize_t rv;
+		size_t datsize = data.size() - start_write;
+		do {
+			errno = 0;
+			rv = ::write(fd, (void*) &(data[start_write]), datsize);
+		} while(rv < 0 && errno == EINTR);
+		if(rv < 0) {
+			switch(errno) {
+			/*would block.  So return failure to write and wait for
+			next select()/poll().
+			*/
+			case EAGAIN:
+				return 0;
+			/*very bad.  internal inconsistency*/
+			case EBADF:
+			case EFAULT:
+				send_error(host,
+					"Internal inconsistency "
+					"in write event: EBADF or "
+					"EFAULT.  Please contact "
+					"developer."
+				);
+				return 1;
+			case EFBIG:
+				send_error(host,
+					"File would grow beyond "
+					"OS limits in write event."
+				);
+				return 1;
+			case EINVAL:
+				send_error(host,
+					"Internal inconsistency "
+					"in write event/writeable "
+					"I/O port: FD is not "
+					"valid for writing.  Please "
+					"contact developer."
+				);
+				return 1;
+			case EIO:
+				send_error(host, "Low-level I/O error.");
+				return 1;
+			case ENOSPC:
+				send_error(host, "Out of space on device.");
+				return 1;
+			case EPIPE:
+				send_error(host, "Other end of pipe closed.");
+				return 1;
+			default:
+				send_error(host, "Write event, unknown error...");
+				return 1;
+			}
+		} else {
+			if(rv == datsize) {
+				/*notify calling process*/
+				return 1;
+			} else {
+				/*incomplete write*/
+				start_write += rv;
+				return 0;
+			}
+		}
+	}
+
+	friend class PosixIOPort;
+};
+
+/*-----------------------------------------------------------------------------
+Core code
+-----------------------------------------------------------------------------*/
 
 /*self-pipe trick with SIGCHLD*/
 static int sigchld_wr, sigchld_rd;
