@@ -469,7 +469,7 @@ void aio_initialize(void) {
 	force_cloexec(pipefds[1]);
 	/*if the read end is not selectable, fail*/
 	if(INVALID_FD_VAL(pipefds[0])) {
-		std::cerr << "aio_initialize: read pipe FD is "
+		std::cerr << "aio_initialize: self-pipe read FD is "
 			<< "not useable for asynchronous I/O."
 			<< std::endl;
 		exit(1);
