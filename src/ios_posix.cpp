@@ -1,5 +1,14 @@
 #include"all_defines.hpp"
 
+/*
+POSIX-based asynchronous I/O and signal handling
+
+Note that we don't program to the letter of the POSIX
+specs: AFAIK no actual OS conforms perfectly to POSIX.
+Preferably we try to be somewhat more resilient and
+try to be more defensive when making system calls.
+*/
+
 #include"aio.hpp"
 
 #include<unistd.h>
@@ -12,6 +21,10 @@
 
 // used for error reporting before aborting
 #include<iostream>
+
+/*-----------------------------------------------------------------------------
+Selection Between select() and poll()
+-----------------------------------------------------------------------------*/
 
 /*
 Choose either USE_POSIX_POLL or USE_POSIX_SELECT
@@ -37,14 +50,11 @@ than select()
 	#error Support for poll() not yet implemented!
 #endif
 
-/*
-POSIX-based asynchronous I/O and signal handling
-
-Note that we don't program to the letter of the POSIX
-specs: AFAIK no actual OS conforms perfectly to POSIX.
-Preferably we try to be somewhat more resilient and
-try to be more defensive when making system calls.
-*/
+#ifdef USE_POSIX_SELECT
+	#define INVALID_FD_VAL(fd) ((fd) >= FD_SETSIZE)
+#else // USE_POSIX_POLL
+	#define INVALID_FD_VAL(fd) (0)
+#endif
 
 /*-----------------------------------------------------------------------------
 Concrete IOPort and Event class declarations
@@ -456,6 +466,12 @@ void aio_initialize(void) {
 	}
 	force_cloexec(pipefds[0]);
 	force_cloexec(pipefds[1]);
+	/*if the read end is not selectable, fail*/
+	if(INVALID_FD_VAL(pipefds[0])) {
+		std::cerr << "aio_initialize: read pipe FD is "
+			<< "not useable for asynchronous I/O."
+			<< std::endl;
+	}
 	sigchld_rd = pipefds[0]; sigchld_wr = pipefds[1];
 
 	/*---------------------------------------------------------------------
