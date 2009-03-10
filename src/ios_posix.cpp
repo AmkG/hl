@@ -472,6 +472,7 @@ void aio_initialize(void) {
 		std::cerr << "aio_initialize: read pipe FD is "
 			<< "not useable for asynchronous I/O."
 			<< std::endl;
+		exit(1);
 	}
 	sigchld_rd = pipefds[0]; sigchld_wr = pipefds[1];
 
