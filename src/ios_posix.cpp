@@ -345,7 +345,7 @@ static void sigchld_handler(int) {
 		EINTR, but better safe than
 		sorry...
 		*/
-	} while(rv < 0 && errno == EINTR);
+	} while(rv < 0 && errno == EINTR || rv == 0);
 	/*All other errors get ignored!*/
 	/*Errors:
 	EAGAIN
