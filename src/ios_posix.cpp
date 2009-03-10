@@ -51,6 +51,7 @@ than select()
 #endif
 
 #ifdef USE_POSIX_SELECT
+	/*select() has limits on maximum FD it can handle*/
 	#define INVALID_FD_VAL(fd) ((fd) >= FD_SETSIZE)
 #else // USE_POSIX_POLL
 	#define INVALID_FD_VAL(fd) (0)
@@ -500,6 +501,8 @@ void aio_initialize(void) {
 			<< std::endl;
 		exit(1);
 	}
+
+	/*TODO: initialize EventSet object*/
 
 }
 
