@@ -19,8 +19,9 @@ around as first-class functions; in order to work as such, they
 must be wrapped in an actual function.
 
 The Axiomatic Layer is the only layer that contains any special
-forms; any "special forms" to the general user of the language
-are really macros.
+forms (aside from any implementation-specific symbols in
+`<impl>`, which are not specified anyway); any "special forms" to
+the general user of the language are really macros.
 
 Links
 -----
