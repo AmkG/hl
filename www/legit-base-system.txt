@@ -25,6 +25,13 @@ Each layer defines symbols with particular meanings.  The symbols
 in each layer must have specific prefixes: `<axiom>` for
 Axiomatic, `<common>` for Common, and `<hl>` for Standard.
 
+In addition to these prefixes, a fourth prefix, `<impl>`, is
+reserved for implementation-specific purposes.  An `hl`
+implementation may use symbols with this prefix for any purpose.
+Because it is implementation-specific, users of any `hl` machine
+should be aware that use of `<impl>` symbols ties them to the
+specific implementation.
+
 Symbols for each Layer
 ----------------------
 
