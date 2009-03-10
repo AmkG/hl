@@ -32,8 +32,9 @@ cat >> $2 <<ENDHTML
   <a href='http://hl-language.blogspot.com/'>Blog</a><br>
   </div>
   <br>hosted by:<br>
-  <a href='http://sourceforge.net/'>
-    <img style="border:0;width=:88px;height:31px" src="http://sourceforge.net/sflogo.php?group_id=86503&amp;type=5" alt="SourceForge.net" />
+  <a href="http://sourceforge.net/projects/hl-language">
+    <img src="http://sflogo.sourceforge.net/sflogo.php?group_id=244002&type=13" width="120" height="30" border="0"
+         alt="Get The hl Programming Language at SourceForge.net. Fast, secure and Free Open Source software downloads" />
   </a>
   </td>
   <td valign="top" id="right"><div id="content">
