@@ -89,6 +89,8 @@ public:
 		boost::shared_ptr<ProcessInvoker>
 	) =0;
 
+	virtual void seek(uint64_t) =0;
+
 	virtual ~IOPort() { }
 };
 
@@ -105,8 +107,6 @@ void close(boost::shared_ptr<IOPort>);
 
 class Event {
 public:
-	virtual void seek(uint64_t) =0;
-
 	virtual ~Event() { }
 };
 
