@@ -127,6 +127,8 @@ public:
 		boost::shared_ptr<ProcessInvoker>
 	);
 
+	void seek(uint64_t);
+
 	/*on dtor, try to close anyway*/
 	~PosixIOPort() {
 		if(!closed) {
