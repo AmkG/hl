@@ -293,6 +293,92 @@ public:
 };
 
 /*-----------------------------------------------------------------------------
+Event creation
+-----------------------------------------------------------------------------*/
+
+boost::shared_ptr<Event> PosixIOPort::write(
+		boost::shared_ptr<ProcessInvoker> proc,
+		boost::shared_ptr<std::vector<unsigned char> >& pdat) {
+	if(!writeable) {
+		throw IOError(
+			std::string("Attempt to write to non-writeable port.")
+		);
+	}
+	/*first check if the relevant FD is immediately writeable*/
+	/*On most *nixes, disk filesystems are assumed to be so fast
+	that they never block (never mind that in reality they do) and
+	thus select()/poll() would immediately reply with "ready".
+	Trying to ask the OS to decently poll this just don't work.
+	The specs thus make a proviso that '<bc>write-event can
+	return with the write actually done, reducing the message-
+	passing overhead to the central I/O process.
+	*/
+	int rv;
+	#ifdef USE_POSIX_SELECT
+		fd_set rd, wr, exc; FD_ZERO(&rd); FD_ZERO(&wr); FD_ZERO(&exc);
+		FD_SET(fd, &wr);
+		struct timeval tm; tm.tv_usec = 0; tm.tv_sec = 0;
+	#endif
+	do {
+		errno = 0;
+		#ifdef USE_POSIX_SELECT
+			rv = ::select(fd + 1, &rd, &wr, &exc, &tm);
+		#endif
+	} while(rv < 0 && errno == EINTR);
+	/*We ignore errors on the select()/poll().  If errors occured,
+	just assume that we can't immediately write.
+	*/
+	/*if select()/poll() succeeded*/
+	if(rv == 1
+		#ifdef USE_POSIX_SELECT
+			&& FD_ISSET(fd, &wr)
+		#endif
+			) {
+		/*can write: try writing*/
+		ssize_t wrv;
+		size_t len = pdat->size();
+		unsigned char* dat = &((*pdat)[0]);
+		do {
+			errno = 0;
+			wrv = ::write(fd, (void*) dat, len);
+		} while(wrv < 0 && errno == EINTR);
+		/*handle errors except EAGAIN; for EAGAIN, just fall through*/
+		if(wrv < 0 && errno != EAGAIN) {
+			/*TODO*/
+		}
+		if(wrv == len) {
+			/*complete write; now we can just exit with NULL*/
+			return boost::shared_ptr<Event>();
+		}
+		if(wrv > 0) {
+			/*incomplete write; schedule the rest of the
+			data for event.
+			*/
+			boost::shared_ptr<WriteEvent> rv(
+				new WriteEvent(
+					proc,
+					*this,
+					pdat
+				)
+			);
+			/*start at point that was written to*/
+			rv->start_write = wrv;
+			return boost::static_pointer_cast<Event>(rv);
+		}
+	}
+	/*if we fell through to here, it means we were not able to
+	write at all.  So return an event.
+	*/
+	return boost::shared_ptr<Event>(
+		new WriteEvent(
+			proc,
+			*this,
+			pdat
+		)
+	);
+}
+
+/*-----------------------------------------------------------------------------
 Core code
 -----------------------------------------------------------------------------*/
 
