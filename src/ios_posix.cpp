@@ -22,6 +22,8 @@ try to be more defensive when making system calls.
 // used for error reporting before aborting
 #include<iostream>
 
+char const* write_error_message(void);
+
 /*-----------------------------------------------------------------------------
 Selection Between select() and poll()
 -----------------------------------------------------------------------------*/
@@ -233,50 +235,10 @@ public:
 			rv = ::write(fd, (void*) &(data[start_write]), datsize);
 		} while(rv < 0 && errno == EINTR);
 		if(rv < 0) {
-			switch(errno) {
-			/*would block.  So return failure to write and wait for
-			next select()/poll().
-			*/
-			case EAGAIN:
-				return 0;
-			/*very bad.  internal inconsistency*/
-			case EBADF:
-			case EFAULT:
-				send_error(host,
-					"Internal inconsistency "
-					"in write event: EBADF or "
-					"EFAULT.  Please contact "
-					"developer."
-				);
-				return 1;
-			case EFBIG:
-				send_error(host,
-					"File would grow beyond "
-					"OS limits in write event."
-				);
-				return 1;
-			case EINVAL:
-				send_error(host,
-					"Internal inconsistency "
-					"in write event/writeable "
-					"I/O port: FD is not "
-					"valid for writing.  Please "
-					"contact developer."
-				);
-				return 1;
-			case EIO:
-				send_error(host, "Low-level I/O error.");
-				return 1;
-			case ENOSPC:
-				send_error(host, "Out of space on device.");
-				return 1;
-			case EPIPE:
-				send_error(host, "Other end of pipe closed.");
-				return 1;
-			default:
-				send_error(host, "Write event, unknown error...");
-				return 1;
-			}
+			/*would block, so don't decommit*/
+			if(errno == EAGAIN) return 0;
+			send_error(host, write_error_message());
+			return 1;
 		} else {
 			if(rv == datsize) {
 				/*notify calling process*/
@@ -597,5 +559,41 @@ void aio_initialize(void) {
 
 void aio_deinitialize(void) {
 	/*TODO: figure out what to clean up, if any*/
+}
+
+/*-----------------------------------------------------------------------------
+Error messages
+-----------------------------------------------------------------------------*/
+
+char const* write_error_message(void) {
+	switch(errno) {
+	/*very bad.  internal inconsistency*/
+	case EBADF:
+	case EFAULT:
+		return
+			"Internal inconsistency "
+			"in write event: EBADF or "
+			"EFAULT.  Please contact "
+			"developer.";
+	case EFBIG:
+		return
+			"File would grow beyond "
+			"OS limits in write event.";
+	case EINVAL:
+		return
+			"Internal inconsistency "
+			"in write event/writeable "
+			"I/O port: FD is not "
+			"valid for writing.  Please "
+			"contact developer.";
+	case EIO:
+		return "Low-level I/O error.";
+	case ENOSPC:
+		return "Out of space on device.";
+	case EPIPE:
+		return "Other end of pipe closed.";
+	default:
+		return "Write event, unknown error...";
+	}
 }
 
