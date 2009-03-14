@@ -242,6 +242,7 @@ public:
 		} else {
 			if(rv == datsize) {
 				/*notify calling process*/
+				send_nil(host);
 				return 1;
 			} else {
 				/*incomplete write*/
@@ -306,7 +307,7 @@ boost::shared_ptr<Event> PosixIOPort::write(
 		} while(wrv < 0 && errno == EINTR);
 		/*handle errors except EAGAIN; for EAGAIN, just fall through*/
 		if(wrv < 0 && errno != EAGAIN) {
-			/*TODO*/
+			throw IOError(std::string(write_error_message()));
 		}
 		if(wrv == len) {
 			/*complete write; now we can just exit with NULL*/
