@@ -609,6 +609,8 @@ void EventSet::event_poll(Process& host) {
 	typedef std::set<boost::shared_ptr<IOEvent> >::iterator
 			io_event_iterator;
 
+	/*TODO: check 'sleep and 'system events*/
+
 	int fd_max = 0;
 	for(io_event_iterator it = event_set.io_events.begin();
 			it != event_set.io_events.end();
@@ -666,6 +668,7 @@ void EventSet::event_poll(Process& host) {
 		/*nothin' happenin', boss!*/
 		return;
 	} else {
+		/*check each I/O Event*/
 		for(io_event_iterator it = event_set.io_events.begin();
 				it != event_set.io_events.end();
 				) {
