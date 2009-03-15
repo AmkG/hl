@@ -677,16 +677,22 @@ void EventSet::event_poll(Process& host) {
 			++it;
 			bool check =
 				#ifdef USE_POSIX_SELECT
-					ev.is_in_select_event(x_rd, x_wr, x_exc)
+					ev.is_in_select_event(
+						x_rd,
+						x_wr,
+						x_exc
+					)
 				#endif
 			;
 			if(check) {
 				if(ev.perform_event(host)) {
-					ev.remove_select_event(
-						event_set.rd,
-						event_set.wr,
-						event_set.exc
-					);
+					#ifdef USE_POSIX_SELECT
+						ev.remove_select_event(
+							event_set.rd,
+							event_set.wr,
+							event_set.exc
+						);
+					#endif
 					event_set.io_events.erase(curr);
 				}
 			}
