@@ -577,7 +577,6 @@ public:
 
 	#ifdef USE_POSIX_SELECT
 		fd_set rd, wr, exc;
-		struct timeval zero_time;
 	#endif
 
 	EventSetImpl(void)
@@ -586,8 +585,6 @@ public:
 			FD_ZERO(&rd);
 			FD_ZERO(&wr);
 			FD_ZERO(&exc);
-			zero_time.tv_usec = 0;
-			zero_time.tv_sec = 0;
 		#endif
 	}
 };
@@ -629,9 +626,7 @@ void EventSet::event_poll(Process& host) {
 			x_wr	= event_set.wr,
 			x_exc	= event_set.exc
 		;
-		struct timeval
-			x_zero_time	= event_set.zero_time
-		;
+		struct timeval zero_time = {0, 0};
 	#endif
 	int rv;
 	do {
@@ -640,7 +635,7 @@ void EventSet::event_poll(Process& host) {
 			rv = select(
 				fd_max + 1,
 				&x_rd, &x_wr, &x_exc,
-				&x_zero_time
+				&zero_time
 			);
 		#endif
 	} while(rv < 0 && errno == EINTR);
