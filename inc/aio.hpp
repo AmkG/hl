@@ -98,6 +98,9 @@ public:
 boost::shared_ptr<IOPort> ioport_stdin(void);
 boost::shared_ptr<IOPort> ioport_stdout(void);
 boost::shared_ptr<IOPort> ioport_stderr(void);
+/*PROMISE: we won't call the above functions unless
+we have called aio_initialize() once, first.
+*/
 
 boost::shared_ptr<IOPort> infile(std::string);
 boost::shared_ptr<IOPort> outfile(std::string);
