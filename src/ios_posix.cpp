@@ -212,7 +212,7 @@ private:
 	WriteEvent(void); // disallowed!
 	WriteEvent(
 		boost::shared_ptr<ProcessInvoker> const& nproc,
-		PosixIOPort& o,
+		PosixIOPort const& o,
 		boost::shared_ptr<std::vector<unsigned char> > const& ndat
 	) : IOEvent(nproc), fd(o.fd), dat(ndat), start_write(0) { }
 
@@ -258,6 +258,55 @@ public:
 	}
 
 	friend class PosixIOPort;
+};
+
+class ReadEvent : public IOEvent {
+private:
+	int fd;
+	size_t sz;
+
+	ReadEvent(void); // disallowed!
+	ReadEvent(
+		boost::shared_ptr<ProcessInvoker> const& nproc,
+		PosixIOPort const& o,
+		size_t nsz
+	) : IOEvent(nproc), fd(o.fd), sz(nsz) { }
+
+public:
+	#ifdef USE_POSIX_SELECT
+		void add_select_event(fd_set& rd, fd_set& wr, fd_set& ex) const {
+			FD_SET(fd, &rd);
+		}
+		void remove_select_event(fd_set& rd, fd_set& wr, fd_set& ex) const {
+			FD_CLR(fd, &rd);
+		}
+		bool is_in_select_event(fd_set& rd, fd_set& wr, fd_set& ex) const {
+			return FD_ISSET(fd, &rd);
+		}
+		/*Needed to get max FD.*/
+		int get_fd(void) const { return fd; }
+	#endif
+
+	bool perform_event(Process& host) {
+		boost::shared_ptr<std::vector<unsigned char> > pndat(
+			new std::vector<unsigned char>(sz)
+		);
+		ssize_t rv;
+		void* pdat = (void*)&((*pndat)[0]);
+		do {
+			rv = ::read(fd, pdat, sz);
+		} while(rv < 0 && errno == EINTR);
+		if(rv < 0) {
+			/*would block, so don't decommit*/
+			if(errno == EAGAIN) return 0;
+			send_error(host, read_error_message()); /*TODO: error messages*/
+		} else if(rv == 0) {
+			/*presumably EOF*/
+			send_nil(host);
+		} else {
+			/*TODO: return data*/
+		}
+	}
 };
 
 /*-----------------------------------------------------------------------------
