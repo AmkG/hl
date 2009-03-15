@@ -21,6 +21,7 @@ try to be more defensive when making system calls.
 
 // used for error reporting before aborting
 #include<iostream>
+#include<set>
 
 char const* write_error_message(void);
 
@@ -196,6 +197,10 @@ public:
 	false means we haven't completed yet.
 	*/
 	virtual bool perform_event(Process& host) =0;
+
+	void scan_process_invokers(ProcessInvokerScanner* pis) {
+		pis->traverse(*proc);
+	}
 };
 
 class WriteEvent : public IOEvent {
@@ -560,6 +565,135 @@ void aio_initialize(void) {
 
 void aio_deinitialize(void) {
 	/*TODO: figure out what to clean up, if any*/
+}
+
+/*-----------------------------------------------------------------------------
+Event Set
+-----------------------------------------------------------------------------*/
+
+class EventSetImpl {
+public:
+	std::set<boost::shared_ptr<IOEvent> > io_events;
+
+	#ifdef USE_POSIX_SELECT
+		fd_set rd, wr, exc;
+		struct timeval zero_time;
+	#endif
+
+	EventSetImpl(void)
+		: io_events() {
+		#ifdef USE_POSIX_SELECT
+			FD_ZERO(&rd);
+			FD_ZERO(&wr);
+			FD_ZERO(&exc);
+			zero_time.tv_usec = 0;
+			zero_time.tv_sec = 0;
+		#endif
+	}
+};
+
+EventSet::EventSet(void) : pimpl(new EventSetImpl) {}
+EventSet::~EventSet() {delete pimpl;}
+
+void EventSet::scan_process_invokers(ProcessInvokerScanner* pis) {
+	EventSetImpl& event_set = *pimpl;
+	typedef std::set<boost::shared_ptr<IOEvent> >::iterator
+			io_event_iterator;
+	for(io_event_iterator it = event_set.io_events.begin();
+			it != event_set.io_events.end();
+			++it) {
+		(*it)->scan_process_invokers(pis);
+	}
+}
+
+/*non-blocking check for event*/
+void EventSet::event_poll(Process& host) {
+	EventSetImpl& event_set = *pimpl;
+	typedef std::set<boost::shared_ptr<IOEvent> >::iterator
+			io_event_iterator;
+
+	int fd_max = 0;
+	for(io_event_iterator it = event_set.io_events.begin();
+			it != event_set.io_events.end();
+			++it) {
+		IOEvent& ev = **it;
+		#ifdef USE_POSIX_SELECT
+			int fd = ev.get_fd();
+			if(fd > fd_max) fd_max = fd;
+		#endif
+	}
+	#ifdef USE_POSIX_SELECT
+		/*create copies to preserve set-to-monitor*/
+		fd_set
+			x_rd	= event_set.rd,
+			x_wr	= event_set.wr,
+			x_exc	= event_set.exc
+		;
+		struct timeval
+			x_zero_time	= event_set.zero_time
+		;
+	#endif
+	int rv;
+	do {
+		errno = 0;
+		#ifdef USE_POSIX_SELECT
+			rv = select(
+				fd_max + 1,
+				&x_rd, &x_wr, &x_exc,
+				&x_zero_time
+			);
+		#endif
+	} while(rv < 0 && errno == EINTR);
+	if(rv < 0) {
+		switch(errno) {
+		case EBADF:
+			std::cout << "event-poll: Internal inconsistency, "
+				<< "somehow, got an invalid FD.  Please "
+				<< "contact developers."
+				<< std::endl;
+			exit(1);
+		case EINVAL:
+			std::cout << "event-poll: Internal inconsistency, "
+				<< "somehow, invalid arguments in system "
+				<< "call.  Please contact developers."
+				<< std::endl;
+			exit(1);
+		case ENOMEM:
+			std::cout << "event-poll: System reported out-of-memory."
+				<< std::endl;
+			exit(1);
+		default:
+			std::cout << "event-poll: unexpected error."
+				<< std::endl;
+			exit(1);
+		}
+	} else if(rv == 0) {
+		/*nothin' happenin', boss!*/
+		return;
+	} else {
+		for(io_event_iterator it = event_set.io_events.begin();
+				it != event_set.io_events.end();
+				) {
+			IOEvent& ev = **it;
+			io_event_iterator curr = it;
+			++it;
+			bool check =
+				#ifdef USE_POSIX_SELECT
+					ev.is_in_select_event(x_rd, x_wr, x_exc)
+				#endif
+			;
+			if(check) {
+				if(ev.perform_event(host)) {
+					ev.remove_select_event(
+						event_set.rd,
+						event_set.wr,
+						event_set.exc
+					);
+					event_set.io_events.erase(curr);
+				}
+			}
+		}
+	}
 }
 
 /*-----------------------------------------------------------------------------
