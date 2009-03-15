@@ -603,6 +603,53 @@ void EventSet::scan_process_invokers(ProcessInvokerScanner* pis) {
 	}
 }
 
+/*add an event*/
+void EventSet::add_event(boost::shared_ptr<Event> evp) {
+	EventSetImpl& event_set = *pimpl;
+	boost::shared_ptr<IOEvent> iop =
+		boost::dynamic_pointer_cast<IOEvent>(evp);
+	if(iop) {
+		iop->add_select_event(
+			event_set.rd,
+			event_set.wr,
+			event_set.exc
+		);
+		event_set.io_events.insert(iop);
+		return;
+	}
+	/*if reached here, internal inconsistency*/
+	std::cout << "add-event: Internal inconsistency, somehow, got an "
+		<< "Event object whose type we are unaware of.  Please "
+		<< "contact developers."
+		<< std::endl;
+	exit(1);
+}
+
+/*remove an event*/
+void EventSet::remove_event(boost::shared_ptr<Event> evp) {
+	EventSetImpl& event_set = *pimpl;
+	boost::shared_ptr<IOEvent> iop =
+		boost::dynamic_pointer_cast<IOEvent>(evp);
+	if(iop) {
+		iop->remove_select_event(
+			event_set.rd,
+			event_set.wr,
+			event_set.exc
+		);
+		event_set.io_events.erase(
+			event_set.io_events.find(iop)
+		);
+		return;
+	}
+	/*if reached here, internal inconsistency*/
+	std::cout << "event-event: Internal inconsistency, somehow, got an "
+		<< "Event object whose type we are unaware of.  Please "
+		<< "contact developers."
+		<< std::endl;
+	exit(1);
+}
+
+
 /*non-blocking check for event*/
 void EventSet::event_poll(Process& host) {
 	EventSetImpl& event_set = *pimpl;
@@ -699,6 +746,11 @@ void EventSet::event_poll(Process& host) {
 		}
 	}
 }
+
+/*the actual event set instance*/
+static EventSet actual_event_set;
+
+EventSet& the_event_set(void) { return actual_event_set; }
 
 /*-----------------------------------------------------------------------------
 Error messages
