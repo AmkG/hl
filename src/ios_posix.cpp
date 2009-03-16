@@ -23,7 +23,8 @@ try to be more defensive when making system calls.
 #include<iostream>
 #include<set>
 
-char const* write_error_message(void);
+static char const* write_error_message(void);
+static char const* read_error_message(void);
 
 /*-----------------------------------------------------------------------------
 Selection Between select() and poll()
@@ -61,7 +62,7 @@ than select()
 #endif
 
 /*-----------------------------------------------------------------------------
-Concrete IOPort and Event class declarations
+Concrete IOPort class declarations
 -----------------------------------------------------------------------------*/
 
 class WriteEvent;
@@ -149,6 +150,10 @@ public:
 	friend class AcceptEvent;
 };
 
+/*-----------------------------------------------------------------------------
+Concrete Event class declarations
+-----------------------------------------------------------------------------*/
+
 class IOEvent : public Event, public boost::enable_shared_from_this<IOEvent> {
 protected:
 	/*These are included here for reuse of send_*() member function*/
@@ -175,6 +180,16 @@ protected:
 			boost::static_pointer_cast<Event>(shared_from_this())
 		);
 		proc->nil_respond(host, tmp);
+	}
+
+	void send_data(
+			Process& host,
+			boost::shared_ptr<std::vector<unsigned char> >&
+				pdat) {
+		boost::shared_ptr<Event> tmp(
+			boost::static_pointer_cast<Event>(shared_from_this())
+		);
+		proc->io_respond(host, tmp, pdat);
 	}
 
 public:
@@ -299,12 +314,14 @@ public:
 		if(rv < 0) {
 			/*would block, so don't decommit*/
 			if(errno == EAGAIN) return 0;
-			send_error(host, read_error_message()); /*TODO: error messages*/
+			send_error(host, read_error_message());
 		} else if(rv == 0) {
 			/*presumably EOF*/
 			send_nil(host);
 		} else {
-			/*TODO: return data*/
+			std::vector<unsigned char>& dat = *pndat;
+			dat.resize(rv);
+			send_data(host, pndat);
 		}
 	}
 };
@@ -805,7 +822,7 @@ EventSet& the_event_set(void) { return actual_event_set; }
 Error messages
 -----------------------------------------------------------------------------*/
 
-char const* write_error_message(void) {
+static char const* write_error_message(void) {
 	switch(errno) {
 	/*very bad.  internal inconsistency*/
 	case EBADF:
@@ -834,6 +851,32 @@ char const* write_error_message(void) {
 		return "Other end of pipe closed.";
 	default:
 		return "Write event, unknown error...";
+	}
+}
+
+static char const* read_error_message(void) {
+	switch(errno) {
+	/*very bad.  internal inconsistency*/
+	case EBADF:
+	case EFAULT:
+		return
+			"Internal inconsistency "
+			"in read event: EBADF or "
+			"EFAULT.  Please contact "
+			"developer.";
+	case EINVAL:
+		return
+			"Internal inconsistency "
+			"in read event/readable "
+			"I/O port: FD is not "
+			"valid for reading.  Please "
+			"contact developer.";
+	case EIO:
+		return "Low-level I/O error.";
+	case EISDIR:
+		return "Can't read from a directory.";
+	default:
+		return "Read event, unknown error...";
 	}
 }
 
