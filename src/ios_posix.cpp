@@ -315,13 +315,16 @@ public:
 			/*would block, so don't decommit*/
 			if(errno == EAGAIN) return 0;
 			send_error(host, read_error_message());
+			return 1;
 		} else if(rv == 0) {
 			/*presumably EOF*/
 			send_nil(host);
+			return 1;
 		} else {
 			std::vector<unsigned char>& dat = *pndat;
 			dat.resize(rv);
 			send_data(host, pndat);
+			return 1;
 		}
 	}
 };
