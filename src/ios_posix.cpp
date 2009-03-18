@@ -49,6 +49,25 @@ than select()
 		#include<sys/select.h>
 	#endif
 #endif
+/*NB: I'm having second thoughts about the value of using *either*
+select() *or* poll(); my research suggests that select(), surprisingly,
+is better when a large set of FD's need to be checked at any one time,
+because for a large set of FD's, the select() fd_set structure is
+smaller than poll()'s array of struct pollfd (with the concomitant
+caching/copying that implies between kernel and userspace).
+
+Note however that in PosixIOPort::read()/write(), we check if data is
+immediately available for that single FD (because most filesystems will
+claim readiness anyway, regardless of the true nature of things, so we
+just avoid going through the central I/O process because it'll be slow
+anyway).  In that case, it would be better to use poll(), because a
+single pollfd is smaller than a whole fd_set.
+
+So, it might actually be better to use *both* poll() *and* select() if
+poll() is present; we just use poll() for the case of the single FD.
+
+-- AmkG
+*/
 
 #ifdef USE_POSIX_POLL
 	#error Support for poll() not yet implemented!
