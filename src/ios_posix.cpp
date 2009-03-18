@@ -737,10 +737,7 @@ void EventSet::remove_event(boost::shared_ptr<Event> evp) {
 	exit(1);
 }
 
-
-/*non-blocking check for event*/
-void EventSet::event_poll(Process& host) {
-	EventSetImpl& event_set = *pimpl;
+static void event_wait_or_poll(Process& host, EventSetImpl& event_set, bool blocking) {
 	typedef std::set<boost::shared_ptr<IOEvent> >::iterator
 			io_event_iterator;
 
@@ -763,7 +760,17 @@ void EventSet::event_poll(Process& host) {
 			x_wr	= event_set.wr,
 			x_exc	= event_set.exc
 		;
-		struct timeval zero_time = {0, 0};
+		/*strictly, when blocking we can actually
+		just set the time delay pointer to NULL.
+		IFF there are no sleep events, anyway.
+		However, '<bc>event-wait is not required
+		to service any events before resuming
+		execution; for paranoia, we set a max
+		waiting of 1 sec.
+		*/
+		struct timeval wait_time;
+		wait_time.tv_usec = 0;
+		wait_time.tv_sec = blocking ? 1 : 0;
 	#endif
 	int rv;
 	do {
@@ -772,7 +779,7 @@ void EventSet::event_poll(Process& host) {
 			rv = select(
 				fd_max + 1,
 				&x_rd, &x_wr, &x_exc,
-				&zero_time
+				&wait_time
 			);
 		#endif
 	} while(rv < 0 && errno == EINTR);
@@ -832,7 +839,17 @@ void EventSet::event_poll(Process& host) {
 				}
 			}
 		}
+		/*TODO: check for SIGCHLD or other event here*/
 	}
+}
+
+/*blocking*/
+void EventSet::event_wait(Process& host) {
+	event_wait_or_poll(host, *pimpl, 1);
+}
+/*non-blocking*/
+void EventSet::event_poll(Process& host) {
+	event_wait_or_poll(host, *pimpl, 0);
 }
 
 /*the actual event set instance*/
