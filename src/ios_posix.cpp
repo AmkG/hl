@@ -863,6 +863,11 @@ Error messages
 
 static char const* write_error_message(void) {
 	switch(errno) {
+	case EAGAIN:
+		return
+			"Programming error: forgot to "
+			"handle EAGAIN in write event.  "
+			"Please contact developer.";
 	/*very bad.  internal inconsistency*/
 	case EBADF:
 	case EFAULT:
@@ -895,6 +900,11 @@ static char const* write_error_message(void) {
 
 static char const* read_error_message(void) {
 	switch(errno) {
+	case EAGAIN:
+		return
+			"Programming error: forgot to "
+			"handle EAGAIN in read event.  "
+			"Please contact developer.";
 	/*very bad.  internal inconsistency*/
 	case EBADF:
 	case EFAULT:
