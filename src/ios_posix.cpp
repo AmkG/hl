@@ -136,7 +136,6 @@ public:
 		}
 	}
 
-	/*TODO: definitions for these*/
 	boost::shared_ptr<Event> read(
 			boost::shared_ptr<ProcessInvoker> const&,
 			size_t,
@@ -146,6 +145,7 @@ public:
 		boost::shared_ptr<ProcessInvoker>,
 		boost::shared_ptr<std::vector<unsigned char> >&
 	);
+	/*TODO: definitions for this*/
 	boost::shared_ptr<Event> accept(
 		boost::shared_ptr<ProcessInvoker>
 	);
