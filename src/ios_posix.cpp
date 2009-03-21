@@ -492,7 +492,6 @@ boost::shared_ptr<Event> PosixIOPort::read(
 	return boost::shared_ptr<Event>(
 		new ReadEvent(proc, *this, sz)
 	);
-	/*TODO*/
 }
 
 /*-----------------------------------------------------------------------------
