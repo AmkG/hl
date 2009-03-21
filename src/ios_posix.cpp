@@ -346,6 +346,8 @@ public:
 			return 1;
 		}
 	}
+
+	friend class PosixIOPort;
 };
 
 /*-----------------------------------------------------------------------------
@@ -432,6 +434,65 @@ boost::shared_ptr<Event> PosixIOPort::write(
 			pdat
 		)
 	);
+}
+
+
+boost::shared_ptr<Event> PosixIOPort::read(
+		boost::shared_ptr<ProcessInvoker> const& proc, size_t sz,
+		boost::shared_ptr<std::vector<unsigned char> >& now_read) {
+	if(!readable) {
+		throw IOError(
+			std::string("Attempt to read from non-readable port.")
+		);
+	}
+	/*check for immediate readability*/
+	int rv;
+	#ifdef USE_POSIX_SELECT
+		fd_set rd, wr, exc; FD_ZERO(&rd); FD_ZERO(&wr); FD_ZERO(&exc);
+		FD_SET(fd, &rd);
+		struct timeval tm; tm.tv_usec = 0; tm.tv_sec = 0;
+	#endif
+	do {
+		errno = 0;
+		#ifdef USE_POSIX_SELECT
+			rv = ::select(fd + 1, &rd, &wr, &exc, &tm);
+		#endif
+	} while(rv < 0 && errno == EINTR);
+	if(rv == 1 &&
+		#ifdef USE_POSIX_SELECT
+			FD_ISSET(fd, &rd)
+		#endif
+			) {
+		/*can read: try reading*/
+		now_read.reset(new std::vector<unsigned char>());
+		std::vector<unsigned char>& dat = *now_read;
+		dat.resize(sz);
+		ssize_t rrv;
+		do {
+			errno = 0;
+			rrv = ::read(fd, (void*)(&(dat[0])), sz);
+		} while(rrv < 0 && errno == EINTR);
+		if(rrv < 0 && errno != EAGAIN) {
+			now_read.reset();
+			throw IOError(std::string(read_error_message()));
+		} else if(rrv == 0) {
+			/*presumed EOF*/
+			now_read.reset();
+			return boost::shared_ptr<Event>();
+		} else if(rrv > 0) {
+			/*read *some* data*/
+			dat.resize(rrv);
+			return boost::shared_ptr<Event>();
+		}
+	}
+	/*if fell through to here, not able to read at all.
+	create an event if so.
+	*/
+	now_read.reset();
+	return boost::shared_ptr<Event>(
+		new ReadEvent(proc, *this, sz)
+	);
+	/*TODO*/
 }
 
 /*-----------------------------------------------------------------------------
