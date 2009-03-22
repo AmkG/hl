@@ -727,6 +727,20 @@ void aio_deinitialize(void) {
 }
 
 /*-----------------------------------------------------------------------------
+Standard Input/Output
+-----------------------------------------------------------------------------*/
+
+boost::shared_ptr<IOPort> ioport_stdin(void) {
+	return boost::shared_ptr<IOPort>(PosixIOPort::r_able(STDIN_FILENO));
+}
+boost::shared_ptr<IOPort> ioport_stdout(void) {
+	return boost::shared_ptr<IOPort>(PosixIOPort::w_able(STDOUT_FILENO));
+}
+boost::shared_ptr<IOPort> ioport_stderr(void) {
+	return boost::shared_ptr<IOPort>(PosixIOPort::w_able(STDERR_FILENO));
+}
+
+/*-----------------------------------------------------------------------------
 Event Set
 -----------------------------------------------------------------------------*/
 
