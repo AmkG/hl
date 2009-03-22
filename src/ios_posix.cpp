@@ -494,6 +494,17 @@ boost::shared_ptr<Event> PosixIOPort::read(
 	);
 }
 
+boost::shared_ptr<Event> PosixIOPort::accept(
+		boost::shared_ptr<ProcessInvoker> proc) {
+	/*TODO*/
+	throw IOError(std::string("not implemented!"));
+}
+
+void PosixIOPort::seek(uint64_t sz) {
+	/*TODO*/
+	throw IOError(std::string("not implemented!"));
+}
+
 /*-----------------------------------------------------------------------------
 Core code
 -----------------------------------------------------------------------------*/
