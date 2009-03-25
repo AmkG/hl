@@ -22,5 +22,5 @@ To compile the test, use:
 	./compile_niaw
 
 Note that the script file currently assumes that you want the
-POSIX test.
+POSIX I/O and signal system.
 
