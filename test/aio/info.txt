@@ -1,0 +1,26 @@
+
+This directory tests the `hl` asynchronous I/O framework.
+
+Here are the tests in this directory:
+
+`niaw`
+------
+
+The `niaw` test is a `cat`-lookalike program which reads stdin and
+writes to stdout.  Try using it in replacement of `cat`.  Inputting
+directly from a terminal should work properly, and the CPU
+consumption should be very near 0 while waiting for keyboard.
+
+`niaw` should work with disk files, pipes, and `mkfifo`-pipes.
+
+Another test that can be done on `niaw` would be to put it as a
+CGI program in a webserver, then accessing it via a slow
+connection.
+
+To compile the test, use:
+
+	./compile_niaw
+
+Note that the script file currently assumes that you want the
+POSIX test.
+
