@@ -88,8 +88,24 @@ class WriteEvent;
 class ReadEvent;
 class AcceptEvent;
 class ConnectEvent;
+/*
+In the future, we may want to differentiate between connect()
+and gethostbyname().
+*/
 class SleepEvent;
 class SystemEvent;
+
+/*
+The problem of gethostbyname():
+
+gethostbyname() has two problems: {1} It's blocking, and
+{2} it's not re-entrant.
+
+One potentially portable solution would be to fork() a
+child process whose only purpose would be to call
+gethostbyname(), then push the result(s) via a pipe()
+which we can then read in the hl VM.
+*/
 
 /*Concrete IOPort type*/
 class PosixIOPort : public IOPort, boost::noncopyable {
@@ -718,8 +734,10 @@ void aio_initialize(void) {
 		exit(1);
 	}
 
-	/*TODO: initialize EventSet object*/
-
+	/*We don't force CLOEXEC on STDIN/STDOUT/STDERR, because child
+	process launching will close() and dup2() the child's standard
+	I/O
+	*/
 }
 
 void aio_deinitialize(void) {
@@ -820,7 +838,7 @@ void EventSet::remove_event(boost::shared_ptr<Event> evp) {
 		return;
 	}
 	/*if reached here, internal inconsistency*/
-	std::cout << "event-event: Internal inconsistency, somehow, got an "
+	std::cout << "remove-event: Internal inconsistency, somehow, got an "
 		<< "Event object whose type we are unaware of.  Please "
 		<< "contact developers."
 		<< std::endl;
