@@ -767,7 +767,7 @@ EventSet::~EventSet() {delete pimpl;}
 
 /*status of set*/
 bool EventSet::empty(void) const {
-	return io_events.empty();
+	return pimpl->io_events.empty();
 }
 
 void EventSet::scan_process_invokers(ProcessInvokerScanner* pis) {
