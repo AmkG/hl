@@ -209,7 +209,7 @@ void event_handler(void) {
 	}
 	if(!es.empty()) {
 		/*processes waiting to do something?*/
-		if(!read_state == reader_nothing) {
+		if(read_state == reader_nothing) {
 			es.event_poll(dummy_process);
 		} else {
 			es.event_wait(dummy_process);
