@@ -110,12 +110,12 @@ void read_process(void) {
 			);
 			if(ev) {
 				event_queue.push(ev);
+				input_process.nil_responded = 0;
+				input_process.io_responded = 0;
 				read_state = reader_waiting;
 				return;
 			} else if(dat) {
 				write_data_queue.push(dat);
-				input_process.nil_responded = 0;
-				input_process.io_responded = 0;
 				read_state = reader_nothing;
 				return;
 			} else {
