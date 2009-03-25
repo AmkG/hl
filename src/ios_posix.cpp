@@ -765,6 +765,11 @@ public:
 EventSet::EventSet(void) : pimpl(new EventSetImpl) {}
 EventSet::~EventSet() {delete pimpl;}
 
+/*status of set*/
+bool EventSet::empty(void) const {
+	return io_events.empty();
+}
+
 void EventSet::scan_process_invokers(ProcessInvokerScanner* pis) {
 	EventSetImpl& event_set = *pimpl;
 	typedef std::set<boost::shared_ptr<IOEvent> >::iterator

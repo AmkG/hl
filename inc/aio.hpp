@@ -129,6 +129,9 @@ private:
 	EventSetImpl* pimpl;
 
 public:
+	/*return true if empty*/
+	bool empty(void) const;
+
 	void add_event(boost::shared_ptr<Event>);
 	void remove_event(boost::shared_ptr<Event>);
 
