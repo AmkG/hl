@@ -1,8 +1,8 @@
 Global Variable Lock - Legal - HL Book
 index book legit legit-global-vars
 
-Global Variable Lock
-====================
+`HL` Legal Specifications: Global Variable Lock
+===============================================
 
 The [Common Layer](legit-common.html) includes a resource known
 as the Global Variable Lock, or GVL.  This resource acts as a
