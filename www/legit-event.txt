@@ -148,11 +148,12 @@ Event Set and cannot be added back again.
 
 `<axiom>event-wait` **may** block, and may block the entire
 virtual machine.  If no events in The Event Set are appropriate
-for triggering, it is required to release any CPU resources
-held by the virtual machine until an event occurs, or for some
-unspecified amount of time.  However, it is not required to
-wait for some event before resuming execution.
-`<axiom>event-wait` returns a `t`.
+for triggering, it is required to release any host CPU
+resources held by the virtual machine until an event occurs, or
+for some unspecified amount of time.  However, it is not
+required to wait for some event before resuming execution (i.e.
+it is allowed to resume execution even though no events have
+triggered).  `<axiom>event-wait` returns a `t`.
 
 Executing this special form when another process is still
 running results in undefined behavior.  Adding an event after
