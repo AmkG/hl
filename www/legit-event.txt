@@ -130,7 +130,7 @@ Upon triggering, the event is automatically removed from The
 Event Set and cannot be added back again.
 
 `<axiom>event-poll` does not block, and returns immediately
-after checking.
+after checking.  `<axiom>event-poll` returns a `t`.
 
 Executing this special form in multiple processes results in
 undefined behavior.  Adding an event after it has been removed
@@ -152,6 +152,7 @@ for triggering, it is required to release any CPU resources
 held by the virtual machine until an event occurs, or for some
 unspecified amount of time.  However, it is not required to
 wait for some event before resuming execution.
+`<axiom>event-wait` returns a `t`.
 
 Executing this special form when another process is still
 running results in undefined behavior.  Adding an event after
