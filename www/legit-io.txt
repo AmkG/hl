@@ -1,0 +1,25 @@
+Input and Output - Legal - HL Book
+index book legit
+
+`HL` Legal Specifications: Input and Output
+===========================================
+
+No man is an island, and neither is any machine, no matter how
+virtual.  Data from the outside world must be able to enter the
+machine, and the machine, to be useful, must be able to
+manipulate some aspect of its environment, if only by emitting
+data.
+
+Thus, `hl` must support an input/output interface to allow the
+hosted processes to communicate with the outside world.
+
+The `hl` I/O subsystem is handled, at the lower levels, by the
+[Event System](legit-event.html).  At the low level, I/O
+operations are non-blocking.  At higher levels, it is possible
+to choose between a blocking, synchronous interface for
+simplicity, or to use an asynchronous, message-based interface.
+
+(This section is not yet finished.  However, the low-level
+details are described in the [Event System
+documentation](legit-event.html))
+
