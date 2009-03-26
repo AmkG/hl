@@ -48,6 +48,10 @@ send their message except when under control of The Event Set,
 but the actual request may be performed by the `hl` virtual
 machine as soon as the event is created.
 
+Events are created in various ways.  All event-creation forms
+require a process ID; the process ID is that of the process
+which is informed of the event triggering.
+
 The Event Set
 -------------
 
@@ -187,7 +191,59 @@ somehow causes a message to be sent to another process.
 Central Event Process
 ---------------------
 
-TODO
+As mentioned above, The Event Set is a single, global object.
+This obviously means it is shared, and this obviously means
+that access to this object is locked.  This locking is provided
+implicitly by the Central Event Process.
+
+The Central Event Process is the only process which we expect
+to actually use The Event Set; thus we expect the bytecodes for
+the axiomatic special forms described above to be used only in
+the Central Event Process.
+
+The process ID for the Central Event Process is stored in the
+global variable `<common>central-event`.
+
+The Central Event Process accepts two messages: an "add event"
+message and a "remove event" message.  Both requests will send
+a message in response indicating completion of the request.
+
+    ('<common>add-event src-pid event)
+    example:
+        (let event (get-some-event)
+          (==> <common>central-event
+            '<common>add-event (my-pid) event)
+          (<==
+            (,event)
+              t))
+
+A messsage composed of a `cons`-cell list of three elements
+`'<common>add-event`, `src-pid`, and `event` requests that the
+specified event be added to The Event Set.  In response, the
+Central Event Process will send a one-element `cons`-cell list
+composed of `(event)` to `src-pid` when it has handled the
+adding of that event.
+
+    ('<common>remove-event src-pid event)
+    example:
+      (let event (get-some-event)
+        (==> <common>central-event
+          '<common>remove-event (my-pid) event)
+        (<==
+          (,event retval)
+            retval))
+
+A message composed of a `cons`-cell list of three element
+`'<common>remove-event`, `src-pid`, and `event` requests that
+the specified event be removed from The Event Set.  In
+response, the Central Event Process will send a two-element
+`cons`-cell list copmosed of `(event retval)` to `src-pid` when
+it has handled the removal of the event, where `retval` is `t`
+if the event was removed, or `nil` if it was not removed (for
+example if the event has already triggered).
+
+Attempting to add an event that has already triggered or has
+already been removed will result in undefined behavior.
 
 Links
 -----
