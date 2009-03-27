@@ -1,5 +1,5 @@
 Input and Output - Legal - HL Book
-index book legit
+index book legit legit-event
 
 `HL` Legal Specifications: Input and Output
 ===========================================
