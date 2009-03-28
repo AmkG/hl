@@ -245,6 +245,62 @@ example if the event has already triggered).
 Attempting to add an event that has already triggered or has
 already been removed will result in undefined behavior.
 
+Sending any other message will result in undefined behavior for
+the virtual machine.
+
+Below is a reference implementation of the Central Event
+Process.
+
+    (in-package impl)
+    (using <hl>v1) ; use macros only
+    
+    (= <common>recv (fn () (<axiom>recv)))
+    
+    (= <common>central-event
+       (<common>process
+         (fn ()
+           (always:let m (<common>recv)
+             (<impl>central-event-message m)
+             (while (if (<axiom>empty-event-set) nil t)
+               ; perform the checking first before
+               ; going through the mailbox
+               ; this prevents a race condition where
+               ; a process sends a message to the
+               ; Central Event Process, then blocks.
+               (let chk (<axiom>only-running)
+                 ((afn ()
+                    (<axiom>try-recv
+                      (fn (m)
+                        (<impl>central-event-message m)
+                        (self))
+                      (fn () ()))))
+                 (if (<axiom>empty-event-set)
+                     () ; do nothing if empty
+                     ; if we're the only running process,
+                     ; then we can safely wait
+                     (if chk
+                         (<axiom>event-wait)
+                         (<axiom>event-poll)))))))))
+    
+    (= <impl>central-event-message
+       (fn (m)
+         ; notice the complete lack of checking; a
+         ; non-toy implementation will make some
+         ; checks...
+         (with (cmd   (<axiom>car m)
+                src   (<axiom>car (<axiom>cdr m))
+                event (<axiom>car (<axiom>cdr (<axiom>cdr m))))
+           (if
+             (<axiom>is cmd '<common>add-event)
+               (do (<axiom>add-event event)
+                   (<axiom>send src
+                     (<axiom>cons event nil)))
+             (<axiom>is cmd '<common>remove-event)
+               (<axiom>send src
+                 (<axiom>cons event
+                   (<axiom>cons (<axiom>remove-event event)
+                     nil)))))))
+
 Links
 -----
 
