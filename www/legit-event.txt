@@ -274,11 +274,13 @@ Process.
                         (<impl>central-event-message m)
                         (self))
                       (fn () ()))))
-                 ; if we're the only running process,
-                 ; then we can safely wait
-                 (if chk
-                     (<axiom>event-wait)
-                     (<axiom>event-poll))))))))
+                 (if (<axiom>empty-event-set)
+                     () ; do nothing if empty
+                     ; if we're the only running process,
+                     ; then we can safely wait
+                     (if chk
+                         (<axiom>event-wait)
+                         (<axiom>event-poll)))))))))
     
     (= <impl>central-event-message
        (fn (m)
