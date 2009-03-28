@@ -1,8 +1,8 @@
 CPPFLAGS = -I@BOOST_PATH@ -I../inc -I../os -I..
 LDFLAGS = @PTHREAD_LIB@
 
-bin_PROGRAMS = hl
-hl_SOURCES = \
+noinst_LIBRARIES = libhlvm.a
+libhlvm_a_SOURCES = \
 	globals.cpp \
 	symbols.cpp \
 	heaps.cpp \
@@ -32,3 +32,7 @@ hl_SOURCES = \
 	../inc/workarounds.hpp \
 	../inc/workers.hpp \
 	../os/thread.hpp
+
+bin_PROGRAMS = hl
+hl_SOURCES = main.cpp
+hl_LDADD = libhlvm.a

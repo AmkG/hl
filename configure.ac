@@ -5,12 +5,13 @@ AM_INIT_AUTOMAKE([-Wall foreign])
 # check for C++ compiler
 AC_PROG_CXX
 AC_PROG_CXXCPP
+AC_PROG_RANLIB
 AC_LANG([C++])
 
 # basic conf
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile test/Makefile test/executors/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile test/executors/Makefile test/disassembler/Makefile test/reader/Makefile])
 
 # user options
 AC_ARG_WITH([boost-include], [AS_HELP_STRING([--with-boost-include], [path where boost headers are installed])], [boost_path=$withval; CPPFLAGS="$CPPFLAGS -I${withval}"], [])

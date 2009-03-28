@@ -1,1 +1,1 @@
-SUBDIRS = executors
+SUBDIRS = executors disassembler reader
