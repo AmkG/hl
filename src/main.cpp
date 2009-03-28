@@ -11,6 +11,7 @@
 #include "executors.hpp"
 #include "symbols.hpp"
 #include "types.hpp"
+#include "workers.hpp"
 
 using namespace std;
 
@@ -34,7 +35,13 @@ int main(int argc, char **argv) {
   }
 
   initialize_globals();
-
+  
+  AllWorkers workers;
+  Process p;
+  Process* Q;
+  size_t timeslice;
+  timeslice = 128;
+  execute(p, timeslice, Q, 1); // init phase
 
   for (int i = 1; i < argc; i++) {
     ifstream in(argv[i]);
@@ -42,21 +49,17 @@ int main(int argc, char **argv) {
       cerr << "Can't open file: " << argv[i] << endl;
       return 2;
     }
-    
-    Process p;
-    Process* Q;
-    size_t timeslice;
-    timeslice = 128;
-    execute(p, timeslice, Q, 1); // init phase
 
+    Process p;
     read_sequence(p, in);
     assembler.go(p);
     Closure *k = Closure::NewKClosure(p, 0);
     k->codereset(p.stack.top()); p.stack.pop();
     p.stack.push(Object::to_ref(k)); // entry point
-    execute(p, timeslice, Q); // run!
-    
-    cout << p.stack.top() << endl;
+    workers.register_process(&p);
+    //execute(p, timeslice, Q); // run!
+    workers.initiate(3);
+    cout << p.stack.top() << endl; // print result
   }
 
   return 0;
