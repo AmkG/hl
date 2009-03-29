@@ -37,11 +37,14 @@ int main(int argc, char **argv) {
   initialize_globals();
   
   AllWorkers workers;
-  Process p;
-  Process* Q;
+  Process *p;
+  Process *Q;
   size_t timeslice;
   timeslice = 128;
-  execute(p, timeslice, Q, 1); // init phase
+
+  p = new Process();
+  execute(*p, timeslice, Q, 1); // init phase
+  delete p;
 
   for (int i = 1; i < argc; i++) {
     ifstream in(argv[i]);
@@ -50,17 +53,17 @@ int main(int argc, char **argv) {
       return 2;
     }
 
-    Process p;
-    read_sequence(p, in);
-    assembler.go(p);
-    Closure *k = Closure::NewKClosure(p, 0);
-    k->codereset(p.stack.top()); p.stack.pop();
-    p.stack.push(Object::to_ref(k)); // entry point
-    workers.register_process(&p);
-    workers.workqueue_push(&p);
-    //execute(p, timeslice, Q); // run!
+    p = new Process();
+    read_sequence(*p, in);
+    assembler.go(*p);
+    Closure *k = Closure::NewKClosure(*p, 0);
+    k->codereset(p->stack.top()); p->stack.pop();
+    p->stack.push(Object::to_ref(k)); // entry point
+    // process will be deleted by workers
+    workers.register_process(p);
+    workers.workqueue_push(p);
     workers.initiate(3);
-    cout << p.stack.top() << endl; // print result
+    cout << p->stack.top() << endl; // print result
   }
 
   return 0;
