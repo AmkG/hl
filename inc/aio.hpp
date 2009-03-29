@@ -106,8 +106,6 @@ boost::shared_ptr<IOPort> infile(std::string);
 boost::shared_ptr<IOPort> outfile(std::string);
 boost::shared_ptr<IOPort> appendfile(std::string);
 
-void close(boost::shared_ptr<IOPort>);
-
 class Event {
 public:
 	virtual ~Event() { }

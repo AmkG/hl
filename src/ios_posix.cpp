@@ -10,6 +10,7 @@ try to be more defensive when making system calls.
 */
 
 #include"aio.hpp"
+#include"mutexes.hpp"
 
 #include<unistd.h>
 #include<errno.h>
@@ -23,6 +24,7 @@ try to be more defensive when making system calls.
 #include<iostream>
 #include<set>
 
+static char const* open_error_message(void);
 static char const* write_error_message(void);
 static char const* read_error_message(void);
 
@@ -759,6 +761,63 @@ boost::shared_ptr<IOPort> ioport_stderr(void) {
 }
 
 /*-----------------------------------------------------------------------------
+CLOEXEC Mutex
+-----------------------------------------------------------------------------*/
+
+AppMutex cloexec_mutex;
+/*
+The CLOEXEC mutex is necessary to prevent forking a process
+from duplicating a non-CLOEXEC'ed FD in a child process.
+Note that we can't always use O_CLOEXEC: for example, pipe()
+and socket() don't allow them.
+*/
+
+/*-----------------------------------------------------------------------------
+Open files by path
+-----------------------------------------------------------------------------*/
+/*
+TODO: consider whether it would be better to allow file opening
+to be evented.
+*/
+
+typedef PosixIOPort* IOPortCreator(int);
+
+static inline boost::shared_ptr<IOPort> file_opener(std::string f, int MODE,
+		 IOPortCreator* creator) {
+	/*lock mutex to allow use to CLOEXEC atomically*/
+	AppLock l(cloexec_mutex);
+	/*why not O_CLOEXEC?  Because it appeared relatively recently, in
+	POSIX.1-2008.  Not all systems may have O_CLOEXEC.
+	TODO: use a feature-test in configure.ac and remove AppLock of
+	cloexec_mutex if O_CLOEXEC is defined.
+	*/
+	int fd = open(f.c_str(), MODE);
+	/*apparently open doesn't have EINTR, so I assume it can't get
+	interrupted by signals.
+	*/
+	if(fd < 0) {
+		/*look, an error!*/
+		throw IOError(std::string(open_error_message()));
+	} else {
+		force_cloexec(fd);
+		return boost::shared_ptr<IOPort>(creator(fd));
+	}
+}
+boost::shared_ptr<IOPort> infile(std::string f) {
+	return file_opener(f, O_RDONLY, &PosixIOPort::r_able);
+}
+boost::shared_ptr<IOPort> outfile(std::string f) {
+	return file_opener(f, O_WRONLY | O_CREAT | O_TRUNC,
+		&PosixIOPort::w_able
+	);
+}
+boost::shared_ptr<IOPort> outfile(std::string f) {
+	return file_opener(f, O_WRONLY | O_APPEND,
+		&PosixIOPort::w_able
+	);
+}
+
+/*-----------------------------------------------------------------------------
 Event Set
 -----------------------------------------------------------------------------*/
 
@@ -969,6 +1028,62 @@ EventSet& the_event_set(void) { return actual_event_set; }
 Error messages
 -----------------------------------------------------------------------------*/
 
+static char const* open_error_message(void) {
+	switch(errno) {
+	case EACCES:
+		return "Access denied.";
+	case EEXIST:
+		return "File already exists.  This error should not "
+			"occur.  Please contact developer.";
+	case EFAULT:
+		return "Internal inconsistency - somehow, would segfault "
+			"when accessing filename.  Please contact "
+			"developers.";
+	case EFBIG:
+		return "File is a regular file, but is too large to open.  "
+			"Please contact developer if this bothers you.";
+	case EISDIR:
+		return "Attempt to open directory for write.";
+	case ELOOP:
+		return "Too many symbolic links to resolve.";
+	case EMFILE:
+		return "Too many open files for this VM process.";
+	case ENAMETOOLONG:
+		return "Path name was too long";
+	case ENFILE:
+		return "Too many open files for the host operating system";
+	case ENOENT:
+		return "Path name to file does not exist.";
+	case ENOMEM:
+		return "Insufficient kernel memory to open file.";
+	case ENOSPC:
+		return "Insufficient space on device/disk.";
+	case ENOTDIR:
+		return "A path component used as a directory is not "
+			"a directory.";
+	case ENXIO:
+		return "No readers on FIFO, or no such device.";
+	case EPERM:
+		return "O_NOATIME was supposedly set, and we don't match "
+			"the owner of the file.  Internal inconsistency, "
+			"we don't set O_NOATIME.  Please contact "
+			"developers.";
+	case EROFS:
+		return "Attempt to open file for writing on read-only "
+			"filesystem.";
+	case ETXTBSY:
+		return "Attempt to open a currently-executing file.";
+	case EWOULDBLOCK:
+		return "O_NONBLOCK was supposedly specified, and an "
+			"incompatible lease was held on the file."
+			"Internal inconsistency, we don't set "
+			"O_NONBLOCK.  Please contact developers.";
+	default:
+		return "Open file, unknown error... Please contact "
+			"developers";
+	}
+}
+
 static char const* write_error_message(void) {
 	switch(errno) {
 	case EAGAIN:
@@ -1002,7 +1117,8 @@ static char const* write_error_message(void) {
 	case EPIPE:
 		return "Other end of pipe closed.";
 	default:
-		return "Write event, unknown error...";
+		return "Write event, unknown error... Please contact "
+			"developers";
 	}
 }
 
@@ -1033,7 +1149,8 @@ static char const* read_error_message(void) {
 	case EISDIR:
 		return "Can't read from a directory.";
 	default:
-		return "Read event, unknown error...";
+		return "Read event, unknown error... Please contact "
+			"developers";
 	}
 }
 
