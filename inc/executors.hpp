@@ -99,6 +99,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(rep_clos_push)
 	A_BYTECODE(scar)
 	A_BYTECODE(scdr)
+        A_BYTECODE(spawn)
 	A_BYTECODE(string_create)
 	A_BYTECODE(string_length)
 	A_BYTECODE(string_ref)

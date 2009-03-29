@@ -35,8 +35,7 @@ int main(int argc, char **argv) {
   }
 
   initialize_globals();
-  
-  AllWorkers workers;
+
   Process *p;
   Process *Q;
   size_t timeslice;
@@ -60,9 +59,10 @@ int main(int argc, char **argv) {
     k->codereset(p->stack.top()); p->stack.pop();
     p->stack.push(Object::to_ref(k)); // entry point
     // process will be deleted by workers
-    workers.register_process(p);
-    workers.workqueue_push(p);
-    workers.initiate(3);
+    AllWorkers &w = AllWorkers::getInstance();
+    w.register_process(p);
+    w.workqueue_push(p);
+    w.initiate(3);
     cout << p->stack.top() << endl; // print result
   }
 

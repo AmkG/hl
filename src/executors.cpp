@@ -5,6 +5,7 @@
 #include "types.hpp"
 #include "executors.hpp"
 #include "bytecodes.hpp"
+#include "workers.hpp"
 
 #ifdef DEBUG
   #include <typeinfo>
@@ -588,6 +589,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("rep",			THE_BYTECODE_LABEL(rep))
       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+	    ("<bc>spawn", THE_BYTECODE_LABEL(spawn))
       ("string-create",		THE_BYTECODE_LABEL(string_create), ARG_INT)
       ("string-length",		THE_BYTECODE_LABEL(string_length))
       ("string-ref",		THE_BYTECODE_LABEL(string_ref))
@@ -1145,6 +1147,21 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(tag): {
       bytecode_tag(proc,stack);
+    } NEXT_BYTECODE;
+    BYTECODE(spawn): {
+	    AllWorkers &w = AllWorkers::getInstance();
+	    // create new process 
+	    Process *spawned = new Process();
+	    // register process to working queue
+	    w.register_process(spawned);
+	    w.workqueue_push(spawned);
+	    // set starting function
+	    spawned->stack.push(stack.top()); stack.pop();
+	    // release cpu as soon as possible
+	    // we can't just return process_running or process_change
+	    // because we can't resume execution in the middle of a function
+	    // and <bc>spawn is not required to appear in tail position
+	    reductions = 0;
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack

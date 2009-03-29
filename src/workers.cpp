@@ -17,6 +17,11 @@ AllWorkers
 -----------------------------------------------------------------------------*/
 
 /*
+ * Unique instance
+ */
+AllWorkers AllWorkers::workers;
+
+/*
  * Registration
  */
 
