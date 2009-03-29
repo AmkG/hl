@@ -1028,11 +1028,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // call function on stack top when message is received
     BYTECODE(recv): {
 	    LockedValueHolderRef &mbox = proc.mailbox();
-	    if (mbox.empty()) {
+            ValueHolderRef ref;
+            mbox.remove(ref);
+	    if (ref.empty()) {
 		    return process_waiting;
 	    } else {
-		    ValueHolderRef ref;
-		    mbox.remove(ref);
 		    stack.push(ref.value());
 		    stack.restack(2);
 		    DOCALL();
