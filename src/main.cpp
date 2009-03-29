@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
   timeslice = 128;
 
   p = new Process();
-  execute(*p, timeslice, Q, 1); // init phase
+  while(execute(*p, timeslice, Q, 1) == process_running); // init phase
   delete p;
 
   for (int i = 1; i < argc; i++) {
