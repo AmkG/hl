@@ -1027,16 +1027,20 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // the matching is done on the hl-side
     // call function on stack top when message is received
     BYTECODE(recv): {
-	    LockedValueHolderRef &mbox = proc.mailbox();
-            ValueHolderRef ref;
-            mbox.remove(ref);
-	    if (ref.empty()) {
-		    return process_waiting;
-	    } else {
-		    stack.push(ref.value());
-		    stack.restack(2);
-		    DOCALL();
-	    }
+        LockedValueHolderRef &mbox = proc.mailbox();
+        ValueHolderRef ref;
+        mbox.remove(ref);
+        if (ref.empty()) {
+            return process_waiting;
+        } else {
+            /*Save the received message's Semispace into
+            the heap's other spaces
+            */
+            proc.heap().other_spaces.insert(ref);
+            stack.push(ref.value());
+            stack.restack(2);
+            DOCALL();
+        }
     } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*
