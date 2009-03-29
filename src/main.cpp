@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
     k->codereset(p.stack.top()); p.stack.pop();
     p.stack.push(Object::to_ref(k)); // entry point
     workers.register_process(&p);
+    workers.workqueue_push(&p);
     //execute(p, timeslice, Q); // run!
     workers.initiate(3);
     cout << p.stack.top() << endl; // print result
