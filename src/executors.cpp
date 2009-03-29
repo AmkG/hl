@@ -1023,8 +1023,20 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+    // always accept the first message
+    // the matching is done on the hl-side
+    // call function on stack top when message is received
     BYTECODE(recv): {
-	    // TODO
+	    LockedValueHolderRef &mbox = proc.mailbox();
+	    if (mbox.empty()) {
+		    return process_waiting;
+	    } else {
+		    ValueHolderRef ref;
+		    mbox.remove(ref);
+		    stack.push(ref.value());
+		    stack.restack(2);
+		    DOCALL();
+	    }
     } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*

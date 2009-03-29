@@ -95,6 +95,10 @@ public:
 		p = o.p;
 		o.p = tmp;
 	}
+	bool empty() {
+		AppLock l(m);
+		return p == NULL;
+	}
 };
 
 
