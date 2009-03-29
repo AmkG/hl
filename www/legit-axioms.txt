@@ -9,7 +9,19 @@ is composed completely of non-overrideable special forms.  These
 special forms are recognized by a compliant `hl` compiler.
 
 All members of the Axiomatic Layer begin with the prefix
-`<axiom>`.
+`<axiom>`.  All members of the Axiomatic Layer are special forms
+directly recognized by the compiler.  Macros assigned to the
+global variable value of these symbols are ignored by the
+compiler.
+
+Since these symbols act as special forms, they cannot be passed
+around as first-class functions; in order to work as such, they
+must be wrapped in an actual function.
+
+The Axiomatic Layer is the only layer that contains any special
+forms (aside from any implementation-specific symbols in
+`<impl>`, which are not specified anyway); any "special forms" to
+the general user of the language are really macros.
 
 Links
 -----

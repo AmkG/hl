@@ -1,0 +1,309 @@
+Event System - Legal - HL Book
+index book legit
+
+`HL` Legal Specifications: Event System
+=======================================
+
+In `hl`, all things that can potentially block are represented
+by sending messages.  This simplifies the design of much of the
+higher level: anything that needs the attention of some process
+can be found in that process's message queue.  **Everything that
+could happen** is signalled by a **message being sent**.
+
+However, at the lower levels near the host machine, inevitably
+some things were not really designed for the "everything is an
+asynchronous message" philosophy.  In particular, the host's
+operating system may not think of various services it provides
+in a "message-passing" style; in many cases, these services may
+be signalled in different, non-congruent ways.
+
+Thus, an implementation of the `hl` virtual machine must
+provide an abstracted interface between the operating system
+and the higher levels of the `hl` [Base
+System](legit-base-system.html).  This interface converts
+requests to the operating system into events that will trigger
+the sending of a message to a process.
+
+Events
+------
+
+An event is a built-in `hl` object of type `<hl>event` which
+represents a pending request from the operating system or
+similar low-level support.  Each event is a pending message;
+when the event is triggered, a message is sent to a specific
+process.  An event object will always be identical to itself
+when sent across process boundaries.  Event objects are not
+directly manipulable by `hl` code.
+
+The process that is notified by the event is provided to the
+event during its construction.  The process will receive at
+least a `cons` cell, whose `car` is the event that triggered,
+and whose `cdr` is the associated information with the event.
+The event keeps a reference to the process, and will prevent a
+process from being automatically garbage collected.
+
+Events cannot be mutated except when they have been added to
+The Event Set, as described below.  Events cannot trigger and
+send their message except when under control of The Event Set,
+but the actual request may be performed by the `hl` virtual
+machine as soon as the event is created.
+
+Events are created in various ways.  All event-creation forms
+require a process ID; the process ID is that of the process
+which is informed of the event triggering.
+
+The Event Set
+-------------
+
+In order to facilitate the interfacing between the operating
+system and the `hl` virtual machine implementation, events are
+funnelled into a single, VM-global object, "The Event Set"
+(emphasis on the singular).  The Event Set is safely
+manipulable only from one process; attempting to manipulate The
+Event Set from multiple processes will result in undefined
+behaviour.
+
+Events are started by actual creation of the events.  However,
+some operating systems may require the checking of events to be
+done in some central location.  For this reason, events must
+be added to The Event Set in order to be assuredly checked.
+
+Events are not allowed to trigger unless they have been added to
+The Event Set, **and** The Event Set is being polled or waited
+on.  Events are automatically removed from The Event Set when
+they trigger.  Events that have been removed from The Event Set
+cannot be safely added back.
+
+Events can be added or removed from The Event Set.  The Event
+Set may be queried to determine if it contains any pending
+events.  A process may check for an event triggering in The
+Event Set, or may (try to) wait for an event.
+
+Various events may have special behavior when being added or
+removed from The Event Set.  Handling The Event Set is done by
+several special forms in the [Axiomatic
+Layer](legit-axioms.html).
+
+    (<axiom>add-event event)
+
+`<axiom>add-event` adds the given `event` to The Event Set.
+The event may trigger as soon as it is added to The Event Set.
+
+Adding an event multiple times results in undefined behavior.
+Executing this special form in multiple processes results in
+undefined behavior.  Adding an event after it has been removed
+(whether by triggering or by being explicitly removed below)
+results in undefined behavior.  This special form returns `t`.
+
+    (<axiom>remove-event event)
+
+`<axiom>remove-event` removes the given `event` from The Event
+Set.  The event may have already triggered by the time
+execution flows to this special form; this special form
+returns a `t` if the event had not yet been triggered and the
+event was succesfully removed, or `nil` if the event had been
+triggered and/or the event was already removed, or wasn't
+added in the first place.
+
+Executing this special form in multiple processes results in
+undefined behavior.  Adding an event after it has been removed
+results in undefined behavior.
+
+For OS spawned child process events, successfully removing the
+event will attempt to terminate that child.  For I/O events,
+successfully removing the event will prevent the I/O from
+being performed.
+
+    (<axiom>empty-event-set)
+
+`<axiom>empty-event-set` determines whether or not The Event
+Set is empty.  It returns `t` if The Event Set is empty and
+`nil` if The Event Set contains at least one event.
+
+Executing this special form in multiple processes results in
+undefined behavior.
+
+    (<axiom>event-poll)
+
+`<axiom>event-poll` checks events in The Event Set for
+triggering, and triggers events if appropriate.  When an event
+is triggered, it sends a message to a specific process,
+composed of a `cons` cell whose `car` is the event, and whose
+`cdr` is the data associated with the triggering of the event.
+Upon triggering, the event is automatically removed from The
+Event Set and cannot be added back again.
+
+`<axiom>event-poll` does not block, and returns immediately
+after checking.  `<axiom>event-poll` returns a `t`.
+
+Executing this special form in multiple processes results in
+undefined behavior.  Adding an event after it has been removed
+results in undefined behavior.
+
+    (<axiom>event-wait)
+
+`<axiom>event-wait` checks events in The Event Set for
+triggering, and triggers events if appropriate.  When an event
+is triggered, it sends a message to a specific process,
+composed of a `cons` cell whose `car` is the event, and whose
+`cdr` is the data associated with the triggering of the event.
+Upon triggering, the event is automatically removed from The
+Event Set and cannot be added back again.
+
+`<axiom>event-wait` **may** block, and may block the entire
+virtual machine.  If no events in The Event Set are appropriate
+for triggering, it is required to release any host CPU
+resources held by the virtual machine until an event occurs, or
+for some unspecified amount of time.  However, it is not
+required to wait for some event before resuming execution (i.e.
+it is allowed to resume execution even though no events have
+triggered).  `<axiom>event-wait` returns a `t`.
+
+Executing this special form when another process is still
+running results in undefined behavior.  Adding an event after
+it has been removed results in undefined behavior.
+
+    (<axiom>only-running)
+
+`<axiom>only-running` checks if the current process is the only
+running process.  It returns `t` if the current process is the
+only running process, and `nil` if another process is running.
+
+If the current process is the only running process, then it
+will obviously remain the only running process until it either
+itself launches another process, or if it sends a message or
+somehow causes a message to be sent to another process.
+
+> ### Subject to Change
+>
+> In the future, the concept of "The Event Set" may be removed,
+> in favor of just using a Central Event Process, as described
+> below.  This means that strictly, in the future we may remove
+> the bytecodes that manipulate the Event Set from the
+> specifications; the exact bytecodes would then become
+> implementation-specific, and the implementation is free to
+> use non-`hl` code to implement the Central Event Process.
+>
+> In other words: we might choose to give more freedom to
+> implementations, and require only the Central Event Process
+> below.
+
+Central Event Process
+---------------------
+
+As mentioned above, The Event Set is a single, global object.
+This obviously means it is shared, and this obviously means
+that access to this object is locked.  This locking is provided
+implicitly by the Central Event Process.
+
+The Central Event Process is the only process which we expect
+to actually use The Event Set; thus we expect the bytecodes for
+the axiomatic special forms described above to be used only in
+the Central Event Process.
+
+The process ID for the Central Event Process is stored in the
+global variable `<common>central-event`.
+
+The Central Event Process accepts two messages: an "add event"
+message and a "remove event" message.  Both requests will send
+a message in response indicating completion of the request.
+
+    ('<common>add-event src-pid event)
+    example:
+        (let event (get-some-event)
+          (==> <common>central-event
+            '<common>add-event (my-pid) event)
+          (<==
+            (,event)
+              t))
+
+A messsage composed of a `cons`-cell list of three elements
+`'<common>add-event`, `src-pid`, and `event` requests that the
+specified event be added to The Event Set.  In response, the
+Central Event Process will send a one-element `cons`-cell list
+composed of `(event)` to `src-pid` when it has handled the
+adding of that event.
+
+    ('<common>remove-event src-pid event)
+    example:
+      (let event (get-some-event)
+        (==> <common>central-event
+          '<common>remove-event (my-pid) event)
+        (<==
+          (,event retval)
+            retval))
+
+A message composed of a `cons`-cell list of three element
+`'<common>remove-event`, `src-pid`, and `event` requests that
+the specified event be removed from The Event Set.  In
+response, the Central Event Process will send a two-element
+`cons`-cell list copmosed of `(event retval)` to `src-pid` when
+it has handled the removal of the event, where `retval` is `t`
+if the event was removed, or `nil` if it was not removed (for
+example if the event has already triggered).
+
+Attempting to add an event that has already triggered or has
+already been removed will result in undefined behavior.
+
+Sending any other message will result in undefined behavior for
+the virtual machine.
+
+Below is a reference implementation of the Central Event
+Process.
+
+    (in-package impl)
+    (using <hl>v1) ; use macros only
+    
+    (= <common>recv (fn () (<axiom>recv)))
+    
+    (= <common>central-event
+       (<common>process
+         (fn ()
+           (always:let m (<common>recv)
+             (<impl>central-event-message m)
+             (while (if (<axiom>empty-event-set) nil t)
+               ; perform the checking first before
+               ; going through the mailbox
+               ; this prevents a race condition where
+               ; a process sends a message to the
+               ; Central Event Process, then blocks.
+               (let chk (<axiom>only-running)
+                 ((afn ()
+                    (<axiom>try-recv
+                      (fn (m)
+                        (<impl>central-event-message m)
+                        (self))
+                      (fn () ()))))
+                 (if (<axiom>empty-event-set)
+                     () ; do nothing if empty
+                     ; if we're the only running process,
+                     ; then we can safely wait
+                     (if chk
+                         (<axiom>event-wait)
+                         (<axiom>event-poll)))))))))
+    
+    (= <impl>central-event-message
+       (fn (m)
+         ; notice the complete lack of checking; a
+         ; non-toy implementation will make some
+         ; checks...
+         (with (cmd   (<axiom>car m)
+                src   (<axiom>car (<axiom>cdr m))
+                event (<axiom>car (<axiom>cdr (<axiom>cdr m))))
+           (if
+             (<axiom>is cmd '<common>add-event)
+               (do (<axiom>add-event event)
+                   (<axiom>send src
+                     (<axiom>cons event nil)))
+             (<axiom>is cmd '<common>remove-event)
+               (<axiom>send src
+                 (<axiom>cons event
+                   (<axiom>cons (<axiom>remove-event event)
+                     nil)))))))
+
+Links
+-----
+
+* In [`HL` Legal Specifications](legit.html):
+    * [I/O](legit-io.html)
+

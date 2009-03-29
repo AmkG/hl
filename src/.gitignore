@@ -1,4 +1,4 @@
-run_bytecode
-*.o
 .deps
+*.o
 Makefile{,.in}
+hl

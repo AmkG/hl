@@ -1,0 +1,162 @@
+Input and Output - Legal - HL Book
+index book legit legit-event
+
+`HL` Legal Specifications: Input and Output
+===========================================
+
+No man is an island, and neither is any machine, no matter how
+virtual.  Data from the outside world must be able to enter the
+machine, and the machine, to be useful, must be able to
+manipulate some aspect of its environment, if only by emitting
+data.
+
+Thus, `hl` must support an input/output interface to allow the
+hosted processes to communicate with the outside world.
+
+The `hl` I/O subsystem is handled, at the lower levels, by the
+[Event System](legit-event.html).  At the low level, I/O
+operations are non-blocking.  At higher levels, it is possible
+to choose between a blocking, synchronous interface for
+simplicity, or to use an asynchronous, message-based interface.
+
+Low-level `<hl>ioport` Objects
+------------------------------
+
+At the low level, I/O ports are represented by `<hl>ioport`
+objects.  `<hl>ioport` objects are created and acquired in
+various ways.  Low-level access is handled by the [Axiomatic
+Layer](legit-axioms.html).
+
+Some methods of creating immediately create and return an
+I/O port object.  In addition, an I/O port object may be
+closed, signifying that the program is no longer interested
+in the I/O resource.
+
+    (<axiom>i/o-stdin)
+    (<axiom>i/o-stdout)
+    (<axiom>i/o-stderr)
+
+These constructors return the I/O port objects for the virtual
+machine's `STDIN`, `STDOUT`, and `STDERR` ports.  These
+special forms will always return "the same" object, i.e. the
+returned objects will always be identical.
+
+You should generally avoid closing these I/O port objects.
+
+    (<axiom>i/o-infile path)
+
+`<axiom>i/o-infile` opens the specified `path` for reading, and
+returns an I/O port object.  `path` should be a string.  The
+created I/O port object is a read-only I/O port.  If the file
+does not exist, this special form returns an error.
+
+If an error occurs during opening, `<axiom>i/o-infile` returns
+a tagged object of type `<hl>i/o`, whose representation is a
+string describing the error.
+
+    (<axiom>i/o-outfile path)
+
+`<axiom>i/o-outfile` opens the specified `path` for writing,
+and returns an I/O port object. `path` should be a string.
+The created I/O port object is a write-only I/O port.  If the
+file exists, it is truncated.
+
+If an error occurs during opening, `<axiom>i/o-outfile` returns
+a tagged object of type `<hl>i/o`, whose representation is a
+string describing the error.
+
+    (<axiom>i/o-appendfile path)
+
+`<axiom>i/o-appendfile` opens the specified `path` for writing,
+and returns an I/O port object. `path` should be a string.  It
+then moves the file pointer to the end-of-file.  The created
+I/O port object is a write-only I/O port.  If the file does not
+exist, this special form returns an error.
+
+If an error occurs during opening, `<axiom>i/o-appendfile`
+returns a tagged object of type `<hl>i/o`, whose representation
+is a string describing the error.
+
+    (<axiom>i/o-listener port)
+
+`<axiom>i/o-listener` opens the specified TCP/IP `port` for
+accepting connections and returns an I/O port.  `port` should
+be an integer.  The returned I/O port object is an accept-only
+I/O port.  If the TCP/IP port is already in use, this special
+form returns an error.
+
+If an error occurs during opening, `<axiom>i/o-listener`
+returns a tagged object of type `<hl>i/o`, whose representation
+is a string describing the error.
+
+Asynchronous Creation of I/O Ports
+----------------------------------
+
+`<hl>ioport` objects may be created by some special forms
+asynchronously.  The asynchronous creation is then handled by
+the [Event System](legit-event.html).
+
+In all cases, creation is cancelled if the event is removed
+successfully from The Event Set.
+
+    (<axiom>i/o-connect host port)
+
+`<axiom>i/o-connect` attempts to connect to the TCP/IP server
+on the `port` of the specified `host`.  `host` should be a
+string, and `port` should be an integer.  This special form
+will return either of the following:
+
+1.  An `<hl>ioport` object, indicating that connection was
+    immediate and the I/O port was created directly.
+2.  An `<hl>event` object, which can be used with the [Event
+    System](legit-event.html).
+3.  A tagged object of type `<hl>i/o`, whose representation is
+    a string describing an error.
+
+If this special form returns an event object, the event object,
+when triggered, will send either of the following:
+
+1.  A `<hl>cons` cell whose `car` is the event object, and
+    whose `cdr` is an `<hl>ioport` object.
+2.  A `<hl>cons` cell whose `car` is the event object, and
+    whose `cdr` is a tagged object of type `<hl>i/o`, whose
+    representation is a string describing an error.
+
+The I/O port created by this special form, or by the event it
+creates, is a bidirectional I/O port which is both readable and
+writeable.
+
+    (<axiom>i/o-accept ioport)
+
+`<axiom>i/o-accept` attempts to accept a pending connection on
+the given listening `ioport`.  `ioport` should be an I/O port
+created using `<axiom>i/o-listener` above.  This special form
+will return either of the following.
+
+1.  An `<hl>ioport` object, indicating that connection was
+    immediate and the I/O port was created directly.
+2.  An `<hl>event` object, which can be used with the [Event
+    System](legit-event.html).
+3.  A tagged object of type `<hl>i/o`, whose representation is
+    a string describing an error.
+
+If this special form returns an event object, the event object,
+when triggered, will send either of the following:
+
+1.  A `<hl>cons` cell whose `car` is the event object, and
+    whose `cdr` is an `<hl>ioport` object.
+2.  A `<hl>cons` cell whose `car` is the event object, and
+    whose `cdr` is a tagged object of type `<hl>i/o`, whose
+    representation is a string describing an error.
+
+The I/O port created by this special form, or by the event it
+creates, is a bidirectional I/O port which is both readable and
+writeable.
+
+
+Links
+-----
+
+* In [`HL` Legal Specifications](legit.html):
+    * [Event System](legit-event.html)
+

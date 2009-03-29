@@ -1,4 +1,5 @@
 
 ExpiresActive On
 ExpiresByType text/html "now plus 1 hour"
+ExpiresByType image/png "now plus 1 week"
 

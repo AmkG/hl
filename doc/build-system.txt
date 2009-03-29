@@ -1,0 +1,11 @@
+The build system is based on autotools. External dependency checks and global 
+configuration go into the file 'configure.ac'. Build targets (executables, 
+libraries), their sources and optional arguments to the compiler go into the
+Makefile.am present in every directory. An custom 'autogen.sh' runs autotools.
+
+To build the Makefiles, from the toplevel directory, type:
+
+$ ./autogen.sh
+$ ./configure --with-boost-prefix=/path/to/boost/include
+
+Reference: http://autotoolset.sourceforge.net/tutorial.html

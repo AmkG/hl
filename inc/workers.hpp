@@ -69,7 +69,14 @@ class AllWorkers : boost::noncopyable {
 	/*checks for a soft-stop condition and blocks while it is true*/
 	void soft_stop_check(AppLock&);
 
+	AllWorkers();
+	static AllWorkers workers;
 public:
+
+	static AllWorkers& getInstance() {
+		return workers;
+	}
+
 	/*initiates the specified number of worker threads
 	This function will return only when workers run out
 	of work, or if someone signals an exit condition
@@ -86,7 +93,6 @@ public:
 	/*pushes a process onto the workqueue*/
 	void workqueue_push(Process*);
 
-	AllWorkers();
 	~AllWorkers();
 
 	friend class Worker;
