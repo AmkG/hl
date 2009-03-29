@@ -216,7 +216,6 @@ private:
 	bool tight;
 
 protected:
-	ValueHolderRef other_spaces;
 	void cheney_collection(Semispace*);
 	void GC(size_t);
 
@@ -232,6 +231,7 @@ protected:
 	virtual void scan_root_object(GenericTraverser*) =0;
 
 public:
+	ValueHolderRef other_spaces;
 	template<class T>
 	inline T* create(void) {
 		/*compile-time checking that T inherits from Generic*/

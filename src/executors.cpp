@@ -584,12 +584,14 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("local",		THE_BYTECODE_LABEL(local), ARG_INT)
       ("monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("reducto",		THE_BYTECODE_LABEL(reducto))
+      ("<bc>recv", THE_BYTECODE_LABEL(recv))
       ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
       ("release",		THE_BYTECODE_LABEL(release))
       ("rep",			THE_BYTECODE_LABEL(rep))
       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
-	    ("<bc>spawn", THE_BYTECODE_LABEL(spawn))
+      ("<bc>send", THE_BYTECODE_LABEL(send))
+      ("<bc>spawn", THE_BYTECODE_LABEL(spawn))
       ("string-create",		THE_BYTECODE_LABEL(string_create), ARG_INT)
       ("string-length",		THE_BYTECODE_LABEL(string_length))
       ("string-ref",		THE_BYTECODE_LABEL(string_ref))
@@ -1021,6 +1023,25 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+    // always accept the first message
+    // the matching is done on the hl-side
+    // call function on stack top when message is received
+    BYTECODE(recv): {
+        LockedValueHolderRef &mbox = proc.mailbox();
+        ValueHolderRef ref;
+        mbox.remove(ref);
+        if (ref.empty()) {
+            return process_waiting;
+        } else {
+            /*Save the received message's Semispace into
+            the heap's other spaces
+            */
+            proc.heap().other_spaces.insert(ref);
+            stack.push(ref.value());
+            stack.restack(2);
+            DOCALL();
+        }
+    } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*
       implement the common reduction functions,
@@ -1147,6 +1168,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(tag): {
       bytecode_tag(proc,stack);
+    } NEXT_BYTECODE;
+    BYTECODE(send): {
+	    // TODO
     } NEXT_BYTECODE;
     BYTECODE(spawn): {
 	    AllWorkers &w = AllWorkers::getInstance();
