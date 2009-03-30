@@ -1025,16 +1025,15 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     // call function on the stack when message is received
     BYTECODE(recv): {
-	    MailBox & mbox = proc.mailbox();
-	    Object::ref msg;
-	    
-	    if (mbox.recv(msg)) {
-		    stack.push(msg);
-		    stack.restack(2);
-		    DOCALL();
-	    } else {
-		    return process_waiting;
-	    }
+        MailBox &mbox = proc.mailbox();
+	Object::ref msg;
+	if (mbox.recv(msg)) {
+		return process_waiting;
+        } else {
+		stack.push(msg);
+		stack.restack(2);
+		DOCALL();
+        }
     } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*

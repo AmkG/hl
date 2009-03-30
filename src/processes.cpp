@@ -12,8 +12,18 @@ void MailBox::insert(Object::ref message) {
 
 bool MailBox::recv(Object::ref & res) {
 	AppLock l(mtx);
-	// TODO
-	return false;
+	ValueHolderRef ref;
+        messages.remove(ref);
+	if (ref.empty()) {
+		return false;
+	} else {
+		/*Save the received message's Semispace into
+		  the heap's other spaces
+		*/
+		parent.heap().other_spaces.insert(ref);
+		res = ref.value();
+		return true;
+	}
 }
 
 bool MailBox::empty() {
