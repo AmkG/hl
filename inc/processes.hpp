@@ -65,13 +65,44 @@ enum ProcessStatus {
 	process_change
 };
 
+class Process;
+
+/*
+ * A mailbox manages a queue of messages sent to a process
+ */
+class MailBox {
+private:
+	AppMutex mtx;
+	Process & parent;
+	ValueHolderRef messages;
+public:
+	MailBox(Process & parent) : parent(parent) {}
+	
+	// add a new message to the queue
+	void insert(Object::ref message);
+
+	// extract a message from the queue, copy it to the Process stack
+	// return false if queue is empty
+	bool recv(Object::ref & msg);
+
+	// is mailbox empty?
+	bool empty();
+	
+	// removes all messages from the mailbox
+	void clear();
+
+	ValueHolderRef& getMessages() {
+		return messages;
+	}
+};
+
 class Process : public Heap {
 private:
 	ProcessStatus stat;
 	bool black;
 	AppMutex mtx;
 
-	LockedValueHolderRef mbox;
+	MailBox mbox;
 
 	/*in the future, consider using a limited cache*/
 	std::map<Symbol*, Object::ref> global_cache;
@@ -136,7 +167,7 @@ public:
 		: stat(process_running),
 		  black(0),
 		  mtx(),
-		  mbox(),
+		  mbox(*this),
 		  global_cache(),
 		  notification_mtx(),
 		  invalid_globals() { }
@@ -246,7 +277,7 @@ For process-level garbage collection
 	Heap& heap(void);
 
 	/*allows access to the mailbox*/
-	LockedValueHolderRef& mailbox(void);
+	MailBox& mailbox(void);
 
 	ProcessStack stack;
 

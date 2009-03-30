@@ -4,6 +4,29 @@
 #include"mutexes.hpp"
 #include"executors.hpp"
 
+void MailBox::insert(Object::ref message) {
+	AppLock l(mtx);
+	// TODO
+	//messages.insert(message);
+}
+
+bool MailBox::recv(Object::ref & res) {
+	AppLock l(mtx);
+	// TODO
+	return false;
+}
+
+bool MailBox::empty() {
+	AppLock l(mtx);
+	return messages.empty();
+}
+
+void MailBox::clear() {
+	AppLock l(mtx);
+	ValueHolderRef tmp;
+	messages.swap(tmp);
+}
+
 /*
  * Process-level GC functions
  */
@@ -21,7 +44,8 @@ bool Process::receive_message(ValueHolderRef& M, bool& is_waiting) {
 	AppTryLock l(mtx);
 	if(!l) return false; /*failed to lock, retry later*/
 	if(stat == process_dead) return true; /*silently succeed*/
-	mbox.insert(M);
+	//mbox.insert(M);
+	mbox.insert(M.value());
 	if(stat == process_waiting) {
 		is_waiting = true;
 		stat = process_running;
@@ -41,9 +65,7 @@ bool Process::anesthesize(void) {
 
 bool Process::unanesthesize(void) {
 	AppLock l(mtx);
-	ValueHolderRef tmp;
-	mbox.swap(tmp);
-	if(tmp.empty()) {
+	if (mbox.empty()) {
 		stat = process_waiting;
 		return false;
 	} else {
@@ -52,8 +74,6 @@ bool Process::unanesthesize(void) {
 		mutex), we expect mbox to be empty at this
 		point
 		*/
-		/*swap back*/
-		mbox.swap(tmp);
 		stat = process_running;
 		return true;
 	}
@@ -61,9 +81,7 @@ bool Process::unanesthesize(void) {
 
 void Process::kill(void) {
 	stat = process_dead;
-	{ValueHolderRef tmp;
-		mbox.swap(tmp);
-	}
+	mbox.clear();
 	global_cache.clear();
 	invalid_globals.clear();
 	free_heap();
@@ -71,9 +89,7 @@ void Process::kill(void) {
 void Process::atomic_kill(void) {
 	{AppLock l(mtx);
 		stat = process_dead;
-		{ValueHolderRef tmp;
-			mbox.swap(tmp);
-		}
+		mbox.clear();
 	}
 	/*used only when running anyway; since we're dead,
 	no need to lock
@@ -91,7 +107,8 @@ void Process::atomic_kill(void) {
 Heap& Process::heap(void) {
 	return *this;
 }
-LockedValueHolderRef& Process::mailbox(void) {
+
+MailBox& Process::mailbox(void) {
 	return mbox;
 }
 
@@ -166,6 +183,7 @@ void Process::scan_root_object(GenericTraverser* gt) {
              it != extra_roots.end(); ++it) {
                 gt->traverse(*(*it));
         }
+
 	/*insert code for traversing process-local vars here*/
 }
 

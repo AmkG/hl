@@ -333,7 +333,7 @@ void Worker::mark_process(Process* P) {
 
 	/*scan the mailbox*/
 	ValueHolderRef tmp;
-	LockedValueHolderRef& mailbox = P->mailbox();
+	ValueHolderRef& mailbox = P->mailbox().getMessages();
 	mailbox.swap(tmp);
 	if(!tmp.empty()) {
 		/*shouldn't throw: traverse_objects doesn't

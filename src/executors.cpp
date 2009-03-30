@@ -1023,19 +1023,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
-    // always accept the first message
-    // the matching is done on the hl-side
-    // call function on stack top when message is received
+    // call function on the stack when message is received
     BYTECODE(recv): {
-	    LockedValueHolderRef &mbox = proc.mailbox();
-	    if (mbox.empty()) {
-		    return process_waiting;
-	    } else {
-		    ValueHolderRef ref;
-		    mbox.remove(ref);
-		    stack.push(ref.value());
+	    MailBox & mbox = proc.mailbox();
+	    Object::ref msg;
+	    
+	    if (mbox.recv(msg)) {
+		    stack.push(msg);
 		    stack.restack(2);
 		    DOCALL();
+	    } else {
+		    return process_waiting;
 	    }
     } NEXT_BYTECODE;
     /*
