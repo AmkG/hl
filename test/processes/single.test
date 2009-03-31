@@ -6,3 +6,5 @@
   (local 1)
   (halt))
 (apply 2)
+
+;^42$

@@ -10,7 +10,7 @@ that integrates the most of the existing `hl` codebase.
 In order to run the tests in this directory:
 
 	./compile_test
-	../reader/dotest.pl ./run_bytecode tests/
+	../dotest.pl ./run_bytecode tests/
 
 The test should display a bunch of "Test X ...ok" messages.
 If there are any errors, the test will show the failing test.

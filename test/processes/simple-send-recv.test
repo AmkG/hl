@@ -11,3 +11,5 @@
   (local 1)
   (halt))
 (<bc>recv)
+
+;^42$
