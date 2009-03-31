@@ -1028,11 +1028,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         MailBox &mbox = proc.mailbox();
 	Object::ref msg;
 	if (mbox.recv(msg)) {
-		return process_waiting;
-        } else {
 		stack.push(msg);
 		stack.restack(2);
 		DOCALL();
+        } else {
+		// <bc>recv is always called in tail position
+		return process_waiting;
         }
     } NEXT_BYTECODE;
     /*
