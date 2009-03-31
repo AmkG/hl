@@ -4,10 +4,9 @@
 #include"mutexes.hpp"
 #include"executors.hpp"
 
-void MailBox::insert(Object::ref message) {
+void MailBox::insert(ValueHolderRef & message) {
 	AppLock l(mtx);
-	// TODO
-	//messages.insert(message);
+	messages.insert(message);
 }
 
 bool MailBox::recv(Object::ref & res) {
@@ -54,8 +53,7 @@ bool Process::receive_message(ValueHolderRef& M, bool& is_waiting) {
 	AppTryLock l(mtx);
 	if(!l) return false; /*failed to lock, retry later*/
 	if(stat == process_dead) return true; /*silently succeed*/
-	//mbox.insert(M);
-	mbox.insert(M.value());
+	mbox.insert(M);
 	if(stat == process_waiting) {
 		is_waiting = true;
 		stat = process_running;

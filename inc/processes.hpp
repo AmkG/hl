@@ -79,10 +79,11 @@ public:
 	MailBox(Process & parent) : parent(parent) {}
 	
 	// add a new message to the queue
-	void insert(Object::ref message);
+	void insert(ValueHolderRef & message);
 
-	// extract a message from the queue, copy it to the Process stack
+	// extract a message from the queue, copy it to the Process heap
 	// return false if queue is empty
+	// msg will be a reference to the process local copy
 	bool recv(Object::ref & msg);
 
 	// is mailbox empty?
