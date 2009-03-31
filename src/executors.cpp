@@ -1163,8 +1163,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(tag): {
       bytecode_tag(proc,stack);
     } NEXT_BYTECODE;
+    // expect a message and a pid on the stack
     BYTECODE(send): {
-	    // TODO
+	    Object::ref msg = proc.stack.top(); proc.stack.pop();
+	    HlPid *pid = expect_type<HlPid>(proc.stack.top(), "send expects a pid as second argument");
+	    proc.stack.pop();
+	    ValueHolderRef ref;
+	    ValueHolder::copy_object(ref, msg);
+	    bool is_waiting;
+	    if (!pid->process->receive_message(ref, is_waiting)) {
+		    // unable to send the message
+		    // what should we do?
+	    }
     } NEXT_BYTECODE;
     BYTECODE(spawn): {
 	    AllWorkers &w = AllWorkers::getInstance();
