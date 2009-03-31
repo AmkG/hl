@@ -178,9 +178,10 @@ void AllWorkers::initiate(size_t nworkers) {
 
 /*
  * constructor/destructor
+ * default_timeslice 2 until workers are fully tested
  */
 
-AllWorkers::AllWorkers(void) : default_timeslice(32), soft_stop_condition(0), workqueue_waiting(0), total_workers(0) {
+AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), workqueue_waiting(0), total_workers(0) {
 }
 
 AllWorkers::~AllWorkers() {
