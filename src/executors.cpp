@@ -653,7 +653,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     symbols->lookup("<impl>composeo-cont-body")->
       set_value(inline_assemble(proc, "(composeo-continuation ) (continue )"));
 
-    return process_running;
+    return process_dead;
   }
   // main VM loop
   // add bytecode as an extra root object to scan
