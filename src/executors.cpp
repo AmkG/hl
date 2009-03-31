@@ -1176,6 +1176,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 		    // what should we do?
 	    }
     } NEXT_BYTECODE;
+    // leave pid of created process on the stack
+    // or nil if there was an error
     BYTECODE(spawn): {
 	    AllWorkers &w = AllWorkers::getInstance();
 	    // create new process 
@@ -1190,6 +1192,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 	    // because we can't resume execution in the middle of a function
 	    // and <bc>spawn is not required to appear in tail position
 	    reductions = 0;
+	    HlPid *pid = proc.create<HlPid>();
+	    pid->process = spawned;
+	    stack.push(Object::to_ref(pid));
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack
