@@ -121,6 +121,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(table_ref)
 	A_BYTECODE(table_sref)
 	A_BYTECODE(tag)
+        A_BYTECODE(try_recv)
 	A_BYTECODE(type)
 	A_BYTECODE(type_local_push)
 	A_BYTECODE(type_clos_push)

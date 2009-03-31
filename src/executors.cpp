@@ -611,6 +611,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("table-sref",		THE_BYTECODE_LABEL(table_sref))
       ("table-keys",		THE_BYTECODE_LABEL(table_keys))
       ("tag",			THE_BYTECODE_LABEL(tag))
+      ("<bc>try-recv", THE_BYTECODE_LABEL(try_recv))
       ("type",		THE_BYTECODE_LABEL(type))
       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
@@ -1024,7 +1025,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
-    // call function on the stack when message is received
+    // call continuation on the stack when message is received
     BYTECODE(recv): {
         MailBox &mbox = proc.mailbox();
 	Object::ref msg;
@@ -1283,6 +1284,32 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(table_keys): {
       bytecode_table_keys(proc, stack);
+    } NEXT_BYTECODE;
+    // expects two continuations on the stack
+    // one is called if there is a message, the other if 
+    // the message queue is empty
+    // stack is:
+    // -- top --
+    // fail cont
+    // success cont
+    // -- bottom --
+    BYTECODE(try_recv): {
+        MailBox &mbox = proc.mailbox();
+	Object::ref msg;
+	if (mbox.recv(msg)) {
+		// success
+		stack.pop(); // throw away fail cont
+		stack.push(msg);
+		stack.restack(2);
+        } else {
+		// fail
+		Object::ref fail_fn = stack.top(); stack.pop();
+		stack.pop(); // remove success cont
+		stack.push(fail_fn); // back in the stack
+		stack.push(Object::nil()); // continuations take an arg
+		stack.restack(2);
+        }
+	DOCALL();
     } NEXT_BYTECODE;
     BYTECODE(type): {
       bytecode_<&type>(stack);
