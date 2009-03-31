@@ -100,6 +100,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(rep_clos_push)
 	A_BYTECODE(scar)
 	A_BYTECODE(scdr)
+	A_BYTECODE(self_pid)
         A_BYTECODE(send)
         A_BYTECODE(spawn)
 	A_BYTECODE(string_create)

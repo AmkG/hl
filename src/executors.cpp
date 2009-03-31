@@ -590,6 +590,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("rep",			THE_BYTECODE_LABEL(rep))
       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+      ("<bc>self-pid", THE_BYTECODE_LABEL(self_pid))
       ("<bc>send", THE_BYTECODE_LABEL(send))
       ("<bc>spawn", THE_BYTECODE_LABEL(spawn))
       ("string-create",		THE_BYTECODE_LABEL(string_create), ARG_INT)
@@ -1162,6 +1163,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(tag): {
       bytecode_tag(proc,stack);
+    } NEXT_BYTECODE;
+    // build an HlPid of the running process
+    BYTECODE(self_pid): {
+	    HlPid *pid = proc.create<HlPid>();
+	    // ?? is this safe?
+	    pid->process = &proc;
+	    stack.push(Object::to_ref(pid));
     } NEXT_BYTECODE;
     // expect a message and a pid on the stack
     BYTECODE(send): {
