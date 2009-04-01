@@ -1039,6 +1039,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
         std::cerr<<"recv: queue empty\n";
         // <bc>recv is always called in tail position
+        // must set process status to waiting
         // !! NOTE: this should *atomically* set the
         // !! process status to process_waiting
         // !! *before* it exits.  We should probably

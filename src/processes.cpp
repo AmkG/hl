@@ -112,6 +112,11 @@ void Process::atomic_kill(void) {
 	free_heap();
 }
 
+void Process::set_waiting() {
+	AppLock l(mtx);
+	stat = process_waiting;
+}
+
 Heap& Process::heap(void) {
 	return *this;
 }
