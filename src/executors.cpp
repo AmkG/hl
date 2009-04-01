@@ -1200,29 +1200,29 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // leave pid of created process on the stack
     // or nil if there was an error
     BYTECODE(spawn): {
-	    AllWorkers &w = AllWorkers::getInstance();
-	    try {
-	      // create new process 
-	      Process *spawned = new Process();
-	      // register process to working queue
-	      w.register_process(spawned);
-	      w.workqueue_push(spawned);
-	      // set starting function
-	      spawned->stack.push(stack.top()); stack.pop();
-	      // release cpu as soon as possible
-	      // we can't just return process_running or process_change
-	      // because we can't resume execution in the middle of a 
-	      // function and <bc>spawn is not required to appear in tail
-	      // position
-	      reductions = 0;
-	      HlPid *pid = proc.create<HlPid>();
-	      pid->process = spawned;
-	      stack.push(Object::to_ref(pid));
-	    }
-	    catch (std::bad_alloc e) {
-	      // couldn't allocate process
-	      stack.push(Object::nil());
-	    }
+      AllWorkers &w = AllWorkers::getInstance();
+      try {
+        // create new process 
+        Process *spawned = new Process();
+        // register process to working queue
+        w.register_process(spawned);
+        w.workqueue_push(spawned);
+        // set starting function
+        spawned->stack.push(stack.top()); stack.pop();
+        // release cpu as soon as possible
+        // we can't just return process_running or process_change
+        // because we can't resume execution in the middle of a 
+        // function and <bc>spawn is not required to appear in tail
+        // position
+        reductions = 0;
+        HlPid *pid = proc.create<HlPid>();
+        pid->process = spawned;
+        stack.push(Object::to_ref(pid));
+      }
+      catch (std::bad_alloc e) {
+        // couldn't allocate process
+        stack.push(Object::nil());
+      }
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack
