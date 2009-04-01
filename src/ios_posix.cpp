@@ -814,6 +814,10 @@ static inline boost::shared_ptr<IOPort> file_opener(std::string f, int MODE,
 	long fl;
 	/*note: at this point, it is quite safe to change file flags
  	on this descriptor.
+	(we shouldn't change file flags for descriptors that are
+	shared across processes, because of race conditions between
+	reading and writing the file flags if both processes attempt
+	to modify simultaneously)
 	*/
 	do {
 		errno = 0;
