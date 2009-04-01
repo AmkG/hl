@@ -274,6 +274,9 @@ For process-level garbage collection
 	*/
 	ProcessStatus execute(size_t& timeslice, Process*& Q);
 
+	/* atomically set process status to process_waiting */
+	void set_waiting();
+
 	/*allows access to the heap object*/
 	Heap& heap(void);
 

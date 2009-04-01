@@ -1038,6 +1038,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         } else {
 		std::cerr<<"recv: queue empty\n";
 		// <bc>recv is always called in tail position
+		// must set process status to waiting
 		return process_waiting;
         }
     } NEXT_BYTECODE;
