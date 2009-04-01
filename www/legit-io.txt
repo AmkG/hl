@@ -99,7 +99,7 @@ the [Event System](legit-event.html).
 In all cases, creation is cancelled if the event is removed
 successfully from The Event Set.
 
-    (<axiom>i/o-connect host port)
+    (<axiom>i/o-connect process host port)
 
 `<axiom>i/o-connect` attempts to connect to the TCP/IP server
 on the `port` of the specified `host`.  `host` should be a
@@ -109,12 +109,14 @@ will return either of the following:
 1.  An `<hl>ioport` object, indicating that connection was
     immediate and the I/O port was created directly.
 2.  An `<hl>event` object, which can be used with the [Event
-    System](legit-event.html).
+    System](legit-event.html).  This event object will send a
+    message to the given `process` when it triggers.
 3.  A tagged object of type `<hl>i/o`, whose representation is
     a string describing an error.
 
 If this special form returns an event object, the event object,
-when triggered, will send either of the following:
+when triggered, will send to the given `process` either of the
+following:
 
 1.  A `<hl>cons` cell whose `car` is the event object, and
     whose `cdr` is an `<hl>ioport` object.
@@ -136,12 +138,14 @@ will return either of the following.
 1.  An `<hl>ioport` object, indicating that connection was
     immediate and the I/O port was created directly.
 2.  An `<hl>event` object, which can be used with the [Event
-    System](legit-event.html).
+    System](legit-event.html).  This event object will send a
+    message to the given `process` when it triggers.
 3.  A tagged object of type `<hl>i/o`, whose representation is
     a string describing an error.
 
 If this special form returns an event object, the event object,
-when triggered, will send either of the following:
+when triggered, will send to the given `process` either of the
+following:
 
 1.  A `<hl>cons` cell whose `car` is the event object, and
     whose `cdr` is an `<hl>ioport` object.
@@ -152,6 +156,8 @@ when triggered, will send either of the following:
 The I/O port created by this special form, or by the event it
 creates, is a bidirectional I/O port which is both readable and
 writeable.
+
+~!
 
 
 Links
