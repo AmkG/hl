@@ -20,7 +20,7 @@ bool MailBox::recv(Object::ref & res) {
 		  the heap's other spaces
 		*/
 		parent.heap().other_spaces.insert(ref);
-		res = ref.value();
+		res = parent.heap().other_spaces.value();
 		return true;
 	}
 }
