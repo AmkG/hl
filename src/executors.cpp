@@ -1032,12 +1032,19 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       Object::ref msg;
       if (mbox.recv(msg)) {
         std::cerr<<"recv: "<<msg<<"\n";
+        // stack.push(stack[1]); // current continuation
         stack.push(msg);
         stack.restack(2);
         DOCALL();
       } else {
         std::cerr<<"recv: queue empty\n";
         // <bc>recv is always called in tail position
+        // !! NOTE: this should *atomically* set the
+        // !! process status to process_waiting
+        // !! *before* it exits.  We should probably
+        // !! add a member function into Process, to
+        // !! encapsulate away the process
+        // !! functionality.
         return process_waiting;
       }
     } NEXT_BYTECODE;
@@ -1050,6 +1057,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       a reusable continuation closure that is
       used an array otherwise
       See also the executor reducto_continuation.
+      TODO: rreducto, which is like reducto
+      except with right-to-left reduction.
     */
     BYTECODE(reducto): {
       /*determine #params*/
@@ -1172,6 +1181,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(self_pid): {
       HlPid *pid = proc.create<HlPid>();
       // ?? is this safe?
+      // !! yes -- almkglor
       pid->process = &proc;
       stack.push(Object::to_ref(pid));
     } NEXT_BYTECODE;
@@ -1193,6 +1203,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         if (is_waiting) {
           // let the process run
           Q = pid->process;
+          // !! Should probably setup the continuation call
+          // !! before returning, so that execution flows
+          // !! into the continuation when this process
+          // !! is resumed.
+          // !! -- almkglor
           return process_change;
         }
       }
