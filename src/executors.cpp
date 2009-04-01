@@ -1208,12 +1208,21 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         w.register_process(spawned);
         w.workqueue_push(spawned);
         // set starting function
+        // !! won't work!  you have to create a new ValueHolder
+        // !! with the stack top and add that to the other_spaces
+        // !! of the new process.  Probably better to create a
+        // !! factory function for spawning processes, which
+        // !! will handle that work (as well as registering etc.)
+        // !! for us. - almkglor
         spawned->stack.push(stack.top()); stack.pop();
         // release cpu as soon as possible
         // we can't just return process_running or process_change
         // because we can't resume execution in the middle of a 
         // function and <bc>spawn is not required to appear in tail
         // position
+        // !! I hereby allow spawn to be required to appear in tail
+        // !! position.  The specs are not yet fixed at this point
+        // !! - almkglor
         reductions = 0;
         HlPid *pid = proc.create<HlPid>();
         pid->process = spawned;
