@@ -179,9 +179,10 @@ void AllWorkers::initiate(size_t nworkers) {
 
 /*
  * constructor/destructor
+ * default_timeslice 2 until workers are fully tested
  */
 
-AllWorkers::AllWorkers(void) : default_timeslice(32), soft_stop_condition(0), workqueue_waiting(0), total_workers(0) {
+AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), workqueue_waiting(0), total_workers(0) {
 }
 
 AllWorkers::~AllWorkers() {
@@ -334,7 +335,7 @@ void Worker::mark_process(Process* P) {
 
 	/*scan the mailbox*/
 	ValueHolderRef tmp;
-	LockedValueHolderRef& mailbox = P->mailbox();
+	ValueHolderRef& mailbox = P->mailbox().getMessages();
 	mailbox.swap(tmp);
 	if(!tmp.empty()) {
 		/*shouldn't throw: traverse_objects doesn't
@@ -515,6 +516,8 @@ execute:
 	Rstat = R->execute(timeslice, Q);
 	switch(Rstat) {
 	case process_waiting:
+		R->set_waiting();
+		// fall through
 	case process_dead:
 		R = 0; // clear
 		break;

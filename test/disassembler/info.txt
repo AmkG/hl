@@ -7,7 +7,7 @@ checking that it's still (mostly) the same.
 To run the tests in this directory:
 
 	./compile_driver
-	../reader/dotest.pl ./driver tests/
+	../dotest.pl ./driver tests/
 
 The above test should print a bunch of "Test X ...ok"
 messages.  If any fail, the test will show which one failed.

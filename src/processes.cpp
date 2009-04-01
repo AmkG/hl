@@ -4,6 +4,38 @@
 #include"mutexes.hpp"
 #include"executors.hpp"
 
+void MailBox::insert(ValueHolderRef & message) {
+	AppLock l(mtx);
+	messages.insert(message);
+}
+
+bool MailBox::recv(Object::ref & res) {
+	AppLock l(mtx);
+	ValueHolderRef ref;
+        messages.remove(ref);
+	if (ref.empty()) {
+		return false;
+	} else {
+		/*Save the received message's Semispace into
+		  the heap's other spaces
+		*/
+		parent.heap().other_spaces.insert(ref);
+		res = parent.heap().other_spaces.value();
+		return true;
+	}
+}
+
+bool MailBox::empty() {
+	AppLock l(mtx);
+	return messages.empty();
+}
+
+void MailBox::clear() {
+	AppLock l(mtx);
+	ValueHolderRef tmp;
+	messages.swap(tmp);
+}
+
 /*
  * Process-level GC functions
  */
@@ -41,9 +73,7 @@ bool Process::anesthesize(void) {
 
 bool Process::unanesthesize(void) {
 	AppLock l(mtx);
-	ValueHolderRef tmp;
-	mbox.swap(tmp);
-	if(tmp.empty()) {
+	if (mbox.empty()) {
 		stat = process_waiting;
 		return false;
 	} else {
@@ -52,8 +82,6 @@ bool Process::unanesthesize(void) {
 		mutex), we expect mbox to be empty at this
 		point
 		*/
-		/*swap back*/
-		mbox.swap(tmp);
 		stat = process_running;
 		return true;
 	}
@@ -61,9 +89,7 @@ bool Process::unanesthesize(void) {
 
 void Process::kill(void) {
 	stat = process_dead;
-	{ValueHolderRef tmp;
-		mbox.swap(tmp);
-	}
+	mbox.clear();
 	global_cache.clear();
 	invalid_globals.clear();
 	free_heap();
@@ -71,9 +97,7 @@ void Process::kill(void) {
 void Process::atomic_kill(void) {
 	{AppLock l(mtx);
 		stat = process_dead;
-		{ValueHolderRef tmp;
-			mbox.swap(tmp);
-		}
+		mbox.clear();
 	}
 	/*used only when running anyway; since we're dead,
 	no need to lock
@@ -88,10 +112,38 @@ void Process::atomic_kill(void) {
 	free_heap();
 }
 
+void Process::set_waiting() {
+/*
+NOTE!  This is not atomic enough!
+The following race condition can occur:
+  S:  (==> R msg)
+  R:  (<== msg (do-something msg))
+
+1.  R checks its mailbox.  It finds it empty.
+2.  S sends message to R.  It inserts the new message
+    into the mailbox.  It detects that R is currently
+    process_running, so it does not schedule the
+    message sending.
+3.  R changes its state to process_waiting and returns
+    process_waiting, causing the worker to drop it.
+
+This means that R has *received* a message, but is
+still in a "waiting" state.
+
+Both stat and the mailbox should be protected by a
+*single* lock.
+
+--almkglor
+*/
+	AppLock l(mtx);
+	stat = process_waiting;
+}
+
 Heap& Process::heap(void) {
 	return *this;
 }
-LockedValueHolderRef& Process::mailbox(void) {
+
+MailBox& Process::mailbox(void) {
 	return mbox;
 }
 
@@ -166,6 +218,7 @@ void Process::scan_root_object(GenericTraverser* gt) {
              it != extra_roots.end(); ++it) {
                 gt->traverse(*(*it));
         }
+
 	/*insert code for traversing process-local vars here*/
 }
 

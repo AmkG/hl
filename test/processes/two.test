@@ -5,3 +5,5 @@
 (<bc>spawn)
 (int 2)
 (halt)
+
+;^2$

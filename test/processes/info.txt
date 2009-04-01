@@ -1,0 +1,8 @@
+Tests in this directory test for the correct behavior of multiple processes and
+message passing synchronization.
+
+To run the tests, execute
+
+$ ./dotest.pl ../src/hl processes
+
+from the test directory.
