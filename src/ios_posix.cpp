@@ -783,26 +783,63 @@ to be evented.
 typedef PosixIOPort* IOPortCreator(int);
 
 static inline boost::shared_ptr<IOPort> file_opener(std::string f, int MODE,
-		 IOPortCreator* creator) {
-	/*lock mutex to allow use to CLOEXEC atomically*/
-	AppLock l(cloexec_mutex);
-	/*why not O_CLOEXEC?  Because it appeared relatively recently, in
-	POSIX.1-2008.  Not all systems may have O_CLOEXEC.
-	TODO: use a feature-test in configure.ac and remove AppLock of
-	cloexec_mutex if O_CLOEXEC is defined.
-	*/
-	int fd = open(f.c_str(), MODE);
-	/*apparently open doesn't have EINTR, so I assume it can't get
-	interrupted by signals.
-	*/
-	if(fd < 0) {
-		/*look, an error!*/
-		throw IOError(std::string(open_error_message()));
-	} else {
-		force_cloexec(fd);
-		return boost::shared_ptr<IOPort>(creator(fd));
+		IOPortCreator* creator) {
+	int fd;
+	{
+		/*lock mutex to allow use to CLOEXEC atomically*/
+		AppLock l(cloexec_mutex);
+		/*why not O_CLOEXEC?  Because it appeared relatively recently, in
+		POSIX.1-2008.  Not all systems may have O_CLOEXEC.
+		TODO: use a feature-test in configure.ac and remove AppLock of
+		cloexec_mutex if O_CLOEXEC is defined.
+		*/
+		/*O_NONBLOCK is only used to ensure that the open() call itself
+		does not block.  We don't actually want the open()'ed file to
+		be *kept* nonblocking, because that is likely to have problems
+		when we launch some random OS process that doesn't expect the
+		nonblocking mode.
+		*/
+		fd = ::open(f.c_str(), MODE | O_NONBLOCK);
+		/*apparently open doesn't have EINTR, so I assume it can't get
+		interrupted by signals.
+		*/
+		if(fd < 0) {
+			/*look, an error!*/
+			throw IOError(std::string(open_error_message()));
+		} else {
+			force_cloexec(fd);
+		}
 	}
+	/*remove non-blocking*/
+	long fl;
+	/*note: at this point, it is quite safe to change file flags
+ 	on this descriptor.
+	*/
+	do {
+		errno = 0;
+		fl = fcntl(fd, F_GETFL);
+	} while(fl < 0 && errno == EINTR);
+	if(fl < 0) {
+		std::cerr << "posix-aio-open: Unexpected error on getting "
+			<< "file flags from newly-opened file descriptor."
+			<< std::endl;
+		exit(1);
+	}
+	fl &= ~((long) O_NONBLOCK);
+	int rv;
+	do {
+		errno = 0;
+		rv = fcntl(fd, F_SETFL, fl);
+	} while(rv < 0 && errno == EINTR);
+	if(fl < 0) {
+		std::cerr << "posix-aio-open: Unexpected error on clearing "
+			<< "O_NONBLOCK from newly-opened file descriptor."
+			<< std::endl;
+		exit(1);
+	}
+	return boost::shared_ptr<IOPort>(creator(fd));
 }
+
 boost::shared_ptr<IOPort> infile(std::string f) {
 	return file_opener(f, O_RDONLY, &PosixIOPort::r_able);
 }
@@ -811,7 +848,7 @@ boost::shared_ptr<IOPort> outfile(std::string f) {
 		&PosixIOPort::w_able
 	);
 }
-boost::shared_ptr<IOPort> outfile(std::string f) {
+boost::shared_ptr<IOPort> appendfile(std::string f) {
 	return file_opener(f, O_WRONLY | O_APPEND,
 		&PosixIOPort::w_able
 	);
@@ -1074,10 +1111,7 @@ static char const* open_error_message(void) {
 	case ETXTBSY:
 		return "Attempt to open a currently-executing file.";
 	case EWOULDBLOCK:
-		return "O_NONBLOCK was supposedly specified, and an "
-			"incompatible lease was held on the file."
-			"Internal inconsistency, we don't set "
-			"O_NONBLOCK.  Please contact developers.";
+		return "An incompatible lease is held on the file.";
 	default:
 		return "Open file, unknown error... Please contact "
 			"developers";
