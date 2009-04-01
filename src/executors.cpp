@@ -1028,18 +1028,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     // call continuation on the stack when message is received
     BYTECODE(recv): {
-        MailBox &mbox = proc.mailbox();
-	Object::ref msg;
-	if (mbox.recv(msg)) {
-		std::cerr<<"recv: "<<msg<<"\n";
-		stack.push(msg);
-		stack.restack(2);
-		DOCALL();
-        } else {
-		std::cerr<<"recv: queue empty\n";
-		// <bc>recv is always called in tail position
-		return process_waiting;
-        }
+      MailBox &mbox = proc.mailbox();
+      Object::ref msg;
+      if (mbox.recv(msg)) {
+        std::cerr<<"recv: "<<msg<<"\n";
+        stack.push(msg);
+        stack.restack(2);
+        DOCALL();
+      } else {
+        std::cerr<<"recv: queue empty\n";
+        // <bc>recv is always called in tail position
+        return process_waiting;
+      }
     } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*
@@ -1170,32 +1170,32 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     // build an HlPid of the running process
     BYTECODE(self_pid): {
-	    HlPid *pid = proc.create<HlPid>();
-	    // ?? is this safe?
-	    pid->process = &proc;
-	    stack.push(Object::to_ref(pid));
+      HlPid *pid = proc.create<HlPid>();
+      // ?? is this safe?
+      pid->process = &proc;
+      stack.push(Object::to_ref(pid));
     } NEXT_BYTECODE;
     // expect a pid and a message on the stack
     // must be called in tail position
     BYTECODE(send): {
-	    Object::ref msg = proc.stack.top(); proc.stack.pop();
-	    HlPid *pid = expect_type<HlPid>(proc.stack.top(), "send expects a pid as first argument");
-	    proc.stack.pop();
-	    ValueHolderRef ref;
-	    ValueHolder::copy_object(ref, msg);
-	    bool is_waiting = false;
-	    if (!pid->process->receive_message(ref, is_waiting)) {
-		    // TODO: save instruction counter in order to restart
-		    // the process from the correct position
-		    return process_running;
-	    } else {
-		    // was process waiting?
-		    if (is_waiting) {
-			    // let the process run
-			    Q = pid->process;
-			    return process_change;
-		    }
-	    }
+      Object::ref msg = proc.stack.top(); proc.stack.pop();
+      HlPid *pid = expect_type<HlPid>(proc.stack.top(), "send expects a pid as first argument");
+      proc.stack.pop();
+      ValueHolderRef ref;
+      ValueHolder::copy_object(ref, msg);
+      bool is_waiting = false;
+      if (!pid->process->receive_message(ref, is_waiting)) {
+        // TODO: save instruction counter in order to restart
+        // the process from the correct position
+        return process_running;
+      } else {
+        // was process waiting?
+        if (is_waiting) {
+          // let the process run
+          Q = pid->process;
+          return process_change;
+        }
+      }
     } NEXT_BYTECODE;
     // leave pid of created process on the stack
     // or nil if there was an error
