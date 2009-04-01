@@ -2,14 +2,16 @@
 #include <stdlib.h> // for size_t
 #include <string>
 #include <sstream>
+#include <new> // for std::bad_alloc
 #include "types.hpp"
 #include "executors.hpp"
 #include "bytecodes.hpp"
+#include "workers.hpp"
 
 #ifdef DEBUG
   #include <typeinfo>
-  #include <iostream>
 #endif
+#include <iostream>
 
 ExecutorTable Executor::tbl;
 
@@ -514,6 +516,7 @@ static void attempt_kclos_dealloc(Heap& hp, Generic* gp) {
 #define DOCALL() goto call_current_closure;
 
 ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init) {
+
   /*REMINDER
     All allocations of Generic objects on the
     Process proc *will* invalidate any pointers
@@ -582,11 +585,15 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("local",		THE_BYTECODE_LABEL(local), ARG_INT)
       ("monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("reducto",		THE_BYTECODE_LABEL(reducto))
+      ("<bc>recv", THE_BYTECODE_LABEL(recv))
       ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
       ("release",		THE_BYTECODE_LABEL(release))
       ("rep",			THE_BYTECODE_LABEL(rep))
       ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+      ("<bc>self-pid", THE_BYTECODE_LABEL(self_pid))
+      ("<bc>send", THE_BYTECODE_LABEL(send))
+      ("<bc>spawn", THE_BYTECODE_LABEL(spawn))
       ("string-create",		THE_BYTECODE_LABEL(string_create), ARG_INT)
       ("string-length",		THE_BYTECODE_LABEL(string_length))
       ("string-ref",		THE_BYTECODE_LABEL(string_ref))
@@ -605,6 +612,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("table-sref",		THE_BYTECODE_LABEL(table_sref))
       ("table-keys",		THE_BYTECODE_LABEL(table_keys))
       ("tag",			THE_BYTECODE_LABEL(tag))
+      ("<bc>try-recv", THE_BYTECODE_LABEL(try_recv))
       ("type",		THE_BYTECODE_LABEL(type))
       ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
       ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
@@ -648,7 +656,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     symbols->lookup("<impl>composeo-cont-body")->
       set_value(inline_assemble(proc, "(composeo-continuation ) (continue )"));
 
-    return process_running;
+    return process_dead;
   }
   // main VM loop
   // add bytecode as an extra root object to scan
@@ -1018,6 +1026,29 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+    // call continuation on the stack when message is received
+    BYTECODE(recv): {
+      MailBox &mbox = proc.mailbox();
+      Object::ref msg;
+      if (mbox.recv(msg)) {
+        std::cerr<<"recv: "<<msg<<"\n";
+        // stack.push(stack[1]); // current continuation
+        stack.push(msg);
+        stack.restack(2);
+        DOCALL();
+      } else {
+        std::cerr<<"recv: queue empty\n";
+        // <bc>recv is always called in tail position
+        // must set process status to waiting
+        // !! NOTE: this should *atomically* set the
+        // !! process status to process_waiting
+        // !! *before* it exits.  We should probably
+        // !! add a member function into Process, to
+        // !! encapsulate away the process
+        // !! functionality.
+        return process_waiting;
+      }
+    } NEXT_BYTECODE;
     /*
       reducto is a bytecode to *efficiently*
       implement the common reduction functions,
@@ -1027,6 +1058,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       a reusable continuation closure that is
       used an array otherwise
       See also the executor reducto_continuation.
+      TODO: rreducto, which is like reducto
+      except with right-to-left reduction.
     */
     BYTECODE(reducto): {
       /*determine #params*/
@@ -1145,6 +1178,77 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(tag): {
       bytecode_tag(proc,stack);
     } NEXT_BYTECODE;
+    // build an HlPid of the running process
+    BYTECODE(self_pid): {
+      HlPid *pid = proc.create<HlPid>();
+      // ?? is this safe?
+      // !! yes -- almkglor
+      pid->process = &proc;
+      stack.push(Object::to_ref(pid));
+    } NEXT_BYTECODE;
+    // expect a pid and a message on the stack
+    // must be called in tail position
+    BYTECODE(send): {
+      Object::ref msg = proc.stack.top(); proc.stack.pop();
+      HlPid *pid = expect_type<HlPid>(proc.stack.top(), "send expects a pid as first argument");
+      proc.stack.pop();
+      ValueHolderRef ref;
+      ValueHolder::copy_object(ref, msg);
+      bool is_waiting = false;
+      if (!pid->process->receive_message(ref, is_waiting)) {
+        // TODO: save instruction counter in order to restart
+        // the process from the correct position
+        return process_running;
+      } else {
+        // was process waiting?
+        if (is_waiting) {
+          // let the process run
+          Q = pid->process;
+          // !! Should probably setup the continuation call
+          // !! before returning, so that execution flows
+          // !! into the continuation when this process
+          // !! is resumed.
+          // !! -- almkglor
+          return process_change;
+        }
+      }
+    } NEXT_BYTECODE;
+    // leave pid of created process on the stack
+    // or nil if there was an error
+    BYTECODE(spawn): {
+      AllWorkers &w = AllWorkers::getInstance();
+      try {
+        // create new process 
+        Process *spawned = new Process();
+        // register process to working queue
+        w.register_process(spawned);
+        w.workqueue_push(spawned);
+        // set starting function
+        // !! won't work!  you have to create a new ValueHolder
+        // !! with the stack top and add that to the other_spaces
+        // !! of the new process.  Probably better to create a
+        // !! factory function for spawning processes, which
+        // !! will handle that work (as well as registering etc.)
+        // !! for us. - almkglor
+        spawned->stack.push(stack.top()); stack.pop();
+        // release cpu as soon as possible
+        // we can't just return process_running or process_change
+        // because we can't resume execution in the middle of a 
+        // function and <bc>spawn is not required to appear in tail
+        // position
+        // !! I hereby allow spawn to be required to appear in tail
+        // !! position.  The specs are not yet fixed at this point
+        // !! - almkglor
+        reductions = 0;
+        HlPid *pid = proc.create<HlPid>();
+        pid->process = spawned;
+        stack.push(Object::to_ref(pid));
+      }
+      catch (std::bad_alloc e) {
+        // couldn't allocate process
+        stack.push(Object::nil());
+      }
+    } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack
       bytecode_string_create( proc, stack, N );
@@ -1207,6 +1311,32 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(table_keys): {
       bytecode_table_keys(proc, stack);
+    } NEXT_BYTECODE;
+    // expects two continuations on the stack
+    // one is called if there is a message, the other if 
+    // the message queue is empty
+    // stack is:
+    // -- top --
+    // fail cont
+    // success cont
+    // -- bottom --
+    BYTECODE(try_recv): {
+        MailBox &mbox = proc.mailbox();
+	Object::ref msg;
+	if (mbox.recv(msg)) {
+		// success
+		stack.pop(); // throw away fail cont
+		stack.push(msg);
+		stack.restack(2);
+        } else {
+		// fail
+		Object::ref fail_fn = stack.top(); stack.pop();
+		stack.pop(); // remove success cont
+		stack.push(fail_fn); // back in the stack
+		stack.push(Object::nil()); // continuations take an arg
+		stack.restack(2);
+        }
+	DOCALL();
     } NEXT_BYTECODE;
     BYTECODE(type): {
       bytecode_<&type>(stack);

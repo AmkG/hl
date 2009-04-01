@@ -176,7 +176,8 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
       else
         out << " . " << r << ")";
     } else {
-      out << "#<??>";
+	    std::string name = as_a<Symbol*>(type(obj))->getPrintName();
+	    out << "#<" << name << ">";
     }
   }
   else {

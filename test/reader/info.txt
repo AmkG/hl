@@ -5,7 +5,7 @@ reads in the bytecode sequences.
 To run the tests in this directory:
 
 	./compile_test1
-	./dotest.pl ./test1 tests/
+	../dotest.pl ./test1 tests/
 
 The tests should display some "Test X ...ok" messages if no
 failures occur.  If failures occur, the test will display
