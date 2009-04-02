@@ -1028,9 +1028,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     // call continuation on the stack when message is received
     BYTECODE(recv): {
-      MailBox &mbox = proc.mailbox();
       Object::ref msg;
-      if (mbox.recv(msg)) {
+      if (proc.extract_message(msg)) {
         std::cerr<<"recv: "<<msg<<"\n";
         // stack.push(stack[1]); // current continuation
         stack.push(msg);
@@ -1039,13 +1038,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
         std::cerr<<"recv: queue empty\n";
         // <bc>recv is always called in tail position
-        // must set process status to waiting
-        // !! NOTE: this should *atomically* set the
-        // !! process status to process_waiting
-        // !! *before* it exits.  We should probably
-        // !! add a member function into Process, to
-        // !! encapsulate away the process
-        // !! functionality.
         return process_waiting;
       }
     } NEXT_BYTECODE;
@@ -1204,11 +1196,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         if (is_waiting) {
           // let the process run
           Q = pid->process;
-          // !! Should probably setup the continuation call
-          // !! before returning, so that execution flows
-          // !! into the continuation when this process
-          // !! is resumed.
-          // !! -- almkglor
+	  // set up stack
+	  std::cerr << stack[1];
+	  stack.push(stack[1]); // push current continuation
+	  stack.push(msg); // pass a meaningful value to continuation
+	  stack.restack(2);
           return process_change;
         }
       }
@@ -1321,8 +1313,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // success cont
     // -- bottom --
     BYTECODE(try_recv): {
+	// directly use the mailbox, to avoid blocking
         MailBox &mbox = proc.mailbox();
 	Object::ref msg;
+	// !! TODO: recv may still block on the MailBox mutex
 	if (mbox.recv(msg)) {
 		// success
 		stack.pop(); // throw away fail cont

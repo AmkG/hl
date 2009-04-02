@@ -490,8 +490,6 @@ execute:
 	Rstat = R->execute(timeslice, Q);
 	switch(Rstat) {
 	case process_waiting:
-		R->set_waiting();
-		// fall through
 	case process_dead:
 		R = 0; // clear
 		break;

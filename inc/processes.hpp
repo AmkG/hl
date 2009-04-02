@@ -202,6 +202,10 @@ For process-level garbage collection
 	*/
 	bool receive_message( ValueHolderRef& M, bool& is_waiting);
 
+	/*atomically call MailBox::recv() and set stat to process_waiting
+	 if the MailBox is empty*/
+	bool extract_message(Object::ref & M);
+
 	/*anesthesizes this process if appropriate*/
 	/*Must atomically check if process status is process_waiting,
 	and process color is not black.  If so, set to
@@ -273,9 +277,6 @@ For process-level garbage collection
 		atomically changing Q to process_running.
 	*/
 	ProcessStatus execute(size_t& timeslice, Process*& Q);
-
-	/* atomically set process status to process_waiting */
-	void set_waiting();
 
 	/*allows access to the heap object*/
 	Heap& heap(void);

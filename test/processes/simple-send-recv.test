@@ -2,10 +2,12 @@
 (global-set main-pid)
 (k-closure 0
   (check-vars 1)
+  (k-closure 0
+    (local 1)
+    (halt))
   (global main-pid)
   (int 42)
-  (<bc>send)
-  (halt))
+  (<bc>send))
 (<bc>spawn)
 (k-closure 0
   (local 1)

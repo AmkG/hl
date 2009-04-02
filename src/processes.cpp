@@ -61,6 +61,16 @@ bool Process::receive_message(ValueHolderRef& M, bool& is_waiting) {
 	return true;
 }
 
+bool Process::extract_message(Object::ref & M) {
+	AppLock l(mtx);
+	if (mbox.recv(M)) {
+		return true;
+	} else {
+		stat = process_waiting;
+		return false;
+	}
+}
+
 bool Process::anesthesize(void) {
 	AppLock l(mtx);
 	if(stat == process_waiting && !black) {
@@ -110,33 +120,6 @@ void Process::atomic_kill(void) {
 		invalid_globals.clear();
 	}
 	free_heap();
-}
-
-void Process::set_waiting() {
-/*
-NOTE!  This is not atomic enough!
-The following race condition can occur:
-  S:  (==> R msg)
-  R:  (<== msg (do-something msg))
-
-1.  R checks its mailbox.  It finds it empty.
-2.  S sends message to R.  It inserts the new message
-    into the mailbox.  It detects that R is currently
-    process_running, so it does not schedule the
-    message sending.
-3.  R changes its state to process_waiting and returns
-    process_waiting, causing the worker to drop it.
-
-This means that R has *received* a message, but is
-still in a "waiting" state.
-
-Both stat and the mailbox should be protected by a
-*single* lock.
-
---almkglor
-*/
-	AppLock l(mtx);
-	stat = process_waiting;
 }
 
 Heap& Process::heap(void) {
