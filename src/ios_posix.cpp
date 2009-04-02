@@ -107,6 +107,43 @@ One potentially portable solution would be to fork() a
 child process whose only purpose would be to call
 gethostbyname(), then push the result(s) via a pipe()
 which we can then read in the hl VM.
+
+(Note that we are avoiding the use of threads here, since
+threads may be less portable than fork(), which is much
+more classic)
+*/
+/*
+The problem of fsync():
+
+like gethostbyname() above, it's {1} blocking.
+
+Again a potentially portable solution would be to fork()
+a child process.
+
+LOL.  I'm starting to imitate hl itself.  "Problems?
+Try launching a new process!"  Now if only we could use
+hl to implement hl.
+*/
+/*
+The problem of fork()ing processes to do things that
+POSIX doesn't want you to do asynchronously:
+
+We want to close everything as much as possible in the
+child process, because weird stuff can happen when we
+don't.
+
+Normally this is handled by CLOEXEC, but since the
+child process doesn't actually do an exec(), we have
+to do the close "by hand".
+
+This probably means that we should register all FD's
+except whichever we are interested in and close them
+in the child process.
+
+And since we'd do that anyway, we might as well have
+launching an OS process from hl code use the "by hand"
+closing rather than CLOEXEC.  So all that bending over
+backward I did was just useless, LOL.
 */
 
 /*Concrete IOPort type*/
