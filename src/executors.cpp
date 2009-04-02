@@ -1207,13 +1207,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // leave pid of created process on the stack
     // or nil if there was an error
     BYTECODE(spawn): {
+      std::cerr << "spawning\n";
       AllWorkers &w = AllWorkers::getInstance();
       try {
         // create new process 
         Process *spawned = new Process();
-        // register process to working queue
-        w.register_process(spawned);
-        w.workqueue_push(spawned);
 	// copy continuation
 	// !! it would be better to copy it directly within the spawned
 	// !! process heap, to reduce memory fragmentation caused by
@@ -1234,6 +1232,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         HlPid *pid = proc.create<HlPid>();
         pid->process = spawned;
         stack.push(Object::to_ref(pid));
+        // process is ready to run, register it to working queue
+        w.register_process(spawned);
+        w.workqueue_push(spawned);
+	std::cerr << "spawned\n";
       }
       catch (std::bad_alloc e) {
         // couldn't allocate process
