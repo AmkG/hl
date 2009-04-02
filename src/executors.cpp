@@ -1188,6 +1188,16 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       if (!pid->process->receive_message(ref, is_waiting)) {
         // TODO: save instruction counter in order to restart
         // the process from the correct position
+        // !! maybe not necessary: we can always specify that
+        // !! <axiom>send may cause the function it is in to
+        // !! be arbitrarily restarted, and require that this
+        // !! axiom be protected by keeping it in its own
+        // !! dedicated function which can safely be restarted
+        // !! in case message sending is unsuccessful.
+        // !! Or alternatively, just specify that message
+        // !! sending/receiving is done at the common layer
+        // !! and the axiomatic stuff behind it is
+        // !! implementation-specific.
         return process_running;
       } else {
         // was process waiting?
@@ -1212,13 +1222,29 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       try {
         // create new process 
         Process *spawned = new Process();
-	// copy continuation
-	// !! it would be better to copy it directly within the spawned
-	// !! process heap, to reduce memory fragmentation caused by
-	// !! multiple heaps in other_spaces
-	ValueHolderRef cont_holder;
-	ValueHolder::copy_object(cont_holder, stack.top()); stack.pop();
-	spawned->heap().other_spaces.insert(cont_holder);
+        // copy continuation
+        // !! it would be better to copy it directly within the spawned
+        // !! process heap, to reduce memory fragmentation caused by
+        // !! multiple heaps in other_spaces
+        // ?? true, but the new process's main heap starts out very
+        // ?? small anyway; if the newly-spawned process starts
+        // ?? allocating memory, it is likely to trigger a GC.  the GC
+        // ?? will then compact the memory into a single new heap and
+        // ?? drop all the heaps in other_spaces.
+        // ?? admittedly, this holds only for the typical case of long
+        // ?? drawn-out process that will allocate quite a bit of
+        // ?? memory at startup.  note that this is the *expected*
+        // ?? typical case, we don't have proof that almost all
+        // ?? processes will allocate memory "soon" after spawning, but
+        // ?? arguably fragmentation happens only if there *is* memory
+        // ?? allocated both on other_spaces and in the main space.
+        // ?? you may still want to add a method that will make a Heap
+        // ?? "grab" the Semispace of a ValueHolder.
+        // ?? this is also an argument for making the launching of a
+        // ?? process into a factory function.
+        ValueHolderRef cont_holder;
+        ValueHolder::copy_object(cont_holder, stack.top()); stack.pop();
+        spawned->heap().other_spaces.insert(cont_holder);
         spawned->stack.push(spawned->heap().other_spaces.value());
         // release cpu as soon as possible
         // we can't just return process_running or process_change
@@ -1318,8 +1344,19 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         MailBox &mbox = proc.mailbox();
 	Object::ref msg;
 	// !! TODO: recv may still block on the MailBox mutex
+	// ?? we can specify that <axiom>try-recv could cause
+	// ?? the function it is in to be restarted, and as
+	// ?? such should be protected by its own function.
+	// ?? we can then use a trylock and return a bool pair
 	if (mbox.recv(msg)) {
 		// success
+		// ?? maybe better to use CPS so that continuation
+		// ?? from stack[1] is passed to a non-continuation
+		// ?? function, i.e.
+		// ?? stack.push(stack.top(2));
+		// ?? stack.push(stack[1]);
+		// ?? stack.push(msg);
+		// ?? stack.restack(3);
 		stack.pop(); // throw away fail cont
 		stack.push(msg);
 		stack.restack(2);
