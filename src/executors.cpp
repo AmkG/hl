@@ -1205,6 +1205,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         }
       }
     } NEXT_BYTECODE;
+    // expect a continuatio on the stack
     // leave pid of created process on the stack
     // or nil if there was an error
     BYTECODE(spawn): {
@@ -1215,14 +1216,14 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         // register process to working queue
         w.register_process(spawned);
         w.workqueue_push(spawned);
-        // set starting function
-        // !! won't work!  you have to create a new ValueHolder
-        // !! with the stack top and add that to the other_spaces
-        // !! of the new process.  Probably better to create a
-        // !! factory function for spawning processes, which
-        // !! will handle that work (as well as registering etc.)
-        // !! for us. - almkglor
-        spawned->stack.push(stack.top()); stack.pop();
+	// copy continuation
+	// !! it would be better to copy it directly within the spawned
+	// !! process heap, to reduce memory fragmentation caused by
+	// !! multiple heaps in other_spaces
+	ValueHolderRef cont_holder;
+	ValueHolder::copy_object(cont_holder, stack.top()); stack.pop();
+	spawned->heap().other_spaces.insert(cont_holder);
+        spawned->stack.push(spawned->heap().other_spaces.value());
         // release cpu as soon as possible
         // we can't just return process_running or process_change
         // because we can't resume execution in the middle of a 
