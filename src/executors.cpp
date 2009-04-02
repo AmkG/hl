@@ -1173,8 +1173,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // build an HlPid of the running process
     BYTECODE(self_pid): {
       HlPid *pid = proc.create<HlPid>();
-      // ?? is this safe?
-      // !! yes -- almkglor
       pid->process = &proc;
       stack.push(Object::to_ref(pid));
     } NEXT_BYTECODE;
