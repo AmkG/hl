@@ -1026,12 +1026,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
-    // call continuation on the stack when message is received
+    // call current continuation
     BYTECODE(recv): {
       Object::ref msg;
       if (proc.extract_message(msg)) {
         std::cerr<<"recv: "<<msg<<"\n";
-        // stack.push(stack[1]); // current continuation
+        stack.push(stack[1]); // current continuation
         stack.push(msg);
         stack.restack(2);
         DOCALL();

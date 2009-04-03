@@ -1,3 +1,6 @@
+(k-closure 0
+  (local 1)
+  (halt))
 (<bc>self-pid)
 (global-set main-pid)
 (k-closure 0
@@ -9,9 +12,6 @@
   (int 42)
   (<bc>send))
 (<bc>spawn)
-(k-closure 0
-  (local 1)
-  (halt))
 (<bc>recv)
 
 ;^42$
