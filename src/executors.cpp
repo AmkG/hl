@@ -1201,20 +1201,16 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         // !! implementation-specific.
         return process_running;
       } else {
+        // prepare the stack for the next call
+	stack.push(stack[1]); // push current continuation
+	stack.push(msg); // pass a meaningful value to continuation
+	stack.restack(2);
         // was process waiting?
         if (is_waiting) {
           // let the process run
           Q = pid->process;
-          // set up stack
-          std::cerr << stack[1];
-          stack.push(stack[1]); // push current continuation
-          stack.push(msg); // pass a meaningful value to continuation
-          stack.restack(2);
           return process_change;
         } else {
-          stack.push(stack[1]); // push current continuation
-          stack.push(msg); // pass a meaningful value to continuation
-          stack.restack(2);
           /***/ DOCALL(); /***/
         }
       }
