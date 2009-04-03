@@ -3,7 +3,7 @@ if BOOST_PATH_SPECIFIED
 OTHER_INCLUDES += -I@BOOST_PATH@
 endif
 
-CPPFLAGS = $(OTHER_INCLUDES) -I../inc -I../os -I..
+AM_CPPFLAGS = $(OTHER_INCLUDES) -I../inc -I../os -I..
 LDFLAGS = @PTHREAD_LIB@
 
 noinst_LIBRARIES = libhlvm.a

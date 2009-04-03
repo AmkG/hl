@@ -3,7 +3,7 @@ if BOOST_PATH_SPECIFIED
 OTHER_INCLUDES += -I@BOOST_PATH@
 endif
 
-CPPFLAGS = $(OTHER_INCLUDES) -I../../inc -I../../os
+AM_CPPFLAGS = $(OTHER_INCLUDES) -I../../inc -I../../os
 LDFLAGS = @PTHREAD_LIB@
 
 bin_PROGRAMS = run_bytecode
