@@ -109,7 +109,14 @@ inline void bytecode_local(ProcessStack& stack, int N){
 }
 inline void bytecode_global_set(Process& proc, ProcessStack& stack,
 		Symbol *S){
-	proc.global_write(S, stack.top()); stack.pop();
+	/*global-set has to retain the stack top! This is because
+	<axiom>set has to return the value that was assigned.
+	The hl-to-bytecode compiler always assumes bytecodes replace
+	all their arguments with a single value; since global-set
+	has a single argument, it must be replaced with a single
+	value, viz. itself.
+	*/
+	proc.global_write(S, stack.top());
 }
 /*
 inline void bytecode_sv_set(ProcessStack& stack){
