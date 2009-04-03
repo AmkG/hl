@@ -148,20 +148,22 @@ retry:
  * Initiate
  */
 
-class WorkerThreadCollection : boost::noncopyable {
-private:
-	std::vector<Thread<Worker>*> ws;
-public:
-	void launch(Worker const& W) {
-		ws.push_back(new Thread<Worker>(W));
-	}
-	~WorkerThreadCollection() {
-		for(size_t i = 0; i < ws.size(); ++i) {
-			ws[i]->join();
-			delete ws[i];
+#ifndef single_threaded
+	class WorkerThreadCollection : boost::noncopyable {
+	private:
+		std::vector<Thread<Worker>*> ws;
+	public:
+		void launch(Worker const& W) {
+			ws.push_back(new Thread<Worker>(W));
 		}
-	}
-};
+		~WorkerThreadCollection() {
+			for(size_t i = 0; i < ws.size(); ++i) {
+				ws[i]->join();
+				delete ws[i];
+			}
+		}
+	};
+#endif
 
 void AllWorkers::initiate(size_t nworkers) {
 	#ifndef single_threaded
