@@ -102,9 +102,9 @@ boost::shared_ptr<IOPort> ioport_stderr(void);
 we have called aio_initialize() once, first.
 */
 
-boost::shared_ptr<IOPort> infile(std::string);
-boost::shared_ptr<IOPort> outfile(std::string);
-boost::shared_ptr<IOPort> appendfile(std::string);
+boost::shared_ptr<Event> infile(std::string, boost::shared_ptr<IOPort>&);
+boost::shared_ptr<Event> outfile(std::string, boost::shared_ptr<IOPort>&);
+boost::shared_ptr<Event> appendfile(std::string, boost::shared_ptr<IOPort>&);
 
 class Event {
 public:
