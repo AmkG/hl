@@ -109,7 +109,7 @@ inline void bytecode_local(ProcessStack& stack, int N){
 }
 inline void bytecode_global_set(Process& proc, ProcessStack& stack,
 		Symbol *S){
-  proc.global_write(S, stack.top());
+	proc.global_write(S, stack.top()); stack.pop();
 }
 /*
 inline void bytecode_sv_set(ProcessStack& stack){

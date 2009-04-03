@@ -1,8 +1,19 @@
-(k-closure 0
-  (local 1)
-  (halt))
+(closure 0
+  (check-vars 2)
+  (<bc>recv))
+(global-set <common>recv)
+
 (<bc>self-pid)
 (global-set main-pid)
+(k-closure 0
+  (check-vars 2)
+  (global <common>recv)
+  (k-closure 0
+    (check-vars 2)
+    (local 1)
+    (halt))
+  (apply 2))
+
 (k-closure 0
   (check-vars 1)
   (k-closure 0
@@ -12,6 +23,6 @@
   (int 42)
   (<bc>send))
 (<bc>spawn)
-(<bc>recv)
+
 
 ;^42$

@@ -65,6 +65,8 @@ HlPid* Process::spawn(Object::ref cont) {
         ValueHolder::copy_object(cont_holder, cont);
 	spawned->heap().other_spaces.insert(cont_holder);
         spawned->stack.push(spawned->heap().other_spaces.value());
+	// since it's a continuation, we should pass it a value
+	// instead, we let it create its own continuation when it runs 
         HlPid *pid = create<HlPid>();
         pid->process = spawned;
         return pid;
