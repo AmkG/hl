@@ -1254,7 +1254,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         // !! I hereby allow spawn to be required to appear in tail
         // !! position.  The specs are not yet fixed at this point
         // !! - almkglor
-        reductions = 0;
+        reductions = 1;
         HlPid *pid = proc.create<HlPid>();
         pid->process = spawned;
         stack.push(Object::to_ref(pid));
