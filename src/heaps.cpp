@@ -248,8 +248,8 @@ public:
 		(*mp)[gp] = gp;
 		todo.push(gp);
 		do {
-			N += gp->real_size();
 			gp = todo.top(); todo.pop();
+			N += gp->real_size();
 			gp->traverse_references(this);
 		} while(!todo.empty());
 	}
