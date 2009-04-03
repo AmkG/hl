@@ -1,4 +1,4 @@
-CPPFLAGS = -I@BOOST_PATH@ -I../inc -I../os -I..
+CPPFLAGS = $(OTHER_INCLUDES) -I../inc -I../os -I..
 LDFLAGS = @PTHREAD_LIB@
 
 noinst_LIBRARIES = libhlvm.a

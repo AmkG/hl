@@ -1,4 +1,4 @@
-CPPFLAGS = -I@BOOST_PATH@ -I../../inc -I../../os
+CPPFLAGS = $(OTHER_INCLUDES) -I../../inc -I../../os
 LDFLAGS = @PTHREAD_LIB@
 
 bin_PROGRAMS = run_bytecode
