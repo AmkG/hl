@@ -97,6 +97,8 @@ public:
 	}
 };
 
+class HlPid;
+
 class Process : public Heap {
 private:
 	ProcessStatus stat;
@@ -133,6 +135,13 @@ private:
 	//bytecode_t *next_instruction;
 
 public:
+	// spawn a new Process
+	// take a continuation (allocated in the current process)
+	// and return the HlPid (also allocated in the current process)
+	// of the newly created process
+	// spawned process si *not* registered or added to a workqueue
+	HlPid* spawn(Object::ref cont);
+
 	/*RAII class for extra roots*/
 	class ExtraRoot {
 	private:
@@ -201,6 +210,10 @@ For process-level garbage collection
 	not (e.g. due to contention on the mailbox)
 	*/
 	bool receive_message( ValueHolderRef& M, bool& is_waiting);
+
+	/*atomically call MailBox::recv() and set stat to process_waiting
+	 if the MailBox is empty*/
+	bool extract_message(Object::ref & M);
 
 	/*anesthesizes this process if appropriate*/
 	/*Must atomically check if process status is process_waiting,
@@ -273,9 +286,6 @@ For process-level garbage collection
 		atomically changing Q to process_running.
 	*/
 	ProcessStatus execute(size_t& timeslice, Process*& Q);
-
-	/* atomically set process status to process_waiting */
-	void set_waiting();
 
 	/*allows access to the heap object*/
 	Heap& heap(void);

@@ -36,6 +36,40 @@ void MailBox::clear() {
 	messages.swap(tmp);
 }
 
+HlPid* Process::spawn(Object::ref cont) {
+	Process *spawned;
+	try {
+		spawned = new Process();
+	} catch (std::bad_alloc e) {
+		throw_HlError("out of memory while spawning a new Process");
+	}
+	ValueHolderRef cont_holder;
+        // copy continuation
+        // !! it would be better to copy it directly within the spawned
+        // !! process heap, to reduce memory fragmentation caused by
+        // !! multiple heaps in other_spaces
+        // ?? true, but the new process's main heap starts out very
+        // ?? small anyway; if the newly-spawned process starts
+        // ?? allocating memory, it is likely to trigger a GC.  the GC
+        // ?? will then compact the memory into a single new heap and
+        // ?? drop all the heaps in other_spaces.
+        // ?? admittedly, this holds only for the typical case of long
+        // ?? drawn-out process that will allocate quite a bit of
+        // ?? memory at startup.  note that this is the *expected*
+        // ?? typical case, we don't have proof that almost all
+        // ?? processes will allocate memory "soon" after spawning, but
+        // ?? arguably fragmentation happens only if there *is* memory
+        // ?? allocated both on other_spaces and in the main space.
+        // ?? you may still want to add a method that will make a Heap
+        // ?? "grab" the Semispace of a ValueHolder.
+        ValueHolder::copy_object(cont_holder, cont);
+	spawned->heap().other_spaces.insert(cont_holder);
+        spawned->stack.push(spawned->heap().other_spaces.value());
+        HlPid *pid = create<HlPid>();
+        pid->process = spawned;
+        return pid;
+}
+
 /*
  * Process-level GC functions
  */
@@ -59,6 +93,16 @@ bool Process::receive_message(ValueHolderRef& M, bool& is_waiting) {
 		stat = process_running;
 	}
 	return true;
+}
+
+bool Process::extract_message(Object::ref & M) {
+	AppLock l(mtx);
+	if (mbox.recv(M)) {
+		return true;
+	} else {
+		stat = process_waiting;
+		return false;
+	}
 }
 
 bool Process::anesthesize(void) {
@@ -110,33 +154,6 @@ void Process::atomic_kill(void) {
 		invalid_globals.clear();
 	}
 	free_heap();
-}
-
-void Process::set_waiting() {
-/*
-NOTE!  This is not atomic enough!
-The following race condition can occur:
-  S:  (==> R msg)
-  R:  (<== msg (do-something msg))
-
-1.  R checks its mailbox.  It finds it empty.
-2.  S sends message to R.  It inserts the new message
-    into the mailbox.  It detects that R is currently
-    process_running, so it does not schedule the
-    message sending.
-3.  R changes its state to process_waiting and returns
-    process_waiting, causing the worker to drop it.
-
-This means that R has *received* a message, but is
-still in a "waiting" state.
-
-Both stat and the mailbox should be protected by a
-*single* lock.
-
---almkglor
-*/
-	AppLock l(mtx);
-	stat = process_waiting;
 }
 
 Heap& Process::heap(void) {

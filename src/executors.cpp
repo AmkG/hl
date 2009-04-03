@@ -1026,26 +1026,19 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
-    // call continuation on the stack when message is received
+    // call current continuation
     BYTECODE(recv): {
-      MailBox &mbox = proc.mailbox();
       Object::ref msg;
-      if (mbox.recv(msg)) {
+      if (proc.extract_message(msg)) {
         std::cerr<<"recv: "<<msg<<"\n";
-        // stack.push(stack[1]); // current continuation
+        stack.push(stack[1]); // current continuation
         stack.push(msg);
         stack.restack(2);
         DOCALL();
       } else {
         std::cerr<<"recv: queue empty\n";
         // <bc>recv is always called in tail position
-        // must set process status to waiting
-        // !! NOTE: this should *atomically* set the
-        // !! process status to process_waiting
-        // !! *before* it exits.  We should probably
-        // !! add a member function into Process, to
-        // !! encapsulate away the process
-        // !! functionality.
+	// !! doesn't work: process will restart from the beginning !!
         return process_waiting;
       }
     } NEXT_BYTECODE;
@@ -1181,8 +1174,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // build an HlPid of the running process
     BYTECODE(self_pid): {
       HlPid *pid = proc.create<HlPid>();
-      // ?? is this safe?
-      // !! yes -- almkglor
       pid->process = &proc;
       stack.push(Object::to_ref(pid));
     } NEXT_BYTECODE;
@@ -1198,56 +1189,57 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       if (!pid->process->receive_message(ref, is_waiting)) {
         // TODO: save instruction counter in order to restart
         // the process from the correct position
+        // !! maybe not necessary: we can always specify that
+        // !! <axiom>send may cause the function it is in to
+        // !! be arbitrarily restarted, and require that this
+        // !! axiom be protected by keeping it in its own
+        // !! dedicated function which can safely be restarted
+        // !! in case message sending is unsuccessful.
+        // !! Or alternatively, just specify that message
+        // !! sending/receiving is done at the common layer
+        // !! and the axiomatic stuff behind it is
+        // !! implementation-specific.
         return process_running;
       } else {
         // was process waiting?
         if (is_waiting) {
           // let the process run
           Q = pid->process;
-          // !! Should probably setup the continuation call
-          // !! before returning, so that execution flows
-          // !! into the continuation when this process
-          // !! is resumed.
-          // !! -- almkglor
+          // set up stack
+          std::cerr << stack[1];
+          stack.push(stack[1]); // push current continuation
+          stack.push(msg); // pass a meaningful value to continuation
+          stack.restack(2);
           return process_change;
+        } else {
+          stack.push(stack[1]); // push current continuation
+          stack.push(msg); // pass a meaningful value to continuation
+          stack.restack(2);
+          /***/ DOCALL(); /***/
         }
       }
     } NEXT_BYTECODE;
+    // expect a continuatio on the stack
     // leave pid of created process on the stack
-    // or nil if there was an error
     BYTECODE(spawn): {
+      std::cerr << "spawning\n";
       AllWorkers &w = AllWorkers::getInstance();
-      try {
-        // create new process 
-        Process *spawned = new Process();
-        // register process to working queue
-        w.register_process(spawned);
-        w.workqueue_push(spawned);
-        // set starting function
-        // !! won't work!  you have to create a new ValueHolder
-        // !! with the stack top and add that to the other_spaces
-        // !! of the new process.  Probably better to create a
-        // !! factory function for spawning processes, which
-        // !! will handle that work (as well as registering etc.)
-        // !! for us. - almkglor
-        spawned->stack.push(stack.top()); stack.pop();
-        // release cpu as soon as possible
-        // we can't just return process_running or process_change
-        // because we can't resume execution in the middle of a 
-        // function and <bc>spawn is not required to appear in tail
-        // position
-        // !! I hereby allow spawn to be required to appear in tail
-        // !! position.  The specs are not yet fixed at this point
-        // !! - almkglor
-        reductions = 0;
-        HlPid *pid = proc.create<HlPid>();
-        pid->process = spawned;
-        stack.push(Object::to_ref(pid));
-      }
-      catch (std::bad_alloc e) {
-        // couldn't allocate process
-        stack.push(Object::nil());
-      }
+      // create new process 
+      HlPid *spawned = proc.spawn(stack.top()); stack.pop();
+      // release cpu as soon as possible
+      // we can't just return process_running or process_change
+      // because we can't resume execution in the middle of a 
+      // function and <bc>spawn is not required to appear in tail
+      // position
+      // !! I hereby allow spawn to be required to appear in tail
+      // !! position.  The specs are not yet fixed at this point
+      // !! - almkglor
+      reductions = 1; // in the future we will just return process_change
+      stack.push(Object::to_ref(spawned));
+      // process is ready to run, register it to working queue
+      w.register_process(spawned->process);
+      w.workqueue_push(spawned->process);
+      std::cerr << "spawned\n";
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack
@@ -1321,10 +1313,23 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // success cont
     // -- bottom --
     BYTECODE(try_recv): {
+	// directly use the mailbox, to avoid blocking
         MailBox &mbox = proc.mailbox();
 	Object::ref msg;
+	// !! TODO: recv may still block on the MailBox mutex
+	// ?? we can specify that <axiom>try-recv could cause
+	// ?? the function it is in to be restarted, and as
+	// ?? such should be protected by its own function.
+	// ?? we can then use a trylock and return a bool pair
 	if (mbox.recv(msg)) {
 		// success
+		// ?? maybe better to use CPS so that continuation
+		// ?? from stack[1] is passed to a non-continuation
+		// ?? function, i.e.
+		// ?? stack.push(stack.top(2));
+		// ?? stack.push(stack[1]);
+		// ?? stack.push(msg);
+		// ?? stack.restack(3);
 		stack.pop(); // throw away fail cont
 		stack.push(msg);
 		stack.restack(2);
