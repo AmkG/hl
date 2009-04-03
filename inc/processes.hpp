@@ -97,6 +97,8 @@ public:
 	}
 };
 
+class HlPid;
+
 class Process : public Heap {
 private:
 	ProcessStatus stat;
@@ -133,6 +135,13 @@ private:
 	//bytecode_t *next_instruction;
 
 public:
+	// spawn a new Process
+	// take a continuation (allocated in the current process)
+	// and return the HlPid (also allocated in the current process)
+	// of the newly created process
+	// spawned process si *not* registered or added to a workqueue
+	HlPid* spawn(Object::ref cont);
+
 	/*RAII class for extra roots*/
 	class ExtraRoot {
 	private:

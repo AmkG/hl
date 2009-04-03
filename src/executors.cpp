@@ -1216,58 +1216,25 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     // expect a continuatio on the stack
     // leave pid of created process on the stack
-    // or nil if there was an error
     BYTECODE(spawn): {
       std::cerr << "spawning\n";
       AllWorkers &w = AllWorkers::getInstance();
-      try {
-        // create new process 
-        Process *spawned = new Process();
-        // copy continuation
-        // !! it would be better to copy it directly within the spawned
-        // !! process heap, to reduce memory fragmentation caused by
-        // !! multiple heaps in other_spaces
-        // ?? true, but the new process's main heap starts out very
-        // ?? small anyway; if the newly-spawned process starts
-        // ?? allocating memory, it is likely to trigger a GC.  the GC
-        // ?? will then compact the memory into a single new heap and
-        // ?? drop all the heaps in other_spaces.
-        // ?? admittedly, this holds only for the typical case of long
-        // ?? drawn-out process that will allocate quite a bit of
-        // ?? memory at startup.  note that this is the *expected*
-        // ?? typical case, we don't have proof that almost all
-        // ?? processes will allocate memory "soon" after spawning, but
-        // ?? arguably fragmentation happens only if there *is* memory
-        // ?? allocated both on other_spaces and in the main space.
-        // ?? you may still want to add a method that will make a Heap
-        // ?? "grab" the Semispace of a ValueHolder.
-        // ?? this is also an argument for making the launching of a
-        // ?? process into a factory function.
-        ValueHolderRef cont_holder;
-        ValueHolder::copy_object(cont_holder, stack.top()); stack.pop();
-        spawned->heap().other_spaces.insert(cont_holder);
-        spawned->stack.push(spawned->heap().other_spaces.value());
-        // release cpu as soon as possible
-        // we can't just return process_running or process_change
-        // because we can't resume execution in the middle of a 
-        // function and <bc>spawn is not required to appear in tail
-        // position
-        // !! I hereby allow spawn to be required to appear in tail
-        // !! position.  The specs are not yet fixed at this point
-        // !! - almkglor
-        reductions = 1;
-        HlPid *pid = proc.create<HlPid>();
-        pid->process = spawned;
-        stack.push(Object::to_ref(pid));
-        // process is ready to run, register it to working queue
-        w.register_process(spawned);
-        w.workqueue_push(spawned);
-	std::cerr << "spawned\n";
-      }
-      catch (std::bad_alloc e) {
-        // couldn't allocate process
-        stack.push(Object::nil());
-      }
+      // create new process 
+      HlPid *spawned = proc.spawn(stack.top()); stack.pop();
+      // release cpu as soon as possible
+      // we can't just return process_running or process_change
+      // because we can't resume execution in the middle of a 
+      // function and <bc>spawn is not required to appear in tail
+      // position
+      // !! I hereby allow spawn to be required to appear in tail
+      // !! position.  The specs are not yet fixed at this point
+      // !! - almkglor
+      reductions = 1; // in the future we will just return process_change
+      stack.push(Object::to_ref(spawned));
+      // process is ready to run, register it to working queue
+      w.register_process(spawned->process);
+      w.workqueue_push(spawned->process);
+      std::cerr << "spawned\n";
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack

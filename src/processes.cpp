@@ -36,6 +36,40 @@ void MailBox::clear() {
 	messages.swap(tmp);
 }
 
+HlPid* Process::spawn(Object::ref cont) {
+	Process *spawned;
+	try {
+		spawned = new Process();
+	} catch (std::bad_alloc e) {
+		throw_HlError("out of memory while spawning a new Process");
+	}
+	ValueHolderRef cont_holder;
+        // copy continuation
+        // !! it would be better to copy it directly within the spawned
+        // !! process heap, to reduce memory fragmentation caused by
+        // !! multiple heaps in other_spaces
+        // ?? true, but the new process's main heap starts out very
+        // ?? small anyway; if the newly-spawned process starts
+        // ?? allocating memory, it is likely to trigger a GC.  the GC
+        // ?? will then compact the memory into a single new heap and
+        // ?? drop all the heaps in other_spaces.
+        // ?? admittedly, this holds only for the typical case of long
+        // ?? drawn-out process that will allocate quite a bit of
+        // ?? memory at startup.  note that this is the *expected*
+        // ?? typical case, we don't have proof that almost all
+        // ?? processes will allocate memory "soon" after spawning, but
+        // ?? arguably fragmentation happens only if there *is* memory
+        // ?? allocated both on other_spaces and in the main space.
+        // ?? you may still want to add a method that will make a Heap
+        // ?? "grab" the Semispace of a ValueHolder.
+        ValueHolder::copy_object(cont_holder, cont);
+	spawned->heap().other_spaces.insert(cont_holder);
+        spawned->stack.push(spawned->heap().other_spaces.value());
+        HlPid *pid = create<HlPid>();
+        pid->process = spawned;
+        return pid;
+}
+
 /*
  * Process-level GC functions
  */
