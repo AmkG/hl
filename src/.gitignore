@@ -1,4 +1,5 @@
 .deps
 *.o
+*.a
 Makefile{,.in}
 hl
