@@ -513,6 +513,25 @@ public:
 class Event;
 
 class HlEvent : public GenericDerived<HlEvent> {
+private:
+  Object::ref hl_pid;
+  /*the above slot is needed to keep alive the
+  process to be sent a message.
+
+  The problem is that after the event is created,
+  the process to be sent a message to might wait
+  for the message.  This leaves it open to the
+  process-level GC.
+
+  The Event Set is considered a root, but the
+  individual event objects are not.  Thus, we
+  need the hl_pid slot to keep alive a copy of
+  the HlPid, so that we can keep alive the
+  actual process.
+
+  This is an admittedly hackish solution
+  */
+
 public:
   boost::shared_ptr<Event> p;
 
@@ -523,6 +542,10 @@ public:
 
   Object::ref type(void) const {
     return Object::to_ref(symbol_event);
+  }
+
+  void traverse_references(GenericTraverser *gt) {
+    gt->traverse(hl_pid);
   }
 };
 
