@@ -21,6 +21,13 @@ AllWorkers
  */
 AllWorkers AllWorkers::workers;
 
+void AllWorkers::set_exit_condition() {
+	exit_condition = 1;
+	// all worker threads are waiting, we wake them so they can exit
+	workqueue_cv.broadcast();
+}
+
+
 /*
  * Registration
  */
@@ -56,8 +63,7 @@ void AllWorkers::unregister_worker(Worker* W) {
 			if(workqueue_waiting > 0) {
 				if(workqueue_waiting == total_workers) {
 					workqueue_waiting = 0;
-					exit_condition = 1;
-					workqueue_cv.broadcast();
+					set_exit_condition();
 				}
 			}
 			return;
@@ -136,7 +142,7 @@ retry:
 	workqueue_waiting++;
 	if(workqueue_waiting == total_workers) {
 		workqueue_waiting = 0;
-		exit_condition = 1;
+		set_exit_condition();
 		return 0;
 	}
 	workqueue_cv.wait(l);
