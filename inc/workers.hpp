@@ -80,8 +80,9 @@ public:
 	/*initiates the specified number of worker threads
 	This function will return only when workers run out
 	of work, or if someone signals an exit condition
+	The given Process* is the starting process.
 	*/
-	void initiate(size_t);
+	void initiate(size_t, Process*);
 
 	/*atomically register a process into U*/
 	void register_process(Process*);

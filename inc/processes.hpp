@@ -173,6 +173,15 @@ public:
 		}
 	};
 
+	/*holds the bytecode sequence object.
+	This is necessary because it's possible
+	to lose all references to a bytecode
+	sequence while it's being executed,
+	in particular, during a k-closure-reuse
+	or k-closure-recreate.
+	*/
+	Object::ref bytecode_slot;
+
 	Process(void)
 		: stat(process_running),
 		  black(0),
@@ -180,7 +189,8 @@ public:
 		  mbox(*this),
 		  global_cache(),
 		  notification_mtx(),
-		  invalid_globals() { }
+		  invalid_globals(),
+		  bytecode_slot() { }
 
 /*-----------------------------------------------------------------------------
 Global Variable Access

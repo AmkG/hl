@@ -101,6 +101,12 @@ void AllWorkers::soft_stop_check(AppLock& l) {
  * Workqueue
  */
 
+/*ISSUE:
+We shouldn't be arbitrarily pushing items on the workqueue.
+The workqueue doubles as the root set during a process-level
+GC; this means that pushes on the workqueue during a
+process-level GC should push a black process.
+*/
 void AllWorkers::workqueue_push(Process* R) {
 	AppLock l(general_mtx);
 	bool sig = workqueue.empty();
@@ -166,11 +172,14 @@ retry:
 	};
 #endif
 
-void AllWorkers::initiate(size_t nworkers) {
+void AllWorkers::initiate(size_t nworkers, Process* begin) {
 	#ifndef single_threaded
 		WorkerThreadCollection wtc;
 	#endif
+	register_process(begin);
+	workqueue_push(begin);
 	Worker W(this);
+	W.T = 4; // for testing, set to 4: future should be 16384
 	#ifndef single_threaded
 		for(size_t i = 1; i < nworkers; ++i) {
 			wtc.launch(W);
