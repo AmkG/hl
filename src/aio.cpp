@@ -29,6 +29,11 @@ static inline void send_message_to(Process* P, ProcessStack& stack) {
 	/*keep sending until we definitely go through any locks or whatnot*/
 	while(!P->receive_message(m, is_waiting)) /*do nothing*/;
 	if(is_waiting) {
+		/*TODO: must have a way of determining if we are
+		in process-level GC.  The process-level GC must
+		first blacken the process before it can be safely
+		pushed on the workqueue.
+		*/
 		workers->workqueue_push(P);
 	}
 }
