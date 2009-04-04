@@ -60,9 +60,7 @@ int main(int argc, char **argv) {
     p->stack.push(Object::to_ref(k)); // entry point
     // process will be deleted by workers
     AllWorkers &w = AllWorkers::getInstance();
-    w.register_process(p);
-    w.workqueue_push(p);
-    w.initiate(3);
+    w.initiate(3, p);
     cout << p->stack.top() << endl; // print result
   }
 
