@@ -660,7 +660,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   }
   // main VM loop
   // add bytecode as an extra root object to scan
-  Process::ExtraRoot bytecode(proc);
+  Object::ref& bytecode = proc.bytecode_slot;
   // ?? could this approach be used for clos too?
  call_current_closure:
   if(--reductions == 0) {

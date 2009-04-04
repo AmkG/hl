@@ -232,6 +232,7 @@ void Process::scan_root_object(GenericTraverser* gt) {
 	for(it = global_cache.begin(); it != global_cache.end(); ++it) {
 		gt->traverse(it->second);
 	}
+	gt->traverse(bytecode_slot);
         // scan extra roots
         for (std::vector<Object::ref*>::iterator it = extra_roots.begin(); 
              it != extra_roots.end(); ++it) {
