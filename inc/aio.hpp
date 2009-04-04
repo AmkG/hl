@@ -194,6 +194,8 @@ public:
 	Reusing an existing process (specifically the process
 	that called the event waiting/polling) reduces
 	allocation overhead.
+	NOTE: these functions *must* be called *before* the
+	event is removed from the event set.
 	*/
 	void io_respond(
 		Process& host,
