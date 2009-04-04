@@ -3,8 +3,15 @@
   (<bc>recv))
 (global-set <common>recv)
 
+(closure 0
+  (check-vars 3)
+  (<bc>spawn))
+(global-set <common>spawn)
+
 (<bc>self-pid)
 (global-set main-pid)
+
+(global <common>spawn)
 (k-closure 0
   (check-vars 2)
   (global <common>recv)
@@ -13,7 +20,6 @@
     (local 1)
     (halt))
   (apply 2))
-
 (k-closure 0
   (check-vars 1)
   (k-closure 0
@@ -22,7 +28,7 @@
   (global main-pid)
   (int 42)
   (<bc>send))
-(<bc>spawn)
+(apply 3)
 
 
 ;^42$
