@@ -1201,45 +1201,37 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         // !! implementation-specific.
         return process_running;
       } else {
+        // prepare the stack for the next call
+	stack.push(stack[1]); // push current continuation
+	stack.push(msg); // pass a meaningful value to continuation
+	stack.restack(2);
         // was process waiting?
         if (is_waiting) {
           // let the process run
           Q = pid->process;
-          // set up stack
-          std::cerr << stack[1];
-          stack.push(stack[1]); // push current continuation
-          stack.push(msg); // pass a meaningful value to continuation
-          stack.restack(2);
           return process_change;
         } else {
-          stack.push(stack[1]); // push current continuation
-          stack.push(msg); // pass a meaningful value to continuation
-          stack.restack(2);
           /***/ DOCALL(); /***/
         }
       }
     } NEXT_BYTECODE;
-    // expect a continuatio on the stack
-    // leave pid of created process on the stack
+    // call current continuation, passing the pid of created process
     BYTECODE(spawn): {
       std::cerr << "spawning\n";
       AllWorkers &w = AllWorkers::getInstance();
       // create new process 
       HlPid *spawned = proc.spawn(stack.top()); stack.pop();
       // release cpu as soon as possible
-      // we can't just return process_running or process_change
-      // because we can't resume execution in the middle of a 
-      // function and <bc>spawn is not required to appear in tail
-      // position
-      // !! I hereby allow spawn to be required to appear in tail
-      // !! position.  The specs are not yet fixed at this point
-      // !! - almkglor
-      reductions = 1; // in the future we will just return process_change
-      stack.push(Object::to_ref(spawned));
+      // spawn is required to appear in tail position.
+      stack.push(stack[1]); // current cont.
+      stack.push(Object::to_ref(spawned)); // the pid
+      stack.restack(2);
       // process is ready to run, register it to working queue
       w.register_process(spawned->process);
-      w.workqueue_push(spawned->process);
+      // w.workqueue_push(spawned->process);
+      Q = spawned->process; // next to run
       std::cerr << "spawned\n";
+      return process_change;
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack
