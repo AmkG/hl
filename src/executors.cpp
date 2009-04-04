@@ -1038,7 +1038,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
         std::cerr<<"recv: queue empty\n";
         // <bc>recv is always called in tail position
-	// !! doesn't work: process will restart from the beginning !!
+        // !! NOTE!  If Process::extract_message() above ever
+        // !! returns false, we should not change anything in the
+        // !! process!
+        // !! IN PARTICULAR: we cannot leave any Process::ExtraRoot
+        // !! objects hanging around.
         return process_waiting;
       }
     } NEXT_BYTECODE;
