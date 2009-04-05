@@ -49,7 +49,8 @@ class AllWorkers : boost::noncopyable {
 	size_t default_timeslice;
 
 	/*Set exit_condition to be true. Must be called while holding
-	  the lock on general_mtx*/
+	the lock on general_mtx.
+	*/
 	void set_exit_condition();
 
 	/*atomically register a worker into Ws*/
