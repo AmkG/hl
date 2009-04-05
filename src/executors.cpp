@@ -944,6 +944,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(halt): {
       stack.restack(1);
+      std::cerr<<"halt\n";
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(halt_local_push): {

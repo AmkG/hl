@@ -6,3 +6,13 @@ To run the tests, execute
 $ ./dotest.pl ../src/hl processes
 
 from the test directory.
+
+multiple-proc.test:
+  Test spawning of multiple processes. Bytecode version of:
+  (def f (n)
+    (if (i< n 1)
+      t
+      (do
+        (<common>spawn (fn ()))
+        (f (- n 1)))))
+  (f 3)
