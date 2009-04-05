@@ -49,6 +49,11 @@ class AllWorkers : boost::noncopyable {
 	/*default timeslice for processes*/
 	size_t default_timeslice;
 
+	/*Set exit_condition to be true. Must be called while holding
+	the lock on general_mtx.
+	*/
+	void set_exit_condition();
+
 	/*atomically register a worker into Ws*/
 	void register_worker(Worker*);
 
@@ -65,6 +70,9 @@ class AllWorkers : boost::noncopyable {
 	returns 1 if a process was successfully popped
 	*/
 	bool workqueue_pop(Process*&);
+
+	/*pushes a process onto the workqueue*/
+	void workqueue_push(Process*);
 
 	/*checks for a soft-stop condition and blocks while it is true*/
 	void soft_stop_check(AppLock&);
@@ -91,12 +99,10 @@ public:
 	void soft_stop_raise(void);
 	void soft_stop_lower(void);
 
-	/*pushes a process onto the workqueue*/
-	void workqueue_push(Process*);
-
 	~AllWorkers();
 
 	friend class Worker;
+	friend class AnesthesizeProcess;
 };
 
 /*Must be copyable!*/
