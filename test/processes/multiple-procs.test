@@ -1,0 +1,32 @@
+(closure 0
+  (check-vars 3)
+  (<bc>spawn))
+(global-set <common>spawn)
+
+(closure 0
+  (local 2)
+  (int 1)
+  (i<)
+  (if
+    (lit-t)
+    (continue))
+  (global <common>spawn)
+  (local 2)
+  (k-closure 1
+    (global f)
+    (local 0)
+    (closure-ref 0)
+    (int 1)
+    (i-)
+    (apply 3))
+  (k-closure 0
+    (halt))
+  (apply 3))
+(global-set f)
+(k-closure 0
+  (local 1)
+  (halt))
+(int 3)
+(apply 3)
+
+;^t$
