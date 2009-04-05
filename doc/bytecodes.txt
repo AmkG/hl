@@ -347,6 +347,7 @@ Concurrency primitives:
 
 (<bc>spawn)
 	expect a function on the stack.
+	must be called in tail position.
 	Operations:
 	- spawn a new process and use the function on the stack as the 
 	  starting point.
@@ -355,3 +356,14 @@ Concurrency primitives:
 	  HlPid as the value (actually set up the stack for the next time 
 	  the process gets scheduled)
 	- release the cpu to the new process
+
+(<bc>send)
+	expect a message (i.e. any hl object) and an HlPid on the stack.
+	must be called in tail position.
+	Operations:
+	1) try to put the message in the mailbox of the process held by the 
+	   HlPid. if it fails go to step 2, else to step 3.
+	2) suspend the process so that it will be scheduled again later.
+	3) call the current continuation, passing the message as the value.
+	   if the process receiving the message was waiting, release the cpu
+	   to the receiving process.
