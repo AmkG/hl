@@ -17,9 +17,20 @@ multiple-proc.test:
         (f (- n 1)))))
   (f 3)
 
-; (def (<common>spawn) ...)
+; (def (<common>spawn f) ...)
 (closure 0
-  )
+  (check-vars 3)
+  ; ignore the dorkiness, this is just how
+  ; the compiler would emit it, but I
+  ; suspect it will be practically the
+  ; same anyway.
+  (local 1)
+  (local 2)
+  (<bc>spawn)
+  (apply 2))
+(global-set <common>spawn)
+
+; (def (f n) ...)
 (closure 0
   (check-vars 3)
   (local 2)
