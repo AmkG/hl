@@ -255,7 +255,7 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		involves a lock.
 		*/
 		invalidate_changed_globals();
-		::execute(*this, reductions, Q, 0);
+		return ::execute(*this, reductions, Q, 0);
 	} /*catch(HlError& h) ...*/
 	/*In the future, when we catch an HlError,
 	get the process's error handler and force it
