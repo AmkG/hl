@@ -501,8 +501,8 @@ public:
   boost::shared_ptr<IOPort> p;
 
   bool is(Object::ref o) const {
-    HlIOPort* p = maybe_type<HlIOPort>(o);
-    return p && p->p == p;
+    HlIOPort* op = maybe_type<HlIOPort>(o);
+    return op && op->p == p;
   }
 
   Object::ref type(void) const {
@@ -536,8 +536,8 @@ public:
   boost::shared_ptr<Event> p;
 
   bool is(Object::ref o) const {
-    HlEvent* p = maybe_type<HlEvent>(o);
-    return p && p->p == p;
+    HlEvent* op = maybe_type<HlEvent>(o);
+    return op && op->p == p;
   }
 
   Object::ref type(void) const {
