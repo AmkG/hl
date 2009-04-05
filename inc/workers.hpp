@@ -110,6 +110,7 @@ class Worker {
 	std::set<Process*> gray_set;
 	bool gray_done;
 	bool scanning_mode;
+	bool in_gc;
 
 	AllWorkers* parent;
 
@@ -131,6 +132,7 @@ public:
 		gray_set(),
 		gray_done(1),
 		scanning_mode(0),
+		in_gc(0),
 		T(0)
 	{ }
 

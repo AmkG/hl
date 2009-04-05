@@ -343,3 +343,36 @@ type
 	; intent is to create a list from a variadic
 	; number of parameters
 
+Concurrency primitives:
+
+(<bc>spawn)
+	expect a function on the stack.
+	must be called in tail position.
+	Operations:
+	1) spawn a new process and use the function on the stack as the 
+	   starting point.
+	2) create the HlPid of the new process
+	3) call the current continuation of the current process passing the 
+	   HlPid as the value (actually set up the stack for the next time 
+	   the process gets scheduled)
+	4) release the cpu to the new process
+
+(<bc>send)
+	expect a message (i.e. any hl object) and an HlPid on the stack.
+	must be called in tail position.
+	Operations:
+	1) try to put the message in the mailbox of the process held by the 
+	   HlPid. if it fails go to step 2, else to step 3.
+	2) suspend the process so that it will be scheduled again later.
+	3) call the current continuation, passing the message as the value.
+	   if the process receiving the message was waiting, release the cpu
+	   to the receiving process.
+
+(<bc>recv)
+	must be called in tail position.
+	Operations:
+	1) extract any message from the mailbox of the running process.
+	   if mailbox is empty, go to step 3, else to step 2.
+	2) call the current continuation, passing the message as the value.
+	3) put the process in a waiting state.
+

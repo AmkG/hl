@@ -506,6 +506,7 @@ WorkerLoop:
 					parent->gray_workers++; // N
 					parent->Ws[i]->gray_done = 0;
 					parent->Ws[i]->scanning_mode = 1;
+					parent->Ws[i]->in_gc = 1;
 				}
 			}
 			T = 0;
@@ -540,7 +541,7 @@ execute:
 		parent->workqueue_push(R);
 		R = Q;
 		Q = 0;
-		if(scanning_mode && !R->is_black()) {
+		if(in_gc && !R->is_black()) {
 			mark_process(R);
 		}
 		goto execute;
@@ -612,6 +613,10 @@ Sweep:
 		}
 		U.resize(j);
 
+		for(i = 0; i < parent->Ws.size(); ++i) {
+			parent->Ws[i]->in_gc = 0;
+		}
+
 		size_t died = l - j;
 		/*having got the short stick, we now compute
 		the trigger point for the next GC
@@ -621,6 +626,8 @@ Sweep:
 		/*otherwise*/		(4096 - died);
 		T += 1;
 		T *= 4;
+		// for testing, set to 4
+		T = 4;
 	}
 	goto WorkerLoop;
 }

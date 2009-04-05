@@ -242,6 +242,7 @@ thread-locals {
 	gray-set	// gray waiting set
 	gray-done	// whether we have notified that the gray waiting set is done
 	scanning-mode	// if non-zero, this thread is currently in scanning mode
+	in-gc		// if non-zero, this thread is currently performing a GC
 }
 
 WorkerLoop:
@@ -256,6 +257,7 @@ WorkerLoop:
 		for each worker W in Ws
 			W.scanning-mode = true
 			W.gray-done = false
+			W.in-gc = true
 		T = false
 		N = Ws.length
 		clear soft-stop
@@ -287,8 +289,8 @@ execute:
 			atomic: Q.mailbox += M; if Q is waiting, set Q to running, then:
 				atomic: push R to workqueue
 				R = Q
-				// must scan here, because we don't exit scanning mode
-				if scanning-mode and R is not black
+				// ensure "only black processes are executed" invariant
+				if in-gc and R is not black
 					for each process P in R
 						atomic: if P is waiting and P is not black
 							gray-set += P
@@ -323,6 +325,8 @@ Sweep:
 			set P to white
 		else
 			delete P
+	for each worker W in Ws
+		W.in-gc = false
 	compute timeout based on number of deleted processes and retained processes
 	T = true // or better: store the timeout here
 	clear soft-stop
