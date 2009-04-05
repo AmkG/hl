@@ -371,7 +371,8 @@ Concurrency primitives:
 (<bc>recv)
 	must be called in tail position.
 	Operations:
-	1) extract the oldest message from the mailbox of the running process.
+	1) extract any message from the mailbox of the running process.
 	   if mailbox is empty, go to step 3, else to step 2.
 	2) call the current continuation, passing the message as the value.
 	3) put the process in a waiting state.
+
