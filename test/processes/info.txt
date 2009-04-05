@@ -16,3 +16,51 @@ multiple-proc.test:
         (<common>spawn (fn ()))
         (f (- n 1)))))
   (f 3)
+
+; (def (<common>spawn) ...)
+(closure 0
+  )
+(closure 0
+  (check-vars 3)
+  (local 2)
+  (int 1)
+  (i<)
+  (if
+    (local 1)
+    (lit-t)
+    (apply 2))
+  (global <common>spawn)
+  ; continuation for spawn
+  (local 1) ; k
+  (local 2) ; n
+  (k-closure 2
+    (check-vars 2)
+    (global f)
+    (closure-ref 0)
+    ; n - 1
+    (closure-ref 1)
+    (int 1)
+    (i-)
+    (apply 3))
+  ; NB: I think <common>spawn should
+  ; really accept a "normal" hl
+  ; function.
+  (k-closure 0
+    (halt)))
+(global-set f)
+
+; (f 3)
+(global f)
+(k-closure 0
+  (check-vars 2)
+  (halt))
+(int 3)
+(apply 3)
+
+NB: I think it would be a good idea to start adding <bc> to all
+the bytecodes quite soon now ^^.  I suggest adding it into the
+InitialAssignments class so that we don't have to explicitly
+add it to the list of bytecodes in executors.cpp, but then we
+still have to put it in AssembleAs and related.
+
+Oh, and it looks as if github is our de facto dev-forum, LOL
