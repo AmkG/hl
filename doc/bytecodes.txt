@@ -349,13 +349,13 @@ Concurrency primitives:
 	expect a function on the stack.
 	must be called in tail position.
 	Operations:
-	- spawn a new process and use the function on the stack as the 
-	  starting point.
-	- create the HlPid of the new process
-	- call the current continuation of the current process passing the 
-	  HlPid as the value (actually set up the stack for the next time 
-	  the process gets scheduled)
-	- release the cpu to the new process
+	1) spawn a new process and use the function on the stack as the 
+	   starting point.
+	2) create the HlPid of the new process
+	3) call the current continuation of the current process passing the 
+	   HlPid as the value (actually set up the stack for the next time 
+	   the process gets scheduled)
+	4) release the cpu to the new process
 
 (<bc>send)
 	expect a message (i.e. any hl object) and an HlPid on the stack.
