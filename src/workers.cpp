@@ -595,6 +595,8 @@ Sweep:
 		/*otherwise*/		(4096 - died);
 		T += 1;
 		T *= 4;
+		// for testing, set to 4
+		T = 4;
 	}
 	goto WorkerLoop;
 }
