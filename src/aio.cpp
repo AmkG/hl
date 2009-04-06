@@ -19,7 +19,7 @@ preconditions:
 postconditions:
 	stack.top() has been popped
 */
-static inline void send_message_to(Process* P, ProcessStack& stack) {
+static inline void send_message_to(Process& host, Process* P, ProcessStack& stack) {
 	/*prepare message*/
 	ValueHolderRef m;
 	ValueHolder::copy_object(m, stack.top());
@@ -29,12 +29,11 @@ static inline void send_message_to(Process* P, ProcessStack& stack) {
 	/*keep sending until we definitely go through any locks or whatnot*/
 	while(!P->receive_message(m, is_waiting)) /*do nothing*/;
 	if(is_waiting) {
-		/*TODO: must have a way of determining if we are
-		in process-level GC.  The process-level GC must
-		first blacken the process before it can be safely
-		pushed on the workqueue.
+		/*Use multipush on the hosting process to
+		push the processes on the workqueue when
+		the hosting process' timeslice expires.
 		*/
-		workers->workqueue_push(P);
+		host.add_to_multipush(P);
 	}
 }
 
@@ -61,7 +60,7 @@ void ProcessInvoker::io_respond(
 	}
 	bytecode_cons(host, stack);
 
-	send_message_to(P, stack);
+	send_message_to(host, P, stack);
 
 }
 
@@ -76,14 +75,14 @@ void ProcessInvoker::nil_respond(
 	stack.push(Object::nil());
 	bytecode_cons(host, stack);
 
-	send_message_to(P, stack);
+	send_message_to(host, P, stack);
 
 }
 
 void ProcessInvoker::accept_respond(
 		Process& host,
 		boost::shared_ptr<Event>& event,
-		boost::shared_ptr<IOPort>& new_socket){
+		boost::shared_ptr<IOPort>& new_socket) {
 	Heap& hp = host; ProcessStack& stack = host.stack;
 	/*build objects*/
 	HlEvent* ev = hp.create<HlEvent>();
@@ -94,7 +93,7 @@ void ProcessInvoker::accept_respond(
 	stack.push(Object::to_ref<Generic*>(io));
 	bytecode_cons(host, stack);
 
-	send_message_to(P, stack);
+	send_message_to(host, P, stack);
 
 }
 
@@ -112,7 +111,7 @@ void ProcessInvoker::connect_respond(
 	stack.push(Object::to_ref<Generic*>(io));
 	bytecode_cons(host, stack);
 
-	send_message_to(P, stack);
+	send_message_to(host, P, stack);
 
 }
 
@@ -128,7 +127,7 @@ void ProcessInvoker::sleep_respond(
 	stack.push(Object::to_ref<int>(time));
 	bytecode_cons(host, stack);
 
-	send_message_to(P, stack);
+	send_message_to(host, P, stack);
 
 }
 
@@ -154,6 +153,6 @@ void ProcessInvoker::error_respond(
 	bytecode_tag(host, stack);
 	bytecode_cons(host, stack);
 
-	send_message_to(P, stack);
+	send_message_to(host, P, stack);
 }
 

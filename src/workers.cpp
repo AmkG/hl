@@ -532,6 +532,22 @@ WorkerLoop:
 	timeslice = parent->default_timeslice;
 execute:
 	Rstat = R->execute(timeslice, Q);
+	/*the multipush hack: when *potentially* multiple processes must
+	be pushed onto the workqueue.
+	*/
+	{boost::scoped_ptr<std::vector<Process*> > to_be_added;
+		Process::GrabMultipush(R, to_be_added);
+		if(to_be_added) {
+			std::vector<Process*>& to_add = *to_be_added;
+			for(size_t i = 0; i < to_add.size(); ++i) {
+				Process* P = to_add[i];
+				if(in_gc && !P->is_black()) {
+					mark_process(P);
+				}
+				parent->workqueue_push(P);
+			}
+		}
+	}
 	switch(Rstat) {
 	case process_waiting:
 	case process_dead:

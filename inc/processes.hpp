@@ -7,6 +7,9 @@
 #include <vector>
 #include <map>
 
+#include <boost/scoped_ptr.hpp>
+#include <boost/noncopyable.hpp>
+
 void throw_HlError(char const*);
 
 /*Consider putting this into the process's heap*/
@@ -98,6 +101,7 @@ public:
 };
 
 class HlPid;
+class Worker;
 
 class Process : public Heap {
 private:
@@ -125,6 +129,22 @@ private:
 
         void pop_extra_root() { extra_roots.pop_back(); }
 
+	/*The multipush hack:
+	The event system can, in theory, push multiple processes
+	onto the workqueue simultaneously.  The worker system
+	does not support this directly (it only expects one
+	pushed process at a time).  So, as a quick-n-dirty hack,
+	we store this potentially-multiple set of processes
+	here.
+	*/
+	boost::scoped_ptr<std::vector<Process*> > multipush;
+
+	void give_multipush(
+			boost::scoped_ptr<std::vector<Process*> >& other) {
+		other.swap(multipush);
+		multipush.reset(); /*for paranoia only*/
+	}
+
 	/*
 	 * When a process suspends its execution (maybe because it consumed its
 	 * timeslice) it saves here the next instruction to run when it is 
@@ -135,6 +155,31 @@ private:
 	//bytecode_t *next_instruction;
 
 public:
+	/*Must be called from within the execution of *this
+	P must be a process we just recently did a
+	Process::receive_message() on.  The receive_message()
+	should have returned an is_waiting of true.
+	*/
+	void add_to_multipush(Process* P) {
+		if(!multipush) {
+			multipush.reset(new std::vector<Process*>());
+		}
+		multipush->push_back(P);
+	}
+
+	/*grabs the multipush slot.  used only for class Worker*/
+	class GrabMultipush : boost::noncopyable {
+	private:
+		GrabMultipush(); //disallowed!
+		GrabMultipush(Process*P,
+				boost::scoped_ptr<std::vector<Process*> >&
+					to ) {
+			P->give_multipush(to);
+		}
+	public:
+		friend class Worker;
+	};
+
 	// spawn a new Process
 	// take a continuation (allocated in the current process)
 	// and return the HlPid (also allocated in the current process)
@@ -190,7 +235,8 @@ public:
 		  global_cache(),
 		  notification_mtx(),
 		  invalid_globals(),
-		  bytecode_slot() { }
+		  bytecode_slot(),
+		  multipush(0) { }
 
 /*-----------------------------------------------------------------------------
 Global Variable Access
@@ -305,6 +351,7 @@ For process-level garbage collection
 	ProcessStack stack;
 
 	virtual void scan_root_object(GenericTraverser* gt);
+
 };
 
 #endif // PROCESSES_H
