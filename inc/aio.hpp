@@ -107,6 +107,8 @@ boost::shared_ptr<IOPort> ioport_stdout(void);
 boost::shared_ptr<IOPort> ioport_stderr(void);
 /*PROMISE: we won't call the above functions unless
 we have called aio_initialize() once, first.
+PROMISE: the above functions are only called once,
+during initialization.
 */
 
 boost::shared_ptr<Event> infile(std::string, boost::shared_ptr<IOPort>&);

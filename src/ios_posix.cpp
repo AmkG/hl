@@ -206,6 +206,7 @@ public:
 		boost::shared_ptr<IOPort>&
 	);
 
+	/*I sincerely hope that this function is non-blocking*/
 	void seek(uint64_t);
 
 	/*on dtor, try to close anyway*/
@@ -554,12 +555,12 @@ boost::shared_ptr<Event> PosixIOPort::accept(
 		boost::shared_ptr<ProcessInvoker> proc,
 		boost::shared_ptr<IOPort>& now_accept) {
 	/*TODO*/
-	throw IOError(std::string("not implemented!"));
+	throw IOError(std::string("'accept not implemented!"));
 }
 
 void PosixIOPort::seek(uint64_t sz) {
 	/*TODO*/
-	throw IOError(std::string("not implemented!"));
+	throw IOError(std::string("'seek not implemented!"));
 }
 
 /*-----------------------------------------------------------------------------
@@ -909,6 +910,31 @@ boost::shared_ptr<Event> appendfile(std::string f,
 }
 
 /*-----------------------------------------------------------------------------
+Other Events
+-----------------------------------------------------------------------------*/
+
+boost::shared_ptr<Event> system_event(
+		boost::shared_ptr<ProcessInvoker> proc, std::string cmd) {
+	/*TODO*/
+	throw IOError(std::string("'system not implemented!"));
+}
+
+/*unit in milliseconds*/
+boost::shared_ptr<Event> sleep_event(
+		boost::shared_ptr<ProcessInvoker> proc, size_t time) {
+	/*TODO*/
+	throw IOError(std::string("'sleep not implemented!"));
+}
+
+/*connect to host's port*/
+boost::shared_ptr<Event> connect_event(
+		boost::shared_ptr<ProcessInvoker> proc,
+		std::string hostname, int port) {
+	/*TODO*/
+	throw IOError(std::string("'connect not implemented!"));
+}
+
+/*-----------------------------------------------------------------------------
 Event Set
 -----------------------------------------------------------------------------*/
 
@@ -936,17 +962,6 @@ EventSet::~EventSet() {delete pimpl;}
 /*status of set*/
 bool EventSet::empty(void) const {
 	return pimpl->io_events.empty();
-}
-
-void EventSet::scan_process_invokers(ProcessInvokerScanner* pis) {
-	EventSetImpl& event_set = *pimpl;
-	typedef std::set<boost::shared_ptr<IOEvent> >::iterator
-			io_event_iterator;
-	for(io_event_iterator it = event_set.io_events.begin();
-			it != event_set.io_events.end();
-			++it) {
-		(*it)->scan_process_invokers(pis);
-	}
 }
 
 /*add an event*/
@@ -1112,6 +1127,18 @@ void EventSet::event_wait(Process& host) {
 /*non-blocking*/
 void EventSet::event_poll(Process& host) {
 	event_wait_or_poll(host, *pimpl, 0);
+}
+
+/*Used during process-level GC*/
+void EventSet::scan_process_invokers(ProcessInvokerScanner* pis) {
+	EventSetImpl& event_set = *pimpl;
+	typedef std::set<boost::shared_ptr<IOEvent> >::iterator
+			io_event_iterator;
+	for(io_event_iterator it = event_set.io_events.begin();
+			it != event_set.io_events.end();
+			++it) {
+		(*it)->scan_process_invokers(pis);
+	}
 }
 
 /*the actual event set instance*/
