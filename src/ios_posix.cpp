@@ -783,6 +783,11 @@ void aio_deinitialize(void) {
 	/*TODO: figure out what to clean up, if any*/
 }
 
+void aio_thread_initialize(void) {
+}
+void aio_thread_deinitialize(void) {
+}
+
 /*-----------------------------------------------------------------------------
 Standard Input/Output
 -----------------------------------------------------------------------------*/
