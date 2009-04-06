@@ -191,7 +191,7 @@ void AllWorkers::initiate(size_t nworkers, Process* begin) {
 			wtc.launch(W);
 		}
 	#endif
-	W();
+	W(1); // the 1 indicates that it is the "main" thread.
 }
 
 /*
@@ -231,7 +231,27 @@ AllWorkers::~AllWorkers() {
 Worker
 -----------------------------------------------------------------------------*/
 
-void Worker::operator()(void) {
+class WorkerInitTeardown : boost::noncopyable {
+private:
+	WorkerInitTeardown(void); //disallowed!
+	bool is_main;
+
+public:
+	explicit WorkerInitTeardown(bool n_is_main)
+		: is_main(n_is_main) {
+		if(!is_main) {
+			aio_thread_initialize();
+		}
+	}
+	~WorkerInitTeardown() {
+		if(!is_main) {
+			aio_thread_deinitialize();
+		}
+	}
+};
+
+void Worker::operator()(bool is_main) {
+	WorkerInitTeardown wit(is_main);
 	try {
 		try {
 			parent->register_worker(this);

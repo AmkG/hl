@@ -125,7 +125,7 @@ public:
 	size_t T;
 
 	/*callable, used to launch a thread*/
-	void operator()(void);
+	void operator(bool is_main=0)(void);
 
 	explicit Worker(AllWorkers* nparent)
 		: parent(nparent),
