@@ -202,7 +202,8 @@ public:
 	);
 	/*TODO: definitions for this*/
 	boost::shared_ptr<Event> accept(
-		boost::shared_ptr<ProcessInvoker>
+		boost::shared_ptr<ProcessInvoker>,
+		boost::shared_ptr<IOPort>&
 	);
 
 	void seek(uint64_t);
@@ -550,7 +551,8 @@ boost::shared_ptr<Event> PosixIOPort::read(
 }
 
 boost::shared_ptr<Event> PosixIOPort::accept(
-		boost::shared_ptr<ProcessInvoker> proc) {
+		boost::shared_ptr<ProcessInvoker> proc,
+		boost::shared_ptr<IOPort>& now_accept) {
 	/*TODO*/
 	throw IOError(std::string("not implemented!"));
 }

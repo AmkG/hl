@@ -85,8 +85,15 @@ public:
 		boost::shared_ptr<ProcessInvoker>,
 		boost::shared_ptr<std::vector<unsigned char> >&
 	) =0;
+
+	/*If the accept completed immediately, return a
+	null pointer and put a value into now_accept.
+	Otherwise, put a null pointer into now_accept and
+	return an event.
+	*/
 	virtual boost::shared_ptr<Event> accept(
-		boost::shared_ptr<ProcessInvoker>
+		boost::shared_ptr<ProcessInvoker>,
+		boost::shared_ptr<IOPort>& now_accept
 	) =0;
 
 	virtual void seek(uint64_t) =0;
