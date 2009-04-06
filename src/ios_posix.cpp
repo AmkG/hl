@@ -955,11 +955,13 @@ void EventSet::add_event(boost::shared_ptr<Event> evp) {
 	boost::shared_ptr<IOEvent> iop =
 		boost::dynamic_pointer_cast<IOEvent>(evp);
 	if(iop) {
-		iop->add_select_event(
-			event_set.rd,
-			event_set.wr,
-			event_set.exc
-		);
+		#ifdef USE_POSIX_SELECT
+			iop->add_select_event(
+				event_set.rd,
+				event_set.wr,
+				event_set.exc
+			);
+		#endif
 		event_set.io_events.insert(iop);
 		return;
 	}
@@ -977,11 +979,13 @@ void EventSet::remove_event(boost::shared_ptr<Event> evp) {
 	boost::shared_ptr<IOEvent> iop =
 		boost::dynamic_pointer_cast<IOEvent>(evp);
 	if(iop) {
-		iop->remove_select_event(
-			event_set.rd,
-			event_set.wr,
-			event_set.exc
-		);
+		#ifdef USE_POSIX_SELECT
+			iop->remove_select_event(
+				event_set.rd,
+				event_set.wr,
+				event_set.exc
+			);
+		#endif
 		event_set.io_events.erase(
 			event_set.io_events.find(iop)
 		);
