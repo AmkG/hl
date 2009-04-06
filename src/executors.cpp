@@ -158,7 +158,7 @@ void GenClosureAs::assemble(Process & proc) {
   Bytecode *current = expect_type<Bytecode>(proc.stack.top());
   size_t iconst = current->closeOver(body); // close over the body
   // reference to the body
-  current->push("const-ref", iconst);
+  current->push("<bc>const-ref", iconst);
   // build the closure
   current->push(s_to_build, as_a<int>(nclose));
 }
@@ -179,7 +179,7 @@ size_t GenClosureAs::disassemble(Process & proc, size_t i) {
     proc.stack.push(Object::to_ref(proc.create<Cons>()));
     Cons *c2 = proc.create<Cons>();
     Object::ref c = proc.stack.top(); proc.stack.pop();
-    scar(c, Object::to_ref(symbols->lookup("float")));
+    scar(c, Object::to_ref(symbols->lookup("<bc>float")));
     scdr(c, Object::to_ref(c2));
     c2->scar(proc.stack.top()); proc.stack.pop(); // float value
     c2->scdr(Object::nil());
@@ -212,24 +212,24 @@ size_t GenClosureAs::disassemble(Process & proc, size_t i) {
 
 class ClosureAs : public GenClosureAs {
 public:
-  ClosureAs() : GenClosureAs("build-closure", "closure") {}
+  ClosureAs() : GenClosureAs("<bc>build-closure", "<bc>closure") {}
 };
 
 class KClosureAs : public GenClosureAs {
 public:
-  KClosureAs() : GenClosureAs("build-k-closure", "k-closure") {}
+  KClosureAs() : GenClosureAs("<bc>build-k-closure", "<bc>k-closure") {}
 };
 
 class KClosureRecreateAs : public GenClosureAs {
 public:
-  KClosureRecreateAs() : GenClosureAs("build-k-closure-recreate", 
-                                      "k-closure-recreate") {}
+  KClosureRecreateAs() : GenClosureAs("<bc>build-k-closure-recreate", 
+                                      "<bc>k-closure-recreate") {}
 };
 
 class KClosureReuseAs : public GenClosureAs {
 public:
-  KClosureReuseAs() : GenClosureAs("build-k-closure-reuse", 
-                                   "k-closure-reuse") {}
+  KClosureReuseAs() : GenClosureAs("<bc>build-k-closure-reuse", 
+                                   "<bc>k-closure-reuse") {}
 };
 
 // assemble instructions to push a complex constant on the stack
@@ -254,7 +254,7 @@ void ComplexAs<T>::assemble(Process & proc) {
   if (Assembler::isComplexConst(arg)) {
     size_t i = b->closeOver(arg);
     // generate a reference to it
-    b->push("const-ref", i);
+    b->push("<bc>const-ref", i);
   } else {
     throw_HlError("assemble: const expects a complex arg");
   }
@@ -272,7 +272,7 @@ public:
 size_t IfAs::countToSkip(Object::ref seq) {
   size_t n = 0;
   for(Object::ref i = seq; i != Object::nil(); i = cdr(i)) {
-    if (as_a<Symbol*>(car(car(i)))==symbols->lookup("if"))
+    if (as_a<Symbol*>(car(car(i)))==symbols->lookup("<bc>if"))
       n += 1 + countToSkip(cdr(car(i))); // +1 for jmp-nil
     else
       n++;
@@ -286,7 +286,7 @@ void IfAs::assemble(Process & proc) {
   proc.stack.pop(); // throw away simple arg
   size_t to_skip = countToSkip(seq);
   // skipping instruction
-  expect_type<Bytecode>(proc.stack.top())->push("jmp-nil", to_skip);
+  expect_type<Bytecode>(proc.stack.top())->push("<bc>jmp-nil", to_skip);
   // append seq with seq being assembled
   Object::ref tail = seq;
   while (cdr(tail)!=Object::nil()) // search the tail
@@ -308,7 +308,7 @@ size_t IfAs::disassemble(Process & proc, size_t i) {
   proc.stack.push(proc.stack.top()); 
   assembler.goBack(proc, i+1, end);
   Cons *c = proc.create<Cons>();
-  c->scar(Object::to_ref(symbols->lookup("if")));
+  c->scar(Object::to_ref(symbols->lookup("<bc>if")));
   c->scdr(proc.stack.top()); proc.stack.pop();
   proc.stack.push(Object::to_ref(c));
 
@@ -480,7 +480,7 @@ size_t Assembler::countConsts(Object::ref seq) {
     if (l==2 && isComplexConst(car(cdr(car(i)))))
       n++;
     if (l>2) {
-      if (as_a<Symbol*>(car(car(i)))==symbols->lookup("if")) {
+      if (as_a<Symbol*>(car(car(i)))==symbols->lookup("<bc>if")) {
         // must look within the 'if subseq
         n += countConsts(cdr(car(i)));
       } else {
@@ -540,109 +540,111 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     InitialAssignments()
       /*built-in functions accessible via $*/
       /*bytecodes*/
-      ("acquire",		THE_BYTECODE_LABEL(acquire))
-      ("apply",		THE_BYTECODE_LABEL(apply), ARG_INT)
-      ("apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k), ARG_INT)
-      ("apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
-      ("apply-list",		THE_BYTECODE_LABEL(apply_list), ARG_INT)
-      ("build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT)
-      ("build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT)
-      ("build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
+      ("<bc>acquire",		THE_BYTECODE_LABEL(acquire))
+      ("<bc>apply",		THE_BYTECODE_LABEL(apply), ARG_INT)
+      ("<bc>apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k), ARG_INT)
+      ("<bc>apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
+      ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
+      ("<bc>build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT)
+      ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT)
+      ("<bc>build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
        ARG_INT)
-      ("build-k-closure-reuse",	THE_BYTECODE_LABEL(build_k_closure_reuse), 
+      ("<bc>build-k-closure-reuse", THE_BYTECODE_LABEL(build_k_closure_reuse), 
        ARG_INT)
-      ("car",			THE_BYTECODE_LABEL(car))
-      ("scar",                  THE_BYTECODE_LABEL(scar))
-      ("car-local-push",	THE_BYTECODE_LABEL(car_local_push), ARG_INT)
-      ("car-clos-push",	THE_BYTECODE_LABEL(car_clos_push), ARG_INT)
-      ("cdr",			THE_BYTECODE_LABEL(cdr))
-      ("scdr",                  THE_BYTECODE_LABEL(scdr))
-      ("cdr-local-push",	THE_BYTECODE_LABEL(cdr_local_push), ARG_INT)
-      ("cdr-clos-push",	THE_BYTECODE_LABEL(cdr_clos_push), ARG_INT)
-      ("char",			THE_BYTECODE_LABEL(b_char), ARG_INT)
-      ("check-vars",		THE_BYTECODE_LABEL(check_vars), ARG_INT)
-      ("closure-ref",		THE_BYTECODE_LABEL(closure_ref), ARG_INT)
-      ("composeo",		THE_BYTECODE_LABEL(composeo))
-      ("composeo-continuation",	THE_BYTECODE_LABEL(composeo_continuation))
-      ("cons",		THE_BYTECODE_LABEL(cons))
-      ("const-ref",     THE_BYTECODE_LABEL(const_ref), ARG_INT)
-      ("continue",		THE_BYTECODE_LABEL(b_continue))
-      ("continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
-      ("continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
-      ("f-to-i",		THE_BYTECODE_LABEL(f_to_i))
-      ("global",		THE_BYTECODE_LABEL(global), ARG_SYMBOL)
-      ("global-set",		THE_BYTECODE_LABEL(global_set), ARG_SYMBOL)
-      ("halt",		THE_BYTECODE_LABEL(halt))
-      ("halt-local-push",	THE_BYTECODE_LABEL(halt_local_push), ARG_INT)
-      ("halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push), ARG_INT)
-      ("i-to-f",		THE_BYTECODE_LABEL(i_to_f))
-      ("jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT) // replacement for 'if
-      //("if-local",		THE_BYTECODE_LABEL(if_local))
-      ("int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
-      ("ccc", THE_BYTECODE_LABEL(ccc))
-      ("lit-nil",		THE_BYTECODE_LABEL(lit_nil))
-      ("lit-t",		THE_BYTECODE_LABEL(lit_t))
-      ("local",		THE_BYTECODE_LABEL(local), ARG_INT)
-      ("monomethod",		THE_BYTECODE_LABEL(monomethod))
-      ("reducto",		THE_BYTECODE_LABEL(reducto))
+      ("<bc>car",			THE_BYTECODE_LABEL(car))
+      ("<bc>scar",                  THE_BYTECODE_LABEL(scar))
+      ("<bc>car-local-push",	THE_BYTECODE_LABEL(car_local_push), ARG_INT)
+      ("<bc>car-clos-push",	THE_BYTECODE_LABEL(car_clos_push), ARG_INT)
+      ("<bc>cdr",			THE_BYTECODE_LABEL(cdr))
+      ("<bc>scdr",                  THE_BYTECODE_LABEL(scdr))
+      ("<bc>cdr-local-push",	THE_BYTECODE_LABEL(cdr_local_push), ARG_INT)
+      ("<bc>cdr-clos-push",	THE_BYTECODE_LABEL(cdr_clos_push), ARG_INT)
+      ("<bc>char",			THE_BYTECODE_LABEL(b_char), ARG_INT)
+      ("<bc>check-vars",	       THE_BYTECODE_LABEL(check_vars), ARG_INT)
+      ("<bc>closure-ref",	      THE_BYTECODE_LABEL(closure_ref), ARG_INT)
+      ("<bc>composeo",		THE_BYTECODE_LABEL(composeo))
+      ("<bc>composeo-continuation",  THE_BYTECODE_LABEL(composeo_continuation))
+      ("<bc>cons",		THE_BYTECODE_LABEL(cons))
+      ("<bc>const-ref",     THE_BYTECODE_LABEL(const_ref), ARG_INT)
+      ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
+      ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
+      ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
+      ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
+      ("<bc>global",		THE_BYTECODE_LABEL(global), ARG_SYMBOL)
+      ("<bc>global-set",		THE_BYTECODE_LABEL(global_set), ARG_SYMBOL)
+      ("<bc>halt",		THE_BYTECODE_LABEL(halt))
+      ("<bc>halt-local-push",	THE_BYTECODE_LABEL(halt_local_push), ARG_INT)
+      ("<bc>halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push), ARG_INT)
+      ("<bc>i-to-f",		THE_BYTECODE_LABEL(i_to_f))
+      ("<bc>jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT) // replacement for 'if
+      //("<bc>if-local",		THE_BYTECODE_LABEL(if_local))
+      ("<bc>int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
+      ("<bc>ccc", THE_BYTECODE_LABEL(ccc))
+      ("<bc>lit-nil",		THE_BYTECODE_LABEL(lit_nil))
+      ("<bc>lit-t",		THE_BYTECODE_LABEL(lit_t))
+      ("<bc>local",		THE_BYTECODE_LABEL(local), ARG_INT)
+      ("<bc>monomethod",		THE_BYTECODE_LABEL(monomethod))
+      ("<bc>reducto",		THE_BYTECODE_LABEL(reducto))
       ("<bc>recv", THE_BYTECODE_LABEL(recv))
-      ("reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
-      ("release",		THE_BYTECODE_LABEL(release))
-      ("rep",			THE_BYTECODE_LABEL(rep))
-      ("rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
-      ("rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+      ("<bc>reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
+      ("<bc>release",		THE_BYTECODE_LABEL(release))
+      ("<bc>rep",			THE_BYTECODE_LABEL(rep))
+      ("<bc>rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
+      ("<bc>rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
       ("<bc>self-pid", THE_BYTECODE_LABEL(self_pid))
       ("<bc>send", THE_BYTECODE_LABEL(send))
       ("<bc>spawn", THE_BYTECODE_LABEL(spawn))
-      ("string-create",		THE_BYTECODE_LABEL(string_create), ARG_INT)
-      ("string-length",		THE_BYTECODE_LABEL(string_length))
-      ("string-ref",		THE_BYTECODE_LABEL(string_ref))
-      ("string-sref",		THE_BYTECODE_LABEL(string_sref))
-      ("sv",			THE_BYTECODE_LABEL(sv))
-      ("sv-local-push",	THE_BYTECODE_LABEL(sv_local_push), ARG_INT)
-      ("sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push), ARG_INT)
-      ("sv-ref",		THE_BYTECODE_LABEL(sv_ref))
-      ("sv-ref-local-push",    THE_BYTECODE_LABEL(sv_ref_local_push), ARG_INT)
-      ("sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push), ARG_INT)
-      ("sv-set",		THE_BYTECODE_LABEL(sv_set))
-      ("sym",			THE_BYTECODE_LABEL(sym), ARG_SYMBOL)
-      ("symeval",		THE_BYTECODE_LABEL(symeval), ARG_SYMBOL)
-      ("table-create",		THE_BYTECODE_LABEL(table_create))
-      ("table-ref",		THE_BYTECODE_LABEL(table_ref))
-      ("table-sref",		THE_BYTECODE_LABEL(table_sref))
-      ("table-keys",		THE_BYTECODE_LABEL(table_keys))
-      ("tag",			THE_BYTECODE_LABEL(tag))
+      ("<bc>string-create",	THE_BYTECODE_LABEL(string_create), ARG_INT)
+      ("<bc>string-length",		THE_BYTECODE_LABEL(string_length))
+      ("<bc>string-ref",		THE_BYTECODE_LABEL(string_ref))
+      ("<bc>string-sref",		THE_BYTECODE_LABEL(string_sref))
+      ("<bc>sv",			THE_BYTECODE_LABEL(sv))
+      ("<bc>sv-local-push",	THE_BYTECODE_LABEL(sv_local_push), ARG_INT)
+      ("<bc>sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push), ARG_INT)
+      ("<bc>sv-ref",		THE_BYTECODE_LABEL(sv_ref))
+      ("<bc>sv-ref-local-push",    THE_BYTECODE_LABEL(sv_ref_local_push), ARG_INT)
+      ("<bc>sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push), ARG_INT)
+      ("<bc>sv-set",		THE_BYTECODE_LABEL(sv_set))
+      ("<bc>sym",			THE_BYTECODE_LABEL(sym), ARG_SYMBOL)
+      ("<bc>symeval",		THE_BYTECODE_LABEL(symeval), ARG_SYMBOL)
+      ("<bc>table-create",		THE_BYTECODE_LABEL(table_create))
+      ("<bc>table-ref",		THE_BYTECODE_LABEL(table_ref))
+      ("<bc>table-sref",		THE_BYTECODE_LABEL(table_sref))
+      ("<bc>table-keys",		THE_BYTECODE_LABEL(table_keys))
+      ("<bc>tag",			THE_BYTECODE_LABEL(tag))
       ("<bc>try-recv", THE_BYTECODE_LABEL(try_recv))
-      ("type",		THE_BYTECODE_LABEL(type))
-      ("type-local-push",	THE_BYTECODE_LABEL(type_local_push))
-      ("type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
-      ("variadic",		THE_BYTECODE_LABEL(variadic), ARG_INT)
-      ("do-executor",           THE_BYTECODE_LABEL(do_executor), ARG_SYMBOL)
-      ("i+",                    THE_BYTECODE_LABEL(iplus))
-      ("i-",                    THE_BYTECODE_LABEL(iminus))
-      ("i*",                    THE_BYTECODE_LABEL(imul))
-      ("i/",                    THE_BYTECODE_LABEL(idiv))
-      ("imod",			THE_BYTECODE_LABEL(imod))
-      ("i<",                    THE_BYTECODE_LABEL(iless))
-      ("f+",                    THE_BYTECODE_LABEL(fplus))
-      ("f-",                    THE_BYTECODE_LABEL(fminus))
-      ("f*",                    THE_BYTECODE_LABEL(fmul))
-      ("f/",                    THE_BYTECODE_LABEL(fdiv))
-      ("f<",                    THE_BYTECODE_LABEL(fless))
+      ("<bc>type",		THE_BYTECODE_LABEL(type))
+      ("<bc>type-local-push",	THE_BYTECODE_LABEL(type_local_push))
+      ("<bc>type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
+      ("<bc>variadic",		THE_BYTECODE_LABEL(variadic), ARG_INT)
+      ("<bc>do-executor",       THE_BYTECODE_LABEL(do_executor), ARG_SYMBOL)
+      ("<bc>i+",                    THE_BYTECODE_LABEL(iplus))
+      ("<bc>i-",                    THE_BYTECODE_LABEL(iminus))
+      ("<bc>i*",                    THE_BYTECODE_LABEL(imul))
+      ("<bc>i/",                    THE_BYTECODE_LABEL(idiv))
+      ("<bc>imod",			THE_BYTECODE_LABEL(imod))
+      ("<bc>i<",                    THE_BYTECODE_LABEL(iless))
+      ("<bc>f+",                    THE_BYTECODE_LABEL(fplus))
+      ("<bc>f-",                    THE_BYTECODE_LABEL(fminus))
+      ("<bc>f*",                    THE_BYTECODE_LABEL(fmul))
+      ("<bc>f/",                    THE_BYTECODE_LABEL(fdiv))
+      ("<bc>f<",                    THE_BYTECODE_LABEL(fless))
       /*declare executors*/
-      ("is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
+      ("<executor>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       /*assign bultin global*/
       ;/*end initializer*/
 
     // initialize assembler operations
-    assembler.reg<ClosureAs>(symbols->lookup("closure"),
+    assembler.reg<ClosureAs>(symbols->lookup("<bc>closure"),
                              THE_BYTECODE_LABEL(const_ref));
-    assembler.reg<KClosureAs>(symbols->lookup("k-closure"), NULL);
-    assembler.reg<KClosureRecreateAs>(symbols->lookup("k-closure-recreate"),
+    assembler.reg<KClosureAs>(symbols->lookup("<bc>k-closure"), NULL);
+    assembler.reg<KClosureRecreateAs>(symbols->lookup("<bc>k-closure-recreate"),
                                       NULL);
-    assembler.reg<KClosureReuseAs>(symbols->lookup("k-closure-reuse"), NULL);
-    assembler.reg<IfAs>(symbols->lookup("if"), THE_BYTECODE_LABEL(jmp_nil));
-    assembler.reg<ComplexAs<Float> >(symbols->lookup("float"), NULL);
+    assembler.reg<KClosureReuseAs>(symbols->lookup("<bc>k-closure-reuse"), 
+				   NULL);
+    assembler.reg<IfAs>(symbols->lookup("<bc>if"), 
+			THE_BYTECODE_LABEL(jmp_nil));
+    assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL);
 
     /*
      * build and assemble various bytecode sequences
@@ -650,11 +652,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
      * as the continuations for various bytecodes
      */
     symbols->lookup("<impl>reducto-cont-body")->
-      set_value(inline_assemble(proc, "(reducto-continuation) (continue)"));
+      set_value(inline_assemble(proc, 
+				"(<bc>reducto-continuation) (<bc>continue)"));
     symbols->lookup("<impl>ccc-fn-body")->
-      set_value(inline_assemble(proc, "(check-vars 3) (continue-on-clos 0)"));
+      set_value(inline_assemble(proc, "(<bc>check-vars 3) (<bc>continue-on-clos 0)"));
     symbols->lookup("<impl>composeo-cont-body")->
-      set_value(inline_assemble(proc, "(composeo-continuation ) (continue )"));
+      set_value(inline_assemble(proc, "(<bc>composeo-continuation ) (<bc>continue)"));
 
     return process_dead;
   }
