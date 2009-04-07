@@ -101,7 +101,8 @@ public:
 };
 
 class HlPid;
-class Worker, AllWorkers;
+class Worker;
+class AllWorkers;
 
 class Process : public Heap {
 private:
