@@ -543,6 +543,10 @@ public:
     return Object::to_ref(symbol_event);
   }
 
+  void enhash(HashingClass* hc) const {
+    hc->enhash((size_t)p.get());
+  }
+
   void traverse_references(GenericTraverser *gt) {
     gt->traverse(hl_pid);
   }
