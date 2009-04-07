@@ -205,9 +205,13 @@ public:
 		boost::shared_ptr<ProcessInvoker>,
 		boost::shared_ptr<IOPort>&
 	);
+	boost::shared_ptr<Event> fsync(
+		boost::shared_ptr<ProcessInvoker>
+	);
 
-	/*I sincerely hope that this function is non-blocking*/
+	/*I sincerely hope that these functions are non-blocking*/
 	void seek(uint64_t);
+	uint64_t tell(void);
 
 	/*on dtor, try to close anyway*/
 	~PosixIOPort() {
@@ -558,9 +562,20 @@ boost::shared_ptr<Event> PosixIOPort::accept(
 	throw IOError(std::string("'accept not implemented!"));
 }
 
+boost::shared_ptr<Event> PosixIOPort::fsync(
+		boost::shared_ptr<ProcessInvoker> proc) {
+	/*TODO*/
+	throw IOError(std::string("'fsync not implemented!"));
+}
+
 void PosixIOPort::seek(uint64_t sz) {
 	/*TODO*/
 	throw IOError(std::string("'seek not implemented!"));
+}
+
+uint64_t PosixIOPort::tell(void) {
+	/*TODO*/
+	throw IOError(std::string("'tell not implemented!"));
 }
 
 /*-----------------------------------------------------------------------------

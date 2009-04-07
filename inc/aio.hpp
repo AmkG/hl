@@ -78,7 +78,7 @@ public:
 		boost::shared_ptr<std::vector<unsigned char> >& now_read
 	) =0;
 
-	/*return a null pointer if data-writing was successfully
+	/*return a null pointer if data-writing was immediately
 	completed.
 	*/
 	virtual boost::shared_ptr<Event> write(
@@ -96,7 +96,15 @@ public:
 		boost::shared_ptr<IOPort>& now_accept
 	) =0;
 
+	/*return a null pointer if fsync was immediately
+	completed.
+	*/
+	virtual boost::shared_ptr<Event> fsync(
+		boost::shared_ptr<ProcessInvoker>
+	) =0;
+
 	virtual void seek(uint64_t) =0;
+	virtual uint64_t tell(void) =0;
 
 	virtual ~IOPort() { }
 };
