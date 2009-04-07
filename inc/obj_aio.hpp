@@ -4,7 +4,7 @@
 #include"types.hpp"
 #include"aio.hpp"
 
-static inline Object::ref add_event(Object::ref ev) {
+inline Object::ref add_event(Object::ref ev) {
 	#ifdef DEBUG
 		if(!maybe_type<HlEvent>(ev)) {
 			throw_HlError("add-event: Expected an event");
@@ -15,7 +15,7 @@ static inline Object::ref add_event(Object::ref ev) {
 	return Object::t();
 }
 
-static inline Object::ref remove_event(Object::ref ev) {
+inline Object::ref remove_event(Object::ref ev) {
 	#ifdef DEBUG
 		if(!maybe_type<HlEvent>(ev)) {
 			throw_HlError("remove-event: Expected an event");
@@ -27,23 +27,23 @@ static inline Object::ref remove_event(Object::ref ev) {
 		/*otherwise*/				Object::nil() ;
 }
 
-static inline Object::ref empty_event_set(void) {
+inline Object::ref empty_event_set(void) {
 	return
 		the_event_set().empty() ?		Object::t() :
 		/*otherwise*/				Object::nil() ;
 }
 
-static inline Object::ref event_poll(void) {
-	the_event_set().event_poll();
+inline Object::ref event_poll(Process& P) {
+	the_event_set().event_poll(P);
 	return Object::t();
 }
 
-static inline Object::ref event_wait(void) {
-	the_event_set().event_wait();
+inline Object::ref event_wait(Process& P) {
+	the_event_set().event_wait(P);
 	return Object::t();
 }
 
-static inline Object::ref only_running(Process& P) {
+inline Object::ref only_running(Process& P) {
 	return
 		P.is_only_running() ?			Object::t() :
 		/*otherwise*/				Object::nil() ;
