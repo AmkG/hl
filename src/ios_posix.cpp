@@ -1016,10 +1016,14 @@ bool EventSet::remove_event(boost::shared_ptr<Event> evp) {
 				event_set.exc
 			);
 		#endif
-		event_set.io_events.erase(
+		std::set<boost::shared_ptr<IOEvent> >::iterator it =
 			event_set.io_events.find(iop)
-		);
-		return;
+		if(it != event_set.io_events.end()) {
+			event_set.io_events.erase(
+				it
+			);
+			return 1;
+		} else return 0;
 	}
 	/*if reached here, internal inconsistency*/
 	std::cout << "remove-event: Internal inconsistency, somehow, got an "
