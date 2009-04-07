@@ -116,6 +116,7 @@ process-level GC should push a black process.
 void AllWorkers::workqueue_push(Process* R) {
 	AppLock l(general_mtx);
 	bool sig = workqueue.empty();
+	Process::SetOnlyRunning(R,0);
 	workqueue.push(R);
 	if(sig) workqueue_cv.broadcast();
 }
@@ -125,7 +126,18 @@ void AllWorkers::workqueue_push_and_pop(Process*& R) {
 	/*if workqueue is empty, we'd end up popping what we
 	would have pushed anyway, so just short-circuit it
 	*/
-	if(workqueue.empty()) return;
+	if(workqueue.empty()) {
+		/*if all other workers are waiting, then this process *is*
+		the only one running
+		*/
+		if(workqueue_waiting == total_workers - 1) {
+			 Process::SetOnlyRunning(R,1);
+		} else {
+			 Process::SetOnlyRunning(R,0);
+		}
+		return;
+	}
+	Process::SetOnlyRunning(R,0);
 	workqueue.push(R);
 	R = workqueue.front();
 	workqueue.pop();

@@ -101,7 +101,7 @@ public:
 };
 
 class HlPid;
-class Worker;
+class Worker, AllWorkers;
 
 class Process : public Heap {
 private:
@@ -110,6 +110,11 @@ private:
 	AppMutex mtx;
 
 	MailBox mbox;
+
+	/*if this flag is true, it means this process is the only
+	running process.
+	*/
+	bool only_running;
 
 	/*in the future, consider using a limited cache*/
 	std::map<Symbol*, Object::ref> global_cache;
@@ -155,12 +160,20 @@ private:
 	//bytecode_t *next_instruction;
 
 public:
+	bool is_only_running(void) const {
+		return only_running;
+	}
+
 	/*Must be called from within the execution of *this
 	P must be a process we just recently did a
 	Process::receive_message() on.  The receive_message()
 	should have returned an is_waiting of true.
 	*/
 	void add_to_multipush(Process* P) {
+		/*implicitly, we know that we aren't the only
+		running process anymore
+		*/
+		only_running = 0;
 		if(!multipush) {
 			multipush.reset(new std::vector<Process*>());
 		}
@@ -171,13 +184,26 @@ public:
 	class GrabMultipush : boost::noncopyable {
 	private:
 		GrabMultipush(); //disallowed!
-		GrabMultipush(Process*P,
+		GrabMultipush(Process* P,
 				boost::scoped_ptr<std::vector<Process*> >&
 					to ) {
 			P->give_multipush(to);
 		}
 	public:
 		friend class Worker;
+	};
+
+	/*sets or clears the only-running flag.  used only for
+	class AllWorkers
+	*/
+	class SetOnlyRunning : boost::noncopyable {
+	private:
+		SetOnlyRunning(); //disallowed!
+		SetOnlyRunning(Process* P, bool val) {
+			P->only_running = val;
+		}
+	public:
+		friend class AllWorkers;
 	};
 
 	// spawn a new Process
@@ -232,6 +258,7 @@ public:
 		  black(0),
 		  mtx(),
 		  mbox(*this),
+		  only_running(0),
 		  global_cache(),
 		  notification_mtx(),
 		  invalid_globals(),
