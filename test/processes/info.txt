@@ -3,7 +3,7 @@ message passing synchronization.
 
 To run the tests, execute
 
-$ ./dotest.pl ../src/hl processes
+$ ./dotest.pl '../src/hl --bc' processes
 
 from the test directory.
 
@@ -67,11 +67,3 @@ multiple-proc.test:
   (halt))
 (int 3)
 (apply 3)
-
-NB: I think it would be a good idea to start adding <bc> to all
-the bytecodes quite soon now ^^.  I suggest adding it into the
-InitialAssignments class so that we don't have to explicitly
-add it to the list of bytecodes in executors.cpp, but then we
-still have to put it in AssembleAs and related.
-
-Oh, and it looks as if github is our de facto dev-forum, LOL
