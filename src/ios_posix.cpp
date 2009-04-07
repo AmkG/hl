@@ -1004,7 +1004,7 @@ void EventSet::add_event(boost::shared_ptr<Event> evp) {
 }
 
 /*remove an event*/
-void EventSet::remove_event(boost::shared_ptr<Event> evp) {
+bool EventSet::remove_event(boost::shared_ptr<Event> evp) {
 	EventSetImpl& event_set = *pimpl;
 	boost::shared_ptr<IOEvent> iop =
 		boost::dynamic_pointer_cast<IOEvent>(evp);

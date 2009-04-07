@@ -148,7 +148,7 @@ public:
 	bool empty(void) const;
 
 	void add_event(boost::shared_ptr<Event>);
-	void remove_event(boost::shared_ptr<Event>);
+	bool remove_event(boost::shared_ptr<Event>);
 
 	/*"host" is the process which performed the
  	'event-wait or 'event-poll bytecode.
