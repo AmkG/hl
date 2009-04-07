@@ -27,7 +27,7 @@
 (<bc>k-closure 0
   (<bc>local 1)
   (<bc>halt))
-(<bc>int 3)
+(<bc>int 90)
 (<bc>apply 3)
 
 ;^t$
