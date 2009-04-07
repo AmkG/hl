@@ -11,11 +11,12 @@
     (<bc>lit-t)
     (<bc>continue))
   (<bc>global <common>spawn)
+  (<bc>local 1)
   (<bc>local 2)
-  (<bc>k-closure 1
+  (<bc>k-closure 2
     (<bc>global f)
-    (<bc>local 0)
     (<bc>closure-ref 0)
+    (<bc>closure-ref 1)
     (<bc>int 1)
     (<bc>i-)
     (<bc>apply 3))
