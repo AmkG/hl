@@ -42,15 +42,29 @@ ProcessInvoker::ProcessInvoker(Process* nP) : P(nP) {
 ProcessInvoker::~ProcessInvoker() {
 }
 
+static inline void recreate_event_push(
+		Heap& hp,
+		ProcessStack& stack,
+		boost::shared_ptr<Event>& event,
+		Process* P) {
+	{
+		HlPid *pid = hp.create<HlPid>();
+		pid->process = P;
+		stack.push(Object::to_ref<Generic*>(pid));
+	}
+	HlEvent* ev = hp.create<HlEvent>();
+	ev->p = event;
+	ev->hl_pid = stack.top(); stack.pop();
+	stack.push(Object::to_ref<Generic*>(ev));
+}
+
 void ProcessInvoker::io_respond(
 		Process& host,
 		boost::shared_ptr<Event>& event,
 		boost::shared_ptr<std::vector<unsigned char> >& dat) {
 	Heap& hp = host; ProcessStack& stack = host.stack;
 	/*build objects*/
-	HlEvent* ev = hp.create<HlEvent>();
-	ev->p = event;
-	stack.push(Object::to_ref<Generic*>(ev));
+	recreate_event_push(hp, stack, event, P);
 	/*any data?*/
 	if(!dat || dat->size() == 0) {
 		stack.push(Object::nil());
@@ -69,9 +83,7 @@ void ProcessInvoker::nil_respond(
 		boost::shared_ptr<Event>& event) {
 	Heap& hp = host; ProcessStack& stack = host.stack;
 	/*build objects*/
-	HlEvent* ev = hp.create<HlEvent>();
-	ev->p = event;
-	stack.push(Object::to_ref<Generic*>(ev));
+	recreate_event_push(hp, stack, event, P);
 	stack.push(Object::nil());
 	bytecode_cons(host, stack);
 
@@ -85,9 +97,7 @@ void ProcessInvoker::accept_respond(
 		boost::shared_ptr<IOPort>& new_socket) {
 	Heap& hp = host; ProcessStack& stack = host.stack;
 	/*build objects*/
-	HlEvent* ev = hp.create<HlEvent>();
-	ev->p = event;
-	stack.push(Object::to_ref<Generic*>(ev));
+	recreate_event_push(hp, stack, event, P);
 	HlIOPort* io = hp.create<HlIOPort>();
 	io->p = new_socket;
 	stack.push(Object::to_ref<Generic*>(io));
@@ -103,9 +113,7 @@ void ProcessInvoker::connect_respond(
 		boost::shared_ptr<IOPort>& new_socket) {
 	Heap& hp = host; ProcessStack& stack = host.stack;
 	/*build objects*/
-	HlEvent* ev = hp.create<HlEvent>();
-	ev->p = event;
-	stack.push(Object::to_ref<Generic*>(ev));
+	recreate_event_push(hp, stack, event, P);
 	HlIOPort* io = hp.create<HlIOPort>();
 	io->p = new_socket;
 	stack.push(Object::to_ref<Generic*>(io));
@@ -121,9 +129,7 @@ void ProcessInvoker::sleep_respond(
 		size_t time) {
 	Heap& hp = host; ProcessStack& stack = host.stack;
 	/*build objects*/
-	HlEvent* ev = hp.create<HlEvent>();
-	ev->p = event;
-	stack.push(Object::to_ref<Generic*>(ev));
+	recreate_event_push(hp, stack, event, P);
 	stack.push(Object::to_ref<int>(time));
 	bytecode_cons(host, stack);
 
@@ -137,9 +143,7 @@ void ProcessInvoker::error_respond(
 		std::string const& msg) {
 	Heap& hp = host; ProcessStack& stack = host.stack;
 	/*build objects*/
-	HlEvent* ev = hp.create<HlEvent>();
-	ev->p = event;
-	stack.push(Object::to_ref<Generic*>(ev));
+	recreate_event_push(hp, stack, event, P);
 	/*slow lookup is OK, we don't expect error handling
 	to be fast.
 	*/
