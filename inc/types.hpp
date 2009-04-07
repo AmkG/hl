@@ -513,7 +513,7 @@ public:
 class Event;
 
 class HlEvent : public GenericDerived<HlEvent> {
-private:
+public:
   Object::ref hl_pid;
   /*the above slot is needed to keep alive the
   process to be sent a message.
@@ -532,7 +532,6 @@ private:
   This is an admittedly hackish solution
   */
 
-public:
   boost::shared_ptr<Event> p;
 
   bool is(Object::ref o) const {
@@ -546,19 +545,6 @@ public:
 
   void traverse_references(GenericTraverser *gt) {
     gt->traverse(hl_pid);
-  }
-
-  static inline HlEvent* create(Heap& hp,
-      boost::shared_ptr<Event> np, Object::ref npid) {
-    #ifdef DEBUG
-      if(!maybe_type<HlPid>(npid)) {
-        throw_HlError("attempt to create event with non-pid target");
-      }
-    #endif
-    HlEvent* rv = hp.create<HlEvent>();
-    rv->p = np;
-    hl_pid = npid;
-    return rv;
   }
 
 };
