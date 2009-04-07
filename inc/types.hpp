@@ -505,6 +505,10 @@ public:
     return op && op->p == p;
   }
 
+  void enhash(HashingClass* hc) const {
+    hc->enhash((size_t) p.get());
+  }
+
   Object::ref type(void) const {
     return Object::to_ref(symbol_ioport);
   }
@@ -544,7 +548,7 @@ public:
   }
 
   void enhash(HashingClass* hc) const {
-    hc->enhash((size_t)p.get());
+    hc->enhash((size_t) p.get());
   }
 
   void traverse_references(GenericTraverser *gt) {
