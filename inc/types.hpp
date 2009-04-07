@@ -547,6 +547,20 @@ public:
   void traverse_references(GenericTraverser *gt) {
     gt->traverse(hl_pid);
   }
+
+  static inline HlEvent* create(Heap& hp,
+      boost::shared_ptr<Event> np, Object::ref npid) {
+    #ifdef DEBUG
+      if(!maybe_type<HlPid>(npid)) {
+        throw_HlError("attempt to create event with non-pid target");
+      }
+    #endif
+    HlEvent* rv = hp.create<HlEvent>();
+    rv->p = np;
+    hl_pid = npid;
+    return rv;
+  }
+
 };
 
 
