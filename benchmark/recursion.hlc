@@ -1,0 +1,20 @@
+(<bc>closure 0
+  (<bc>check-vars 3)
+  (<bc>int 10000000)
+  (<bc>local 2)
+  (<bc>i<)
+  (<bc>if
+    (<bc>continue-local 2))
+  (<bc>global f)
+  (<bc>local 1)
+  (<bc>local 2)
+  (<bc>int 1)
+  (<bc>i+)
+  (<bc>apply 3))
+(<bc>global-set f)
+(<bc>k-closure 0
+  (<bc>check-vars 2)
+  (<bc>local 1)
+  (<bc>halt))
+(<bc>int 0)
+(<bc>apply 3)
