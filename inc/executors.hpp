@@ -341,6 +341,15 @@ public:
 
 };
 
+/*
+ * Bridge between hl and the bytecode assembler
+ */
+class AssemblerExecutor : public Executor {
+public:
+	// leave a closure on proc.stack
+	virtual bool run(Process & proc, size_t & reductions);
+};
+
 extern Assembler assembler;
 
 // Execute a given process

@@ -492,6 +492,16 @@ size_t Assembler::countConsts(Object::ref seq) {
   return n;
 }
 
+bool AssemblerExecutor::run(Process & proc, size_t & reductions) {
+	assembler.go(proc);
+	// wrap the bytecode in a closure
+	Closure *c = Closure::NewClosure(proc, 0);
+	c->codereset(proc.stack.top()); proc.stack.pop();
+	proc.stack.push(Object::to_ref(c));
+
+	return false;
+}
+
 // assemble from a string representation
 Object::ref inline_assemble(Process & proc, const char *code) {
   std::stringstream code_stream(code);
@@ -631,6 +641,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>f<",                    THE_BYTECODE_LABEL(fless))
       /*declare executors*/
       ("<executor>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
+      ("<executor>assemble", THE_EXECUTOR<AssemblerExecutor>())
       /*assign bultin global*/
       ;/*end initializer*/
 
