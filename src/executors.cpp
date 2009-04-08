@@ -958,7 +958,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(halt): {
       stack.restack(1);
-      std::cerr<<"halt\n";
+      //std::cerr<<"halt\n";
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(halt_local_push): {
@@ -1045,13 +1045,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(recv): {
       Object::ref msg;
       if (proc.extract_message(msg)) {
-        std::cerr<<"recv: "<<msg<<"\n";
+	//std::cerr<<"recv: "<<msg<<"\n";
         stack.push(stack[1]); // current continuation
         stack.push(msg);
         stack.restack(2);
         DOCALL();
       } else {
-        std::cerr<<"recv: queue empty\n";
+	//std::cerr<<"recv: queue empty\n";
         // <bc>recv is always called in tail position
         // !! NOTE!  If Process::extract_message() above ever
         // !! returns false, we should not change anything in the
@@ -1236,7 +1236,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     // call current continuation, passing the pid of created process
     BYTECODE(spawn): {
-      std::cerr << "spawning\n";
+      //std::cerr << "spawning\n";
       AllWorkers &w = AllWorkers::getInstance();
       // create new process 
       HlPid *spawned = proc.spawn(stack.top()); stack.pop();
@@ -1249,7 +1249,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       w.register_process(spawned->process);
       // w.workqueue_push(spawned->process);
       Q = spawned->process; // next to run
-      std::cerr << "spawned\n";
+      //std::cerr << "spawned\n";
       return process_change;
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
