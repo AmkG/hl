@@ -7,6 +7,7 @@
 #include "executors.hpp"
 #include "bytecodes.hpp"
 #include "workers.hpp"
+#include "obj_aio.hpp"
 
 #ifdef DEBUG
   #include <typeinfo>
@@ -541,6 +542,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*built-in functions accessible via $*/
       /*bytecodes*/
       ("<bc>acquire",		THE_BYTECODE_LABEL(acquire))
+      ("<bc>add-event",		THE_BYTECODE_LABEL(add_event))
       ("<bc>apply",		THE_BYTECODE_LABEL(apply), ARG_INT)
       ("<bc>apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k), ARG_INT)
       ("<bc>apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
@@ -569,6 +571,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
       ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
+      ("<bc>empty-event-set",	THE_BYTECODE_LABEL(empty_event_set))
+      ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
+      ("<bc>event-wait",	THE_BYTECODE_LABEL(event_wait))
       ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
       ("<bc>global",		THE_BYTECODE_LABEL(global), ARG_SYMBOL)
       ("<bc>global-set",		THE_BYTECODE_LABEL(global_set), ARG_SYMBOL)
@@ -584,10 +589,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>lit-t",		THE_BYTECODE_LABEL(lit_t))
       ("<bc>local",		THE_BYTECODE_LABEL(local), ARG_INT)
       ("<bc>monomethod",		THE_BYTECODE_LABEL(monomethod))
+      ("<bc>only-running",	THE_BYTECODE_LABEL(only_running))
       ("<bc>reducto",		THE_BYTECODE_LABEL(reducto))
       ("<bc>recv", THE_BYTECODE_LABEL(recv))
       ("<bc>reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
       ("<bc>release",		THE_BYTECODE_LABEL(release))
+      ("<bc>remove-event",	THE_BYTECODE_LABEL(remove_event))
       ("<bc>rep",			THE_BYTECODE_LABEL(rep))
       ("<bc>rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("<bc>rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
@@ -692,6 +699,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   DISPATCH_BYTECODES {
     BYTECODE(acquire): {
       proc.global_acquire();
+    } NEXT_BYTECODE;
+    BYTECODE(add_event): {
+      bytecode_<&add_event>(stack);
     } NEXT_BYTECODE;
     BYTECODE(apply): {
       INTPARAM(N);
@@ -934,6 +944,15 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.restack(2);
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+    BYTECODE(empty_event_set): {
+      bytecode_<&empty_event_set>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(event_poll): {
+      bytecode_<&event_poll>(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(event_wait): {
+      bytecode_<&event_wait>(proc, stack);
+    } NEXT_BYTECODE;
     BYTECODE(f_to_i): {
       bytecode_<&f_to_i>(stack);
     } NEXT_BYTECODE;
@@ -1029,6 +1048,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
          stack[0] = T.lookup(Object::nil());
       }
       /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
+    BYTECODE(only_running): {
+      bytecode_<&only_running>(proc, stack);
     } NEXT_BYTECODE;
     // call current continuation
     BYTECODE(recv): {
@@ -1164,6 +1186,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(release): {
       /*On this machine, <bc>release does nothing*/
+    } NEXT_BYTECODE;
+    BYTECODE(remove_event): {
+      bytecode_<&remove_event>(stack);
     } NEXT_BYTECODE;
     BYTECODE(rep): {
       bytecode_<rep>(stack);
