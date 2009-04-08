@@ -21,9 +21,19 @@ here.
 
 /*---------------------------------------------------------------------------*/
 
+template<Object::ref (*MF)(void)>
+inline void bytecode_(ProcessStack& stack){
+	stack.push( (*MF)() );
+}
+
 template<Object::ref (*MF)(Object::ref)>
 inline void bytecode_(ProcessStack& stack){
 	stack.top() = (*MF)(stack.top());
+}
+
+template<Object::ref (*MF)(Process&)>
+inline void bytecode_(Process& proc, ProcessStack& stack){
+	stack.push( (*MF)(proc) );
 }
 
 template<Object::ref const& (*MF)(Object::ref const&)>
