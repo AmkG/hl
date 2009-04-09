@@ -14,6 +14,7 @@ libhlvm_a_SOURCES = \
 	symtable.cpp \
 	main.cpp \
 	processes.cpp \
+	generics.cpp \
 	types.cpp \
 	executors.cpp \
 	reader.cpp \

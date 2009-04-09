@@ -692,7 +692,19 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   // TODO: in the future, replace below with maybe_type<Closure>;
   // if not a Closure, get value for <axiom>call* and manipulate
   // stack
-  Closure *clos = expect_type<Closure>(stack[0], "execute: closure expected!");
+  Closure *clos = maybe_type<Closure>(stack[0]);
+  if (!clos) {
+	  if (is_a<Generic*>(stack[0])) {
+		  as_a<Generic*>(stack[0])->call(proc, reductions);
+		  // the last instruction in the continuation chain
+		  // is always a real continuation (Closure)
+		  // this will be assured by the compiler
+		  // DOCALL() is then safe
+		  /***/ DOCALL(); /***/
+	  } else {
+		  throw_HlError("callable type expected");
+	  }
+  }
   // a reference to the current bytecode *must* be retained for 
   // k-closure-recreate and k-closure-reuse to work correctly:
   // they may change the body of the current closure, but we are still

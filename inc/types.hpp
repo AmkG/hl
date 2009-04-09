@@ -92,6 +92,8 @@ public:
   }
 
   Object::ref len();
+
+  void call(Process & proc, size_t & reductions);
 };
 
 /*
