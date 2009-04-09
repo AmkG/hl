@@ -689,9 +689,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     std::cerr << "Type on stacktop: " << inf.name() << std::endl;
   }
 #endif
-  // TODO: in the future, replace below with maybe_type<Closure>;
-  // if not a Closure, get value for <axiom>call* and manipulate
-  // stack
+  // is this a function/continuation call?
   Closure *clos = maybe_type<Closure>(stack[0]);
   if (!clos) {
 	  if (is_a<Generic*>(stack[0])) {
