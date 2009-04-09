@@ -3,8 +3,6 @@
 
 #include"objects.hpp"
 
-#include <string>
-
 class Semispace;
 
 /*-----------------------------------------------------------------------------
