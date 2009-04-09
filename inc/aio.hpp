@@ -204,13 +204,10 @@ private:
 public:
 	Process* P;
 
-	/*"host" parameter is just a heap that can be used to
-	conveniently construct the response before actually
-	sending it to the target process.  It is *not* the
-	target process: it's just used as a scratch heap.
-	Reusing an existing process (specifically the process
-	that called the event waiting/polling) reduces
-	allocation overhead.
+	/*"host" parameter should be the process which
+	executes the event_wait()/event_poll().
+	This is necessary for proper scheduling of
+	processes revived by the event system.
 	NOTE: these functions *must* be called *before* the
 	event is removed from the event set.
 	*/
