@@ -23,6 +23,7 @@ Symbol* symbol_bytecode;
 Symbol* symbol_ioport;
 Symbol* symbol_event;
 Symbol* symbol_binobj;
+Symbol* symbol_io;
 
 #include"symbols.hpp"
 
@@ -49,7 +50,8 @@ void initialize_globals(void) {
         symbol_bytecode = symbols->lookup("<hl>bytecode");
         symbol_ioport = symbols->lookup("<hl>ioport");
         symbol_event = symbols->lookup("<hl>event");
-        symbol_binobj = symbols->lookup("<hl>binobj");
+	symbol_binobj = symbols->lookup("<hl>binobj");
+	symbol_io = symbols->lookup("<hl>i/o");
 	workers.reset(new AllWorkers());
 }
 

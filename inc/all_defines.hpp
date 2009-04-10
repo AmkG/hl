@@ -30,6 +30,7 @@ extern Symbol* symbol_bytecode;
 extern Symbol* symbol_ioport;
 extern Symbol* symbol_event;
 extern Symbol* symbol_binobj;
+extern Symbol* symbol_io;
 extern boost::scoped_ptr<AllWorkers> workers;
 
 #ifndef single_threaded
