@@ -164,6 +164,10 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	#ifndef single_threaded
+		single_threaded = 1;
+	#endif
+
 	initialize_globals();
 
 	Process *p;
@@ -174,6 +178,10 @@ int main(int argc, char **argv) {
 	p = new Process();
 	while(execute(*p, timeslice, Q, 1) == process_running); // init phase
 	delete p;
+
+	#ifndef single_threaded
+		single_threaded = 0;
+	#endif
 
 	std::vector<std::string> files = bytecodes.get_files();	
 	for (std::vector<std::string>::iterator it = files.begin(); 
