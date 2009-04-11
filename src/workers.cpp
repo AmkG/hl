@@ -87,18 +87,29 @@ void AllWorkers::soft_stop_raise(void) {
 void AllWorkers::soft_stop_lower(void) {
 	AppLock l(general_mtx);
 	soft_stop_condition = 0;
+	soft_stop_waiting = 0;
 	soft_stop_cv.broadcast();
 }
 
 void AllWorkers::soft_stop_check(AppLock& l) {
-	while(soft_stop_condition) {
-		soft_stop_waiting++;
-		if(soft_stop_waiting == total_workers) {
-			soft_stop_waiting = 0;
-			soft_stop_cv.broadcast();
-		} else {
-			soft_stop_cv.wait(l);
-		}
+	if(soft_stop_condition) {
+		#ifdef DEBUG
+			std::cerr << "Entering soft-stop" << std::endl;
+			std::cerr.flush();
+		#endif
+		do {
+			soft_stop_waiting++;
+			if(soft_stop_waiting == total_workers) {
+				soft_stop_waiting = 0;
+				soft_stop_cv.broadcast();
+			} else {
+				soft_stop_cv.wait(l);
+			}
+		} while(soft_stop_condition);
+		#ifdef DEBUG
+			std::cerr << "Exiting soft-stop" << std::endl;
+			std::cerr.flush();
+		#endif
 	}
 }
 
@@ -178,6 +189,9 @@ retry:
 #endif
 
 void AllWorkers::initiate(size_t nworkers, Process* begin) {
+	#ifdef DEBUG
+		std::cerr << "#workers: " << nworkers << std::endl;
+	#endif
 	#ifndef single_threaded
 		WorkerThreadCollection wtc;
 	#endif
