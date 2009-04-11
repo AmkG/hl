@@ -692,16 +692,35 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   // is this a function/continuation call?
   Closure *clos = maybe_type<Closure>(stack[0]);
   if (!clos) {
-	  if (is_a<Generic*>(stack[0])) {
-		  as_a<Generic*>(stack[0])->call(proc, reductions);
-		  // the last instruction in the continuation chain
-		  // is always a real continuation (Closure)
-		  // this will be assured by the compiler
-		  // DOCALL() is then safe
-		  /***/ DOCALL(); /***/
-	  } else {
-		  throw_HlError("callable type expected");
-	  }
+    /*
+    In hl, function calls of the form (f a b c),
+    where 'f is *not* a real function, are
+    transformed into function calls of
+    (<hl>call* f a b c)
+    - if <hl>call* is itself not a function, the
+      behavior is undefined.
+    This allows the user to redefine how an
+    object behaves when it is called by simply
+    defining a method for <hl>call*.
+    */
+    /*Transform stack:
+    from:
+       obj   k   a1   a2   ...
+    to:
+       call* k   obj  a1   a2    ...
+    */
+    stack.push(Object::nil());
+    Object::ref call_star = proc.global_read(symbol_call_star);
+    if(!maybe_type<Closure>(call_star)) {
+      throw_HlError("<hl>call* is not a function");
+    }
+    /*move args*/
+    for(size_t i = 1; i < stack.size() - 1; ++i) {
+      stack.top(i) = stack.top(i + 1);
+    }
+    stack[2] = stack[0];
+    stack[0] = call_star;
+    /***/ DO_CALL(); /***/
   }
   // a reference to the current bytecode *must* be retained for 
   // k-closure-recreate and k-closure-reuse to work correctly:

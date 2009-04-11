@@ -20,29 +20,6 @@ Object::ref Cons::len() {
   return Object::to_ref(l);
 }
 
-void Cons::call(Process & proc, size_t & reductions) {
-	// check arg. number (cons + cont + index)
-	if (proc.stack.size() != 3) {
-		throw_HlError("Worong number of arguments, expected 1");
-	}
-	Object::ref i = proc.stack.top(); proc.stack.pop();
-	if (!is_a<int>(i)) {
-		throw_HlError("int expected");
-	}
-	int pos = as_a<int>(i);
-	if (pos < 0) {
-		throw_HlError("index must be positive");
-	}
-	Object::ref self = proc.stack[0];
-	for (size_t i = 0; i < pos; ++i) {
-		self = ::cdr(self);
-	}
-	// set up for the next call
-	proc.stack.push(proc.stack[1]);
-	proc.stack.push(::car(self));
-	proc.stack.restack(2);
-}
-
 /*-----------------------------------------------------------------------------
 Closure
 -----------------------------------------------------------------------------*/

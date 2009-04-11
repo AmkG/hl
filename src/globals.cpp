@@ -23,6 +23,7 @@ Symbol* symbol_bytecode;
 Symbol* symbol_iport;
 Symbol* symbol_oport;
 Symbol* symbol_binobj;
+Symbol* symbol_call_star;
 
 #include"symbols.hpp"
 
@@ -46,5 +47,6 @@ void initialize_globals(void) {
         symbol_iport = symbols->lookup("<hl>iport");
         symbol_oport = symbols->lookup("<hl>oport");
         symbol_binobj = symbols->lookup("<hl>binobj");
+        symbol_call_star = symbols->lookup("<hl>call-star");
 }
 

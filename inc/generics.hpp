@@ -87,13 +87,6 @@ public:
 
 	virtual Object::ref type(void) const =0;
 
-	/*enable generic object to be called
-	  Closure doesn't need to redefine it, since it is treated
-	  differently
-	  When a type redefines call() it is responsible of setting up the 
-	  stack for the next execution*/
-	virtual void call(Process & proc, size_t & reductions);
-
 	/*dtor*/
 	virtual ~Generic() { }
 };
