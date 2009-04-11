@@ -720,7 +720,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     }
     stack[2] = stack[0];
     stack[0] = call_star;
-    /***/ DO_CALL(); /***/
+    /***/ DOCALL(); /***/
   }
   // a reference to the current bytecode *must* be retained for 
   // k-closure-recreate and k-closure-reuse to work correctly:
