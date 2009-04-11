@@ -1,0 +1,20 @@
+(<bc>sym <bc>int)
+(<bc>int 1)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>cons)
+
+(<bc>sym <bc>halt)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>lit-nil)
+(<bc>cons)
+
+(<bc>cons)
+
+(<bc>do-executor <executor>assemble)
+(<bc>k-closure 0
+  (<bc>halt))
+(<bc>apply 2)
+
+;^1$

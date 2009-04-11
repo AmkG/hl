@@ -1,34 +1,34 @@
-(closure 0
-  (check-vars 2)
+(<bc>closure 0
+  (<bc>check-vars 2)
   (<bc>recv))
-(global-set <common>recv)
+(<bc>global-set <common>recv)
 
-(closure 0
-  (check-vars 3)
+(<bc>closure 0
+  (<bc>check-vars 3)
   (<bc>spawn))
-(global-set <common>spawn)
+(<bc>global-set <common>spawn)
 
 (<bc>self-pid)
-(global-set main-pid)
+(<bc>global-set main-pid)
 
-(global <common>spawn)
-(k-closure 0
-  (check-vars 2)
-  (global <common>recv)
-  (k-closure 0
-    (check-vars 2)
-    (local 1)
-    (halt))
-  (apply 2))
-(k-closure 0
-  (check-vars 1)
-  (k-closure 0
-    (local 1)
-    (halt))
-  (global main-pid)
-  (int 42)
+(<bc>global <common>spawn)
+(<bc>k-closure 0
+  (<bc>check-vars 2)
+  (<bc>global <common>recv)
+  (<bc>k-closure 0
+    (<bc>check-vars 2)
+    (<bc>local 1)
+    (<bc>halt))
+  (<bc>apply 2))
+(<bc>k-closure 0
+  (<bc>check-vars 1)
+  (<bc>k-closure 0
+    (<bc>local 1)
+    (<bc>halt))
+  (<bc>global main-pid)
+  (<bc>int 42)
   (<bc>send))
-(apply 3)
+(<bc>apply 3)
 
 
 ;^42$

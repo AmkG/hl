@@ -1,0 +1,11 @@
+Performance tests. Currently because of debugging purposes the process GC is 
+triggered often and each process has a really low timeslice (1 function call).
+With the right values, performance is much better.
+
+To run a test, type (within this directory):
+
+$ time ../src/hl --bc test.hlc
+
+Files:
+  - recursion.hlc: test of a recursive function 
+                   that calls itself 10000000 times

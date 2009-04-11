@@ -92,6 +92,7 @@ public:
   }
 
   Object::ref len();
+
 };
 
 /*

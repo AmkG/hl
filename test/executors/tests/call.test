@@ -1,0 +1,129 @@
+(<bc>int 1)
+(<bc>k-closure 0
+  (<bc>halt))
+(<bc>apply 2)
+
+;^Error
+
+; *** calling a cons
+
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>local 2)
+  (<bc>if
+    (<bc>local 3)
+    (<bc>int 1)
+    (<bc>i<)
+    (<bc>if
+      (<bc>local 2)
+      (<bc>car)
+      (<bc>continue)
+    )
+    (<bc>local 0)
+    (<bc>local 1)
+    (<bc>local 2)
+    (<bc>cdr)
+    (<bc>local 3)
+    (<bc>int 1)
+    (<bc>i- 1)
+    (<bc>apply 4)
+  )
+  (<bc>lit-nil)
+  (<bc>continue))
+(<bc>global-set <hl>call*)
+
+(<bc>int 1)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>k-closure 0
+  (<bc>local 1)
+  (<bc>halt))
+(<bc>int 0)
+(<bc>apply 3)
+
+;^1$
+
+; *** calling a list
+
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>local 2)
+  (<bc>if
+    (<bc>local 3)
+    (<bc>int 1)
+    (<bc>i<)
+    (<bc>if
+      (<bc>local 2)
+      (<bc>car)
+      (<bc>continue)
+    )
+    (<bc>local 0)
+    (<bc>local 1)
+    (<bc>local 2)
+    (<bc>cdr)
+    (<bc>local 3)
+    (<bc>int 1)
+    (<bc>i- 1)
+    (<bc>apply 4)
+  )
+  (<bc>lit-nil)
+  (<bc>continue))
+(<bc>global-set <hl>call*)
+
+(<bc>int 1)
+(<bc>int 2)
+(<bc>int 3)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>cons)
+(<bc>cons)
+(<bc>k-closure 0
+  (<bc>local 1)
+  (<bc>halt))
+(<bc>int 2)
+(<bc>apply 3)
+
+;^3$
+
+; *** calling a list over the limit
+
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>local 2)
+  (<bc>if
+    (<bc>local 3)
+    (<bc>int 1)
+    (<bc>i<)
+    (<bc>if
+      (<bc>local 2)
+      (<bc>car)
+      (<bc>continue)
+    )
+    (<bc>local 0)
+    (<bc>local 1)
+    (<bc>local 2)
+    (<bc>cdr)
+    (<bc>local 3)
+    (<bc>int 1)
+    (<bc>i- 1)
+    (<bc>apply 4)
+  )
+  (<bc>lit-nil)
+  (<bc>continue))
+(<bc>global-set <hl>call*)
+
+(<bc>int 1)
+(<bc>int 2)
+(<bc>int 3)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>cons)
+(<bc>cons)
+(<bc>k-closure 0
+  (<bc>local 1)
+  (<bc>halt))
+(<bc>int 3)
+(<bc>apply 3)
+
+;^nil$
+

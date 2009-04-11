@@ -493,6 +493,16 @@ size_t Assembler::countConsts(Object::ref seq) {
   return n;
 }
 
+bool AssemblerExecutor::run(Process & proc, size_t & reductions) {
+	assembler.go(proc);
+	// wrap the bytecode in a closure
+	Closure *c = Closure::NewClosure(proc, 0);
+	c->codereset(proc.stack.top()); proc.stack.pop();
+	proc.stack.push(Object::to_ref(c));
+
+	return false;
+}
+
 // assemble from a string representation
 Object::ref inline_assemble(Process & proc, const char *code) {
   std::stringstream code_stream(code);
@@ -638,6 +648,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>f<",                    THE_BYTECODE_LABEL(fless))
       /*declare executors*/
       ("<executor>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
+      ("<executor>assemble", THE_EXECUTOR<AssemblerExecutor>())
       /*assign bultin global*/
       ;/*end initializer*/
 
@@ -685,10 +696,39 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     std::cerr << "Type on stacktop: " << inf.name() << std::endl;
   }
 #endif
-  // TODO: in the future, replace below with maybe_type<Closure>;
-  // if not a Closure, get value for <axiom>call* and manipulate
-  // stack
-  Closure *clos = expect_type<Closure>(stack[0], "execute: closure expected!");
+  // is this a function/continuation call?
+  Closure *clos = maybe_type<Closure>(stack[0]);
+  if (!clos) {
+    /*
+    In hl, function calls of the form (f a b c),
+    where 'f is *not* a real function, are
+    transformed into function calls of
+    (<hl>call* f a b c)
+    - if <hl>call* is itself not a function, the
+      behavior is undefined.
+    This allows the user to redefine how an
+    object behaves when it is called by simply
+    defining a method for <hl>call*.
+    */
+    /*Transform stack:
+    from:
+       obj   k   a1   a2   ...
+    to:
+       call* k   obj  a1   a2    ...
+    */
+    stack.push(Object::nil());
+    Object::ref call_star = proc.global_read(symbol_call_star);
+    if(!maybe_type<Closure>(call_star)) {
+      throw_HlError("<hl>call* is not a function");
+    }
+    /*move args*/
+    for(size_t i = 1; i < stack.size() - 1; ++i) {
+      stack.top(i) = stack.top(i + 1);
+    }
+    stack[2] = stack[0];
+    stack[0] = call_star;
+    /***/ DOCALL(); /***/
+  }
   // a reference to the current bytecode *must* be retained for 
   // k-closure-recreate and k-closure-reuse to work correctly:
   // they may change the body of the current closure, but we are still
@@ -966,7 +1006,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(halt): {
       stack.restack(1);
-      std::cerr<<"halt\n";
+      //std::cerr<<"halt\n";
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(halt_local_push): {
@@ -1056,13 +1096,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(recv): {
       Object::ref msg;
       if (proc.extract_message(msg)) {
-        std::cerr<<"recv: "<<msg<<"\n";
+	//std::cerr<<"recv: "<<msg<<"\n";
         stack.push(stack[1]); // current continuation
         stack.push(msg);
         stack.restack(2);
         DOCALL();
       } else {
-        std::cerr<<"recv: queue empty\n";
+	//std::cerr<<"recv: queue empty\n";
         // <bc>recv is always called in tail position
         // !! NOTE!  If Process::extract_message() above ever
         // !! returns false, we should not change anything in the
@@ -1250,7 +1290,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     // call current continuation, passing the pid of created process
     BYTECODE(spawn): {
-      std::cerr << "spawning\n";
+      //std::cerr << "spawning\n";
       AllWorkers &w = AllWorkers::getInstance();
       // create new process 
       HlPid *spawned = proc.spawn(stack.top()); stack.pop();
@@ -1263,7 +1303,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       w.register_process(spawned->process);
       // w.workqueue_push(spawned->process);
       Q = spawned->process; // next to run
-      std::cerr << "spawned\n";
+      //std::cerr << "spawned\n";
       return process_change;
     } NEXT_BYTECODE;
     BYTECODE(string_create): {

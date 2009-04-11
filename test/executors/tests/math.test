@@ -1,89 +1,89 @@
-(int 40)
-(int 2)
-(i+)
-(halt)
+(<bc>int 40)
+(<bc>int 2)
+(<bc>i+)
+(<bc>halt)
 
 ;^42$
 
 ; ***
 
-(float 7.2)
-(halt)
+(<bc>float 7.2)
+(<bc>halt)
 
 ;^7.20*$
 
 ; ***
 
-(int 1)
-(i-to-f)
-(float 0.2)
-(f+)
-(halt)
+(<bc>int 1)
+(<bc>i-to-f)
+(<bc>float 0.2)
+(<bc>f+)
+(<bc>halt)
 
 ;^1.20*$
 
 ; ***
 
-(float 2.0)
-(float -0.2)
-(f+)
-(halt)
+(<bc>float 2.0)
+(<bc>float -0.2)
+(<bc>f+)
+(<bc>halt)
 
 ;^1.80*$
 
 ; ***
 
-(float 0.1)
-(int 10)
-(i-to-f)
-(f+)
-(int 1)
-(i-to-f)
-(f+)
-(halt)
+(<bc>float 0.1)
+(<bc>int 10)
+(<bc>i-to-f)
+(<bc>f+)
+(<bc>int 1)
+(<bc>i-to-f)
+(<bc>f+)
+(<bc>halt)
 
 ;^11.10*$
 
 ; ***
 
-(int 1)
-(int 2)
-(i/)
-(halt)
+(<bc>int 1)
+(<bc>int 2)
+(<bc>i/)
+(<bc>halt)
 
 ;^0$
 
 ; ***
 
-(int 1)
-(i-to-f)
-(float 2.0)
-(f/)
-(halt)
+(<bc>int 1)
+(<bc>i-to-f)
+(<bc>float 2.0)
+(<bc>f/)
+(<bc>halt)
 
 ;^0.50*$
 
 ; *** 
 
-(int 1)
-(i-to-f)
-(float 10.0)
-(f/)
-(int 100)
-(i-to-f)
-(f*)
-(int 3)
-(i-to-f)
-(f-)
-(halt)
+(<bc>int 1)
+(<bc>i-to-f)
+(<bc>float 10.0)
+(<bc>f/)
+(<bc>int 100)
+(<bc>i-to-f)
+(<bc>f*)
+(<bc>int 3)
+(<bc>i-to-f)
+(<bc>f-)
+(<bc>halt)
 
 ;^7.0*$
 
 ; ***
 
-(int 5)
-(int 3)
-(i-)
-(halt)
+(<bc>int 5)
+(<bc>int 3)
+(<bc>i-)
+(<bc>halt)
 
 ;^2$

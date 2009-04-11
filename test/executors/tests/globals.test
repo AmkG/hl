@@ -1,42 +1,42 @@
-(int 0)
-(global-set foo)
-(int 1)
-(global foo)
-(i+)
-(global-set foo)
-(closure 0
-  (check-vars 2)
-  (global foo)
-  (continue))
-(k-closure 0
-  (halt))
-(apply 2)
+(<bc>int 0)
+(<bc>global-set foo)
+(<bc>int 1)
+(<bc>global foo)
+(<bc>i+)
+(<bc>global-set foo)
+(<bc>closure 0
+  (<bc>check-vars 2)
+  (<bc>global foo)
+  (<bc>continue))
+(<bc>k-closure 0
+  (<bc>halt))
+(<bc>apply 2)
 
 ;^1$
 
 ; **** assign a complex structure
 
-(int 0)
-(int 1)
-(cons)
-(global-set foo)
-(closure 0
-  (check-vars 2)
-  (global foo)
-  (int 2)
-  (cons)
-  (global-set foo)
-  (closure 0
-    (check-vars 2)
-    (global foo)
-    (car)
-    (car)
-    (continue))
-  (local 1)
-  (apply 2))
-(k-closure 0
-  (halt))
-(apply 2)
+(<bc>int 0)
+(<bc>int 1)
+(<bc>cons)
+(<bc>global-set foo)
+(<bc>closure 0
+  (<bc>check-vars 2)
+  (<bc>global foo)
+  (<bc>int 2)
+  (<bc>cons)
+  (<bc>global-set foo)
+  (<bc>closure 0
+    (<bc>check-vars 2)
+    (<bc>global foo)
+    (<bc>car)
+    (<bc>car)
+    (<bc>continue))
+  (<bc>local 1)
+  (<bc>apply 2))
+(<bc>k-closure 0
+  (<bc>halt))
+(<bc>apply 2)
 
 ;^0$
 

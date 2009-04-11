@@ -24,6 +24,7 @@ Symbol* symbol_ioport;
 Symbol* symbol_event;
 Symbol* symbol_binobj;
 Symbol* symbol_io;
+Symbol* symbol_call_star;
 
 #include"symbols.hpp"
 
@@ -52,6 +53,7 @@ void initialize_globals(void) {
         symbol_event = symbols->lookup("<hl>event");
 	symbol_binobj = symbols->lookup("<hl>binobj");
 	symbol_io = symbols->lookup("<hl>i/o");
+        symbol_call_star = symbols->lookup("<hl>call*");
 	workers.reset(new AllWorkers());
 }
 
