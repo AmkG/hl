@@ -5,6 +5,7 @@ Defines a set of types for use on the hl-side.
 */
 
 #include<cstring>
+#include<string>
 #include<boost/shared_ptr.hpp>
 
 #include"objects.hpp"
@@ -245,6 +246,8 @@ public:
 
 	static Object::ref length(Object::ref);
 	static Object::ref string_ref(Object::ref, Object::ref);
+
+	std::string to_cpp_string(void) const;
 };
 
 class HlStringImpl : public GenericDerivedVariadic<HlStringImpl> {
