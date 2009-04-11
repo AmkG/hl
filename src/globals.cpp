@@ -47,6 +47,6 @@ void initialize_globals(void) {
         symbol_iport = symbols->lookup("<hl>iport");
         symbol_oport = symbols->lookup("<hl>oport");
         symbol_binobj = symbols->lookup("<hl>binobj");
-        symbol_call_star = symbols->lookup("<hl>call-star");
+        symbol_call_star = symbols->lookup("<hl>call*");
 }
 
