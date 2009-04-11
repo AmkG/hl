@@ -124,6 +124,39 @@ void HlString::enhash(HashingClass* hc) const {
 	}
 }
 
+std::string HlString::to_cpp_string(void) const {
+	if(impl) {
+		HlStringImpl& S = *known_type<HlStringImpl>(impl);
+		std::string rv = "";
+		char utf8c[4];
+		/*convert to UTF-8 encoding*/
+		for(size_t i = 0; i < size(); ++i) {
+			UnicodeChar uc = as_a<UnicodeChar>(S[i]);
+			uint32_t c = uc.dat;
+			if(c < 128) {
+				utf8c[0] = c;
+				rv.append(utf8c, 1);
+			} else if(c < 2048) {
+				utf8c[0] = 192 + c / 64;
+				utf8c[1] = 128 + c % 64;
+				rv.append(utf8c, 2);
+			} else if(c < 65536) {
+				utf8c[0] = 224 + c / 4096;
+				utf8c[1] = 128 + ((c / 64) % 64);
+				utf8c[2] = 128 + c % 64;
+				rv.append(utf8c, 3);
+			} else if(c < 2097152) {
+				utf8c[0] = 240 + c / 262144;
+				utf8c[1] = 128 + ((c / 4096) % 64);
+				utf8c[2] = 128 + ((c / 64) % 64);
+				utf8c[3] = 128 + c % 64;
+				rv.append(utf8c, 4);
+			} /*bigger characters are not valid UTF8*/
+		}
+		return rv;
+	} else return std::string("");
+}
+
 /*-----------------------------------------------------------------------------
 HlTable
 -----------------------------------------------------------------------------*/
