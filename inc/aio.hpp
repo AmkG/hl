@@ -133,6 +133,8 @@ boost::shared_ptr<Event> system_event(boost::shared_ptr<ProcessInvoker>,std::str
 boost::shared_ptr<Event> sleep_event(boost::shared_ptr<ProcessInvoker>,size_t);
 /*connect to host's port*/
 boost::shared_ptr<Event> connect_event(boost::shared_ptr<ProcessInvoker>,std::string,int);
+/*create a server at port*/
+boost::shared_ptr<Event> listener_event(boost::shared_ptr<ProcessInvoker>,int);
 
 class ProcessInvokerScanner;
 

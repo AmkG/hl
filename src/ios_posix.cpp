@@ -955,6 +955,14 @@ boost::shared_ptr<Event> connect_event(
 	throw IOError(std::string("'connect not implemented!"));
 }
 
+/*create a listener*/
+boost::shared_ptr<Event> listener_event(
+		boost::shared_ptr<ProcessInvoker> proc,
+		int port) {
+	/*TODO*/
+	throw IOError(std::string("'listener not implemented!"));
+}
+
 /*-----------------------------------------------------------------------------
 Event Set
 -----------------------------------------------------------------------------*/
