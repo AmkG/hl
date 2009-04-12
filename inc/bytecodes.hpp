@@ -53,7 +53,7 @@ inline void bytecode2_(ProcessStack& stack){
   stack.top() = (*MF)(stack.top(), v2);
 }
 
-template<Object::ref (*MF)(Process& proc, Object::ref, Object::ref)>
+template<Object::ref (*MF)(Process& proc, Object::ref, Object::ref, Object::ref)>
 inline void bytecode3_(Process& proc, ProcessStack& stack) {
   Object::ref v3 = stack.top(); stack.pop();
   Object::ref v2 = stack.top(); stack.pop();
