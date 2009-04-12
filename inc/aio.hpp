@@ -119,9 +119,9 @@ PROMISE: the above functions are only called once,
 during initialization.
 */
 
-boost::shared_ptr<Event> infile(std::string, boost::shared_ptr<IOPort>&);
-boost::shared_ptr<Event> outfile(std::string, boost::shared_ptr<IOPort>&);
-boost::shared_ptr<Event> appendfile(std::string, boost::shared_ptr<IOPort>&);
+boost::shared_ptr<Event> infile(boost::shared_ptr<ProcessInvoker>, std::string, boost::shared_ptr<IOPort>&);
+boost::shared_ptr<Event> outfile(boost::shared_ptr<ProcessInvoker>, std::string, boost::shared_ptr<IOPort>&);
+boost::shared_ptr<Event> appendfile(boost::shared_ptr<ProcessInvoker>, std::string, boost::shared_ptr<IOPort>&);
 
 class Event {
 public:

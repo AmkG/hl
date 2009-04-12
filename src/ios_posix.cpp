@@ -904,19 +904,25 @@ static inline boost::shared_ptr<IOPort> file_opener(std::string f, int MODE,
 	return boost::shared_ptr<IOPort>(creator(fd));
 }
 
-boost::shared_ptr<Event> infile(std::string f,
+boost::shared_ptr<Event> infile(
+		boost::shared_ptr<ProcessInvoker>,
+		std::string f,
 		boost::shared_ptr<IOPort>& ioport) {
 	ioport = file_opener(f, O_RDONLY, &PosixIOPort::r_able);
 	return boost::shared_ptr<Event>();
 }
-boost::shared_ptr<Event> outfile(std::string f,
+boost::shared_ptr<Event> outfile(
+		boost::shared_ptr<ProcessInvoker>,
+		std::string f,
 		boost::shared_ptr<IOPort>& ioport) {
 	ioport = file_opener(f, O_WRONLY | O_CREAT | O_TRUNC,
 		&PosixIOPort::w_able
 	);
 	return boost::shared_ptr<Event>();
 }
-boost::shared_ptr<Event> appendfile(std::string f,
+boost::shared_ptr<Event> appendfile(
+		boost::shared_ptr<ProcessInvoker>,
+		std::string f,
 		boost::shared_ptr<IOPort>& ioport) {
 	ioport = file_opener(f, O_WRONLY | O_APPEND,
 		&PosixIOPort::w_able
