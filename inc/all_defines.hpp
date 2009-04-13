@@ -12,7 +12,6 @@ and should only be included once
 
 class SymbolsTable;
 class Symbol;
-class AllWorkers;
 class IOPort;
 
 extern boost::scoped_ptr<SymbolsTable> symbols;
@@ -34,7 +33,6 @@ extern Symbol* symbol_event;
 extern Symbol* symbol_binobj;
 extern Symbol* symbol_io;
 extern Symbol* symbol_call_star;
-extern boost::scoped_ptr<AllWorkers> workers;
 
 extern boost::shared_ptr<IOPort> port_stdin;
 extern boost::shared_ptr<IOPort> port_stdout;
