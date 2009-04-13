@@ -13,6 +13,7 @@ and should only be included once
 class SymbolsTable;
 class Symbol;
 class AllWorkers;
+class IOPort;
 
 extern boost::scoped_ptr<SymbolsTable> symbols;
 extern Symbol* symbol_sym;
