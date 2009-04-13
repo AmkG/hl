@@ -34,6 +34,12 @@ boost::scoped_ptr<SymbolsTable> symbols;
 
 boost::scoped_ptr<AllWorkers> workers;
 
+#include"aio.hpp"
+
+boost::shared_ptr<IOPort> port_stdin;
+boost::shared_ptr<IOPort> port_stdout;
+boost::shared_ptr<IOPort> port_stderr;
+
 void initialize_globals(void) {
 	symbols.reset(new SymbolsTable());
 	symbol_sym = symbols->lookup("<hl>sym");
@@ -55,5 +61,11 @@ void initialize_globals(void) {
 	symbol_io = symbols->lookup("<hl>i/o");
         symbol_call_star = symbols->lookup("<hl>call*");
 	workers.reset(new AllWorkers());
+
+	aio_initialize();
+
+	port_stdin = ioport_stdin();
+	port_stdout = ioport_stdout();
+	port_stderr = ioport_stderr();
 }
 

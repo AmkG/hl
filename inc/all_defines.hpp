@@ -6,6 +6,7 @@ and should only be included once
 #define __STDC_LIMIT_MACROS // necessary for INTPTR_MAX and INTPTR_MIN
 
 #include<boost/scoped_ptr.hpp>
+#include<boost/shared_ptr.hpp>
 
 #ifndef DEFINE_GLOBALS
 
@@ -33,6 +34,10 @@ extern Symbol* symbol_binobj;
 extern Symbol* symbol_io;
 extern Symbol* symbol_call_star;
 extern boost::scoped_ptr<AllWorkers> workers;
+
+extern boost::shared_ptr<IOPort> port_stdin;
+extern boost::shared_ptr<IOPort> port_stdout;
+extern boost::shared_ptr<IOPort> port_stderr;
 
 #ifndef single_threaded
 	extern bool single_threaded;
