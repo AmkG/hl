@@ -30,10 +30,6 @@ Symbol* symbol_call_star;
 
 boost::scoped_ptr<SymbolsTable> symbols;
 
-#include"workers.hpp"
-
-boost::scoped_ptr<AllWorkers> workers;
-
 #include"aio.hpp"
 
 boost::shared_ptr<IOPort> port_stdin;
@@ -60,7 +56,6 @@ void initialize_globals(void) {
 	symbol_binobj = symbols->lookup("<hl>binobj");
 	symbol_io = symbols->lookup("<hl>i/o");
         symbol_call_star = symbols->lookup("<hl>call*");
-	workers.reset(new AllWorkers());
 
 	aio_initialize();
 
