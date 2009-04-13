@@ -594,6 +594,15 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT) // replacement for 'if
       //("<bc>if-local",		THE_BYTECODE_LABEL(if_local))
       ("<bc>int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
+      ("<bc>i/o-accept",	THE_BYTECODE_LABEL(io_accept))
+      ("<bc>i/o-appendfile",	THE_BYTECODE_LABEL(io_appendfile))
+      ("<bc>i/o-connect",	THE_BYTECODE_LABEL(io_connect))
+      ("<bc>i/o-fsync",		THE_BYTECODE_LABEL(io_fsync))
+      ("<bc>i/o-infile",	THE_BYTECODE_LABEL(io_infile))
+      ("<bc>i/o-listener",	THE_BYTECODE_LABEL(io_listener))
+      ("<bc>i/o-outfile",	THE_BYTECODE_LABEL(io_outfile))
+      ("<bc>i/o-read",		THE_BYTECODE_LABEL(io_read))
+      ("<bc>i/o-seek",		THE_BYTECODE_LABEL(io_seek))
       ("<bc>ccc", THE_BYTECODE_LABEL(ccc))
       ("<bc>lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("<bc>lit-t",		THE_BYTECODE_LABEL(lit_t))
@@ -1023,6 +1032,33 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(i_to_f): {
       bytecode_<&i_to_f>(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_accept): {
+      bytecode2_<&io_accept>(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_appendfile): {
+      bytecode2_<&io_openfile<&appendfile> >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_connect): {
+      bytecode3_<&io_connect >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_fsync): {
+      bytecode2_<&io_fsync >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_infile): {
+      bytecode2_<&io_openfile<&infile> >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_listener): {
+      bytecode2_<&io_listener >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_outfile): {
+      bytecode2_<&io_openfile<&outfile> >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_read): {
+      bytecode3_<&io_read >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_seek): {
+      bytecode2_<&io_seek >(proc, stack);
     } NEXT_BYTECODE;
     BYTECODE(jmp_nil): {
       INTPARAM(N); // number of operations to skip

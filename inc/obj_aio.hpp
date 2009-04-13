@@ -127,5 +127,211 @@ inline Object::ref io_accept(Process& host, Object::ref proc, Object::ref port) 
 	}
 }
 
+template<boost::shared_ptr<Event> (*OF)(boost::shared_ptr<ProcessInvoker>, std::string, boost::shared_ptr<IOPort>& )>
+inline Object::ref io_openfile(Process& host, Object::ref proc, Object::ref file) {
+	#ifdef DEBUG
+		expect_type<HlString>(
+			file,
+			"open a file: expected a string for filename"
+		);
+	#endif
+	boost::shared_ptr<IOPort> now_port;
+	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
+	try {
+		boost::shared_ptr<Event> event = (*OF)(
+			pi,
+			known_type<HlString>(file)->to_cpp_string(),
+			now_port
+		);
+		if(event) {
+			return create_event(host, proc, event);
+		} else {
+			#ifdef DEBUG
+				if(!now_port) {
+					throw_HlError("open a file: did not "
+						"return an event, a port, "
+						"or an error"
+					);
+				}
+			#endif
+			return create_io_port(host, now_port);
+		}
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
+inline Object::ref io_connect(Process& host, Object::ref proc, Object::ref target, Object::ref port) {
+	#ifdef DEBUG
+		expect_type<HlString>(
+			target,
+			"connect: expected a string for hostname"
+		);
+		if(!is_a<int>(port)) {
+			throw_HlError(
+				"connect: expected a number for port number"
+			);
+		}
+	#endif
+	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
+	try {
+		boost::shared_ptr<Event> event = connect_event(
+			pi,
+			known_type<HlString>(target)->to_cpp_string(),
+			as_a<int>(port)
+		);
+		#ifdef DEBUG
+			if(!event) {
+				throw_HlError("'connect did not return an event!");
+			}
+		#endif
+		return create_event(host, proc, event);
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
+inline Object::ref io_fsync(Process& host, Object::ref proc, Object::ref port) {
+	#ifdef DEBUG
+		expect_type<HlIOPort>(
+			port,
+			"fsync: expected an I/O port for port"
+		);
+	#endif
+	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
+	try {
+		boost::shared_ptr<Event> event =
+			known_type<HlIOPort>(port)->p->fsync(pi)
+		;
+		if(event) {
+			return create_event(host, proc, event);
+		} else {
+			return Object::nil();
+		}
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
+inline Object::ref io_listener(Process& host, Object::ref proc, Object::ref port) {
+	#ifdef DEBUG
+		expect_type<HlIOPort>(
+			port,
+			"listener: expected an I/O port for port"
+		);
+	#endif
+	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
+	try {
+		boost::shared_ptr<Event> event =
+			listener_event(pi, as_a<int>(port))
+		;
+		#ifdef DEBUG
+			if(!event) {
+				throw_HlError("'listen did not return an event!");
+			}
+		#endif
+		return create_event(host, proc, event);
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
+inline Object::ref io_read(Process& host, Object::ref proc, Object::ref port, Object::ref len) {
+	#ifdef DEBUG
+		expect_type<HlIOPort>(
+			port,
+			"read: expected an I/O port for port"
+		);
+		if(!is_a<int>(len)) {
+			throw_HlError(
+				"read: expected an integer for length"
+			);
+		}
+	#endif
+	boost::shared_ptr<std::vector<unsigned char> > now_read;
+	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
+	try {
+		boost::shared_ptr<Event> event =
+			known_type<HlIOPort>(port)->p->read(
+				pi, as_a<int>(len), now_read
+			)
+		;
+		if(event) {
+			return create_event(host, proc, event);
+		} else {
+			#ifdef DEBUG
+				if(!now_read) {
+					throw_HlError("read: did not "
+						"return an event or a "
+						"binary blob."
+					);
+				}
+			#endif
+			return Object::to_ref<Generic*>(
+				BinObj::create(host, now_read)
+			);
+		}
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
+inline Object::ref io_seek(Process& host, Object::ref port, Object::ref point) {
+	#ifdef DEBUG
+		expect_type<HlIOPort>(
+			port,
+			"seek: expected an I/O port for port"
+		);
+		if(point) {
+			expect_type<Cons>(
+				point,
+				"seek: expected a Cons cell set for point"
+			);
+		}
+	#endif
+	/*translate the list of numbers into a single, 64-bit number
+	e.g:
+		(list 1 2 3)
+		==>
+		1 + 2 * 16777216 + 3 * 281474976710656
+	i.e.
+	The first number in the list is always the least 24 bits.
+	Succeeding numbers in the list are higher-numbered offsets,
+	by 24 bits.
+	*/
+	uint64_t value = 0, off = 1;
+	Object::ref p1;
+	p1 = point;
+	while(p1) {
+		#ifdef DEBUG
+			expect_type<Cons>(
+				p1,
+				"seek: not a complete Cons cell"
+			);
+		#endif
+		Object::ref v = car(p1);
+		#ifdef DEBUG
+			if(!is_a<int>(v)) {
+				throw_HlError(
+					"expected list of integers "
+					"in seek point"
+				);
+			}
+		#endif
+		value += off * ((unsigned int)as_a<int>(v));
+		off = off << 24;
+		if(off == 0) break;
+		p1 = cdr(p1);
+	}
+	try {
+		known_type<HlIOPort>(port)->p->seek(
+			value
+		);
+		return Object::t();
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
 #endif // OBJ_AIO_H
 
