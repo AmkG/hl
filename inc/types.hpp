@@ -634,9 +634,8 @@ Binary Objects
 of bytes.
 */
 class BinObj : public GenericDerived<BinObj> {
-private:
-	boost::shared_ptr<std::vector<unsigned char> > pdat;
 public:
+	boost::shared_ptr<std::vector<unsigned char> > pdat;
 	static inline BinObj* create(Heap& hp, boost::shared_ptr<std::vector<unsigned char> > const& np) {
 		BinObj* rv = hp.create<BinObj>();
 		rv->pdat = np;

@@ -603,6 +603,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>i/o-outfile",	THE_BYTECODE_LABEL(io_outfile))
       ("<bc>i/o-read",		THE_BYTECODE_LABEL(io_read))
       ("<bc>i/o-seek",		THE_BYTECODE_LABEL(io_seek))
+      ("<bc>i/o-stderr",	THE_BYTECODE_LABEL(io_stderr))
+      ("<bc>i/o-stdin",		THE_BYTECODE_LABEL(io_stdin))
+      ("<bc>i/o-stdout",	THE_BYTECODE_LABEL(io_stdout))
+      ("<bc>i/o-tell",		THE_BYTECODE_LABEL(io_tell))
+      ("<bc>i/o-write",		THE_BYTECODE_LABEL(io_write))
       ("<bc>ccc", THE_BYTECODE_LABEL(ccc))
       ("<bc>lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("<bc>lit-t",		THE_BYTECODE_LABEL(lit_t))
@@ -1059,6 +1064,21 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(io_seek): {
       bytecode2_<&io_seek >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_stderr): {
+      bytecode_<&io_builtin_port<&port_stderr> >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_stdin): {
+      bytecode_<&io_builtin_port<&port_stdin> >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_stdout): {
+      bytecode_<&io_builtin_port<&port_stdout> >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_tell): {
+      bytecode_<&io_tell>(proc,stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_write): {
+      bytecode3_<&io_write>(proc,stack);
     } NEXT_BYTECODE;
     BYTECODE(jmp_nil): {
       INTPARAM(N); // number of operations to skip

@@ -26,6 +26,11 @@ inline void bytecode_(ProcessStack& stack){
 	stack.push( (*MF)() );
 }
 
+template<Object::ref (*MF)(Process&, Object::ref)>
+inline void bytecode_(Process& proc, ProcessStack& stack){
+	stack.top() = (*MF)(proc, stack.top());
+}
+
 template<Object::ref (*MF)(Object::ref)>
 inline void bytecode_(ProcessStack& stack){
 	stack.top() = (*MF)(stack.top());
@@ -36,12 +41,17 @@ inline void bytecode_(Process& proc, ProcessStack& stack){
 	stack.push( (*MF)(proc) );
 }
 
+template<Object::ref const& (*MF)(Process&, Object::ref const&)>
+inline void bytecode_(Process& proc, ProcessStack& stack){
+	stack.top() = (*MF)(proc, stack.top());
+}
+
 template<Object::ref const& (*MF)(Object::ref const&)>
 inline void bytecode_(ProcessStack& stack){
 	stack.top() = (*MF)(stack.top());
 }
 
-template<Object::ref (*MF)(Process& proc, Object::ref, Object::ref)>
+template<Object::ref (*MF)(Process&, Object::ref, Object::ref)>
 inline void bytecode2_(Process& proc, ProcessStack& stack) {
   Object::ref v2 = stack.top(); stack.pop();
   stack.top() = (*MF)(proc, stack.top(), v2);

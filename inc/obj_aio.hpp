@@ -3,6 +3,7 @@
 
 #include"types.hpp"
 #include"aio.hpp"
+#include"bytecodes.hpp"
 
 #include<string>
 
@@ -328,6 +329,76 @@ inline Object::ref io_seek(Process& host, Object::ref port, Object::ref point) {
 			value
 		);
 		return Object::t();
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
+template<boost::shared_ptr<IOPort>* pp>
+inline Object::ref io_builtin_port(Process& proc) {
+	boost::shared_ptr<IOPort>& port = *pp;
+	HlIOPort* hp = proc.create<HlIOPort>();
+	hp->p = port;
+	return Object::to_ref<Generic*>(hp);
+}
+
+inline Object::ref io_tell(Process& host, Object::ref port) {
+	#ifdef DEBUG
+		expect_type<HlIOPort>(
+			port,
+			"tell: expected an I/O port for port"
+		);
+	#endif
+        uint64_t value;
+	try {
+		value = known_type<HlIOPort>(port)->p->tell();
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+	/*now construct a bunch of Cons cells, divided into 24-bit values*/
+	uint64_t sub;
+	size_t times = 0;
+	ProcessStack& stack = host.stack;
+	/*first push all on stack*/
+	while(value > 0) {
+		sub = value % (((uint64_t) 1) << 24);
+		value = value >> 24;
+		++times;
+		stack.push(Object::to_ref<int>(sub));
+	}
+	stack.push(Object::nil());
+	/*now construct list*/
+	for(size_t i = 0; i < times; ++i) {
+		bytecode_cons(host, stack);
+	}
+	Object::ref rv = stack.top(); stack.pop();
+	return rv;
+}
+
+inline Object::ref io_write(Process& host, Object::ref proc, Object::ref port, Object::ref dat) {
+	#ifdef DEBUG
+		expect_type<HlIOPort>(
+			port,
+			"write: expected an I/O port for port"
+		);
+		expect_type<BinObj>(
+			dat,
+			"write: expected a binary object for data"
+		);
+	#endif
+	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
+	try {
+		boost::shared_ptr<Event> event =
+			known_type<HlIOPort>(port)->p->write(
+				pi,
+				known_type<BinObj>(dat)->pdat
+			)
+		;
+		if(event) {
+			return create_event(host, proc, event);
+		} else {
+			return Object::nil();
+		}
 	} catch(IOError& err) {
 		return handle_io_error(host, err);
 	}
