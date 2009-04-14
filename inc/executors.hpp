@@ -90,6 +90,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(i_to_f)
 	A_BYTECODE(io_accept)
 	A_BYTECODE(io_appendfile)
+	A_BYTECODE(io_close)
 	A_BYTECODE(io_connect)
 	A_BYTECODE(io_fsync)
 	A_BYTECODE(io_infile)

@@ -404,5 +404,20 @@ inline Object::ref io_write(Process& host, Object::ref proc, Object::ref port, O
 	}
 }
 
+inline Object::ref io_close(Process& host, Object::ref port) {
+	#ifdef DEBUG
+		expect_type<HlIOPort>(
+			port,
+			"close: expected an I/O port for port"
+		);
+	#endif
+	try {
+		known_type<HlIOPort>(port)->p->close();
+		return Object::nil();
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
 #endif // OBJ_AIO_H
 

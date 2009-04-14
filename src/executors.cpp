@@ -596,6 +596,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
       ("<bc>i/o-accept",	THE_BYTECODE_LABEL(io_accept))
       ("<bc>i/o-appendfile",	THE_BYTECODE_LABEL(io_appendfile))
+      ("<bc>i/o-close",		THE_BYTECODE_LABEL(io_close))
       ("<bc>i/o-connect",	THE_BYTECODE_LABEL(io_connect))
       ("<bc>i/o-fsync",		THE_BYTECODE_LABEL(io_fsync))
       ("<bc>i/o-infile",	THE_BYTECODE_LABEL(io_infile))
@@ -1043,6 +1044,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(io_appendfile): {
       bytecode2_<&io_openfile<&appendfile> >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_close): {
+      bytecode_<&io_close >(proc, stack);
     } NEXT_BYTECODE;
     BYTECODE(io_connect): {
       bytecode3_<&io_connect >(proc, stack);
