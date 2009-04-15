@@ -4,6 +4,9 @@
 ; Contains definitions for the abstract syntax trees used
 ; in CPS- and closure-conversions.
 
+(in-pkg compiler)
+(using <hl>v0)
+
 ; a variable
 (def make-var (id uid)
   (listtab `((type var) (id ,id) (uid ,uid))))

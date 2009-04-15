@@ -5,6 +5,9 @@
 ; to:
 ;   (let quoted 'bar (foo quoted))
 
+(in-pkg compiler)
+(using <hl>v0)
+
 (def quote-lift (ast)
   (givens collect
           (fn (ast)

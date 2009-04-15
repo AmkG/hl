@@ -18,6 +18,9 @@
 ; overriding the compiler code; we can't directly use
 ; 'eval ^^
 
+(in-pkg compiler)
+(using <hl>v0)
+
 (def make-eval ()
   " Creates an 'eval-like function for macros. "
   (withs (global-env (table)

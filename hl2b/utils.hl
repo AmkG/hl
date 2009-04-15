@@ -1,5 +1,8 @@
 ; utilities
 
+(in-pkg compiler)
+(using <hl>v0)
+
 (def diff (s1 s2)
   (if
     (no s1)

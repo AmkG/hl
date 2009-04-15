@@ -18,6 +18,9 @@
 ;
 ; Based on an idea by stefano
 
+(in-pkg compiler)
+(using <hl>v0)
+
 (def sharedvars-convert (ast)
   (with (sc [map sharedvars-convert _]
          ; flip the arguments to make-lam
