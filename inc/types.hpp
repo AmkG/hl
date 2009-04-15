@@ -576,6 +576,9 @@ Types
 -----------------------------------------------------------------------------*/
 
 extern inline Object::ref type(Object::ref ob) {
+	if(ob == Object::t() || ob == Object::nil()) {
+		return Object::to_ref(symbol_bool);
+	}
 	if(is_a<Generic*>(ob)) {
 		return as_a<Generic*>(ob)->type();
 	}

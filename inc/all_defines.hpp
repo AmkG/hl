@@ -29,6 +29,7 @@ extern Symbol* symbol_bytecode;
 extern Symbol* symbol_iport;
 extern Symbol* symbol_oport;
 extern Symbol* symbol_binobj;
+extern Symbol* symbol_bool;
 extern Symbol* symbol_call_star;
 
 #ifndef single_threaded
