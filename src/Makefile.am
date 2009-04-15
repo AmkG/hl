@@ -8,7 +8,9 @@ LDFLAGS = @PTHREAD_LIB@
 
 noinst_LIBRARIES = libhlvm.a
 libhlvm_a_SOURCES = \
+	aio.cpp \
 	globals.cpp \
+	ios_posix.cpp \
 	symbols.cpp \
 	heaps.cpp \
 	symtable.cpp \
@@ -18,6 +20,7 @@ libhlvm_a_SOURCES = \
 	executors.cpp \
 	reader.cpp \
 	workers.cpp \
+	../inc/aio.hpp \
 	../inc/all_defines.hpp \
 	../inc/bytecodes.hpp \
 	../inc/executors.hpp \
