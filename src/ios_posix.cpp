@@ -1034,7 +1034,7 @@ bool EventSet::remove_event(boost::shared_ptr<Event> evp) {
 			);
 		#endif
 		std::set<boost::shared_ptr<IOEvent> >::iterator it =
-			event_set.io_events.find(iop)
+			event_set.io_events.find(iop);
 		if(it != event_set.io_events.end()) {
 			event_set.io_events.erase(
 				it
