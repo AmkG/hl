@@ -32,6 +32,9 @@ static char const* read_error_message(void);
 Selection Between select() and poll()
 -----------------------------------------------------------------------------*/
 
+/*for now, force select()*/
+#define USE_POSIX_SELECT
+
 /*
 Choose either USE_POSIX_POLL or USE_POSIX_SELECT
 
