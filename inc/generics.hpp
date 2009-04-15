@@ -171,5 +171,11 @@ static inline bool is(Object::ref a, Object::ref b) {
 	return as_a<Generic*>(a)->is(b);
 }
 
+inline Object::ref obj_is(Object::ref a, Object::ref b) {
+	return
+		is(a, b) ?		Object::t() :
+		/*otherwise*/		Object::nil() ;
+}
+
 #endif // GENERICS_H
 

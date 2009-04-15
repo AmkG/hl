@@ -84,6 +84,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(halt_local_push)
 	A_BYTECODE(halt_clos_push)
 	A_BYTECODE(i_to_f)
+	A_BYTECODE(is)
 	A_BYTECODE(jmp_nil)
   //A_BYTECODE(if_local)
 	A_BYTECODE(b_int)
