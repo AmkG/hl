@@ -592,6 +592,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>halt-local-push",	THE_BYTECODE_LABEL(halt_local_push), ARG_INT)
       ("<bc>halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push), ARG_INT)
       ("<bc>i-to-f",		THE_BYTECODE_LABEL(i_to_f))
+      ("<bc>is",		THE_BYTECODE_LABEL(is))
       ("<bc>jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT) // replacement for 'if
       //("<bc>if-local",		THE_BYTECODE_LABEL(if_local))
       ("<bc>int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
@@ -1088,6 +1089,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(io_write): {
       bytecode3_<&io_write>(proc,stack);
+    } NEXT_BYTECODE;
+    BYTECODE(is): {
+      bytecode2_<&obj_is>(stack);
     } NEXT_BYTECODE;
     BYTECODE(jmp_nil): {
       INTPARAM(N); // number of operations to skip

@@ -104,6 +104,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(io_stdout)
 	A_BYTECODE(io_tell)
 	A_BYTECODE(io_write)
+	A_BYTECODE(is)
 	A_BYTECODE(jmp_nil)
   //A_BYTECODE(if_local)
 	A_BYTECODE(b_int)
