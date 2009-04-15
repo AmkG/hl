@@ -1,3 +1,5 @@
+(in-pkg compiler)
+(using <hl>v0)
 
 (require "lib/proto-table.arc")
 

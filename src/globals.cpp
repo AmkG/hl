@@ -24,6 +24,7 @@ Symbol* symbol_ioport;
 Symbol* symbol_event;
 Symbol* symbol_binobj;
 Symbol* symbol_io;
+Symbol* symbol_bool;
 Symbol* symbol_call_star;
 
 #include"symbols.hpp"
@@ -55,6 +56,7 @@ void initialize_globals(void) {
         symbol_event = symbols->lookup("<hl>event");
 	symbol_binobj = symbols->lookup("<hl>binobj");
 	symbol_io = symbols->lookup("<hl>i/o");
+        symbol_bool = symbols->lookup("<hl>bool");
         symbol_call_star = symbols->lookup("<hl>call*");
 
 	aio_initialize();

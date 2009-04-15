@@ -1,3 +1,6 @@
+(in-pkg compiler)
+(using <hl>v0)
+
 ; xe = expand expression     xe :: (expr,cte) -> ast
 
 (def xe (e cte)

@@ -1,5 +1,8 @@
 ; CPS conversion
 
+(in-pkg compiler)
+(using <hl>v0)
+
 (def make-cont (subx params)
   (let ast (make-lam subx params)
     (assert ast!continuation)

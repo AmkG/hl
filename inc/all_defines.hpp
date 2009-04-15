@@ -32,6 +32,7 @@ extern Symbol* symbol_ioport;
 extern Symbol* symbol_event;
 extern Symbol* symbol_binobj;
 extern Symbol* symbol_io;
+extern Symbol* symbol_bool;
 extern Symbol* symbol_call_star;
 
 extern boost::shared_ptr<IOPort> port_stdin;

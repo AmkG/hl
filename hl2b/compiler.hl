@@ -1,0 +1,19 @@
+; front end to the bytecode compiler
+; loads all the files and defines an entry function
+
+(in-pkg compiler)
+(using <hl>v0)
+
+(interface v0 compile)
+
+(set files* '(codegen.hl make-eval.hl structs.hl bytecodegen.hl quote-lift.hl
+              utils.hl closures.hl cps.hl sharedvars.hl  xe.hl))
+
+; load all the files
+(each f files*
+  (load (string (unpkg f))))
+
+; entry point
+; return a 0 arg function that executes expr
+(def compile (expr)
+  (<axiom>assemble (compile-to-bytecode expr)))
