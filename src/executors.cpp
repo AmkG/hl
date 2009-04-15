@@ -557,6 +557,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k), ARG_INT)
       ("<bc>apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
+      ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
       ("<bc>build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT)
       ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT)
       ("<bc>build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
@@ -610,6 +611,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>i/o-tell",		THE_BYTECODE_LABEL(io_tell))
       ("<bc>i/o-write",		THE_BYTECODE_LABEL(io_write))
       ("<bc>ccc", THE_BYTECODE_LABEL(ccc))
+      ("<bc>l-to-b",		THE_BYTECODE_LABEL(l_to_b))
       ("<bc>lit-nil",		THE_BYTECODE_LABEL(lit_nil))
       ("<bc>lit-t",		THE_BYTECODE_LABEL(lit_t))
       ("<bc>local",		THE_BYTECODE_LABEL(local), ARG_INT)
@@ -809,6 +811,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       stack.pop();
       /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
+    BYTECODE(b_ref): {
+      bytecode2_<&BinObj::bin_ref>( stack );
     } NEXT_BYTECODE;
     BYTECODE(build_closure): {
       INTPARAM(N);
@@ -1126,6 +1131,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       //(f current-continuation function-that-will-call-current-continuation)
       // do the call
       /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
+    BYTECODE(l_to_b): {
+      bytecode_<&BinObj::from_Cons>(proc, stack);
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
       bytecode_lit_nil(proc, stack);

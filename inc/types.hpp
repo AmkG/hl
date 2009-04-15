@@ -652,6 +652,46 @@ public:
 		return Object::to_ref(symbol_binobj);
 	}
 
+	static Object::ref from_Cons(Process& proc, Object::ref dat) {
+		boost::shared_ptr<std::vector<unsigned char> > bp(
+			new std::vector<unsigned char>()
+		);
+		while(dat) {
+			#ifdef DEBUG
+				expect_type<Cons>(
+					dat,
+					"l-to-b: expected a Cons cell"
+				);
+				if(!is_a<int>(car(dat))) {
+					throw_HlError(
+						"l-to-b: expected an integer."
+					);
+				}
+			#endif
+			bp->push_back(as_a<int>(car(dat)));
+			dat = cdr(dat);
+		}
+		return Object::to_ref<Generic*>(create(proc.heap(), bp));
+	}
+
+	static Object::ref bin_ref(Object::ref dat, Object::ref off) {
+		#ifdef DEBUG
+			expect_type<Cons>(
+				dat,
+				"b-ref: expected a binary object"
+			);
+			if(!is_a<int>(off)) {
+				throw_HlError(
+					"b-ref: expected an integer "
+					"for index."
+				);
+			}
+		#endif
+		return Object::to_ref<int>(
+			(*known_type<BinObj>(dat))[as_a<int>(off)]
+		);
+	}
+
 };
 
 #endif //TYPES_H
