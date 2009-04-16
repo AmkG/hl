@@ -1,7 +1,7 @@
 ; front end to the bytecode compiler
 ; loads all the files and defines an entry function
 
-(in-pkg compiler)
+(in-package compiler)
 (using <hl>v0)
 
 (interface v0 compile)

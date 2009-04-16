@@ -1,6 +1,6 @@
 ; utilities
 
-(in-pkg compiler)
+(in-package compiler)
 (using <hl>v0)
 
 (def diff (s1 s2)

@@ -18,7 +18,7 @@
 ;
 ; Based on an idea by stefano
 
-(in-pkg compiler)
+(in-package compiler)
 (using <hl>v0)
 
 (def sharedvars-convert (ast)

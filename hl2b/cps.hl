@@ -1,6 +1,6 @@
 ; CPS conversion
 
-(in-pkg compiler)
+(in-package compiler)
 (using <hl>v0)
 
 (def make-cont (subx params)
