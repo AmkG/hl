@@ -145,6 +145,7 @@ public:
 
   void assemble(Process & proc);
   size_t disassemble(Process & proc, size_t i);
+  size_t n_bytecodes() { return 2; }
 };
 
 std::map<Symbol*, Symbol*> GenClosureAs::names;
@@ -263,22 +264,33 @@ void ComplexAs<T>::assemble(Process & proc) {
 // build a jmp-nil instruction out of a (if (...) (...)) op
 class IfAs : public AsOp {
 private:
-  static size_t countToSkip(Object::ref seq);
+  size_t countToSkip(Object::ref seq);
 public:
   void assemble(Process & proc);
   size_t disassemble(Process & proc, size_t i);
 };
 
 size_t IfAs::countToSkip(Object::ref seq) {
-  size_t n = 0;
-  for(Object::ref i = seq; i != Object::nil(); i = cdr(i)) {
-    if (as_a<Symbol*>(car(car(i)))==symbols->lookup("<bc>if"))
-      n += 1 + countToSkip(cdr(car(i))); // +1 for jmp-nil
-    else
-      n++;
-  }
+	size_t n = 0;
 
-  return n;
+	for(Object::ref i = seq; i != Object::nil(); i = cdr(i)) {
+		Symbol *op = as_a<Symbol*>(car(car(i)));
+		if (op==symbols->lookup("<bc>if"))
+			n += this->n_bytecodes() + countToSkip(cdr(car(i)));
+		else {
+			AsOp *o = assembler.get_operation(op);
+			if (o) {
+				n += o->n_bytecodes();
+			} else {
+				// unknown operation
+				// keep going, error will be raised when
+				// this operations is assembled
+				n++;
+			}
+		}
+	}
+	
+	return n;
 }
 
 void IfAs::assemble(Process & proc) {
@@ -490,6 +502,15 @@ size_t Assembler::countConsts(Object::ref seq) {
   }
 
   return n;
+}
+
+AsOp* Assembler::get_operation(Symbol *s) {
+	sym_op_tbl::iterator op = tbl.find(s);
+	if (op!=tbl.end()) {
+		return op->second;
+	} else {
+		return NULL;
+	}
 }
 
 bool AssemblerExecutor::run(Process & proc, size_t & reductions) {
