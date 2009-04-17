@@ -24,3 +24,15 @@ To compile the test, use:
 Note that the script file currently assumes that you want the
 POSIX I/O and signal system.
 
+`hello.hlbc`
+------------
+
+The `hello.hlbc` test just prints "hello" terminated by a cr-lf
+pair on stdout.  It's supposed to work with the (at the time of
+this writing) current version of the `hl` program, which supports
+a `--bc` flag:
+
+	../../src/hl --bc hello.hlbc
+
+
+
