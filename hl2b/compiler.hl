@@ -15,7 +15,7 @@
 
 (interface v0 compile)
 
-(set files* '("codegen.hl" "make-eval.hl" "structs.hl" "bytecodegen.hl" 
+(set files* '("make-eval.hl" "structs.hl" "bytecodegen.hl" 
               "quote-lift.hl" "utils.hl" "closures.hl" "cps.hl"
               "sharedvars.hl"  "xe.hl"))
 
