@@ -1,7 +1,8 @@
 (in-package compiler)
 (using <hl>v0)
 
-(require "lib/proto-table.arc")
+; dependency on external lib?
+;(require "lib/proto-table.arc")
 
 (def bytecodegen (ast (o env (table 'top 0)) (o cont-clos))
   ; (ppr-sexp:source ast)
