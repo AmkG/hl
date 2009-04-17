@@ -1,0 +1,47 @@
+(<bc>closure 0
+  (<bc>empty-event-set)
+  (<bc>if
+    (<bc>lit-t)
+    (<bc>continue))
+  (<bc>event-wait)
+  (<bc>global event-loop)
+  (<bc>local 1)
+  (<bc>apply 2))
+(<bc>global-set event-loop)
+
+(<bc>self-pid)
+(<bc>i/o-stdout)
+
+(<bc>int 104)
+(<bc>int 101)
+(<bc>int 108)
+(<bc>int 108)
+(<bc>int 111)
+(<bc>int 13)
+(<bc>int 10)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>cons)
+(<bc>cons)
+(<bc>cons)
+(<bc>cons)
+(<bc>cons)
+(<bc>cons)
+(<bc>l-to-b)
+
+(<bc>i/o-write)
+
+(<bc>local 1)
+(<bc>local 1)
+(<bc>type)
+(<bc>sym <hl>event)
+(<bc>is)
+(<bc>if
+  (<bc>add-event)
+  (<bc>global event-loop)
+  (<bc>closure 0
+    (<bc>halt))
+  (<bc>apply 2)
+)
+(<bc>halt)
+
