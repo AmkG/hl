@@ -5,9 +5,10 @@
 ; by the compiler from <arc>v3
 (in-package hl)
 (using <arc>v3)
-(interface v0 def mac if and no or each load string unpkg prn = w/infile)
+(interface v0 def mac if and no or each load string unpkg prn = w/infile 
+              let with withs fn afn require w/uniq coerce + sym push listtab)
 
-(set unpkg <arc>unpkg)
+(set <hl>unpkg <arc>unpkg)
 
 ; the compiler package
 (in-package compiler)
@@ -15,7 +16,7 @@
 
 (interface v0 compile)
 
-(set files* '("make-eval.hl" "structs.hl" "bytecodegen.hl" 
+(set files* '("structs.hl" "bytecodegen.hl" 
               "quote-lift.hl" "utils.hl" "closures.hl" "cps.hl"
               "sharedvars.hl"  "xe.hl"))
 
