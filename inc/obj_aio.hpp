@@ -70,8 +70,10 @@ static inline Object::ref create_event(
 		Process& host,
 		Object::ref proc,
 		boost::shared_ptr<Event>& event) {
+	/*prevent the given proc from being lost if a GC triggers*/
+	host.stack.push(proc);
 	HlEvent* hp = host.create<HlEvent>();
-	hp->hl_pid = proc;
+	hp->hl_pid = host.stack.top(); host.stack.pop();
 	hp->p = event;
 	return Object::to_ref<Generic*>(hp);
 }
@@ -97,6 +99,13 @@ static inline Object::ref handle_io_error(Process& host, IOError& err) {
 	hp->o_rep = stack.top(); stack.pop();
 	return Object::to_ref<Generic*>(hp);
 }
+
+/*
+NOTE!  Many of the functions below are specially coded to
+ensure that they only use their Object::ref arguments
+BEFORE they ever allocate anything on the hosting
+process.
+*/
 
 inline Object::ref io_accept(Process& host, Object::ref proc, Object::ref port) {
 	#ifdef DEBUG
@@ -369,6 +378,7 @@ inline Object::ref io_tell(Process& host, Object::ref port) {
 	stack.push(Object::nil());
 	/*now construct list*/
 	for(size_t i = 0; i < times; ++i) {
+		/*never refer to port after this point*/
 		bytecode_cons(host, stack);
 	}
 	Object::ref rv = stack.top(); stack.pop();
