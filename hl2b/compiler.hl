@@ -3,6 +3,8 @@
 
 ; define the <hl> package and import functions and macros needed 
 ; by the compiler from <arc>v3
+; TODO: move in a file conditionally loaded only when bootstrapping
+;       using hl-arc-f
 (in-package hl)
 (using <arc>v3)
 (interface v0 def mac if and no or each load string unpkg prn = w/infile 
