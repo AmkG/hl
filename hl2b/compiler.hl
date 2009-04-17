@@ -1,17 +1,28 @@
 ; front end to the bytecode compiler
 ; loads all the files and defines an entry function
 
-(in-pkg compiler)
+; define the <hl> package and import functions and macros needed 
+; by the compiler from <arc>v3
+(in-package hl)
+(using <arc>v3)
+(interface v0 def mac if and no or each load string unpkg prn = w/infile 
+              let with withs fn afn require w/uniq coerce + sym push listtab)
+
+(set <hl>unpkg <arc>unpkg)
+
+; the compiler package
+(in-package compiler)
 (using <hl>v0)
 
 (interface v0 compile)
 
-(set files* '(codegen.hl make-eval.hl structs.hl bytecodegen.hl quote-lift.hl
-              utils.hl closures.hl cps.hl sharedvars.hl  xe.hl))
+(set files* '("structs.hl" "bytecodegen.hl" 
+              "quote-lift.hl" "utils.hl" "closures.hl" "cps.hl"
+              "sharedvars.hl"  "xe.hl"))
 
 ; load all the files
 (each f files*
-  (load (string (unpkg f))))
+  (load f))
 
 ; entry point
 ; return a 0 arg function that executes expr

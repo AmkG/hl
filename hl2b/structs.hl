@@ -4,7 +4,7 @@
 ; Contains definitions for the abstract syntax trees used
 ; in CPS- and closure-conversions.
 
-(in-pkg compiler)
+(in-package compiler)
 (using <hl>v0)
 
 ; a variable

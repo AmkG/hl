@@ -18,7 +18,7 @@
 ; overriding the compiler code; we can't directly use
 ; 'eval ^^
 
-(in-pkg compiler)
+(in-package compiler)
 (using <hl>v0)
 
 (def make-eval ()

@@ -79,6 +79,19 @@
 
 ;^42$
 
+; *** if with a closure within ***
+
+(<bc>lit-nil)
+(<bc>if
+  (<bc>closure 0
+    (<bc>int 3)
+    (<bc>halt))
+  (<bc>apply 1))
+(<bc>int 2)
+(<bc>halt)
+
+;^2$
+
 ; *** Closures that close something ***
 
 (<bc>int 42)
