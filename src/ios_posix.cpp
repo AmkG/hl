@@ -934,6 +934,27 @@ boost::shared_ptr<Event> appendfile(
 }
 
 /*-----------------------------------------------------------------------------
+Pipe creation
+-----------------------------------------------------------------------------*/
+
+void create_pipe(
+		boost::shared_ptr<IOPort>& in,
+		boost::shared_ptr<IOPort>& out) {
+	int fds[2];
+	{AppLock l(cloexec_mutex);
+		if(pipe(fds) < 0) {
+			/*should be good enough for now*/
+			throw IOError(std::string("error creating pipe"));
+		} else {
+			force_cloexec(fds[0]);
+			force_cloexec(fds[1]);
+		}
+	}
+	in .reset(PosixIOPort::r_able(fds[0]));
+	out.reset(PosixIOPort::w_able(fds[1]));
+}
+
+/*-----------------------------------------------------------------------------
 Other Events
 -----------------------------------------------------------------------------*/
 

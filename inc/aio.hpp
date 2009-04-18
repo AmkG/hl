@@ -123,6 +123,16 @@ boost::shared_ptr<Event> infile(boost::shared_ptr<ProcessInvoker>, std::string, 
 boost::shared_ptr<Event> outfile(boost::shared_ptr<ProcessInvoker>, std::string, boost::shared_ptr<IOPort>&);
 boost::shared_ptr<Event> appendfile(boost::shared_ptr<ProcessInvoker>, std::string, boost::shared_ptr<IOPort>&);
 
+/*creates a pipe
+The assumption here is that pipe creation
+can never be so long as to require an
+event.
+*/
+void create_pipe(
+	boost::shared_ptr<IOPort>& in,
+	boost::shared_ptr<IOPort>& out
+);
+
 class Event {
 public:
 	virtual ~Event() { }
