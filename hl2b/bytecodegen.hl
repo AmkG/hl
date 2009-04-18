@@ -326,6 +326,10 @@
   (if
     ; what we expect
     (alam ast)
+      ; ?? Why is this done?  Doesn't
+      ; ?? <common>assemble already emit a
+      ; ?? closure upon compilation?
+      ; ?? -- almkglor
       `((<bc>closure 0
           ,(if (~dotted ast!params)
                `(<bc>check-vars ,(len ast!params))
@@ -450,5 +454,41 @@
           cps-convert [cps-convert _ top-k-var]
           closure-convert [closure-convert _ top-k-var]
     ; this is stupid.... I like it!
+    ; !! Probably avoid : syntax here, because
+    ; !! of differences in hl and Arc-F.
+    ; !! in hl:
+    ; !!   (foo:bar nitz)
+    ; !!   => ((m-compose foo bar) nitz) ; m-compose is a macro
+    ; !! in Arc-F:
+    ; !!   (foo:bar nitz)
+    ; !!   => ((compose foo bar) nitz) ; compose is a function, but is treated specially by compiler
+    ; !! explanation: hl's compiler should support
+    ; !! anonymous macros; when the head position
+    ; !! of an expression is itself an expression,
+    ; !! if the inner expression's head is a macro,
+    ; !! the macro is invoked with
+    ; !!    (assert macro-info!head)
+    ; !! and if the macro's return value is itself
+    ; !! an anonymous macro, then the outer
+    ; !! expression is passed to the anonymous
+    ; !! macro.
+    ; !! 'm-compose returns an anonymous macro
+    ; !! if it gets a true macro-info!head;
+    ; !! the anonymous macro then wraps the
+    ; !! call inside the composed expansions.
+    ; !!
+    ; !! (mac (m-compose . heads)
+    ; !!   (if (macro-info 'head)
+    ; !!       ; anonymous macro
+    ; !!       (macro args
+    ; !!         (m-compose-loop heads args))
+    ; !!       `(<hl>compose ,@heads)))
+    ; !! (def (m-compose-loop heads args)
+    ; !!   (aif (cdr heads)
+    ; !!        `(,(car heads) ,(m-compose-loop it args))
+    ; !!        `(,(car heads) ,@args)))
+    ; !!
+    ; !! - this change was done to generalize
+    ; !! the special handling of 'compose
     (bytecodegen-top:closure-convert:cps-convert:quote-lift:sharedvars-convert-assert:xe:to-3-if:symbol-syntax e)))
 
