@@ -52,11 +52,11 @@
             ; check if it's a local variable reference
             (aif
               (and (aref param) (~aglobal param!var) (env param!var))
-                 `( (,(sym:string op '-local-push) ,it))
+                 `( (,(sym:string '<bc> op '-local-push) ,it))
               (is-closure-ref-self param)
                  ; closure values in arc2c are numbered from 1->N, but
                  ; in snap are numbered 0->N-1
-                 `( (,(sym:string op '-clos-push)
+                 `( (,(sym:string '<bc> op '-clos-push)
                      ,(- ((cadr param!subx) 'val) 1)))
               ; else
                  `( ,@(bytecodegen param env)
@@ -105,7 +105,8 @@
                        ; create a new environment
                        ; (don't overwrite old one - we might
                        ; be on one branch of an 'if)
-                       new-env (proto-table env)
+                       ;new-env (proto-table env)
+                       new-env (copy env)
                        ; push each parameter on the stack
                        pushlist
                        (mappend
@@ -142,7 +143,7 @@
                            ; arc2c counts the function code as closure.0
                            ; snap does not, so convert closure.N to
                            ; (closure (- N 1))
-                           (continue-on-clos ,(- ((cadr k!subx) 'val) 1))))
+                           (<bc>continue-on-clos ,(- ((cadr k!subx) 'val) 1))))
                     ; check if current function is a continuation and
                     ; if we need to create a continuation for this
                     ; call
@@ -153,25 +154,25 @@
                               ;   continuation
                               (k-fn . k-closed) k!subx)
                         `( ,@(bytecodegen f env)
-                           (local 0) ; placeholder for k
+                           (<bc>local 0) ; placeholder for k
                            ,@(apply-pushall params)
                            ,@(mappend [bytecodegen _ env] k-closed)
                            (,(if (>= cont-clos
                                      (- (len k!subx) 1))
-                               'k-closure-reuse
-                               'k-closure-recreate)
+                               '<bc>k-closure-reuse
+                               '<bc>k-closure-recreate)
                              ,(len k-closed)
                              ,@(bytecodegen
                                  (car k-fn!subx)
                                  (f-environment k-fn!params)
                                  (max cont-clos (len k-closed))))
-                           (apply-invert-k ,(+ 2 (len params)))))
+                           (<bc>apply-invert-k ,(+ 2 (len params)))))
                     ; check if continuation anyway - continuations
                     ; that don't reuse or recreate their closures
                     ; should use apply-k-release
                     cont-clos
                       `( ,@(apply-pushall params)
-                         (apply-k-release ,(len params)))
+                         (<bc>apply-k-release ,(len params)))
                     ; check if return-type call (first param is ref
                     ; to local[1], and two params (continuation and
                     ; return-value) only)
@@ -179,9 +180,9 @@
                       ; now check if return value is a variable reference
                       (let (k rv) params
                         (if (and (aref rv) (~aglobal rv!var))
-                            `( (continue-local ,(env rv!var)))
+                            `( (<bc>continue-local ,(env rv!var)))
                             `( ,@(bytecodegen rv env)
-                               continue)))
+                               (<bc>continue))))
                     ; ordinary apply
                        ; NOTE! assumes that subexpressions here cannot
                        ; be 'let forms
@@ -205,7 +206,7 @@
                     ; closure numberings in arc2c count the function code
                     ; as closure.0
                     ; snap does not, so convert closure.N to (closure (- N 1))
-                    `((closure-ref ,(- paramnum!val 1)))
+                    `((<bc>closure-ref ,(- paramnum!val 1)))
                     (do (prn "----expected (%closure-ref self _)")
                         (ppr-sexp:source ast)
                         nil)))
@@ -225,39 +226,39 @@
                                 ,(len closed)
                                 ; add check for correct arguments here
                                 ,(if (~dotted f!params)
-                                     `(check-vars ,(len f!params))
+                                     `(<bc>check-vars ,(len f!params))
                                      ; the variadic bytecode counts only
                                      ; the proper arguments
-                                     `(variadic
+                                     `(<bc>variadic
                                         ,(- (len:properify f!params) 1)))
                                 ,@(bytecodegen
                                     (car f!subx)
                                     (f-environment:properify f!params)
                                     (if f!continuation (len closed)))))))
             %car
-              (w/local-push (car ast!subx) 'car)
+              (w/local-push (car ast!subx) '<bc>car)
             %cdr
-              (w/local-push (car ast!subx) 'cdr)
+              (w/local-push (car ast!subx) '<bc>cdr)
             %cons
-              (direct-compile ast!subx 'cons)
+              (direct-compile ast!subx '<bc>cons)
             %halt
-              (w/local-push (car ast!subx) 'halt)
+              (w/local-push (car ast!subx) '<bc>halt)
             %type
-              (w/local-push (car ast!subx) 'type)
+              (w/local-push (car ast!subx) '<bc>type)
             %rep
-              (w/local-push (car ast!subx) 'rep)
+              (w/local-push (car ast!subx) '<bc>rep)
             %annotate
-              (direct-compile ast!subx 'tag)
+              (direct-compile ast!subx '<bc>tag)
             %apply
-              (direct-compile ast!subx 'apply-list)
+              (direct-compile ast!subx '<bc>apply-list)
             %sharedvar
-              (w/local-push (car ast!subx) 'sv)
+              (w/local-push (car ast!subx) '<bc>sv)
             %sharedvar-read
-              (w/local-push (car ast!subx) 'sv-ref)
+              (w/local-push (car ast!subx) '<bc>sv-ref)
             %sharedvar-write
-              (direct-compile ast!subx 'sv-set)
+              (direct-compile ast!subx '<bc>sv-set)
             %symeval
-              (direct-compile ast!subx 'symeval)
+              (direct-compile ast!subx '<bc>symeval)
             ; default primitive
               (do (prn "----unsupported primitive")
                   (ppr-sexp:source ast)
@@ -276,11 +277,11 @@
         (let val ast!val
           (if
             (isa val 'int)
-              `( (int ,val))
+              `( (<bc>int ,val))
             (is val t)
-              `( lit-t )
+              `( <bc>lit-t )
             (no val)
-              `( lit-nil )
+              `( <bc>lit-nil )
             ; else
               (do (prn "----unsupported literal type")
                   (ppr-sexp:source ast)
@@ -288,7 +289,7 @@
       (aquote ast)
         (let val ast!val
           (if (isa val 'sym)
-              `( (sym ',val))
+              `( (<bc>sym ',val))
               (do (prn "----unexpected type in quote form")
                   (ppr-sexp:source ast)
                   nil)))
@@ -297,15 +298,15 @@
                (val) ast!subx
           (if (aglobal var)
               `( ,@(bytecodegen val env)
-                 (global-set ',var!id))
+                 (<bc>global-set ',var!id))
               (do (prn "----unexpected set of non-global")
                   (ppr-sexp:source ast)
                   nil)))
       (aref ast)
         (let var ast!var
           (if (aglobal var)
-              `( (global ',var!id))
-              `( (local ,(env var)))))
+              `( (<bc>global ',var!id))
+              `( (<bc>local ,(env var)))))
       ; shouldn't occur after closure conversion
       (alam ast)
         (do (prn "----unexpected naked function")
@@ -325,16 +326,16 @@
   (if
     ; what we expect
     (alam ast)
-      `(
-        ,(if (~dotted ast!params)
-             `(check-vars ,(len ast!params))
-             `(variadic ,(- (len:properify ast!params) 1)))
-        ,@(bytecodegen (car ast!subx)
-                       (with (rv (table)
-                              params (properify ast!params))
-                         (on e params (= rv.e index))
-                         (= rv!top (len params))
-                         rv)))
+      `((<bc>closure 0
+          ,(if (~dotted ast!params)
+               `(<bc>check-vars ,(len ast!params))
+               `(<bc>variadic ,(- (len:properify ast!params) 1)))
+          ,@(bytecodegen (car ast!subx)
+                         (with (rv (table)
+                                params (properify ast!params))
+                           (on e params (= rv.e index))
+                           (= rv!top (len params))
+                           rv))))
     ; else
       (do (prn "----expected naked function")
           (ppr-sexp:source ast)

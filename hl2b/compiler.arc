@@ -17,10 +17,9 @@
               givens make-br-fn ++ acons ssyntax isnt caris _ in type isa
               alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self makeproper rfn pos complement dotted len on
-              index
+              index copy mappend cadr
               ; types
               int table string sym)
-
 
 (set <hl>unpkg <arc>unpkg)
 (set <hl>ssyntax <arc>ssyntax)
@@ -44,8 +43,8 @@
 
 ; entry point
 ; return a 0 arg function that executes expr
-(def compile (expr)
-  (<axiom>assemble (compile-to-bytecode expr)))
+;(def compile (expr)
+;  (<axiom>assemble (compile-to-bytecode expr)))
 ; above doesn't actually make sense from within
 ; Arc-F, because Arc-F doesn't support <axiom>assemble.
 ; Maybe should be in the "compiled-but-not-executed"
