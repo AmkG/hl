@@ -10,9 +10,9 @@
 (interface v0 def mac if and no or each load string unpkg prn = w/infile 
               let with withs fn afn require w/uniq coerce + push listtab
               givens make-br-fn ++ acons ssyntax isnt caris _ in type isa
-              alist err is car cons cdr maporf awhen do trav+ when ontable
+              alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self makeproper rfn pos complement dotted len on
-              index
+              index copy mappend cadr
               ; types
               int table string sym)
 

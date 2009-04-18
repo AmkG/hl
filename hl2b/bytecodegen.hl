@@ -105,7 +105,8 @@
                        ; create a new environment
                        ; (don't overwrite old one - we might
                        ; be on one branch of an 'if)
-                       new-env (proto-table env)
+                       ;new-env (proto-table env)
+                       new-env (copy env)
                        ; push each parameter on the stack
                        pushlist
                        (mappend
