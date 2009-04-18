@@ -7,13 +7,24 @@
 ;       using hl-arc-f
 (in-package hl)
 (using <arc>v3)
+; Should really use <hl>def, not just def, because def in this
+; context will be <arc>def.  Same with <hl>type etc.
+; Please see http://hl.webhop.net/item?id=103 ; I recommended
+; using 3 sections, and specified which ones should specify
+; specific packages, and which ones just use <arc> packages.
 (interface v0 def mac if and no or each load string unpkg prn = w/infile 
-              let with withs fn afn require w/uniq coerce + sym push listtab
+              let with withs fn afn require w/uniq coerce + push listtab
               givens make-br-fn ++ acons ssyntax isnt caris _ in type isa
-              alist err is car cons cdr map)
+              alist err is car cons cdr map orf awhen do trav+ when ontable
+              list aif zap self makeproper rfn pos complement dotted len on
+              index
+              ; types
+              int table string sym)
+
 
 (set <hl>unpkg <arc>unpkg)
 (set <hl>ssyntax <arc>ssyntax)
+(set <hl>pos <arc>pos)
 
 ; the compiler package
 (in-package compiler)
