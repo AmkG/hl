@@ -97,6 +97,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(io_infile)
 	A_BYTECODE(io_listener)
 	A_BYTECODE(io_outfile)
+	A_BYTECODE(io_pipe)
 	A_BYTECODE(io_read)
 	A_BYTECODE(io_seek)
 	A_BYTECODE(io_stderr)

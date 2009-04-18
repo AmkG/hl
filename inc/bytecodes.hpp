@@ -2,6 +2,7 @@
 #define BYTECODES_H
 #include "processes.hpp"
 #include"types.hpp"
+#include"aio.hpp"
 #include<boost/shared_ptr.hpp>
 
 /*
@@ -386,6 +387,20 @@ inline void bytecode_string_sref( Heap& hp, ProcessStack& stack ) {
 
 inline void bytecode_char(ProcessStack& stack, int N) {
 	stack.push( Object::to_ref(UnicodeChar((uint32_t)N)) );
+}
+
+inline void bytecode_io_pipe(Process& proc, ProcessStack& stack) {
+	stack.push(
+		Object::to_ref<Generic*>(proc.create<HlIOPort>())
+	);
+	stack.push(
+		Object::to_ref<Generic*>(proc.create<HlIOPort>())
+	);
+	create_pipe(
+		known_type<HlIOPort>(stack.top(2))->p,
+		known_type<HlIOPort>(stack.top(1))->p
+	);
+	bytecode_cons(proc, stack);
 }
 
 #endif //BYTECODES_H

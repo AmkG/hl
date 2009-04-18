@@ -625,6 +625,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>i/o-infile",	THE_BYTECODE_LABEL(io_infile))
       ("<bc>i/o-listener",	THE_BYTECODE_LABEL(io_listener))
       ("<bc>i/o-outfile",	THE_BYTECODE_LABEL(io_outfile))
+      ("<bc>i/o-pipe",		THE_BYTECODE_LABEL(io_pipe))
       ("<bc>i/o-read",		THE_BYTECODE_LABEL(io_read))
       ("<bc>i/o-seek",		THE_BYTECODE_LABEL(io_seek))
       ("<bc>i/o-stderr",	THE_BYTECODE_LABEL(io_stderr))
@@ -1089,6 +1090,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(io_outfile): {
       bytecode2_<&io_openfile<&outfile> >(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(io_pipe): {
+      bytecode_io_pipe(proc, stack);
     } NEXT_BYTECODE;
     BYTECODE(io_read): {
       bytecode3_<&io_read >(proc, stack);
