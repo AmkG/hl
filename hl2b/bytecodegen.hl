@@ -326,16 +326,16 @@
   (if
     ; what we expect
     (alam ast)
-      `(
-        ,(if (~dotted ast!params)
-             `(<bc>check-vars ,(len ast!params))
-             `(<bc>variadic ,(- (len:properify ast!params) 1)))
-        ,@(bytecodegen (car ast!subx)
-                       (with (rv (table)
-                              params (properify ast!params))
-                         (on e params (= rv.e index))
-                         (= rv!top (len params))
-                         rv)))
+      `((<bc>closure 0
+          ,(if (~dotted ast!params)
+               `(<bc>check-vars ,(len ast!params))
+               `(<bc>variadic ,(- (len:properify ast!params) 1)))
+          ,@(bytecodegen (car ast!subx)
+                         (with (rv (table)
+                                params (properify ast!params))
+                           (on e params (= rv.e index))
+                           (= rv!top (len params))
+                           rv))))
     ; else
       (do (prn "----expected naked function")
           (ppr-sexp:source ast)
