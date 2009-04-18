@@ -8,12 +8,17 @@
 (in-package hl)
 (using <arc>v3)
 (interface v0 def mac if and no or each load string unpkg prn = w/infile 
-              let with withs fn afn require w/uniq coerce + sym push listtab
+              let with withs fn afn require w/uniq coerce + push listtab
               givens make-br-fn ++ acons ssyntax isnt caris _ in type isa
-              alist err is car cons cdr map)
+              alist err is car cons cdr maporf awhen do trav+ when ontable
+              list aif zap self makeproper rfn pos complement dotted len on
+              index
+              ; types
+              int table string sym)
 
 (set <hl>unpkg <arc>unpkg)
 (set <hl>ssyntax <arc>ssyntax)
+(set <hl>pos <arc>pos)
 
 ; the compiler package
 (in-package compiler)
@@ -33,8 +38,8 @@
 
 ; entry point
 ; return a 0 arg function that executes expr
-(def compile (expr)
-  (<axiom>assemble (compile-to-bytecode expr)))
+;(def compile (expr)
+;  (<axiom>assemble (compile-to-bytecode expr)))
 ; above doesn't actually make sense from within
 ; Arc-F, because Arc-F doesn't support <axiom>assemble.
 ; Maybe should be in the "compiled-but-not-executed"
