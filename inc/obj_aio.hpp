@@ -429,5 +429,51 @@ inline Object::ref io_close(Process& host, Object::ref port) {
 	}
 }
 
+inline Object::ref create_sleep_event(Process& host, Object::ref proc, Object::ref time) {
+	#ifdef DEBUG
+		if(!is_a<int>(time)) {
+			throw_HlError("sleep: Expected an integer for time");
+		}
+	#endif
+	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
+	try {
+		boost::shared_ptr<Event> event =
+			sleep_event(pi, (size_t) as_a<int>(time))
+		;
+		if(event) {
+			return create_event(host, proc, event);
+		} else {
+			return Object::nil();
+		}
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
+inline Object::ref create_system_event(Process& host, Object::ref proc, Object::ref cmd) {
+	#ifdef DEBUG
+		expect_type<HlString>(
+			cmd,
+			"system: expected a string for command"
+		);
+	#endif
+	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
+	try {
+		boost::shared_ptr<Event> event =
+			system_event(
+				pi,
+				known_type<HlString>(cmd)->to_cpp_string()
+			)
+		;
+		if(event) {
+			return create_event(host, proc, event);
+		} else {
+			return Object::nil();
+		}
+	} catch(IOError& err) {
+		return handle_io_error(host, err);
+	}
+}
+
 #endif // OBJ_AIO_H
 

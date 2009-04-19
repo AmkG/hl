@@ -649,8 +649,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("<bc>rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
       ("<bc>self-pid", THE_BYTECODE_LABEL(self_pid))
-      ("<bc>send", THE_BYTECODE_LABEL(send))
-      ("<bc>spawn", THE_BYTECODE_LABEL(spawn))
+      ("<bc>send",		THE_BYTECODE_LABEL(send))
+      ("<bc>sleep",		THE_BYTECODE_LABEL(sleep))
+      ("<bc>spawn",		THE_BYTECODE_LABEL(spawn))
       ("<bc>string-create",	THE_BYTECODE_LABEL(string_create), ARG_INT)
       ("<bc>string-length",		THE_BYTECODE_LABEL(string_length))
       ("<bc>string-ref",		THE_BYTECODE_LABEL(string_ref))
@@ -664,6 +665,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>sv-set",		THE_BYTECODE_LABEL(sv_set))
       ("<bc>sym",			THE_BYTECODE_LABEL(sym), ARG_SYMBOL)
       ("<bc>symeval",		THE_BYTECODE_LABEL(symeval), ARG_SYMBOL)
+      ("<bc>system",		THE_BYTECODE_LABEL(system))
       ("<bc>table-create",		THE_BYTECODE_LABEL(table_create))
       ("<bc>table-ref",		THE_BYTECODE_LABEL(table_ref))
       ("<bc>table-sref",		THE_BYTECODE_LABEL(table_sref))
@@ -1385,6 +1387,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         }
       }
     } NEXT_BYTECODE;
+    BYTECODE(sleep): {
+      bytecode2_<&create_sleep_event>(proc, stack);
+    } NEXT_BYTECODE;
     // call current continuation, passing the pid of created process
     BYTECODE(spawn): {
       //std::cerr << "spawning\n";
@@ -1453,6 +1458,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(symeval): {
       bytecode_symeval(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(system): {
+      bytecode2_<&create_system_event>(proc, stack);
     } NEXT_BYTECODE;
     BYTECODE(table_create): {
       bytecode_table_create(proc, stack);
