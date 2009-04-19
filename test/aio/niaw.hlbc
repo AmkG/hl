@@ -80,7 +80,7 @@
   (<bc>self-pid)
   (<bc>i/o-stdout)
   (<bc>local 2)
-  (<bc>write)
+  (<bc>i/o-write)
 
   (<bc>local 3)
   (<bc>type)
