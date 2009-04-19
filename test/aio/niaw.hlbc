@@ -1,0 +1,191 @@
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>send))
+(<bc>global-set <common>send)
+(<bc>closure 0
+  (<bc>check-vars 2)
+  (<bc>recv))
+(<bc>global-set <common>recv)
+(<bc>closure 0
+  (<bc>check-vars 3)
+  (<bc>spawn))
+(<bc>global-set <common>spawn)
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>try-recv))
+(<bc>global-set <common>try-recv)
+
+(<bc>closure 0
+  (<bc>check-vars 2)
+
+  (<bc>self-pid)
+  (<bc>i/o-stdin)
+  (<bc>int 40)
+  (<bc>i/o-read)
+
+  (<bc>local 2)
+  (<bc>type)
+  (<bc>sym <hl>binobj)
+  (<bc>is)
+  (<bc>if
+    (<bc>global <test>do-write)
+    (<bc>local 1)
+    (<bc>local 2)
+    (<bc>apply 3)
+  )
+
+  (<bc>local 2)
+  (<bc>type)
+  (<bc>sym <hl>i/o)
+  (<bc>is)
+  (<bc>if
+    (<bc>local 2)
+    (<bc>continue)
+  )
+
+  (<bc>global <common>send)
+  (<bc>local 1)
+  (<bc>k-closure 1
+    (<bc>check-vars 2)
+    (<bc>global <common>recv)
+    (<bc>closure-ref 0)
+    (<bc>k-closure 1
+      (<bc>check-vars 2)
+      (<bc>cdr)
+      (<bc>local 1)
+      (<bc>if
+        (<bc>local 1)
+        (<bc>type)
+        (<bc>sym <hl>binobj)
+        (<bc>is)
+        (<bc>if
+          (<bc>global <test>do-write)
+          (<bc>closure-ref 0)
+          (<bc>local 1)
+          (<bc>apply 3)
+        )
+        (<bc>local 1)
+        (<bc>continue-on-clos 0))
+      (<bc>lit-t)
+      (<bc>continue-on-clos 0))
+    (<bc>apply 2))
+  (<bc>global <common>central-event)
+  (<bc>local 2)
+  (<bc>apply 4))
+(<bc>global-set <test>do-read)
+
+(<bc>closure 0
+  (<bc>check-vars 3)
+
+  (<bc>self-pid)
+  (<bc>i/o-stdout)
+  (<bc>local 2)
+  (<bc>write)
+
+  (<bc>local 3)
+  (<bc>type)
+  (<bc>sym <hl>event)
+  (<bc>is)
+  (<bc>if
+    (<bc>global <common>send)
+    (<bc>local 1)
+    (<bc>k-closure 1
+      (<bc>check-vars 2)
+      (<bc>global <common>recv)
+      (<bc>closure-ref 0)
+      (<bc>k-closure 1
+        (<bc>check-vars 2)
+        (<bc>cdr)
+
+        (<bc>local 1)
+        (<bc>if
+          (<bc>local 1)
+          (<bc>type)
+          (<bc>sym <hl>binobj)
+          (<bc>is)
+          (<bc>if
+            (<bc>global <test>do-write)
+            (<bc>closure-ref 0)
+            (<bc>local 1)
+            (<bc>apply 3)
+          )
+          (<bc>local 1)
+          (<bc>continue-on-clos 0)
+        )
+
+        (<bc>global <test>do-read)
+        (<bc>closure-ref 0)
+        (<bc>apply 2))
+      (<bc>apply 2))
+    (<bc>global <common>central-event)
+    (<bc>local 3)
+    (<bc>apply 4)
+  )
+
+  (<bc>local 3)
+  (<bc>type)
+  (<bc>sym <hl>i/o)
+  (<bc>is)
+  (<bc>if
+    (<bc>local 3)
+    (<bc>continue)
+  )
+
+  (<bc>global <test>do-read)
+  (<bc>local 1)
+  (<bc>apply 2))
+(<bc>global-set <test>do-write)
+
+(<bc>global <common>spawn)
+(<bc>k-closure 0
+  (<bc>check-vars 2)
+  (<bc>global-set <common>central-event)
+  (<bc>global <test>do-read)
+  (<bc>k-closure 0
+    (<bc>halt))
+  (<bc>apply 2))
+(<bc>closure 0
+  (<bc>check-vars 1)
+  (<bc>global <common>recv)
+  (<bc>local 0)
+  (<bc>k-closure 1
+    (<bc>check-vars 2)
+    (<bc>add-event)
+    (<bc>closure-ref 0)
+    (<bc>closure 1
+      (<bc>check-vars 1)
+      (<bc>empty-event-set)
+      (<bc>if
+        (<bc>closure-ref 0)
+        (<bc>apply 1)
+      )
+      (<bc>global <common>try-recv)
+      (<bc>local 0)
+      (<bc>only-running)
+      (<bc>k-closure 2
+        (<bc>check-vars 2)
+        (<bc>closure-ref 1)
+        (<bc>if
+          (<bc>event-wait)
+          (<bc>closure-ref 0)
+          (<bc>apply 1)
+        )
+        (<bc>event-poll)
+        (<bc>closure-ref 0)
+        (<bc>apply 1))
+      (<bc>local 0)
+      (<bc>closure 1
+        (<bc>check-vars 3)
+        (<bc>add-event)
+        (<bc>closure-ref 0)
+        (<bc>apply 1))
+      (<bc>closure 0
+        (<bc>check-vars 2)
+        (<bc>lit-t)
+        (<bc>continue))
+      (<bc>apply 4))
+    (<bc>apply 1))
+  (<bc>apply 2))
+(<bc>apply 3)
+
+
