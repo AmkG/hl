@@ -1379,6 +1379,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // -- bottom --
     BYTECODE(try_recv): {
 	// directly use the mailbox, to avoid blocking
+	// ?? how's that?
         MailBox &mbox = proc.mailbox();
 	Object::ref msg;
 	// !! TODO: recv may still block on the MailBox mutex
@@ -1386,27 +1387,27 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 	// ?? the function it is in to be restarted, and as
 	// ?? such should be protected by its own function.
 	// ?? we can then use a trylock and return a bool pair
+	/*TODO: rename MailBox::recv to try_recv!!*/
+	/*TODO: note: clarify division of responsibilities
+	between MailBox and Process.
+	suggestions: drop MailBox and use a plain ValueHolder;
+	recv, try-recv, and send then attempt to get the
+	process's lock.  This eliminates an extra lock on
+	the mailbox itself.
+	*/
 	if (mbox.recv(msg)) {
 		// success
-		// ?? maybe better to use CPS so that continuation
-		// ?? from stack[1] is passed to a non-continuation
-		// ?? function, i.e.
-		// ?? stack.push(stack.top(2));
-		// ?? stack.push(stack[1]);
-		// ?? stack.push(msg);
-		// ?? stack.restack(3);
-		stack.pop(); // throw away fail cont
+		stack.push(stack.top(2));
+		stack.push(stack[1]);
 		stack.push(msg);
-		stack.restack(2);
+		stack.restack(3);
         } else {
 		// fail
-		Object::ref fail_fn = stack.top(); stack.pop();
-		stack.pop(); // remove success cont
-		stack.push(fail_fn); // back in the stack
-		stack.push(Object::nil()); // continuations take an arg
+		stack.push(stack.top(1));
+		stack.push(stack[1]);
 		stack.restack(2);
         }
-	DOCALL();
+	/***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     BYTECODE(type): {
       bytecode_<&type>(stack);
