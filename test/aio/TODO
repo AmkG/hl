@@ -1,1 +1,9 @@
 niaw.hlbc occasionally segfaults.
+
+The segfault tends to happen for large files/inputs
+
+The problem always occurs on the closure-ref directly after an event-wait.
+It's a heisenbug, breaking at apparently random moments of time.
+Badly enough, it's a heisenbug even in a -Dsingle_threaded build; possibly
+the randomness is from the OS scheduling various processes.
+
