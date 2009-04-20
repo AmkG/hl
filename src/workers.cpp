@@ -490,7 +490,7 @@ WorkerLoop:
 				/*all other threads are now suspended*/
 				SymbolProcessScanner ssc(parent->Ws);
 				symbols->traverse_symbols(&ssc);
-				for(size_t i; i < parent->total_workers; ++i) {
+				for(size_t i = 0; i < parent->total_workers; ++i) {
 					parent->gray_workers++; // N
 					parent->Ws[i]->gray_done = 0;
 					parent->Ws[i]->scanning_mode = 1;
