@@ -168,6 +168,14 @@ DECLARE_BYTECODES
 	A_BYTECODE(fless)
 END_DECLARE_BYTECODES
 
+#ifdef BYTECODE_DEBUG
+#include<iostream>
+#define COLON_POST_BYTECODE_LABEL(x) : \
+	std::cerr << "bytecode " #x << std::endl; PASTE_SYMBOLS(post_label_b_, x)
+#else
+#define COLON_POST_BYTECODE_LABEL(x)
+#endif
+
 #ifdef __GNUC__
 
 // use indirect goto when using GCC
@@ -177,7 +185,7 @@ typedef void* _bytecode_label;
         bytecode_t *pc = known_type<Bytecode>(clos->code())->getCode();\
 	goto *(pc->op);
 #define NEXT_BYTECODE goto *((++pc)->op)
-#define BYTECODE(x) BYTECODE_ENUM(x); PASTE_SYMBOLS(label_b_, x)
+#define BYTECODE(x) BYTECODE_ENUM(x); PASTE_SYMBOLS(label_b_, x) COLON_POST_BYTECODE_LABEL(x)
 #define THE_BYTECODE_LABEL(x) &&PASTE_SYMBOLS(label_b_, x)
 
 #else // __GNUC__
@@ -189,7 +197,7 @@ typedef enum _e_bytecode_label _bytecode_label;
 	bytecode_t *pc = known_type<Bytecode>(clos->code())->getCode();\
 	switch(pc->op)
 #define NEXT_BYTECODE {pc++; continue;}
-#define BYTECODE(x) case BYTECODE_ENUM(x)
+#define BYTECODE(x) case BYTECODE_ENUM(x) COLON_POST_BYTECODE_LABEL(x)
 #define THE_BYTECODE_LABEL(x) BYTECODE_ENUM(x)
 
 #endif // __GNUC__
@@ -301,9 +309,13 @@ public:
   }
 };
 
+#ifdef BYTECODE_DEBUG
+#define INTPARAM(name) intptr_t name = pc->val; std::cerr << "parm " << name << std::endl
+#define SYMPARAM(name) Symbol *name = (Symbol*)pc->val; std::cerr << "parm " << name->getPrintName() << std::endl
+#else
 #define INTPARAM(name) intptr_t name = pc->val
 #define SYMPARAM(name) Symbol *name = (Symbol*)pc->val
-#define FLOATPARAM(name) Float *name = (Float*)pc->val
+#endif
 
 class AsOp {
 public:
