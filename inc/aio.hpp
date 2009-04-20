@@ -72,6 +72,8 @@ public:
 	pointer and put a value into now_read.  Otherwise,
 	put a null pointer into now_read and return an
 	event.
+	If an end-of-file is immediately discovered, clear
+	now_read and return a null pointer.
 	*/
 	virtual boost::shared_ptr<Event> read(
 		boost::shared_ptr<ProcessInvoker> const&, size_t,

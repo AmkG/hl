@@ -269,17 +269,13 @@ inline Object::ref io_read(Process& host, Object::ref proc, Object::ref port, Ob
 		if(event) {
 			return create_event(host, proc, event);
 		} else {
-			#ifdef DEBUG
-				if(!now_read) {
-					throw_HlError("read: did not "
-						"return an event or a "
-						"binary blob."
-					);
-				}
-			#endif
-			return Object::to_ref<Generic*>(
-				BinObj::create(host, now_read)
-			);
+			if(!now_read) {
+				return Object::nil();
+			} else {
+				return Object::to_ref<Generic*>(
+					BinObj::create(host, now_read)
+				);
+			}
 		}
 	} catch(IOError& err) {
 		return handle_io_error(host, err);
