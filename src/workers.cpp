@@ -235,7 +235,7 @@ AllWorkers::~AllWorkers() {
 			}
 		}
 	#endif
-	for(size_t i; i < U.size(); ++i) {
+	for(size_t i = 0; i < U.size(); ++i) {
 		delete U[i];
 	}
 }
