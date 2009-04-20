@@ -1034,9 +1034,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(event_poll): {
       bytecode_<&event_poll>(proc, stack);
+      SETCLOS(clos); // event-poll may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(event_wait): {
       bytecode_<&event_wait>(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(f_to_i): {
       bytecode_<&f_to_i>(stack);
@@ -1071,51 +1073,67 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(io_accept): {
       bytecode2_<&io_accept>(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_appendfile): {
       bytecode2_<&io_openfile<&appendfile> >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_close): {
       bytecode_<&io_close >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_connect): {
       bytecode3_<&io_connect >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_fsync): {
       bytecode2_<&io_fsync >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_infile): {
       bytecode2_<&io_openfile<&infile> >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_listener): {
       bytecode2_<&io_listener >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_outfile): {
       bytecode2_<&io_openfile<&outfile> >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_pipe): {
       bytecode_io_pipe(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_read): {
       bytecode3_<&io_read >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_seek): {
       bytecode2_<&io_seek >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_stderr): {
       bytecode_<&io_builtin_port<&port_stderr> >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_stdin): {
       bytecode_<&io_builtin_port<&port_stdin> >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_stdout): {
       bytecode_<&io_builtin_port<&port_stdout> >(proc, stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_tell): {
       bytecode_<&io_tell>(proc,stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(io_write): {
       bytecode3_<&io_write>(proc,stack);
+      SETCLOS(clos); // i/o may allocate, allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(is): {
       bytecode2_<&obj_is>(stack);
@@ -1165,6 +1183,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(l_to_b): {
       bytecode_<&BinObj::from_Cons>(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(lit_nil): {
       bytecode_lit_nil(proc, stack);
@@ -1348,6 +1367,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       HlPid *pid = proc.create<HlPid>();
       pid->process = &proc;
       stack.push(Object::to_ref(pid));
+      SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     // expect a pid and a message on the stack
     // must be called in tail position
@@ -1389,6 +1409,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(sleep): {
       bytecode2_<&create_sleep_event>(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     // call current continuation, passing the pid of created process
     BYTECODE(spawn): {
@@ -1461,6 +1482,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(system): {
       bytecode2_<&create_system_event>(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(table_create): {
       bytecode_table_create(proc, stack);
@@ -1514,6 +1536,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         }
 	/***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+    /*type never allocates: even when
+    using a builtin type, we just use
+    a Object::to_ref<Symbol*>()
+    */
     BYTECODE(type): {
       bytecode_<&type>(stack);
     } NEXT_BYTECODE;
