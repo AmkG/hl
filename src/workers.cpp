@@ -248,7 +248,7 @@ AllWorkers::~AllWorkers() {
 			}
 		}
 	#endif
-	for(size_t i; i < U.size(); ++i) {
+	for(size_t i = 0; i < U.size(); ++i) {
 		delete U[i];
 	}
 }
@@ -548,7 +548,7 @@ WorkerLoop:
 				EventSetScanner ess(parent->Ws);
 				the_event_set().scan_process_invokers(&ess);
 				/*initialize marking state*/
-				for(size_t i; i < parent->total_workers; ++i) {
+				for(size_t i = 0; i < parent->total_workers; ++i) {
 					parent->gray_workers++; // N
 					parent->Ws[i]->gray_done = 0;
 					parent->Ws[i]->scanning_mode = 1;

@@ -171,7 +171,7 @@
       (<bc>global <common>try-recv)
       (<bc>local 0)
       (<bc>only-running)
-      (<bc>k-closure 2
+      (<bc>closure 2
         (<bc>check-vars 2)
         (<bc>closure-ref 1)
         (<bc>if
