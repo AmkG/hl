@@ -25,6 +25,15 @@
 
   (<bc>local 2)
   (<bc>type)
+  (<bc>sym <hl>bool)
+  (<bc>is)
+  (<bc>if
+    (<bc>local 2)
+    (<bc>continue)
+  )
+
+  (<bc>local 2)
+  (<bc>type)
   (<bc>sym <hl>binobj)
   (<bc>is)
   (<bc>if
