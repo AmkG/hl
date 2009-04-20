@@ -1,7 +1,6 @@
 #!/bin/sh
 
-g++ -g -o niaw niaw.cpp -I../../inc/ \
+g++ -g -o niaw niaw.cpp -I../../inc/ -I../../os/ \
 	../../src/ios_posix.cpp \
-	-DUSE_POSIX_SELECT \
 	$@
 

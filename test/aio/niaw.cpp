@@ -15,6 +15,10 @@ uses the hl aio system.
 #include<stdexcept>
 #include<iostream>
 
+#ifndef single_threaded
+	bool single_threaded;
+#endif
+
 /*use an abstract base*/
 class Process {
 public:
