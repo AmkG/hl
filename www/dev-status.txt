@@ -13,11 +13,18 @@ built**".  Currently, these are what we are working on:
 * <img src='done.png'> Strings.  **Done.**
 * <img src='done.png'> Tables.  **Done.**
 * <img src='doing.png'> Thread Pool.  *Doing...*
-* <img src='doing.png'> Asynchronous I/O.  *Doing...*
+* <img src='done.png'> Asynchronous I/O framework.  **Done.**
+* <img src='undone.png'> TCP/IP socket I/O.  <small>not
+  started</small>
+* <img src='undone.png'> `sleep` and `system`.  <small>not
+  started</small>
 * <img src='undone.png'> Signal Handling.  <small>not
   started</small>
 * <img src='doing.png'> Runtime Executable.  *Doing...*
-* <img src='doing.png'> Expression Compiler.  *Doing...*
+* <img src='doing.png'> Expression Compiler (on Arc-F).
+  *Doing...*
+* <img src='undone.png'> Expression Compiler (self-compiling).
+  <small>not started</small>
 * <img src='undone.png'> Common Layer of [base
   system](legit-base-system.html).  <small>not started</small>
 * <img src='undone.png'> Standard Layer of [base
