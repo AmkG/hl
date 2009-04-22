@@ -179,6 +179,20 @@ retry:
 	workqueue.pop();
 	return 1;
 }
+void AllWorkers::workqueue_trypop(Process*& R) {
+	AppTryLock l(general_mtx);
+	if(!l) {
+		R = 0;
+		return;
+	}
+	if(workqueue.empty()) {
+		R = 0;
+		return;
+	} else {
+		R = workqueue.front(); workqueue.pop();
+		return;
+	}
+}
 
 /*
  * Initiate

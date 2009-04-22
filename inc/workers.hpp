@@ -71,6 +71,12 @@ class AllWorkers : boost::noncopyable {
 	*/
 	bool workqueue_pop(Process*&);
 
+	/*attempts to pop, but gives up easily
+	if workqueue is busy or if there is
+	nothing to pop.
+	*/
+	void workqueue_trypop(Process*&);
+
 	/*pushes a process onto the workqueue*/
 	void workqueue_push(Process*);
 
