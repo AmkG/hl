@@ -564,13 +564,19 @@ WorkerLoop:
 	if(R) {
 		parent->workqueue_push_and_pop(R);
 	} else {
-		if(!parent->workqueue_pop(R)) {
-			return; //no more work
+		if(gray_done) {
+			if(!parent->workqueue_pop(R)) {
+				return; //no more work
+			}
+		} else {
+			parent->workqueue_trypop(R);
+			if(!R) goto gray_scan;
 		}
 	}
 	if(scanning_mode) {
 		if(R->is_black()) {
 			scanning_mode = 0;
+			goto gray_scan;
 		} else {
 			mark_process(R);
 		}
@@ -608,6 +614,7 @@ execute:
 		}
 		goto execute;
 	}
+gray_scan:
 	if(!scanning_mode && !gray_done) {
 		if(!gray_set.empty()) {
 			if(R) {
