@@ -578,13 +578,13 @@ WorkerLoop:
 	if(R) {
 		parent->workqueue_push_and_pop(R);
 	} else {
-		if(gray_done) {
+		if(!scanning_mode && !gray_done) {
+			parent->workqueue_trypop(R);
+			if(!R) goto gray_scan;
+		} else {
 			if(!parent->workqueue_pop(R)) {
 				return; //no more work
 			}
-		} else {
-			parent->workqueue_trypop(R);
-			if(!R) goto gray_scan;
 		}
 	}
 	if(scanning_mode) {
