@@ -4,8 +4,9 @@
 
 (in-package simple-test)
 (using <arc>v3)
+(interface v0 test run-tests)
 
-; execute tests
+; execute tests and report results
 ; args is a list of of three-elements lists:
 ; '((test-desc code-to-compile expected-bytecode) ...)
 (def do-test (args)
@@ -30,5 +31,27 @@
     (prn "\tFailed: " failed "/" n-tests ", "
          (/ (* 100 failed) n-tests) "%")))
 
+; list of registered tests
 (set all-tests* nil)
 
+; add a test (last added, last executed)
+(def register-test (test)
+  (set all-tests* (append all-tests* (list test))))
+
+; add a set of tests with the same name
+; usage:
+;   (test "Description"
+;     input-program1 expected-result1
+;     input-program2 expected-result2
+;     ...)
+(mac test (name . tests)
+  (unless (is 0 (mod (len tests) 2))
+    (err "Unpaired test/result"))
+  `(do
+     ,@(map (fn (tst)
+              `(register-test (cons name ,tst)))
+            (tuples ,tests 2))))
+
+; run all the registered tests
+(def run-tests ()
+  (do-tests all-tests*))
