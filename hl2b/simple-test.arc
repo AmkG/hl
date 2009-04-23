@@ -9,19 +9,17 @@
 ; execute tests and report results
 ; args is a list of of three-elements lists:
 ; '((test-desc code-to-compile expected-bytecode) ...)
-(def do-test (args)
+(def do-tests (args)
   (with (failed 0 ; number of failed tests
          n-tests (len args))
     (when (is n-tests 0)
       (err "No tests"))
     (each x args 
-      (withs (name (car x)
-              to-test (cadr x)
-              expected (caddr x)
+      (withs ((name to-test expected) x
               res (<compiler>compile-to-bytecode to-test))
         (unless (iso res expected)
           (prn "Test " name " " to-test " failed, expected " expected
-               " , got " res))
+               ", got " res))
           (set failed (+ failed 1))))
     (prn "Successfully completed " (- n-tests failed) " tests")
     (prn "Failed " failed " tests")
@@ -29,14 +27,15 @@
     (prn "\tPassed: " (- n-tests failed) "/" n-tests ", " 
          (/ (* 100 (- n-tests failed)) n-tests) "%")
     (prn "\tFailed: " failed "/" n-tests ", "
-         (/ (* 100 failed) n-tests) "%")))
+         (/ (* 100 failed) n-tests) "%")
+    (if (> failed 0) nil t)))
 
 ; list of registered tests
 (set all-tests* nil)
 
 ; add a test (last added, last executed)
 (def register-test (test)
-  (set all-tests* (append all-tests* (list test))))
+  (set all-tests* (join all-tests* (list test))))
 
 ; add a set of tests with the same name
 ; usage:
@@ -49,8 +48,8 @@
     (err "Unpaired test/result"))
   `(do
      ,@(map (fn (tst)
-              `(register-test (cons name ,tst)))
-            (tuples ,tests 2))))
+              `(register-test '(,name ,@tst)))
+            (tuples tests 2))))
 
 ; run all the registered tests
 (def run-tests ()
