@@ -1,0 +1,18 @@
+; tests for literal values
+
+(using <simple-test>v0)
+(using <bc>v0) ; to avoid prepending <bc> to every bytecode
+
+(test "Integers"
+  0 ((check-vars 2)
+     (int 0)
+     (continue))
+  -1 ((check-vars 2)
+      (int -1)
+      (continue))
+  42 ((check-vars 2)
+      (int 42)
+      (continue))
+  1073741823 ((check-vars 2)
+              (int 1073741823)
+              (continue)))

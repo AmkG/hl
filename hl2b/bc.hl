@@ -1,0 +1,17 @@
+; force bytecodes to be in the <bc> package
+(in-package bc)
+(interface v0 acquire apply apply-invert-k apply-k-release apply-list 
+              build-closure build-k-closure build-k-closure-recreate 
+              build-k-closure-reuse car scar car-local-push car-clos-push cdr 
+              scdr cdr-local-push cdr-clos-push char check-vars closure-ref 
+              composeo composeo-continuation cons const-ref continue 
+              continue-local continue-on-clos f-to-i global global-set halt 
+              halt-local-push halt-clos-push i-to-f is jmp-nil if-local int ccc
+              lit-nil lit-t local monomethod reducto recv reducto-continuation
+              release rep rep-local-push rep-clos-push self-pid send spawn 
+              string-create string-length string-ref string-sref sv 
+              sv-local-push sv-clos-push sv-ref sv-ref-local-push 
+              sv-ref-clos-push sv-set sym symeval table-create table-ref 
+              table-sref table-keys tag try-recv type type-local-push 
+              type-clos-push variadic do-executor i+ i- i* i/ imod i< f+ f- 
+              f* f/ f<)
