@@ -411,40 +411,7 @@ void Worker::mark_process(Process* P) {
 	P->heap().traverse_objects(&mt);
 
 	/*scan the mailbox*/
-	ValueHolderRef tmp;
-	ValueHolderRef& mailbox = P->mailbox().getMessages();
-	mailbox.swap(tmp);
-	if(!tmp.empty()) {
-		/*shouldn't throw: traverse_objects doesn't
-		throw, and MarkingTraverser doesn't either
-		*/
-		tmp->traverse_objects(&mt);
-		/*put back the contents into the mailbox*/
-		mailbox.swap(tmp);
-	}
-
-	/*another process might have sent new messages
-	while we were marking - so tmp might not be
-	empty.  We just push tmp one-by-one onto the
-	mailbox.
-	*/
-	/*
-	We don't have to rescan the new messages - we
-	only mark during a process-level GC, and
-	messages that are sent while a GC is going on
-	cannot contain references to white processes,
-	because only black processes are actually
-	allowed to run (and by extension, send
-	messages).
-	*/
-	ValueHolderRef tmp2;
-	while(!tmp.empty()) {
-		tmp.remove(tmp2);	/* --> tmp2 */
-		mailbox.insert(tmp2);	/* <-- tmp2*/
-	}
-	/*would be better to insert them all at once
-	rather than one at a time.
-	*/
+	P->mailbox().traverse(&mt);
 
 	/*does not require atomicity, since only one
 	worker thread can perform marking on any
