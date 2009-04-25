@@ -69,35 +69,51 @@ enum ProcessStatus {
 };
 
 class Process;
+class HeapTraverser;
 
 /*
- * A mailbox manages a queue of messages sent to a process
+ * A mailbox is an abstraction on top of a Process.
  */
 class MailBox {
 private:
-	AppMutex mtx;
 	Process & parent;
-	ValueHolderRef messages;
+	explicit MailBox(Process & parent) : parent(parent) {}
+	MailBox(void); /*disallowed*/
 public:
-	MailBox(Process & parent) : parent(parent) {}
-	
-	// add a new message to the queue
-	void insert(ValueHolderRef & message);
 
-	// extract a message from the queue, copy it to the Process heap
-	// return false if queue is empty
-	// msg will be a reference to the process local copy
-	bool recv(Object::ref & msg);
+	/*adds the message M to this process's mailbox*/
+	/*Must atomically insert M to the mailbox, then
+	check if this process is waiting.  If so, it should
+	set is_waiting to true and change the process state
+	to process_running.
+	returns true if it was able to insert M, false if
+	not (e.g. due to contention on the mailbox)
+	*/
+	bool receive_message( ValueHolderRef& M, bool& is_waiting);
 
-	// is mailbox empty?
-	bool empty();
-	
-	// removes all messages from the mailbox
-	void clear();
+	/*atomically check if the attached process
+	  has any messages.  Change stat to
+	  process_waiting if the process's mailbox
+	  is empty*/
+	bool extract_message(Object::ref& M);
+	/*attempt to atomically check if the attached
+	  process has any messages.  If it can't
+	  check (e.g. heavy contention on mailbox),
+	  it just returns false.  If it can check,
+	  it sets has_message to true if there was
+	  indeed a message, or false if there were
+	  no messages yet.  Does not change status.*/
+	bool try_extract_message(Object::ref& M, bool& has_message);
 
-	ValueHolderRef& getMessages() {
-		return messages;
-	}
+	/*traverses the messages in the attached
+	process's mailbox.
+	NOTE!  A message can be received *during*
+	the traversal.  If a message is received,
+	it will *not* be traversed.
+	*/
+	void traverse(HeapTraverser* ht);
+
+	friend class Process;
 };
 
 class HlPid;
@@ -109,8 +125,6 @@ private:
 	ProcessStatus stat;
 	bool black;
 	AppMutex mtx;
-
-	MailBox mbox;
 
 	/*if this flag is true, it means this process is the only
 	running process.
@@ -159,6 +173,9 @@ private:
 	 * reference is already held by the Bytecode in the stack
 	 */
 	//bytecode_t *next_instruction;
+
+	/*The real mailbox*/
+	ValueHolderRef the_mailbox;
 
 public:
 	bool is_only_running(void) const {
@@ -258,7 +275,6 @@ public:
 		: stat(process_running),
 		  black(0),
 		  mtx(),
-		  mbox(*this),
 		  only_running(0),
 		  global_cache(),
 		  notification_mtx(),
@@ -283,20 +299,6 @@ For process-level garbage collection
 -----------------------------------------------------------------------------*/
 	/*atomically check if status is process_waiting and it is not marked*/
 	bool waiting_and_not_black(void);
-
-	/*adds the message M to this process's mailbox*/
-	/*Must atomically insert M to the mailbox, then
-	check if this process is waiting.  If so, it should
-	set is_waiting to true and change the process state
-	to process_running.
-	returns true if it was able to insert M, false if
-	not (e.g. due to contention on the mailbox)
-	*/
-	bool receive_message( ValueHolderRef& M, bool& is_waiting);
-
-	/*atomically call MailBox::recv() and set stat to process_waiting
-	 if the MailBox is empty*/
-	bool extract_message(Object::ref & M);
 
 	/*anesthesizes this process if appropriate*/
 	/*Must atomically check if process status is process_waiting,
@@ -374,12 +376,13 @@ For process-level garbage collection
 	Heap& heap(void);
 
 	/*allows access to the mailbox*/
-	MailBox& mailbox(void);
+	MailBox mailbox(void) { return MailBox(*this); }
 
 	ProcessStack stack;
 
 	virtual void scan_root_object(GenericTraverser* gt);
 
+	friend class MailBox;
 };
 
 #endif // PROCESSES_H
