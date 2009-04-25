@@ -27,7 +27,7 @@ static inline void send_message_to(Process& host, Process* P, ProcessStack& stac
 
 	bool is_waiting = 0;
 	/*keep sending until we definitely go through any locks or whatnot*/
-	while(!P->receive_message(m, is_waiting)) /*do nothing*/;
+	while(!P->mailbox().receive_message(m, is_waiting)) /*do nothing*/;
 	if(is_waiting) {
 		/*Use multipush on the hosting process to
 		push the processes on the workqueue when
