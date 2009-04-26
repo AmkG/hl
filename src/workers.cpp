@@ -271,7 +271,7 @@ AllWorkers::~AllWorkers() {
  * Debug
  */
 
-void AllWorkers::report(void) const {
+void AllWorkers::report(void) {
 	AppLock l(U_mtx);
 	std::cerr
 		<< "Processes not cleaned: "

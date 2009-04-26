@@ -91,7 +91,7 @@ public:
 		return workers;
 	}
 
-	void report(void) const;
+	void report(void);
 
 	/*initiates the specified number of worker threads
 	This function will return only when workers run out
