@@ -392,12 +392,14 @@ public:
 /*
  * Marks all PID's of a process
  */
+// move within mailbox
 void Worker::mark_process(Process* P) {
 	MarkingTraverser mt(gray_set);
 	P->heap().traverse_objects(&mt);
 
 	/*scan the mailbox*/
 	ValueHolderRef tmp;
+	// -- LOCK --
 	ValueHolderRef& mailbox = P->mailbox().getMessages();
 	mailbox.swap(tmp);
 	if(!tmp.empty()) {
@@ -406,6 +408,7 @@ void Worker::mark_process(Process* P) {
 		*/
 		tmp->traverse_objects(&mt);
 		/*put back the contents into the mailbox*/
+		// -- LOCK --
 		mailbox.swap(tmp);
 	}
 

@@ -19,8 +19,8 @@
               res (<compiler>compile-to-bytecode to-test))
         (unless (iso res expected)
           (prn "Test " name " " to-test " failed, expected " expected
-               ", got " res))
-          (set failed (+ failed 1))))
+               ", got " res)
+          (set failed (+ failed 1)))))
     (prn "Successfully completed " (- n-tests failed) " tests")
     (prn "Failed " failed " tests")
     (prn "Summary:")
