@@ -267,6 +267,18 @@ AllWorkers::~AllWorkers() {
 	}
 }
 
+/*
+ * Debug
+ */
+
+void AllWorkers::report(void) const {
+	AppLock l(U_mtx);
+	std::cerr
+		<< "Processes not cleaned: "
+		<< U.size()
+		<< std::endl;
+}
+
 /*-----------------------------------------------------------------------------
 Worker
 -----------------------------------------------------------------------------*/
