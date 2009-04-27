@@ -16,3 +16,16 @@
   1073741823 ((check-vars 2)
               (int 1073741823)
               (continue)))
+
+(test "Characters"
+  #\a ((check-vars 2)
+       (char 97)
+       (continue))
+  #\newline ((check-vars 2)
+             (char 10)
+             (continue))
+  #\space ((check-vars 2)
+           (char 32)
+           (continue))
+  ; TODO: add unicode characters
+  )
