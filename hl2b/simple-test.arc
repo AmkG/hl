@@ -16,7 +16,8 @@
       (err "No tests"))
     (each x args 
       (withs ((name to-test expected) x
-              res (<compiler>compile-to-bytecode to-test))
+              res (on-err (fn (e) (details e))
+                          (fn () (<compiler>compile-to-bytecode to-test))))
         (unless (iso res expected)
           (prn "Test " name " " to-test " failed, expected " expected
                ", got " res)
@@ -25,9 +26,9 @@
     (prn "Failed " failed " tests")
     (prn "Summary:")
     (prn "\tPassed: " (- n-tests failed) "/" n-tests ", " 
-         (/ (* 100 (- n-tests failed)) n-tests) "%")
+         (/ (* 100.0 (- n-tests failed)) n-tests) "%")
     (prn "\tFailed: " failed "/" n-tests ", "
-         (/ (* 100 failed) n-tests) "%")
+         (/ (* 100.0 failed) n-tests) "%")
     (if (> failed 0) nil t)))
 
 ; list of registered tests
