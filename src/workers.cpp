@@ -418,11 +418,10 @@ public:
 /*
  * Marks all PID's of a process
  */
+// move within mailbox
 void Worker::mark_process(Process* P) {
 	MarkingTraverser mt(gray_set);
 	P->heap().traverse_objects(&mt);
-
-	/*scan the mailbox*/
 	P->mailbox().traverse(&mt);
 
 	/*does not require atomicity, since only one

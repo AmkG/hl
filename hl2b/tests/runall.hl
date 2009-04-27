@@ -1,0 +1,19 @@
+; load this file to run all the tests in this directory
+; this file must be loaded under the hl2b direcory
+; e.g.: 
+; $ arc tests/runall.hl
+; to run all the tests
+; 'arc' is the executable of hl-arc-f
+
+(load "bc.hl")
+(load "compiler.arc")
+
+(using <simple-test>v0)
+(using <arc>v3) ; uncomment when running under hl-arc-f
+; (using <hl>v0) ; un-comment when running under hl
+
+; load files with tests
+(load "tests/lit.hl")
+
+; run the tests
+(<simple-test>run-tests)
