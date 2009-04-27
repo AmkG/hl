@@ -29,3 +29,23 @@
            (continue))
   ; TODO: add unicode characters
   )
+
+(test "t & nil"
+  t ((check-vars 2)
+     (lit-t)
+     (continue))
+  't ((check-vars 2)
+     (lit-t)
+     (continue))
+  nil ((check-vars 2)
+       (lit-nil)
+       (continue))
+  'nil ((check-vars 2)
+        (lit-nil)
+        (continue))
+  () ((check-vars 2)
+      (lit-nil)
+      (continue))
+  '() ((check-vars 2)
+       (lit-nil)
+       (continue)))
