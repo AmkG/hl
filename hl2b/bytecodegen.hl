@@ -277,11 +277,13 @@
         (let val ast!val
           (if
             (isa val 'int)
-              `( (<bc>int ,val))
+              `((<bc>int ,val))
             (is val t)
-              `( <bc>lit-t )
+              `((<bc>lit-t))
             (no val)
-              `( <bc>lit-nil )
+              `((<bc>lit-nil))
+            (isa val 'char)
+              `((<bc>char ,(coerce val 'int)))
             ; else
               (do (prn "----unsupported literal type")
                   (ppr-sexp:source ast)

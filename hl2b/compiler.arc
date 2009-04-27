@@ -19,7 +19,7 @@
               list aif zap self makeproper rfn pos complement dotted len on
               index copy mappend cadr cddr len>
               ; types
-              int table string sym)
+              int char table string sym)
 
 (set <hl>unpkg <arc>unpkg)
 (set <hl>ssyntax <arc>ssyntax)
