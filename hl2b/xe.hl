@@ -13,8 +13,13 @@
       (xe-form-expr e cte)
       (err "syntax-error" e)))
 
+; a simple constant expression is an expression that can be 
+; built with a single bytecode instruction
+(def simple-const-expr? (e)
+  (or (in e t nil) (in (type e) 'int 'char)))
+
 (def const-expr? (e)
-  (or (in e t nil) (in (type e) 'int 'num 'char 'string)))
+  (or (simple-const-expr? e) (in (type e) 'num 'string)))
 
 (def ident-expr? (e)
   (isa e 'sym))
@@ -110,7 +115,10 @@
 (push (make-macro 'quote
   (fn (e cte)
     (if (is (len (cdr e)) 1)
-      (make-quote '() (cadr e))
+      ; simple constants may be safely unquoted
+      (if (simple-const-expr? (cadr e))
+        (xe-const-expr (cadr e) cte)
+        (make-quote '() (cadr e)))
       (err "quote expects 1 arg")))) initial-ctes*)
 
 (push (make-macro 'set
