@@ -17,7 +17,7 @@
               givens make-br-fn ++ acons ssyntax isnt caris _ in type isa
               alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self makeproper rfn pos complement dotted len on
-              index copy mappend cadr cddr len>
+              index copy mappend cadr cddr len> it some
               ; types
               int char table string sym)
 
