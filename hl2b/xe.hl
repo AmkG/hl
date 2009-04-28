@@ -116,9 +116,7 @@
   (fn (e cte)
     (if (is (len (cdr e)) 1)
       ; simple constants may be safely unquoted
-      (if (simple-const-expr? (cadr e))
-        (xe-const-expr (cadr e) cte)
-        (make-quote '() (cadr e)))
+      (make-quote '() (cadr e))
       (err "quote expects 1 arg")))) initial-ctes*)
 
 (push (make-macro 'set

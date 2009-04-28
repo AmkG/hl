@@ -10,11 +10,13 @@
 (using <hl>v0)
 
 ; traverse ast, looking for quote expressions
+; if it's more expensive to create and refer to a local var than to directly
+; create the constant, then it is not collected
 ; return a table associating ast nodes to vars
-(def quote-collect (ast)
+(def quote-complex-collect (ast)
   (let tb (table)
     (trav+ (go ast) ast
-      (when (aquote ast)
+      (when (and (aquote ast) (~simple-const-expr? ast!val))
         (= tb.ast (new-var 'quoted)))
       (each s ast!subx (go s)))
     tb))
@@ -51,7 +53,7 @@
   (make-prim (list (const-expand:car val) (const-expand:cdr val)) '%cons))
 
 (def quote-lift (ast)
-  (givens ctb (quote-collect ast)
+  (givens ctb (quote-complex-collect ast)
           (params arguments) (table-key-value-lists ctb)
           arguments (map [const-expand _!val] arguments)
           transform
@@ -61,9 +63,12 @@
                       (list
                         ((afn (ast)
                            (aif ctb.ast
-                                (make-ref () it)
-                                (do (zap [map self _] ast!subx)
-                                    ast)))
+                             (make-ref () it)
+                             (if (aquote ast)
+                               ; not collected quote
+                               (const-expand ast!val)
+                               (do (zap [map self _] ast!subx)
+                                    ast))))
                          ast))
                       params)
                     arguments)))
