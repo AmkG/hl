@@ -49,3 +49,15 @@
   '() ((check-vars 2)
        (lit-nil)
        (continue)))
+
+(test "list"
+  '(1) ((check-vars 2)
+        (closure 0
+          (check-vars 3)
+          (local 2)
+          (continue))
+        (local 1)
+        (int 1)
+        (lit-nil)
+        (cons)
+        (apply 2)))
