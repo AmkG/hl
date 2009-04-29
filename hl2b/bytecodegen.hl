@@ -64,7 +64,7 @@
           direct-compile
           (fn (params op)
             `( ,@(mappend [bytecodegen _ env] params)
-               ,op))
+               (,op)))
           is-continuation
           (fn (ast)
             (if (and (aprim ast) (is '%closure ast!op))
