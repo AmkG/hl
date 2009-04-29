@@ -54,8 +54,8 @@
 
 (def quote-lift (ast)
   (givens ctb (quote-complex-collect ast)
-          (params arguments) (table-key-value-lists ctb)
-          arguments (map [const-expand _!val] params)
+          (arguments params) (table-key-value-lists ctb)
+          arguments (map [const-expand _!val] arguments)
           transform
           (fn (ast)
             (make-app
