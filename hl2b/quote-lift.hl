@@ -9,14 +9,16 @@
 (in-package compiler)
 (using <hl>v0)
 
-; traverse ast, looking for quote expressions
+; traverse ast, looking for quote expressions or complex constants such as
+; strings
 ; if it's more expensive to create and refer to a local var than to directly
 ; create the constant, then it is not collected
 ; return a table associating ast nodes to vars
 (def quote-complex-collect (ast)
   (let tb (table)
     (trav+ (go ast) ast
-      (when (and (aquote ast) (~simple-const-expr? ast!val))
+      (when (or (and (alit ast) (~simple-const-expr? ast!val))
+                (and (aquote ast) (~simple-const-expr? ast!val)))
         (= tb.ast (new-var 'quoted)))
       (each s ast!subx (go s)))
     tb))
@@ -51,6 +53,9 @@
 ; complex types
 (def-const-expander cons val
   (make-prim (list (const-expand:car val) (const-expand:cdr val)) '%cons))
+
+(def-const-expander str val
+  (make-prim (map [make-lit '() _] val) '%string-create))
 
 (def quote-lift (ast)
   (givens ctb (quote-complex-collect ast)
