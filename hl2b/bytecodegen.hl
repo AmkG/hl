@@ -259,7 +259,7 @@
               (direct-compile ast!subx '<bc>sv-set)
             %string-create
              `(,@(mappend [bytecodegen _ env] ast!subx)
-               (,op ,(len ast!subx)))
+               (<bc>string-create ,(len ast!subx)))
             %symeval
               (direct-compile ast!subx '<bc>symeval)
             ; default primitive

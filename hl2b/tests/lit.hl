@@ -70,3 +70,17 @@
             (cons)
             (cons)
             (continue-local 3)))
+
+(test "strings"
+  "abc" ((check-vars 2)
+         (char 97)
+         (char 98)
+         (char 99)
+         (string-create 3)
+         (continue-local 3))
+  '"abc" ((check-vars 2)
+          (char 97)
+          (char 98)
+          (char 99)
+          (string-create 3)
+          (continue-local 3)))

@@ -54,8 +54,8 @@
 (def-const-expander cons val
   (make-prim (list (const-expand:car val) (const-expand:cdr val)) '%cons))
 
-(def-const-expander str val
-  (make-prim (map [make-lit '() _] val) '%string-create))
+(def-const-expander string val
+  (make-prim (map [make-lit '() _] (coerce val 'cons)) '%string-create))
 
 (def quote-lift (ast)
   (givens ctb (quote-complex-collect ast)
