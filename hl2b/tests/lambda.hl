@@ -1,0 +1,9 @@
+; test for lambdas
+
+(test "straight lambda"
+  (lambda () nil) ((check-vars 2)
+                   (closure 0
+                     (check-vars 2)
+                     (lit-nil)
+                     (continue))
+                   (continue)))
