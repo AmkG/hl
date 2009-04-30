@@ -19,7 +19,7 @@
               list aif zap self makeproper rfn pos complement dotted len on
               index copy mappend cadr cddr len> it some assert given case
               ; types
-              int char table string sym bool)
+              int num char table string sym bool)
 
 (set <hl>unpkg <arc>unpkg)
 (set <hl>ssyntax <arc>ssyntax)

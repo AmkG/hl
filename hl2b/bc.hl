@@ -14,4 +14,4 @@
               sv-ref-clos-push sv-set sym symeval table-create table-ref 
               table-sref table-keys tag try-recv type type-local-push 
               type-clos-push variadic do-executor i+ i- i* i/ imod i< f+ f- 
-              f* f/ f<)
+              f* f/ f< float)
