@@ -137,7 +137,7 @@
         (xe `(if ,(cadr e) ,(car:cddr e) nil) cte)
         (err "if expects 2 or 3 args")))) initial-ctes*)
 
-(push (make-macro 'fn
+(push (make-macro '<axiom>lambda
   (fn (e cte)
     (let (_ exp-params . body) e
       (if (>= (len (cdr e)) 1)
