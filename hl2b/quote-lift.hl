@@ -1,5 +1,6 @@
 ; quote-lift.arc
 ; by AmkG
+; mods by Stefano
 ; converts the form:
 ;   (foo 'bar)
 ; to:
@@ -8,39 +9,58 @@
 (in-package compiler)
 (using <hl>v0)
 
+; traverse ast, looking for quote expressions or complex constants such as
+; strings
+; if it's more expensive to create and refer to a local var than to directly
+; create the constant, then it is not collected
+; return a table associating ast nodes to vars
+(def quote-complex-collect (ast)
+  (let tb (table)
+    (trav+ (go ast) ast
+      (when (or (and (alit ast) (~simple-const-expr? ast!val))
+                (and (aquote ast) (~simple-const-expr? ast!val)))
+        (= tb.ast (new-var 'quoted)))
+      (each s ast!subx (go s)))
+    tb))
+
+; return a list of two lists
+; the first list holds all the keys, the second all the values
+(def table-key-value-lists (tb)
+  (let (keys vals) nil
+    (ontable key val tb
+      (push key keys)
+      (push val vals))
+    (list keys vals)))
+
+(set const-expanders* (table))
+
+; define an expander for a certain constant type
+(mac def-const-expander (ast-type val-arg-name . body)
+  `(= (const-expanders* ',ast-type) (fn (,val-arg-name) ,@body)))
+
+; take a constant expression
+; return quote-free code (an ast) that builds the constant
+(def const-expand (val)
+  (aif (const-expanders* (type val))
+    (it val)
+    (err:string "Don't know how to build quoted expression " val)))
+
+; simple types: 
+(def-const-expander sym s (make-lit '() s))
+(def-const-expander int i (make-lit '() i))
+(def-const-expander bool b (make-lit '() b))
+
+; complex types
+(def-const-expander cons val
+  (make-prim (list (const-expand:car val) (const-expand:cdr val)) '%cons))
+
+(def-const-expander string val
+  (make-prim (map [make-lit '() _] (coerce val 'cons)) '%string-create))
+
 (def quote-lift (ast)
-  (givens collect
-          (fn (ast)
-            (let tb (table)
-              (trav+ (go ast) ast
-                (when (aquote ast)
-                  (= tb.ast (new-var 'quoted)))
-                (each s ast!subx (go s)))
-              tb))
-          ctb (collect ast)
-          (params arguments)
-            (let (params arguments) nil
-              (ontable argument param ctb
-                (push argument arguments)
-                (push param params))
-              (list params arguments))
-          list-expand
-          (fn (ast)
-            (if
-              (isa ast!val 'cons)
-                ((afn (val)
-                   (if
-                     (isa val 'cons)
-                       (make-prim (list (self:car val) (self:cdr val)) '%cons)
-                     (isa val 'sym)
-                       (make-quote () val)
-                       (make-lit () val)))
-                 ast!val)
-              (isa ast!val 'sym)
-                ast
-              ; else
-                (make-lit () ast!val)))
-          arguments (map list-expand arguments)
+  (givens ctb (quote-complex-collect ast)
+          (arguments params) (table-key-value-lists ctb)
+          arguments (map [const-expand _!val] arguments)
           transform
           (fn (ast)
             (make-app
@@ -48,12 +68,13 @@
                       (list
                         ((afn (ast)
                            (aif ctb.ast
-                                (make-ref () it)
-                                (do (zap [map self _] ast!subx)
-                                    ast)))
+                             (make-ref () it)
+                             (if (aquote ast)
+                               ; not collected quote
+                               (const-expand ast!val)
+                               (do (zap [map self _] ast!subx)
+                                    ast))))
                          ast))
                       params)
                     arguments)))
     (transform ast)))
-
-

@@ -64,7 +64,7 @@
           direct-compile
           (fn (params op)
             `( ,@(mappend [bytecodegen _ env] params)
-               ,op))
+               (,op)))
           is-continuation
           (fn (ast)
             (if (and (aprim ast) (is '%closure ast!op))
@@ -257,6 +257,9 @@
               (w/local-push (car ast!subx) '<bc>sv-ref)
             %sharedvar-write
               (direct-compile ast!subx '<bc>sv-set)
+            %string-create
+             `(,@(mappend [bytecodegen _ env] ast!subx)
+               (<bc>string-create ,(len ast!subx)))
             %symeval
               (direct-compile ast!subx '<bc>symeval)
             ; default primitive
