@@ -236,7 +236,6 @@ void AllWorkers::initiate(size_t nworkers, Process* begin) {
 	register_process(begin);
 	workqueue_push(begin);
 	Worker W(this);
-	W.T = 4; // for testing, set to 4: future should be 16384
 	#ifndef single_threaded
 		for(size_t i = 1; i < nworkers; ++i) {
 			wtc.launch(W);
@@ -315,6 +314,11 @@ public:
 
 void Worker::operator()(bool is_main) {
 	WorkerInitTeardown wit(is_main);
+	if(is_main) {
+		T = 4; // for testing, set to 4: future should be 16384
+	} else {
+		T = 0;
+	}
 	try {
 		try {
 			parent->register_worker(this);
