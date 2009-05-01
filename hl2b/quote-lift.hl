@@ -57,6 +57,9 @@
 (def-const-expander string val
   (make-prim (map [make-lit '() _] (coerce val 'cons)) '%string-create))
 
+(def-const-expander num val
+  (make-lit '() val))
+
 (def quote-lift (ast)
   (givens ctb (quote-complex-collect ast)
           (arguments params) (table-key-value-lists ctb)

@@ -1,0 +1,22 @@
+; test for lambdas
+
+(test "straight lambda"
+  (<axiom>lambda () nil) ((check-vars 2)
+                          (closure 0
+                            (check-vars 2)
+                            (lit-nil)
+                            (continue))
+                          (continue))
+  (<axiom>lambda () 9) ((check-vars 2)
+                          (closure 0
+                            (check-vars 2)
+                            (int 9)
+                            (continue))
+                          (continue)))
+
+(test "one-arg lambda"
+  (<axiom>lambda (arg) arg) ((check-vars 2)
+                             (closure 0
+                               (check-vars 3)
+                               (continue-local 3))
+                             (continue)))

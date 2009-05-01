@@ -12,8 +12,11 @@
 (using <arc>v3) ; uncomment when running under hl-arc-f
 ; (using <hl>v0) ; un-comment when running under hl
 
+(set tests* '("lit.hl" "lambda.hl"))
+
 ; load files with tests
-(load "tests/lit.hl")
+(each test tests*
+  (load:string "tests/" test))
 
 ; run the tests
 (<simple-test>run-tests)

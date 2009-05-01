@@ -222,7 +222,7 @@
                         nil)
                     ; create the closure
                     `( ,@(mappend [bytecodegen _ env] closed)
-                       (,(if f!continuation 'k-closure 'closure)
+                       (,(if f!continuation '<bc>k-closure '<bc>closure)
                                 ,(len closed)
                                 ; add check for correct arguments here
                                 ,(if (~dotted f!params)
@@ -287,6 +287,8 @@
               `((<bc>lit-nil))
             (isa val 'char)
               `((<bc>char ,(coerce val 'int)))
+            (isa val 'num)
+              `((<bc>float ,val))
             ; else
               (do (prn "----unsupported literal type")
                   (ppr-sexp:source ast)
