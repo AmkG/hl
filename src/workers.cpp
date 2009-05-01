@@ -574,6 +574,10 @@ WorkerLoop:
 		if(!scanning_mode && !gray_done) {
 			parent->workqueue_trypop(R);
 			if(!R) goto gray_scan;
+		} else if(T > 0) {
+			/*just count down to the GC if we can't get any*/
+			parent->workqueue_trypop(R);
+			if(!R) goto WorkerLoop;
 		} else {
 			if(!parent->workqueue_pop(R, this)) {
 				return; //no more work
