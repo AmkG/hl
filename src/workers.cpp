@@ -54,10 +54,14 @@ void AllWorkers::unregister_worker(Worker* W) {
 			waiting states
 			*/
 			if(soft_stop_condition) {
-				if(soft_stop_waiting == total_workers) {
-					soft_stop_waiting = 0;
-					soft_stop_cv.broadcast();
-				}
+				/*TODO: determine if assumption is
+				correct
+				*/
+				/*ASSUMPTION: we assume that a worker
+				never dies while raising the soft-stop
+				waiting state.
+				*/
+				soft_stop_sema.post();
 			}
 			if(waitqueue.size() > 0) {
 				if(waitqueue.size() == total_workers) {
@@ -74,16 +78,32 @@ void AllWorkers::unregister_worker(Worker* W) {
  */
 
 void AllWorkers::soft_stop_raise(void) {
-	AppLock l(general_mtx);
-	/*TODO*/
+	size_t num_waiting;
+	{ AppLock l(general_mtx);
+		/*the number of workers to wait for.
+		the workers waiting on the queue are already
+		blocked, so we don't worry about them;
+		in addition we don't count ourself
+		*/
+		num_waiting = (total_workers - waitqueue.size()) - 1;
+		soft_stop_condition = 1;
+	}
+	/*release the lock, then let each of the other
+	workers notify us.
+	*/
+	for(size_t i = 0; i < num_waiting; ++i){
+		soft_stop_sema.wait();
+	}
 }
 void AllWorkers::soft_stop_lower(void) {
-	AppLock l(general_mtx);
-	/*TODO*/
-}
-
-void AllWorkers::soft_stop_check(AppLock& l) {
-	/*TODO*/
+	std::vector<Worker*> stopped;
+	{ AppLock l(general_mtx);
+		soft_stopped_procs.swap(stopped);
+		soft_stop_condition = 0;
+	}
+	for(size_t i = 0; i < stopped.size(); ++i) {
+		stopped[i]->waiting_sema.post();
+	}
 }
 
 /*
@@ -106,34 +126,47 @@ void AllWorkers::workqueue_push(Process* R) {
 		W->waiting_sema.post();
 	}
 }
-void AllWorkers::workqueue_push_and_pop(Process*& R) {
-	AppLock l(general_mtx);
-	soft_stop_check(l);
-	/*if workqueue is empty, we'd end up popping what we
-	would have pushed anyway, so just short-circuit it
-	*/
-	if(workqueue.empty()) {
-		/*if all other workers are waiting, then this process *is*
-		the only one running
-		*/
-		if(waitqueue.size() == total_workers - 1) {
-			 Process::SetOnlyRunning(R,1);
-		} else {
-			 Process::SetOnlyRunning(R,0);
+void AllWorkers::workqueue_push_and_pop(Process*& R, Worker* W) {
+start:
+	{ AppLock l(general_mtx);
+		if(soft_stop_condition) {
+			soft_stopped_procs.push_back(W);
+			soft_stop_sema.post();
+			goto wait;
 		}
+		/*if workqueue is empty, we'd end up popping what we
+		would have pushed anyway, so just short-circuit it
+		*/
+		if(workqueue.empty()) {
+			/*if all other workers are waiting, then this process *is*
+			the only one running
+			*/
+			if(waitqueue.size() == total_workers - 1) {
+				 Process::SetOnlyRunning(R,1);
+			} else {
+				 Process::SetOnlyRunning(R,0);
+			}
+			return;
+		}
+		Process::SetOnlyRunning(R,0);
+		workqueue.push(R);
+		R = workqueue.front();
+		workqueue.pop();
 		return;
 	}
-	Process::SetOnlyRunning(R,0);
-	workqueue.push(R);
-	R = workqueue.front();
-	workqueue.pop();
+wait:
+	W->waiting_sema.wait(); goto start;
 }
 bool AllWorkers::workqueue_pop(Process*& R, Worker* W) {
 start:
-	{
-		AppLock l(general_mtx);
+	{ AppLock l(general_mtx);
 		if(exit_condition) return 0;
-		soft_stop_check(l);
+		if(soft_stop_condition) {
+			soft_stopped_procs.push_back(W);
+			soft_stop_sema.post();
+			/*release lock and wait*/
+			goto wait;
+		}
 		if(workqueue.empty()) {
 			R = 0;
 			if(waitqueue.size() == total_workers - 1) {
@@ -532,7 +565,7 @@ WorkerLoop:
 	}
 	/*this also checks for soft-stop for us*/
 	if(R) {
-		parent->workqueue_push_and_pop(R);
+		parent->workqueue_push_and_pop(R, this);
 	} else {
 		if(!scanning_mode && !gray_done) {
 			parent->workqueue_trypop(R);

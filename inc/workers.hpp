@@ -23,8 +23,8 @@ class AllWorkers : boost::noncopyable {
 	bool exit_condition;
 
 	bool soft_stop_condition;
-	size_t soft_stop_waiting;
-	AppCondVar soft_stop_cv;
+	std::vector<Worker*> soft_stopped_procs;
+	Semaphore soft_stop_sema;
 
 	AppMutex general_mtx;
 
@@ -65,7 +65,7 @@ class AllWorkers : boost::noncopyable {
 	void unregister_worker(Worker*);
 
 	/*pushes a process onto the workqueue, then pops a process*/
-	void workqueue_push_and_pop(Process*&);
+	void workqueue_push_and_pop(Process*&, Worker*);
 
 	/*pops a process from the workqueue.
 	blocks if no process is available yet.
@@ -83,9 +83,6 @@ class AllWorkers : boost::noncopyable {
 
 	/*pushes a process onto the workqueue*/
 	void workqueue_push(Process*);
-
-	/*checks for a soft-stop condition and blocks while it is true*/
-	void soft_stop_check(AppLock&);
 
 	AllWorkers();
 	static AllWorkers workers;
