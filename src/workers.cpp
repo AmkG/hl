@@ -24,8 +24,6 @@ AllWorkers AllWorkers::workers;
 
 void AllWorkers::set_exit_condition() {
 	exit_condition = 1;
-	// all worker threads are waiting, we wake them so they can exit
-	workqueue_cv.broadcast();
 }
 
 
@@ -61,9 +59,8 @@ void AllWorkers::unregister_worker(Worker* W) {
 					soft_stop_cv.broadcast();
 				}
 			}
-			if(workqueue_waiting > 0) {
-				if(workqueue_waiting == total_workers) {
-					workqueue_waiting = 0;
+			if(waitqueue.size() > 0) {
+				if(waitqueue.size() == total_workers) {
 					set_exit_condition();
 				}
 			}
@@ -78,40 +75,15 @@ void AllWorkers::unregister_worker(Worker* W) {
 
 void AllWorkers::soft_stop_raise(void) {
 	AppLock l(general_mtx);
-	soft_stop_condition = 1;
-	if(workqueue_waiting != 0) {
-		workqueue_cv.broadcast();
-	}
-	soft_stop_waiting++;
-	soft_stop_cv.wait(l);
+	/*TODO*/
 }
 void AllWorkers::soft_stop_lower(void) {
 	AppLock l(general_mtx);
-	soft_stop_condition = 0;
-	soft_stop_waiting = 0;
-	soft_stop_cv.broadcast();
+	/*TODO*/
 }
 
 void AllWorkers::soft_stop_check(AppLock& l) {
-	if(soft_stop_condition) {
-		#ifdef DEBUG
-			std::cerr << "Entering soft-stop" << std::endl;
-			std::cerr.flush();
-		#endif
-		do {
-			soft_stop_waiting++;
-			if(soft_stop_waiting == total_workers) {
-				soft_stop_waiting = 0;
-				soft_stop_cv.broadcast();
-			} else {
-				soft_stop_cv.wait(l);
-			}
-		} while(soft_stop_condition);
-		#ifdef DEBUG
-			std::cerr << "Exiting soft-stop" << std::endl;
-			std::cerr.flush();
-		#endif
-	}
+	/*TODO*/
 }
 
 /*
@@ -126,10 +98,13 @@ process-level GC should push a black process.
 */
 void AllWorkers::workqueue_push(Process* R) {
 	AppLock l(general_mtx);
-	bool sig = workqueue.empty();
+	bool waiting = !waitqueue.empty();
 	Process::SetOnlyRunning(R,0);
 	workqueue.push(R);
-	if(sig) workqueue_cv.broadcast();
+	if(waiting) {
+		Worker* W = waitqueue.front(); waitqueue.pop();
+		W->waiting_sema.post();
+	}
 }
 void AllWorkers::workqueue_push_and_pop(Process*& R) {
 	AppLock l(general_mtx);
@@ -141,7 +116,7 @@ void AllWorkers::workqueue_push_and_pop(Process*& R) {
 		/*if all other workers are waiting, then this process *is*
 		the only one running
 		*/
-		if(workqueue_waiting == total_workers - 1) {
+		if(waitqueue.size() == total_workers - 1) {
 			 Process::SetOnlyRunning(R,1);
 		} else {
 			 Process::SetOnlyRunning(R,0);
@@ -153,31 +128,34 @@ void AllWorkers::workqueue_push_and_pop(Process*& R) {
 	R = workqueue.front();
 	workqueue.pop();
 }
-bool AllWorkers::workqueue_pop(Process*& R) {
-	AppLock l(general_mtx);
+bool AllWorkers::workqueue_pop(Process*& R, Worker* W) {
 start:
-	soft_stop_check(l);
-	if(!workqueue.empty()) {
-		R = workqueue.front();
-		workqueue.pop();
-		return 1;
+	{
+		AppLock l(general_mtx);
+		if(exit_condition) return 0;
+		soft_stop_check(l);
+		if(workqueue.empty()) {
+			R = 0;
+			if(waitqueue.size() == total_workers - 1) {
+				set_exit_condition();
+				/*wake up all so that we can all die*/
+				while(!waitqueue.empty()) {
+					Worker* V = waitqueue.front();
+					waitqueue.pop();
+					V->waiting_sema.post();
+				}
+				return 0;
+			} else {
+				waitqueue.push(W);
+				goto wait;
+			}
+		} else {
+			R = workqueue.front(); workqueue.pop();
+			return 1;
+		}
 	}
-retry:
-	workqueue_waiting++;
-	if(workqueue_waiting == total_workers) {
-		workqueue_waiting = 0;
-		set_exit_condition();
-		return 0;
-	}
-	workqueue_cv.wait(l);
-	if(exit_condition) return 0;
-	--workqueue_waiting;
-	/*if we exited due to a soft-stop, bar*/
-	if(soft_stop_condition) goto start;
-	if(workqueue.empty()) goto retry;
-	R = workqueue.front();
-	workqueue.pop();
-	return 1;
+wait:
+	W->waiting_sema.wait(); goto start;
 }
 void AllWorkers::workqueue_trypop(Process*& R) {
 	AppTryLock l(general_mtx);
@@ -239,7 +217,7 @@ void AllWorkers::initiate(size_t nworkers, Process* begin) {
  * default_timeslice 2 until workers are fully tested
  */
 
-AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), workqueue_waiting(0), total_workers(0) {
+AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), total_workers(0) {
 }
 
 AllWorkers::~AllWorkers() {
@@ -560,7 +538,7 @@ WorkerLoop:
 			parent->workqueue_trypop(R);
 			if(!R) goto gray_scan;
 		} else {
-			if(!parent->workqueue_pop(R)) {
+			if(!parent->workqueue_pop(R, this)) {
 				return; //no more work
 			}
 		}

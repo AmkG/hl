@@ -43,8 +43,12 @@ class AllWorkers : boost::noncopyable {
 	AppMutex U_mtx;
 
 	std::queue<Process*> workqueue;
+	/*
 	size_t workqueue_waiting;
 	AppCondVar workqueue_cv;
+	*/
+
+	std::queue<Worker*> waitqueue;
 
 	/*default timeslice for processes*/
 	size_t default_timeslice;
@@ -69,7 +73,7 @@ class AllWorkers : boost::noncopyable {
 		(meaning all work has ended)
 	returns 1 if a process was successfully popped
 	*/
-	bool workqueue_pop(Process*&);
+	bool workqueue_pop(Process*&, Worker*);
 
 	/*attempts to pop, but gives up easily
 	if workqueue is busy or if there is
@@ -122,6 +126,9 @@ class Worker {
 
 	AllWorkers* parent;
 
+	/*worker waits on this when it can't get a process to work on yet*/
+	Semaphore waiting_sema;
+
 	/*worker core*/
 	void work(void);
 
@@ -141,11 +148,23 @@ public:
 		gray_done(1),
 		scanning_mode(0),
 		in_gc(0),
-		T(0)
+		T(0),
+		waiting_sema()
+	{ }
+
+	explicit Worker(Worker const& o)
+		: parent(o.parent),
+		gray_set(o.gray_set),
+		gray_done(o.gray_done),
+		scanning_mode(o.scanning_mode),
+		in_gc(o.in_gc),
+		T(o.T),
+		waiting_sema()
 	{ }
 
 	friend class SymbolProcessScanner;
 	friend class EventSetScanner;
+	friend class AllWorkers;
 };
 
 #endif // WORKERS_H
