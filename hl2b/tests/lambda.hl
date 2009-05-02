@@ -38,3 +38,9 @@
                                       (check-vars 4)
                                       (continue-local 3))
                                       (continue)))
+(test "rest arg"
+  (<axiom>lambda r r) ((check-vars 2)
+                       (closure 0
+                         (variadic 2)
+                         (continue-local 2))
+                       (continue)))
