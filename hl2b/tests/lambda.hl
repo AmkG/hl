@@ -18,5 +18,5 @@
   (<axiom>lambda (arg) arg) ((check-vars 2)
                              (closure 0
                                (check-vars 3)
-                               (continue-local 3))
+                               (continue-local 2))
                              (continue)))
