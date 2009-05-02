@@ -43,4 +43,14 @@
                        (closure 0
                          (variadic 2)
                          (continue-local 2))
-                       (continue)))
+                       (continue))
+  (<axiom>lambda (a . r) r) ((check-vars 2)
+                             (closure 0
+                               (variadic 3)
+                               (continue-local 3))
+                             (continue))
+  (<axiom>lambda (a . r) a) ((check-vars 2)
+                             (closure 0
+                               (variadic 3)
+                               (continue-local 2))
+                             (continue)))

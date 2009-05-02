@@ -147,7 +147,7 @@
          (rev acc)
        (or (no (cdr l)) (acons (cdr l)))
          (self (cdr l) (cons (car l) acc))
-       (rev (cons (cdr l) acc))))
+       (rev (cons (cdr l) (cons (car l) acc)))))
     l nil))
 
 (push (make-macro '<axiom>lambda
