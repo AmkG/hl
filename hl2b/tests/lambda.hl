@@ -15,8 +15,26 @@
                           (continue)))
 
 (test "one-arg lambda"
+  (<axiom>lambda (arg) 9) ((check-vars 2)
+                             (closure 0
+                               (check-vars 3)
+                               (int 9)
+                               (continue))
+                             (continue))
   (<axiom>lambda (arg) arg) ((check-vars 2)
                              (closure 0
                                (check-vars 3)
                                (continue-local 2))
                              (continue)))
+
+(test "multi arg lambda"
+  (<axiom>lambda (arg1 arg2) arg1) ((check-vars 2)
+                                    (closure 0
+                                      (check-vars 4)
+                                      (continue-local 2))
+                                      (continue))
+  (<axiom>lambda (arg1 arg2) arg2) ((check-vars 2)
+                                    (closure 0
+                                      (check-vars 4)
+                                      (continue-local 3))
+                                      (continue)))
