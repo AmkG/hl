@@ -492,5 +492,10 @@
     ; !!
     ; !! - this change was done to generalize
     ; !! the special handling of 'compose
-    (bytecodegen-top:closure-convert:cps-convert:quote-lift:sharedvars-convert-assert:xe:to-3-if:symbol-syntax e)))
-
+    (withs (e (symbol-syntax e)
+            e (xe e)
+            e (sharedvars-convert-assert e)
+            e (quote-lift e)
+            e (cps-convert e)
+            e (closure-convert e))
+      (bytecodegen-top e))))
