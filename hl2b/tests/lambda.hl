@@ -15,6 +15,12 @@
                           (continue)))
 
 (test "one-arg lambda"
+  (<axiom>lambda (arg) 9) ((check-vars 2)
+                             (closure 0
+                               (check-vars 3)
+                               (int 9)
+                               (continue))
+                             (continue))
   (<axiom>lambda (arg) arg) ((check-vars 2)
                              (closure 0
                                (check-vars 3)
