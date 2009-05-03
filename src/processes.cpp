@@ -293,7 +293,7 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 			AppLock l(mtx);
 			stat = process_dead;
 		}
-		return stat;
+		return nstat;
 	} /*catch(HlError& h) ...*/
 	/*In the future, when we catch an HlError,
 	get the process's error handler and force it
