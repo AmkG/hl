@@ -149,6 +149,8 @@ bool Process::anesthesize(void) {
 	if(stat == process_waiting && !black) {
 		stat = process_anesthesized;
 		return true;
+	} else if(stat == process_dead && !black) {
+		return true;
 	} else {
 		return false;
 	}
@@ -156,7 +158,9 @@ bool Process::anesthesize(void) {
 
 bool Process::unanesthesize(void) {
 	AppLock l(mtx);
-	if (the_mailbox.empty()) {
+	if(stat == process_dead) {
+		return false;
+	} else if (the_mailbox.empty()) {
 		stat = process_waiting;
 		return false;
 	} else {
