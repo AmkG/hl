@@ -24,6 +24,7 @@ The "App" versions have the following characteristics:
 class AppLock;
 class AppTryLock;
 class AppCondVar;
+class AppSemaphore
 
 class AppMutex : boost::noncopyable {
 private:
@@ -146,6 +147,37 @@ public:
 	void broadcast(void) {
 		#ifndef single_threaded
 			if(!single_threaded) c.broadcast();
+		#endif
+	}
+};
+
+class AppSemaphore : boost::noncopyable {
+private:
+	#ifndef single_threaded
+		Semaphore s;
+	#endif
+
+public:
+	AppSemaphore(void)
+	#ifndef single_threaded
+		: s()
+	#endif
+	{ }
+	void post(void) {
+		#ifndef single_threaded
+			s.post();
+		#endif
+	}
+	void wait(void) {
+		#ifndef single_threaded
+			s.wait();
+		#endif
+	}
+	void try_wait(void) {
+		#ifndef single_threaded
+			return s.try_wait();
+		#else
+			return 1;
 		#endif
 	}
 };

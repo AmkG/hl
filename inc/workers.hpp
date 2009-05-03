@@ -24,7 +24,7 @@ class AllWorkers : boost::noncopyable {
 
 	bool soft_stop_condition;
 	std::vector<Worker*> soft_stopped_procs;
-	Semaphore soft_stop_sema;
+	AppSemaphore soft_stop_sema;
 
 	AppMutex general_mtx;
 
@@ -124,7 +124,7 @@ class Worker {
 	AllWorkers* parent;
 
 	/*worker waits on this when it can't get a process to work on yet*/
-	Semaphore waiting_sema;
+	AppSemaphore waiting_sema;
 
 	/*worker core*/
 	void work(void);
