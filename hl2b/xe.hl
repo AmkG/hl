@@ -137,6 +137,19 @@
         (xe `(if ,(cadr e) ,(car:cddr e) nil) cte)
         (err "if expects 2 or 3 args")))) initial-ctes*)
 
+; make a dotted list a proper list only if it end with a non nil value
+; 'makeproper transforms '(1 2) in '(1 2 nil)
+; this function transorfms '(1 2) in '(1 2) and '(1 2 . 3) in '(1 2 3)
+(def make-proper-list (l)
+  ((afn (l acc)
+     (if 
+       (no l)
+         (rev acc)
+       (or (no (cdr l)) (acons (cdr l)))
+         (self (cdr l) (cons (car l) acc))
+       (rev (cons (cdr l) (cons (car l) acc)))))
+    l nil))
+
 (push (make-macro '<axiom>lambda
   (fn (e cte)
     (let (_ exp-params . body) e
@@ -145,7 +158,7 @@
           ; support proper and improper lists
           ; as argument list: (arg arg) or (arg . arg)
           (params (map-improper new-var exp-params)
-           proper-params (if (alist params) (makeproper params) (cons params nil))
+           proper-params (if (alist params) (make-proper-list params) (cons params nil))
            new-cte (extend proper-params cte))
           (make-lam (list:xe (cons 'do body) new-cte) params))
         (err "fn expects a parameter list"))))) initial-ctes*)
