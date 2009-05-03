@@ -290,7 +290,7 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		invalidate_changed_globals();
 		ProcessStatus nstat = ::execute(*this, reductions, Q, 0);
 		if(nstat == process_dead) {
-			AppMutex l(mtx);
+			AppLock l(mtx);
 			stat = process_dead;
 		}
 		return stat;
