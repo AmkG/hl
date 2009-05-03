@@ -173,7 +173,7 @@ public:
 			s.wait();
 		#endif
 	}
-	void try_wait(void) {
+	bool try_wait(void) {
 		#ifndef single_threaded
 			return s.try_wait();
 		#else
