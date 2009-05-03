@@ -24,7 +24,7 @@ The "App" versions have the following characteristics:
 class AppLock;
 class AppTryLock;
 class AppCondVar;
-class AppSemaphore
+class AppSemaphore;
 
 class AppMutex : boost::noncopyable {
 private:
