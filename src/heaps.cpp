@@ -313,7 +313,10 @@ Heaps
 -----------------------------------------------------------------------------*/
 
 void Heap::traverse_objects(HeapTraverser* ht) const {
-	main->traverse_objects(ht);
+	/*if the heap is "dead", don't traverse it!*/
+	if(main) {
+		main->traverse_objects(ht);
+	}
 	if(!other_spaces.empty()) {
 		other_spaces->traverse_objects(ht);
 	}

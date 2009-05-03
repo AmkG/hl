@@ -140,7 +140,8 @@ Refer to doc/process-gc.txt and in particular src/workers.cpp
 
 bool Process::waiting_and_not_black(void) {
 	AppLock l(mtx);
-	return (stat == process_waiting) && !black;
+	/*need to also check if process is dead.  Dead processes don't actually do anything*/
+	return (stat == process_waiting || stat == process_dead) && !black;
 }
 
 bool Process::anesthesize(void) {
