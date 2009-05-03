@@ -433,8 +433,12 @@ public:
 /*
  * Marks all PID's of a process
  */
-// move within mailbox
 void Worker::mark_process(Process* P) {
+	/*Marking may be invoked in parallel multiple times in
+	the same process, if the involved process is dead.
+	We should be careful to avoid anything that could
+	be unsafe if the process is dead.
+	*/
 	MarkingTraverser mt(gray_set);
 	P->heap().traverse_objects(&mt);
 	P->mailbox().traverse(&mt);
@@ -639,6 +643,14 @@ gray_scan:
 			gray_set.erase(i);
 			{AnesthesizeProcess ap(Q, parent);
 				if(ap.succeeded) {
+					/*NOTE! It's possible for us
+					to attempt anesthesizing a
+					dead process.  This means that
+					mark_process must be safe to
+					run on the same process in
+					multiple threads provided the
+					process is dead.
+					*/
 					mark_process(Q);
 				} else if(!gray_set.empty()) {
 					/*if anesthesizing failed, keep
