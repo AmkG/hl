@@ -20,6 +20,7 @@ libhlvm_a_SOURCES = \
 	executors.cpp \
 	reader.cpp \
 	workers.cpp \
+	assembler.cpp \
 	../inc/aio.hpp \
 	../inc/all_defines.hpp \
 	../inc/bytecodes.hpp \
@@ -39,6 +40,7 @@ libhlvm_a_SOURCES = \
 	../inc/unichars.hpp \
 	../inc/workarounds.hpp \
 	../inc/workers.hpp \
+	../inc/assembler.hpp \
 	../os/thread.hpp
 
 bin_PROGRAMS = hl
