@@ -12,6 +12,7 @@
 #include "symbols.hpp"
 #include "types.hpp"
 #include "workers.hpp"
+#include "assembler.hpp"
 
 using namespace std;
 

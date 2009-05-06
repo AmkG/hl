@@ -11,6 +11,7 @@
 #include "executors.hpp"
 #include "symbols.hpp"
 #include "types.hpp"
+#include "assembler.hpp"
 
 using namespace std;
 
