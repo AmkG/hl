@@ -212,7 +212,7 @@ public:
 	};
 
 	/*sets or clears the only-running flag.  used only for
-	class AllWorkers
+	class AllWorkers and class Worker
 	*/
 	class SetOnlyRunning : boost::noncopyable {
 	private:
@@ -222,6 +222,7 @@ public:
 		}
 	public:
 		friend class AllWorkers;
+		friend class Workers;
 	};
 
 	// spawn a new Process

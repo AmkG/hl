@@ -628,6 +628,7 @@ execute:
 		if(in_gc && !R->is_black()) {
 			mark_process(R);
 		}
+		Process::SetOnlyRunning(R, 0);//no possible race ...?
 		goto execute;
 	}
 gray_scan:
