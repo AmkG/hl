@@ -108,6 +108,7 @@ void AllWorkers::soft_stop_lower(void) {
 void AllWorkers::soft_stop_check(Worker* W, Process*& R) {
 	{ AppLock l(general_mtx);
 		if(soft_stop_condition) {
+			workqueue.push(R); R = 0;
 			soft_stopped_procs.push_back(W);
 			soft_stop_sema.post();
 			goto wait;
