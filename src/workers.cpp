@@ -184,6 +184,7 @@ start:
 			}
 		} else {
 			R = workqueue.front(); workqueue.pop();
+			Process::SetOnlyRunning(R,0);
 			return 1;
 		}
 	}
