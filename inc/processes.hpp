@@ -222,7 +222,7 @@ public:
 		}
 	public:
 		friend class AllWorkers;
-		friend class Workers;
+		friend class Worker;
 	};
 
 	// spawn a new Process
