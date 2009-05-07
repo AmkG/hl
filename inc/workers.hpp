@@ -53,6 +53,9 @@ class AllWorkers : boost::noncopyable {
 	/*default timeslice for processes*/
 	size_t default_timeslice;
 
+	/*check for soft-stop state and do so if needed*/
+	void soft_stop_check(Worker*, Process*&);
+
 	/*Set exit_condition to be true. Must be called while holding
 	the lock on general_mtx.
 	*/

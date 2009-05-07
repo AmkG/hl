@@ -105,6 +105,19 @@ void AllWorkers::soft_stop_lower(void) {
 		stopped[i]->waiting_sema.post();
 	}
 }
+void AllWorkers::soft_stop_check(Worker* W, Process*& R) {
+	{ AppLock l(general_mtx);
+		if(soft_stop_condition) {
+			soft_stopped_procs.push_back(W);
+			soft_stop_sema.post();
+			goto wait;
+		}
+		return;
+	}
+wait:
+	W->waiting_sema.wait();
+	return;
+}
 
 /*
  * Workqueue
@@ -127,13 +140,7 @@ void AllWorkers::workqueue_push(Process* R) {
 	}
 }
 void AllWorkers::workqueue_push_and_pop(Process*& R, Worker* W) {
-start:
 	{ AppLock l(general_mtx);
-		if(soft_stop_condition) {
-			soft_stopped_procs.push_back(W);
-			soft_stop_sema.post();
-			goto wait;
-		}
 		/*if workqueue is empty, we'd end up popping what we
 		would have pushed anyway, so just short-circuit it
 		*/
@@ -154,13 +161,25 @@ start:
 		workqueue.pop();
 		return;
 	}
-wait:
-	W->waiting_sema.wait(); goto start;
 }
 bool AllWorkers::workqueue_pop(Process*& R, Worker* W) {
 start:
 	{ AppLock l(general_mtx);
 		if(exit_condition) return 0;
+		/*we still have to check soft-stop here, because of
+		potential race:
+			worker A		worker B
+			...			check soft-stop, find none
+			enter soft-stop		...mutex block
+			get workers not		...mutex block
+			  waiting on queue (1)
+			raise soft-stop flag	...mutex block
+			wait for 1 worker	enter pop
+			...sema block		check queue empty (true)
+			...sema block		push on waitqueue
+			...sema block		wait for work
+			...sema block		...sema block
+		*/
 		if(soft_stop_condition) {
 			soft_stopped_procs.push_back(W);
 			soft_stop_sema.post();
@@ -572,7 +591,7 @@ WorkerLoop:
 			--T;
 		}
 	}
-	/*this also checks for soft-stop for us*/
+	parent->soft_stop_check(this, R);
 	if(R) {
 		parent->workqueue_push_and_pop(R, this);
 	} else {
