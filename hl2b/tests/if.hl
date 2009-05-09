@@ -1,0 +1,30 @@
+; <axiom>if test
+
+(test "all constants"
+  (if t 1 2)  ((check-vars 2)
+               (lit-t)
+               (if
+                 (int 1)
+                 (continue))
+               (int 2)
+               (continue)))
+
+(test "nested if in test"
+  (if (if t t nil) 1 2)  ((check-vars 2)
+                          (local 1)
+                          (k-closure 1
+                            (check-vars 2)
+                            (local 1)
+                            (if
+                              (int 1)
+                              (continue-on-clos 0))
+                            (int 2)
+                            (continue-on-clos 0))
+                          (lit-t)
+                          (if
+                            (local 3)
+                            (lit-t)
+                            (apply 2))
+                          (local 3)
+                          (lit-nil)
+                          (apply 2)))
