@@ -28,3 +28,42 @@
                           (local 3)
                           (lit-nil)
                           (apply 2)))
+
+(test "nested if in clause"
+  (if t (if t t nil) 2)  ((check-vars 2)
+                          (lit-t)
+                          (if
+                            (lit-t)
+                            (if
+                              (lit-t)
+                              (continue))
+                            (lit-nil)
+                            (continue))
+                          (int 2)
+                          (continue)))
+
+(test "nested if in test & clause"
+  (if (if t t nil) 
+    1 
+    (if 2 3 4))  ((check-vars 2)
+                  (local 1)
+                  (k-closure 1
+                    (check-vars 2)
+                    (local 1)
+                    (if
+                      (int 1)
+                      (continue-on-clos 0))
+                    (int 2)
+                    (if
+                      (int 3)
+                      (continue-on-clos 0))
+                    (int 4)
+                    (continue-on-clos 0))
+                  (lit-t)
+                  (if
+                    (local 3)
+                    (lit-t)
+                    (apply 2))
+                  (local 3)
+                  (lit-nil)
+                  (apply 2)))
