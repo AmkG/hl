@@ -187,7 +187,7 @@
                        ; NOTE! assumes that subexpressions here cannot
                        ; be 'let forms
                       `( ,@(apply-pushall params)
-                         (apply ,(len params))))
+                         (<bc>apply ,(len params))))
                   (do (prn "----expected (%closure-ref _ 0) on apply")
                       (ppr-sexp:source ast)
                       nil))))
@@ -269,13 +269,14 @@
       (acnd ast)
         (let (c then else) ast!subx
           ; check for common case of local variable reference
-          (if (and (aref c) (~aglobal c!var))
-              `( (if-local ,(env c!var) ,@(bytecodegen then env))
-                 ,@(bytecodegen else env))
+          ;(if (and (aref c) (~aglobal c!var))
+          ;    `( (if-local ,(env c!var) ,@(bytecodegen then env))
+          ;       ,@(bytecodegen else env))
               ; bytecode 'if pops stack top, so no need to update environment
+          ; !! no if-local for the moment
               `( ,@(bytecodegen c env)
                  (if ,@(bytecodegen then env))
-                 ,@(bytecodegen else env))))
+                 ,@(bytecodegen else env)))
       (alit ast)
         (let val ast!val
           (if

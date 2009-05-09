@@ -12,7 +12,7 @@
 (using <arc>v3) ; uncomment when running under hl-arc-f
 ; (using <hl>v0) ; un-comment when running under hl
 
-(set tests* '("lit.hl" "lambda.hl"))
+(set tests* '("lit.hl" "lambda.hl" "if.hl"))
 
 ; load files with tests
 (each test tests*
