@@ -54,14 +54,18 @@ void AllWorkers::unregister_worker(Worker* W) {
 			waiting states
 			*/
 			if(soft_stop_condition) {
-				/*TODO: determine if assumption is
-				correct
-				*/
-				/*ASSUMPTION: we assume that a worker
-				never dies while raising the soft-stop
-				waiting state.
-				*/
-				soft_stop_sema.post();
+				size_t blocked =
+					soft_stopped_procs.size() +
+					waitqueue.size() +
+					1
+				;
+				if(blocked >= total_workers) {
+					/*ASSUMPTION: we assume that a worker
+					never dies while raising the soft-stop
+					waiting state.
+					*/
+					soft_stop_sema.post();
+				}
 			}
 			if(waitqueue.size() > 0) {
 				if(waitqueue.size() == total_workers) {
@@ -80,20 +84,12 @@ void AllWorkers::unregister_worker(Worker* W) {
 void AllWorkers::soft_stop_raise(void) {
 	size_t num_waiting;
 	{ AppLock l(general_mtx);
-		/*the number of workers to wait for.
-		the workers waiting on the queue are already
-		blocked, so we don't worry about them;
-		in addition we don't count ourself
-		*/
-		num_waiting = (total_workers - waitqueue.size()) - 1;
 		soft_stop_condition = 1;
 	}
-	/*release the lock, then let each of the other
-	workers notify us.
+	/*release the lock, then let the other workers
+	notify us.
 	*/
-	for(size_t i = 0; i < num_waiting; ++i){
-		soft_stop_sema.wait();
-	}
+	soft_stop_sema.wait();
 }
 void AllWorkers::soft_stop_lower(void) {
 	std::vector<Worker*> stopped;
@@ -108,9 +104,19 @@ void AllWorkers::soft_stop_lower(void) {
 void AllWorkers::soft_stop_check(Worker* W, Process*& R) {
 	{ AppLock l(general_mtx);
 		if(soft_stop_condition) {
-			workqueue.push(R); R = 0;
+			if(R) {
+				workqueue.push(R);
+				R = 0;
+			}
 			soft_stopped_procs.push_back(W);
-			soft_stop_sema.post();
+			size_t blocked =
+				soft_stopped_procs.size() +
+				waitqueue.size() +
+				1
+			;
+			if(blocked >= total_workers) {
+				soft_stop_sema.post();
+			}
 			goto wait;
 		}
 		return;
@@ -183,7 +189,14 @@ start:
 		*/
 		if(soft_stop_condition) {
 			soft_stopped_procs.push_back(W);
-			soft_stop_sema.post();
+			size_t blocked =
+				soft_stopped_procs.size() +
+				waitqueue.size() +
+				1
+			;
+			if(blocked >= total_workers) {
+				soft_stop_sema.post();
+			}
 			/*release lock and wait*/
 			goto wait;
 		}
