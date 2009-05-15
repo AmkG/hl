@@ -961,7 +961,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // must be called in tail position
     BYTECODE(send): {
       Object::ref msg = proc.stack.top();
-      HlPid *pid = expect_type<HlPid>(proc.stack.top(), "send expects a pid as first argument");
+      HlPid *pid = expect_type<HlPid>(proc.stack.top(2), "send expects a pid as first argument");
       proc.stack.pop();
       ValueHolderRef ref;
       ValueHolder::copy_object(ref, msg);
