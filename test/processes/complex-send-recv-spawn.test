@@ -18,7 +18,7 @@
   (<bc>closure 2
     (<bc>check-vars 1)
     (<bc>closure-ref 1)
-    (<bc>int 1)
+    (<bc>int 0)
     (<bc>is)
     (<bc>if
       (<bc>global <common>send)
