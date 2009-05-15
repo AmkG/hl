@@ -962,7 +962,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(send): {
       Object::ref msg = proc.stack.top();
       HlPid *pid = expect_type<HlPid>(proc.stack.top(2), "send expects a pid as first argument");
-      proc.stack.pop();
       ValueHolderRef ref;
       ValueHolder::copy_object(ref, msg);
       bool is_waiting = false;
