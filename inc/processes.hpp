@@ -319,14 +319,17 @@ For process-level garbage collection
 
 	/*sets color to black*/
 	void blacken(void) {
+		AppLock l(mtx);
 		black = true;
 	}
 	/*sets color to white*/
 	void whiten(void) {
+		AppLock l(mtx);
 		black = false;
 	}
 	/*checks color.  no atomicity necessary*/
 	bool is_black(void) {
+		AppLock l(mtx);
 		return black;
 	}
 
