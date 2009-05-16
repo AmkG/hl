@@ -65,6 +65,7 @@
                        (<bc>halt))
                     tmp)
         (each expr (compile-to-bytecode prog)
+          ; (prn expr)
           (<arc>write expr tmp)))))
   ; run the bytecode
   (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))

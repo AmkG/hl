@@ -275,7 +275,7 @@
               ; bytecode 'if pops stack top, so no need to update environment
           ; !! no if-local for the moment
               `( ,@(bytecodegen c env)
-                 (if ,@(bytecodegen then env))
+                 (<bc>if ,@(bytecodegen then env))
                  ,@(bytecodegen else env)))
       (alit ast)
         (let val ast!val
