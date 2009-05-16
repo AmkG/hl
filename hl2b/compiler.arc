@@ -18,7 +18,7 @@
               alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self makeproper rfn pos complement dotted len on
               index copy mappend cadr cddr len> it some assert given case
-              >= keep idfn rev -
+              >= > keep idfn rev -
               ; types
               int num char table string sym bool)
 
@@ -50,3 +50,21 @@
 ; Arc-F, because Arc-F doesn't support <axiom>assemble.
 ; Maybe should be in the "compiled-but-not-executed"
 ; set of files
+
+(when (> (len <arc>argv) 1)
+  ; called from the command line
+  ; compile and run the program
+  (<arc>w/infile in (<arc>argv 1)
+    (let prog `((<axiom>lambda () ,@(<arc>readall in)))
+      (<arc>w/outfile tmp "/tmp/hl-tmp"
+        ; not the best thing to do, pipe-to would be better if we had it
+        ; put the default continuation
+        (<arc>write '(<bc>k-closure 0 
+                       (<bc>check-vars 2) 
+                       (<bc>local 1) 
+                       (<bc>halt))
+                    tmp)
+        (each expr (compile-to-bytecode prog)
+          (<arc>write expr tmp)))))
+  ; run the bytecode
+  (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))

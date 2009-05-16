@@ -54,3 +54,41 @@
                                (variadic 3)
                                (continue-local 2))
                              (continue)))
+(test "nested lambdas"
+  (<axiom>lambda (x) 
+    (<axiom>lambda (x)
+      x)) ((check-vars 2)
+           (closure 0
+             (check-vars 3)
+             (closure 0
+               (check-vars 3)
+               (continue-local 2))
+             (continue))
+           (continue))
+
+  (<axiom>lambda (x)
+    (<axiom>lambda ()
+      x)) ((check-vars 2)
+           (closure 0
+             (check-vars 3)
+             (local 2)
+             (closure 1
+               (check-vars 2)
+               (closure-ref 0)
+               (continue))
+             (continue))
+           (continue)))
+
+(test "lambda with more than on expression"
+  (<axiom>lambda (x)
+    3 x) ((check-vars 2)
+          (closure 0
+            (check-vars 3)
+            (local 1)
+            (local 2)
+            (k-closure 2
+              (closure-ref 1)
+              (continue-on-clos 0))
+            (int 3)
+            (continue))
+          (continue)))

@@ -306,14 +306,14 @@
                (val) ast!subx
           (if (aglobal var)
               `( ,@(bytecodegen val env)
-                 (<bc>global-set ',var!id))
+                 (<bc>global-set ,var!id))
               (do (prn "----unexpected set of non-global")
                   (ppr-sexp:source ast)
                   nil)))
       (aref ast)
         (let var ast!var
           (if (aglobal var)
-              `( (<bc>global ',var!id))
+              `( (<bc>global ,var!id))
               `( (<bc>local ,(env var)))))
       ; shouldn't occur after closure conversion
       (alam ast)

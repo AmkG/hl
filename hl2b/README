@@ -1,0 +1,13 @@
+You can now run simple hl programs.
+
+Requirements:
+ - a working, updated, hl-arc-f
+ - a system where you can create and write a file called "/tmp/hl-tmp"
+
+the last requirement is obviously temporary and will disappear in future versions.
+
+To run a program saved in a file, type (within this directory):
+
+  $ hl-arc-f compiler.arc your-file.hl
+
+if everything is ok, the result of the last expression will be printed.
