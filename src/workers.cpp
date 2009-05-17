@@ -37,9 +37,18 @@ void AllWorkers::register_process(Process* P) {
 }
 
 void AllWorkers::register_worker(Worker* W) {
-	AppLock l(general_mtx);
-	Ws.push_back(W);
-	total_workers++;
+	{
+		AppLock l(general_mtx);
+		Ws.push_back(W);
+		total_workers++;
+		if(soft_stop_condition) {
+			soft_stopped_procs.push_back(W);
+			goto wait;
+		}
+		return;
+	}
+wait:
+	W->waiting_sema.wait();
 }
 
 void AllWorkers::unregister_worker(Worker* W) {
