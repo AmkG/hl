@@ -164,6 +164,7 @@ public:
 
 	friend class ValueHolderRef;
 	friend class LockedValueHolderRef;
+	friend class Heap;
 };
 
 inline ValueHolderRef::~ValueHolderRef() {
@@ -306,6 +307,9 @@ public:
 	}
 
 	void traverse_objects(HeapTraverser*) const;
+
+	/*clears other_spaces if it's already too deep*/
+	void maybe_clear_other_spaces(void);
 
 	explicit Heap(size_t initsize = 8 * sizeof(Object::ref))
 		: main(new Semispace(initsize)), tight(1) { }

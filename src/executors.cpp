@@ -806,6 +806,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         stack.push(stack[1]); // current continuation
         stack.push(msg);
         stack.restack(2);
+        proc.maybe_clear_other_spaces();
         DOCALL();
       } else {
 	//std::cerr<<"recv: queue empty\n";
@@ -1104,6 +1105,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         stack.push(stack[1]);
         stack.push(msg);
         stack.restack(3);
+        proc.maybe_clear_other_spaces();
       } else {
         // fail
         stack.push(stack.top(1));

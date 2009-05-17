@@ -401,4 +401,20 @@ void Heap::GC(size_t insurance) {
 	}
 }
 
+void Heap::maybe_clear_other_spaces(void) {
+	/*count the depth first*/
+	size_t i = 0;
+	ValueHolder* vh = &*other_spaces;
+	while(vh) {
+		++i; if(i > 8) goto do_clear;
+		vh = &*vh->next;
+	}
+	return;
+do_clear:
+	/*for now, just do a GC
+	TODO: in the future, check if the main semispace has enough
+	free space and copy into it.
+	*/
+	GC(0);
+}
 
