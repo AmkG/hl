@@ -42,10 +42,23 @@
         (++ result (string elt))))
     result))
 
+; make a dotted list a proper list only if it end with a non nil value
+; 'makeproper transforms '(1 2) in '(1 2 nil)
+; this function transorfms '(1 2) in '(1 2) and '(1 2 . 3) in '(1 2 3)
+(def make-proper-list (l)
+  ((afn (l acc)
+     (if 
+       (no l)
+         (rev acc)
+       (or (no (cdr l)) (acons (cdr l)))
+         (self (cdr l) (cons (car l) acc))
+       (rev (cons (cdr l) (cons (car l) acc)))))
+    l nil))
+
 (def properify (lst)
   " Makes an improper list proper, or a non-list into a
     singleton list "
-  (if (alist lst) (makeproper lst) (cons lst nil)))
+  (if (alist lst) (make-proper-list lst) (cons lst nil)))
 
 (def map-improper (f l)
   " A mapping function which supports both
