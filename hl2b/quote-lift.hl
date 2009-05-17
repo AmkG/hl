@@ -52,10 +52,11 @@
 
 ; complex types
 (def-const-expander cons val
-  (make-prim (list (const-expand:car val) (const-expand:cdr val)) '%cons))
+  (make-prim (list (const-expand:car val) (const-expand:cdr val)) 
+             '<axiom>cons))
 
 (def-const-expander string val
-  (make-prim (map [make-lit '() _] (coerce val 'cons)) '%string-create))
+  (make-prim (map [make-lit '() _] (coerce val 'cons)) '<axiom>string-create))
 
 (def-const-expander num val
   (make-lit '() val))

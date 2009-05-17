@@ -64,7 +64,7 @@
          primvar
          (fn (var)
            (and (aglobal var)
-                (is #\% ((string var!id) 0))))
+                (an-axiom var!id)))
          primitivize nil)
     (= primitivize
        (fn (ast)
@@ -87,6 +87,6 @@
       (= ast-cps
          (make-app:list
           (make-lam (list ast-cps) (list (new-var '_)))
-          (primitivize:xe '(set <arc2c>!apply (fn (k f l) (%apply f k l))) '()))))
+          (primitivize:xe '(set <arc2c>!apply (fn (k f l) (<axiom>apply f k l))) '()))))
     ast-cps))
 

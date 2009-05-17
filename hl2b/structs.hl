@@ -76,6 +76,23 @@
 (def aprim (x)
   (and (isa x 'table) (is x!type 'prim)))
 
+; list of known bytecodes accessible directly to the user
+(set axioms* '(<axiom>acquire <axiom>car <axiom>scar <axiom>cdr <axiom>scdr 
+               <axiom>char <axiom>composeo <axiom>cons <axiom>f-to-i 
+               <axiom>halt <axiom>i-to-f <axiom>is <axiom>ccc <axiom>monomethod
+               <axiom>reducto <axiom>recv <axiom>release <axiom>rep 
+               <axiom>self-pid <axiom>send <axiom>spawn <axiom>string-create
+               <axiom>string-length <axiom>string-ref <axiom>string-sref 
+               <axiom>sym <axiom>symeval <axiom>table-create <axiom>table-ref 
+               <axiom>table-sref <axiom>table-keys <axiom>tag <axiom>try-recv 
+               <axiom>type <axiom>do-executor <axiom>i+ <axiom>i- <axiom>i* 
+               <axiom>i/ <axiom>imod <axiom>i< <axiom>f+ <axiom>f- <axiom>f* 
+               <axiom>f/ <axiom>f<))
+
+; check if x is an axiom
+(def an-axiom (x)
+  (and (isa x 'sym) (mem x axioms*)))
+
 ; a function call (a function *app*lication)
 (def make-app (subx)
   (listtab `((type app) (subx ,subx))))

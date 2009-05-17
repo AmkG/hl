@@ -12,9 +12,9 @@
 ; (fn (x)
 ;   ((fn (shared)
 ;     (list
-;       (fn () (%sharedvar-read shared))
-;       (fn (v) (%sharedvar-write shared v))))
-;    (%sharedvar x)))
+;       (fn () (<axiom>sharedvar-read shared))
+;       (fn (v) (<axiom>sharedvar-write shared v))))
+;    (<axiom>sharedvar x)))
 ;
 ; Based on an idea by stefano
 
@@ -43,9 +43,9 @@
                  (make-fn (map [lookup _] shared)
                    ; ,@body
                    (transform-shared subx lookup))
-                 ; (map [%sharedvar _] shared)
+                 ; (map [<axiom>sharedvar _] shared)
                  (map
-                   [make-prim (list:make-ref () _) '%sharedvar]
+                   [make-prim (list:make-ref () _) '<axiom>sharedvar]
                    shared) ))))))
     ; transform references to shared variables
     (= transform-shared
@@ -58,7 +58,7 @@
                (aif (lookup ast!var)
                     (make-prim
                       (list:make-ref () it)
-                      '%sharedvar-read)
+                      '<axiom>sharedvar-read)
                     ast)
              (aset ast)
                (aif (lookup ast!var)
@@ -68,7 +68,7 @@
                          ; 'set only has a singleton list in
                          ; its subx
                          (transform-shared ast!subx lookup))
-                   '%sharedvar-write)
+                   '<axiom>sharedvar-write)
                  (make-set (transform-shared ast!subx lookup) ast!var))
              (aquote ast)
                ast

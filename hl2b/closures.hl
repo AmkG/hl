@@ -11,7 +11,7 @@
         ast
       (aref ast)
         (aif (pos ast!var free-vars)
-          (make-prim (list (make-ref '() self-var) (make-lit '() (+ it 1))) '%closure-ref)
+          (make-prim (list (make-ref '() self-var) (make-lit '() (+ it 1))) '<axiom>closure-ref)
           ast)
       (aset ast)
         (make-set (map cc ast!subx) ast!var)
@@ -28,7 +28,7 @@
               ((if fun!continuation make-cont make-lam)
                 (list:cc (car fun!subx)) fun!params) args)
             (let f (cc fun)
-              (make-app:cons (make-prim (list f (make-lit '() 0)) '%closure-ref) (cons f args)))))
+              (make-app:cons (make-prim (list f (make-lit '() 0)) '<axiom>closure-ref) (cons f args)))))
       (alam ast)
         (with
           (new-free-vars (keep [~aglobal _] (fv ast))
@@ -39,7 +39,7 @@
                 (list:convert (car ast!subx) new-self-var new-free-vars)
                 (cons new-self-var ast!params))
               (map [cc (make-ref '() _)] new-free-vars))
-            '%closure))
+            '<axiom>closure))
       (aseq ast) ; Impossible after CPS
         (make-seq (map cc ast!subx))
         (err "unknown ast" ast)))

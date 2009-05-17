@@ -39,8 +39,11 @@
 (def xe-form-expr (e cte)
   (let h (car e)
     (let b (and (ident-expr? h) (xe-lookup h cte))
-      (if (amacro b)
-        (b!expander e cte)
+      (if 
+        (amacro b)
+          (b!expander e cte)
+        (an-axiom b)
+          (make-prim (xe-exprs (cdr e) cte) b)
         (make-app (xe-exprs e cte))))))
 
 (def xe-exprs (le cte)
@@ -48,24 +51,24 @@
 
 (= initial-ctes* '())
 
-(mac add-macro (name nbargs)
-  (w/uniq prim-name
-    `(let ,prim-name (coerce (+ "%" (coerce ',name 'string)) 'sym)
-      (push (make-macro ',name
-        (fn (e cte)
-          (if (is (len (cdr e)) ,nbargs)
-            (make-prim (xe-exprs (cdr e) cte) ,prim-name)
-            (err:string ',name " : expects " ,nbargs "arg(s)")))) initial-ctes*))))
+;(mac add-macro (name nbargs)
+;  (w/uniq prim-name
+;    `(let ,prim-name (coerce (+ "%" (coerce ',name 'string)) 'sym)
+;      (push (make-macro ',name
+;        (fn (e cte)
+;          (if (is (len (cdr e)) ,nbargs)
+;            (make-prim (xe-exprs (cdr e) cte) ,prim-name)
+;            (err:string ',name " : expects " ,nbargs "arg(s)")))) initial-ctes*))))
 
-(add-macro < 2)
-(add-macro > 2)
-(add-macro <= 2)
-(add-macro >= 2)
-(add-macro + 2)
-(add-macro - 2)
-(add-macro * 2)
-(add-macro / 2)
-(add-macro mod 2)
+;(add-macro < 2)
+;(add-macro > 2)
+;(add-macro <= 2)
+;(add-macro >= 2)
+;(add-macro + 2)
+;(add-macro - 2)
+;(add-macro * 2)
+;(add-macro / 2)
+;(add-macro mod 2)
 
 (push (make-macro 'do
   (fn (e cte)
@@ -169,7 +172,7 @@
     (let (_ form) e
       (if (caris form 'quote)
           (make-ref '() (xe-lookup (cadr form) '()))
-          (make-prim (list:xe form cte) '%symeval))))) initial-ctes*)
+          (make-prim (list:xe form cte) '<axiom>symeval))))) initial-ctes*)
 
 (def make-initial-cte ()
   initial-ctes*)

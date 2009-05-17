@@ -8,13 +8,13 @@
   ; (ppr-sexp:source ast)
   (withs (is-closure-ref-self
           (fn (ast)
-            (and (aprim ast) (is ast!op '%closure-ref)
+            (and (aprim ast) (is ast!op '<axiom>closure-ref)
                  (let (s-var i) ast!subx
                    (and (aref s-var) (is 0 (env s-var!var))))))
           is-closure-ref-0
           (fn (ast)
             (and (aprim ast)
-                 (is ast!op '%closure-ref)
+                 (is ast!op '<axiom>closure-ref)
                  (is ((cadr ast!subx) 'val) 0)))
           is-cont-type
           (fn (asts)
@@ -67,7 +67,7 @@
                (,op)))
           is-continuation
           (fn (ast)
-            (if (and (aprim ast) (is '%closure ast!op))
+            (if (and (aprim ast) (is '<axiom>closure ast!op))
                (let f (car ast!subx)
                   (and (alam f) f!continuation)))))
     (if
@@ -97,7 +97,7 @@
                                     (if subxs
                                         (make-prim
                                           `(,(car subxs) ,(self:cdr subxs))
-                                          '%cons)
+                                          '<axiom>cons)
                                         (make-lit () nil)))
                                   subxs))
                                nil)))
@@ -188,14 +188,14 @@
                        ; be 'let forms
                       `( ,@(apply-pushall params)
                          (<bc>apply ,(len params))))
-                  (do (prn "----expected (%closure-ref _ 0) on apply")
+                  (do (prn "----expected (<axiom>closure-ref _ 0) on apply")
                       (ppr-sexp:source ast)
                       nil))))
       (aprim ast)
         (given op      ast!op
                params  ast!subx
           (case op
-            %closure-ref
+            <axiom>closure-ref
               ; make sure we are referring to the
               ; self variable
               (let (s-var paramnum) params
@@ -207,17 +207,17 @@
                     ; as closure.0
                     ; snap does not, so convert closure.N to (closure (- N 1))
                     `((<bc>closure-ref ,(- paramnum!val 1)))
-                    (do (prn "----expected (%closure-ref self _)")
+                    (do (prn "----expected (<axiom>closure-ref self _)")
                         (ppr-sexp:source ast)
                         nil)))
-            %closure
+            <axiom>closure
               ; make sure first parameter is a
               ; function
               (let (f . closed) params
                 (if
                   (~alam f)
                     ; not a function
-                    (do (prn "---- expected (%closure (fn ...) ...)")
+                    (do (prn "---- expected (<axiom>closure (fn ...) ...)")
                         (ppr-sexp:source ast)
                         nil)
                     ; create the closure
@@ -235,32 +235,32 @@
                                     (car f!subx)
                                     (f-environment:properify f!params)
                                     (if f!continuation (len closed)))))))
-            %car
+            <axiom>car
               (w/local-push (car ast!subx) '<bc>car)
-            %cdr
+            <axiom>cdr
               (w/local-push (car ast!subx) '<bc>cdr)
-            %cons
+            <axiom>cons
               (direct-compile ast!subx '<bc>cons)
-            %halt
+            <axiom>halt
               (w/local-push (car ast!subx) '<bc>halt)
-            %type
+            <axiom>type
               (w/local-push (car ast!subx) '<bc>type)
-            %rep
+            <axiom>rep
               (w/local-push (car ast!subx) '<bc>rep)
-            %annotate
+            <axiom>annotate
               (direct-compile ast!subx '<bc>tag)
-            %apply
+            <axiom>apply
               (direct-compile ast!subx '<bc>apply-list)
-            %sharedvar
+            <axiom>sharedvar
               (w/local-push (car ast!subx) '<bc>sv)
-            %sharedvar-read
+            <axiom>sharedvar-read
               (w/local-push (car ast!subx) '<bc>sv-ref)
-            %sharedvar-write
+            <axiom>sharedvar-write
               (direct-compile ast!subx '<bc>sv-set)
-            %string-create
+            <axiom>string-create
              `(,@(mappend [bytecodegen _ env] ast!subx)
                (<bc>string-create ,(len ast!subx)))
-            %symeval
+            <axiom>symeval
               (direct-compile ast!subx '<bc>symeval)
             ; default primitive
               (do (prn "----unsupported primitive")
