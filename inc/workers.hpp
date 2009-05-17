@@ -23,8 +23,8 @@ class AllWorkers : boost::noncopyable {
 	bool exit_condition;
 
 	bool soft_stop_condition;
-	size_t soft_stop_waiting;
-	AppCondVar soft_stop_cv;
+	std::vector<Worker*> soft_stopped_procs;
+	AppSemaphore soft_stop_sema;
 
 	AppMutex general_mtx;
 
@@ -43,11 +43,18 @@ class AllWorkers : boost::noncopyable {
 	AppMutex U_mtx;
 
 	std::queue<Process*> workqueue;
+	/*
 	size_t workqueue_waiting;
 	AppCondVar workqueue_cv;
+	*/
+
+	std::queue<Worker*> waitqueue;
 
 	/*default timeslice for processes*/
 	size_t default_timeslice;
+
+	/*check for soft-stop state and do so if needed*/
+	void soft_stop_check(Worker*, Process*&);
 
 	/*Set exit_condition to be true. Must be called while holding
 	the lock on general_mtx.
@@ -61,7 +68,7 @@ class AllWorkers : boost::noncopyable {
 	void unregister_worker(Worker*);
 
 	/*pushes a process onto the workqueue, then pops a process*/
-	void workqueue_push_and_pop(Process*&);
+	void workqueue_push_and_pop(Process*&, Worker*);
 
 	/*pops a process from the workqueue.
 	blocks if no process is available yet.
@@ -69,13 +76,16 @@ class AllWorkers : boost::noncopyable {
 		(meaning all work has ended)
 	returns 1 if a process was successfully popped
 	*/
-	bool workqueue_pop(Process*&);
+	bool workqueue_pop(Process*&, Worker*);
+
+	/*attempts to pop, but gives up easily
+	if workqueue is busy or if there is
+	nothing to pop.
+	*/
+	void workqueue_trypop(Process*&);
 
 	/*pushes a process onto the workqueue*/
 	void workqueue_push(Process*);
-
-	/*checks for a soft-stop condition and blocks while it is true*/
-	void soft_stop_check(AppLock&);
 
 	AllWorkers();
 	static AllWorkers workers;
@@ -84,6 +94,8 @@ public:
 	static AllWorkers& getInstance() {
 		return workers;
 	}
+
+	void report(void);
 
 	/*initiates the specified number of worker threads
 	This function will return only when workers run out
@@ -114,6 +126,9 @@ class Worker {
 
 	AllWorkers* parent;
 
+	/*worker waits on this when it can't get a process to work on yet*/
+	AppSemaphore waiting_sema;
+
 	/*worker core*/
 	void work(void);
 
@@ -133,11 +148,23 @@ public:
 		gray_done(1),
 		scanning_mode(0),
 		in_gc(0),
-		T(0)
+		T(0),
+		waiting_sema()
+	{ }
+
+	explicit Worker(Worker const& o)
+		: parent(o.parent),
+		gray_set(o.gray_set),
+		gray_done(o.gray_done),
+		scanning_mode(o.scanning_mode),
+		in_gc(o.in_gc),
+		T(o.T),
+		waiting_sema()
 	{ }
 
 	friend class SymbolProcessScanner;
 	friend class EventSetScanner;
+	friend class AllWorkers;
 };
 
 #endif // WORKERS_H

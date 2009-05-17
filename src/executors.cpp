@@ -801,11 +801,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // call current continuation
     BYTECODE(recv): {
       Object::ref msg;
-      if (proc.extract_message(msg)) {
+      if (proc.mailbox().extract_message(msg)) {
 	//std::cerr<<"recv: "<<msg<<"\n";
         stack.push(stack[1]); // current continuation
         stack.push(msg);
         stack.restack(2);
+        proc.maybe_clear_other_spaces();
         DOCALL();
       } else {
 	//std::cerr<<"recv: queue empty\n";
@@ -960,13 +961,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // expect a pid and a message on the stack
     // must be called in tail position
     BYTECODE(send): {
-      Object::ref msg = proc.stack.top(); proc.stack.pop();
-      HlPid *pid = expect_type<HlPid>(proc.stack.top(), "send expects a pid as first argument");
-      proc.stack.pop();
+      Object::ref msg = proc.stack.top();
+      HlPid *pid = expect_type<HlPid>(proc.stack.top(2), "send expects a pid as first argument");
       ValueHolderRef ref;
       ValueHolder::copy_object(ref, msg);
       bool is_waiting = false;
-      if (!pid->process->receive_message(ref, is_waiting)) {
+      if (!pid->process->mailbox().receive_message(ref, is_waiting)) {
         // TODO: save instruction counter in order to restart
         // the process from the correct position
         // !! maybe not necessary: we can always specify that
@@ -1084,45 +1084,35 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(table_keys): {
       bytecode_table_keys(proc, stack);
     } NEXT_BYTECODE;
-    // expects two continuations on the stack
+    // expects two functions on the stack
     // one is called if there is a message, the other if 
     // the message queue is empty
     // stack is:
     // -- top --
-    // fail cont
-    // success cont
+    // fail function
+    // success function
     // -- bottom --
     BYTECODE(try_recv): {
-	// directly use the mailbox, to avoid blocking
-	// ?? how's that?
-        MailBox &mbox = proc.mailbox();
-	Object::ref msg;
-	// !! TODO: recv may still block on the MailBox mutex
-	// ?? we can specify that <axiom>try-recv could cause
-	// ?? the function it is in to be restarted, and as
-	// ?? such should be protected by its own function.
-	// ?? we can then use a trylock and return a bool pair
-	/*TODO: rename MailBox::recv to try_recv!!*/
-	/*TODO: note: clarify division of responsibilities
-	between MailBox and Process.
-	suggestions: drop MailBox and use a plain ValueHolder;
-	recv, try-recv, and send then attempt to get the
-	process's lock.  This eliminates an extra lock on
-	the mailbox itself.
-	*/
-	if (mbox.recv(msg)) {
-		// success
-		stack.push(stack.top(2));
-		stack.push(stack[1]);
-		stack.push(msg);
-		stack.restack(3);
-        } else {
-		// fail
-		stack.push(stack.top(1));
-		stack.push(stack[1]);
-		stack.restack(2);
-        }
-	/***/ DOCALL(); /***/
+      MailBox mbox = proc.mailbox();
+      Object::ref msg;
+      bool has_message;
+      bool tried = mbox.try_extract_message(msg, has_message);
+      if(!tried) {
+        return process_running;
+      } else if (has_message) {
+        // success
+        stack.push(stack.top(2));
+        stack.push(stack[1]);
+        stack.push(msg);
+        stack.restack(3);
+        proc.maybe_clear_other_spaces();
+      } else {
+        // fail
+        stack.push(stack.top(1));
+        stack.push(stack[1]);
+        stack.restack(2);
+      }
+      /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*type never allocates: even when
     using a builtin type, we just use
