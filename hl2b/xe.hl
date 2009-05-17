@@ -38,13 +38,12 @@
 
 (def xe-form-expr (e cte)
   (let h (car e)
-    (let b (and (ident-expr? h) (xe-lookup h cte))
-      (if 
-        (amacro b)
+    (if (an-axiom h)
+      (make-prim (xe-exprs (cdr e) cte) h)
+      (let b (and (ident-expr? h) (xe-lookup h cte))
+        (if (amacro b)
           (b!expander e cte)
-        (an-axiom b)
-          (make-prim (xe-exprs (cdr e) cte) b)
-        (make-app (xe-exprs e cte))))))
+          (make-app (xe-exprs e cte)))))))
 
 (def xe-exprs (le cte)
   (map [xe _ cte] le))

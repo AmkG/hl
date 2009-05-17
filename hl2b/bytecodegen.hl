@@ -195,7 +195,7 @@
         (given op      ast!op
                params  ast!subx
           (case op
-            <axiom>closure-ref
+            '<axiom>closure-ref
               ; make sure we are referring to the
               ; self variable
               (let (s-var paramnum) params
@@ -210,7 +210,7 @@
                     (do (prn "----expected (<axiom>closure-ref self _)")
                         (ppr-sexp:source ast)
                         nil)))
-            <axiom>closure
+            '<axiom>closure
               ; make sure first parameter is a
               ; function
               (let (f . closed) params
@@ -235,37 +235,39 @@
                                     (car f!subx)
                                     (f-environment:properify f!params)
                                     (if f!continuation (len closed)))))))
-            <axiom>car
+            '<axiom>car
               (w/local-push (car ast!subx) '<bc>car)
-            <axiom>cdr
+            '<axiom>cdr
               (w/local-push (car ast!subx) '<bc>cdr)
-            <axiom>cons
+            '<axiom>cons
               (direct-compile ast!subx '<bc>cons)
-            <axiom>halt
+            '<axiom>halt
               (w/local-push (car ast!subx) '<bc>halt)
-            <axiom>type
+            '<axiom>type
               (w/local-push (car ast!subx) '<bc>type)
-            <axiom>rep
+            '<axiom>rep
               (w/local-push (car ast!subx) '<bc>rep)
-            <axiom>annotate
+            '<axiom>annotate
               (direct-compile ast!subx '<bc>tag)
-            <axiom>apply
+            '<axiom>apply
               (direct-compile ast!subx '<bc>apply-list)
-            <axiom>sharedvar
+            '<axiom>sharedvar
               (w/local-push (car ast!subx) '<bc>sv)
-            <axiom>sharedvar-read
+            '<axiom>sharedvar-read
               (w/local-push (car ast!subx) '<bc>sv-ref)
-            <axiom>sharedvar-write
+            '<axiom>sharedvar-write
               (direct-compile ast!subx '<bc>sv-set)
-            <axiom>string-create
+            '<axiom>string-create
              `(,@(mappend [bytecodegen _ env] ast!subx)
                (<bc>string-create ,(len ast!subx)))
-            <axiom>symeval
+            '<axiom>symeval
               (direct-compile ast!subx '<bc>symeval)
             ; default primitive
+            (if (no (an-axiom op))
               (do (prn "----unsupported primitive")
                   (ppr-sexp:source ast)
-                  nil)))
+                  nil)
+              (direct-compile ast!subx (sym (string "<bc>" (unpkg op)))))))
       (acnd ast)
         (let (c then else) ast!subx
           ; check for common case of local variable reference

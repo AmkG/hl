@@ -18,7 +18,7 @@
               alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self makeproper rfn pos complement dotted len on
               index copy mappend cadr cddr len> it some assert given case
-              >= > keep idfn rev -
+              >= > keep idfn rev - mem
               ; types
               int num char table string sym bool)
 
@@ -65,7 +65,7 @@
                        (<bc>halt))
                     tmp)
         (each expr (compile-to-bytecode prog)
-          ; (prn expr)
+          (prn expr)
           (<arc>write expr tmp)))))
   ; run the bytecode
   (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))
