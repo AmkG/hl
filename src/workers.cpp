@@ -94,6 +94,12 @@ void AllWorkers::soft_stop_raise(void) {
 	size_t num_waiting;
 	{ AppLock l(general_mtx);
 		soft_stop_condition = 1;
+		/*if all other workers are blocked on the
+		workqueue, then don't block here either
+		*/
+		if(total_workers == waitqueue.size() + 1) {
+			return;
+		}
 	}
 	/*release the lock, then let the other workers
 	notify us.
