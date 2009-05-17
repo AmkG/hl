@@ -24,8 +24,6 @@ AllWorkers AllWorkers::workers;
 
 void AllWorkers::set_exit_condition() {
 	exit_condition = 1;
-	// all worker threads are waiting, we wake them so they can exit
-	workqueue_cv.broadcast();
 }
 
 
@@ -39,9 +37,18 @@ void AllWorkers::register_process(Process* P) {
 }
 
 void AllWorkers::register_worker(Worker* W) {
-	AppLock l(general_mtx);
-	Ws.push_back(W);
-	total_workers++;
+	{
+		AppLock l(general_mtx);
+		Ws.push_back(W);
+		total_workers++;
+		if(soft_stop_condition) {
+			soft_stopped_procs.push_back(W);
+			goto wait;
+		}
+		return;
+	}
+wait:
+	W->waiting_sema.wait();
 }
 
 void AllWorkers::unregister_worker(Worker* W) {
@@ -56,14 +63,21 @@ void AllWorkers::unregister_worker(Worker* W) {
 			waiting states
 			*/
 			if(soft_stop_condition) {
-				if(soft_stop_waiting == total_workers) {
-					soft_stop_waiting = 0;
-					soft_stop_cv.broadcast();
+				size_t blocked =
+					soft_stopped_procs.size() +
+					waitqueue.size() +
+					1
+				;
+				if(blocked >= total_workers) {
+					/*ASSUMPTION: we assume that a worker
+					never dies while raising the soft-stop
+					waiting state.
+					*/
+					soft_stop_sema.post();
 				}
 			}
-			if(workqueue_waiting > 0) {
-				if(workqueue_waiting == total_workers) {
-					workqueue_waiting = 0;
+			if(waitqueue.size() > 0) {
+				if(waitqueue.size() == total_workers) {
 					set_exit_condition();
 				}
 			}
@@ -77,41 +91,54 @@ void AllWorkers::unregister_worker(Worker* W) {
  */
 
 void AllWorkers::soft_stop_raise(void) {
-	AppLock l(general_mtx);
-	soft_stop_condition = 1;
-	if(workqueue_waiting != 0) {
-		workqueue_cv.broadcast();
+	size_t num_waiting;
+	{ AppLock l(general_mtx);
+		soft_stop_condition = 1;
+		/*if all other workers are blocked on the
+		workqueue, then don't block here either
+		*/
+		if(total_workers == waitqueue.size() + 1) {
+			return;
+		}
 	}
-	soft_stop_waiting++;
-	soft_stop_cv.wait(l);
+	/*release the lock, then let the other workers
+	notify us.
+	*/
+	soft_stop_sema.wait();
 }
 void AllWorkers::soft_stop_lower(void) {
-	AppLock l(general_mtx);
-	soft_stop_condition = 0;
-	soft_stop_waiting = 0;
-	soft_stop_cv.broadcast();
-}
-
-void AllWorkers::soft_stop_check(AppLock& l) {
-	if(soft_stop_condition) {
-		#ifdef DEBUG
-			std::cerr << "Entering soft-stop" << std::endl;
-			std::cerr.flush();
-		#endif
-		do {
-			soft_stop_waiting++;
-			if(soft_stop_waiting == total_workers) {
-				soft_stop_waiting = 0;
-				soft_stop_cv.broadcast();
-			} else {
-				soft_stop_cv.wait(l);
-			}
-		} while(soft_stop_condition);
-		#ifdef DEBUG
-			std::cerr << "Exiting soft-stop" << std::endl;
-			std::cerr.flush();
-		#endif
+	std::vector<Worker*> stopped;
+	{ AppLock l(general_mtx);
+		soft_stopped_procs.swap(stopped);
+		soft_stop_condition = 0;
 	}
+	for(size_t i = 0; i < stopped.size(); ++i) {
+		stopped[i]->waiting_sema.post();
+	}
+}
+void AllWorkers::soft_stop_check(Worker* W, Process*& R) {
+	{ AppLock l(general_mtx);
+		if(soft_stop_condition) {
+			if(R) {
+				workqueue.push(R);
+				R = 0;
+			}
+			soft_stopped_procs.push_back(W);
+			size_t blocked =
+				soft_stopped_procs.size() +
+				waitqueue.size() +
+				1
+			;
+			if(blocked >= total_workers) {
+				soft_stop_sema.post();
+			}
+			goto wait;
+		}
+		return;
+	}
+wait:
+	W->waiting_sema.wait();
+	return;
 }
 
 /*
@@ -126,58 +153,105 @@ process-level GC should push a black process.
 */
 void AllWorkers::workqueue_push(Process* R) {
 	AppLock l(general_mtx);
-	bool sig = workqueue.empty();
+	bool waiting = !waitqueue.empty();
 	Process::SetOnlyRunning(R,0);
 	workqueue.push(R);
-	if(sig) workqueue_cv.broadcast();
-}
-void AllWorkers::workqueue_push_and_pop(Process*& R) {
-	AppLock l(general_mtx);
-	soft_stop_check(l);
-	/*if workqueue is empty, we'd end up popping what we
-	would have pushed anyway, so just short-circuit it
-	*/
-	if(workqueue.empty()) {
-		/*if all other workers are waiting, then this process *is*
-		the only one running
-		*/
-		if(workqueue_waiting == total_workers - 1) {
-			 Process::SetOnlyRunning(R,1);
-		} else {
-			 Process::SetOnlyRunning(R,0);
-		}
-		return;
+	if(waiting) {
+		Worker* W = waitqueue.front(); waitqueue.pop();
+		W->waiting_sema.post();
 	}
-	Process::SetOnlyRunning(R,0);
-	workqueue.push(R);
-	R = workqueue.front();
-	workqueue.pop();
 }
-bool AllWorkers::workqueue_pop(Process*& R) {
-	AppLock l(general_mtx);
-start:
-	soft_stop_check(l);
-	if(!workqueue.empty()) {
+void AllWorkers::workqueue_push_and_pop(Process*& R, Worker* W) {
+	{ AppLock l(general_mtx);
+		/*if workqueue is empty, we'd end up popping what we
+		would have pushed anyway, so just short-circuit it
+		*/
+		if(workqueue.empty()) {
+			/*if all other workers are waiting, then this process *is*
+			the only one running
+			*/
+			if(waitqueue.size() == total_workers - 1) {
+				 Process::SetOnlyRunning(R,1);
+			} else {
+				 Process::SetOnlyRunning(R,0);
+			}
+			return;
+		}
+		Process::SetOnlyRunning(R,0);
+		workqueue.push(R);
 		R = workqueue.front();
 		workqueue.pop();
-		return 1;
+		return;
 	}
-retry:
-	workqueue_waiting++;
-	if(workqueue_waiting == total_workers) {
-		workqueue_waiting = 0;
-		set_exit_condition();
-		return 0;
+}
+bool AllWorkers::workqueue_pop(Process*& R, Worker* W) {
+start:
+	{ AppLock l(general_mtx);
+		if(exit_condition) return 0;
+		/*we still have to check soft-stop here, because of
+		potential race:
+			worker A		worker B
+			...			check soft-stop, find none
+			enter soft-stop		...mutex block
+			get workers not		...mutex block
+			  waiting on queue (1)
+			raise soft-stop flag	...mutex block
+			wait for 1 worker	enter pop
+			...sema block		check queue empty (true)
+			...sema block		push on waitqueue
+			...sema block		wait for work
+			...sema block		...sema block
+		*/
+		if(soft_stop_condition) {
+			soft_stopped_procs.push_back(W);
+			size_t blocked =
+				soft_stopped_procs.size() +
+				waitqueue.size() +
+				1
+			;
+			if(blocked >= total_workers) {
+				soft_stop_sema.post();
+			}
+			/*release lock and wait*/
+			goto wait;
+		}
+		if(workqueue.empty()) {
+			R = 0;
+			if(waitqueue.size() == total_workers - 1) {
+				set_exit_condition();
+				/*wake up all so that we can all die*/
+				while(!waitqueue.empty()) {
+					Worker* V = waitqueue.front();
+					waitqueue.pop();
+					V->waiting_sema.post();
+				}
+				return 0;
+			} else {
+				waitqueue.push(W);
+				goto wait;
+			}
+		} else {
+			R = workqueue.front(); workqueue.pop();
+			Process::SetOnlyRunning(R,0);
+			return 1;
+		}
 	}
-	workqueue_cv.wait(l);
-	if(exit_condition) return 0;
-	--workqueue_waiting;
-	/*if we exited due to a soft-stop, bar*/
-	if(soft_stop_condition) goto start;
-	if(workqueue.empty()) goto retry;
-	R = workqueue.front();
-	workqueue.pop();
-	return 1;
+wait:
+	W->waiting_sema.wait(); goto start;
+}
+void AllWorkers::workqueue_trypop(Process*& R) {
+	AppTryLock l(general_mtx);
+	if(!l) {
+		R = 0;
+		return;
+	}
+	if(workqueue.empty()) {
+		R = 0;
+		return;
+	} else {
+		R = workqueue.front(); workqueue.pop();
+		return;
+	}
 }
 
 /*
@@ -211,7 +285,6 @@ void AllWorkers::initiate(size_t nworkers, Process* begin) {
 	register_process(begin);
 	workqueue_push(begin);
 	Worker W(this);
-	W.T = 4; // for testing, set to 4: future should be 16384
 	#ifndef single_threaded
 		for(size_t i = 1; i < nworkers; ++i) {
 			wtc.launch(W);
@@ -225,7 +298,7 @@ void AllWorkers::initiate(size_t nworkers, Process* begin) {
  * default_timeslice 2 until workers are fully tested
  */
 
-AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), workqueue_waiting(0), total_workers(0) {
+AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), total_workers(0) {
 }
 
 AllWorkers::~AllWorkers() {
@@ -253,6 +326,18 @@ AllWorkers::~AllWorkers() {
 	}
 }
 
+/*
+ * Debug
+ */
+
+void AllWorkers::report(void) {
+	AppLock l(U_mtx);
+	std::cerr
+		<< "Processes not cleaned: "
+		<< U.size()
+		<< std::endl;
+}
+
 /*-----------------------------------------------------------------------------
 Worker
 -----------------------------------------------------------------------------*/
@@ -278,6 +363,11 @@ public:
 
 void Worker::operator()(bool is_main) {
 	WorkerInitTeardown wit(is_main);
+	if(is_main) {
+		T = 4; // for testing, set to 4: future should be 16384
+	} else {
+		T = 0;
+	}
 	try {
 		try {
 			parent->register_worker(this);
@@ -392,48 +482,15 @@ public:
 /*
  * Marks all PID's of a process
  */
-// move within mailbox
 void Worker::mark_process(Process* P) {
+	/*Marking may be invoked in parallel multiple times in
+	the same process, if the involved process is dead.
+	We should be careful to avoid anything that could
+	be unsafe if the process is dead.
+	*/
 	MarkingTraverser mt(gray_set);
 	P->heap().traverse_objects(&mt);
-
-	/*scan the mailbox*/
-	ValueHolderRef tmp;
-	// -- LOCK --
-	ValueHolderRef& mailbox = P->mailbox().getMessages();
-	mailbox.swap(tmp);
-	if(!tmp.empty()) {
-		/*shouldn't throw: traverse_objects doesn't
-		throw, and MarkingTraverser doesn't either
-		*/
-		tmp->traverse_objects(&mt);
-		/*put back the contents into the mailbox*/
-		// -- LOCK --
-		mailbox.swap(tmp);
-	}
-
-	/*another process might have sent new messages
-	while we were marking - so tmp might not be
-	empty.  We just push tmp one-by-one onto the
-	mailbox.
-	*/
-	/*
-	We don't have to rescan the new messages - we
-	only mark during a process-level GC, and
-	messages that are sent while a GC is going on
-	cannot contain references to white processes,
-	because only black processes are actually
-	allowed to run (and by extension, send
-	messages).
-	*/
-	ValueHolderRef tmp2;
-	while(!tmp.empty()) {
-		tmp.remove(tmp2);	/* --> tmp2 */
-		mailbox.insert(tmp2);	/* <-- tmp2*/
-	}
-	/*would be better to insert them all at once
-	rather than one at a time.
-	*/
+	P->mailbox().traverse(&mt);
 
 	/*does not require atomicity, since only one
 	worker thread can perform marking on any
@@ -563,17 +620,27 @@ WorkerLoop:
 			--T;
 		}
 	}
-	/*this also checks for soft-stop for us*/
+	parent->soft_stop_check(this, R);
 	if(R) {
-		parent->workqueue_push_and_pop(R);
+		parent->workqueue_push_and_pop(R, this);
 	} else {
-		if(!parent->workqueue_pop(R)) {
-			return; //no more work
+		if(!scanning_mode && !gray_done) {
+			parent->workqueue_trypop(R);
+			if(!R) goto gray_scan;
+		} else if(T > 0) {
+			/*just count down to the GC if we can't get any*/
+			parent->workqueue_trypop(R);
+			if(!R) goto WorkerLoop;
+		} else {
+			if(!parent->workqueue_pop(R, this)) {
+				return; //no more work
+			}
 		}
 	}
 	if(scanning_mode) {
 		if(R->is_black()) {
 			scanning_mode = 0;
+			goto gray_scan;
 		} else {
 			mark_process(R);
 		}
@@ -609,8 +676,10 @@ execute:
 		if(in_gc && !R->is_black()) {
 			mark_process(R);
 		}
+		Process::SetOnlyRunning(R, 0);//no possible race ...?
 		goto execute;
 	}
+gray_scan:
 	if(!scanning_mode && !gray_done) {
 		if(!gray_set.empty()) {
 			if(R) {
@@ -624,6 +693,14 @@ execute:
 			gray_set.erase(i);
 			{AnesthesizeProcess ap(Q, parent);
 				if(ap.succeeded) {
+					/*NOTE! It's possible for us
+					to attempt anesthesizing a
+					dead process.  This means that
+					mark_process must be safe to
+					run on the same process in
+					multiple threads provided the
+					process is dead.
+					*/
 					mark_process(Q);
 				} else if(!gray_set.empty()) {
 					/*if anesthesizing failed, keep

@@ -1,0 +1,107 @@
+(<bc>closure 0
+  (<bc>check-vars 3)
+  (<bc>spawn))
+(<bc>global-set <common>spawn)
+
+(<bc>closure 0
+  (<bc>check-vars 2)
+  (<bc>recv))
+(<bc>global-set <common>recv)
+
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>send))
+(<bc>global-set <common>send)
+
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>closure 2
+    (<bc>check-vars 1)
+    (<bc>closure-ref 1)
+    (<bc>int 0)
+    (<bc>is)
+    (<bc>if
+      (<bc>global <common>send)
+      (<bc>closure 0
+        (<bc>halt))
+      (<bc>closure-ref 0)
+      (<bc>int 1)
+      (<bc>apply 4)
+    )
+    (<bc>global spawn-and-recv-twice)
+    (<bc>closure 0
+      (<bc>halt))
+    (<bc>closure-ref 0)
+    (<bc>closure-ref 1)
+    (<bc>apply 4))
+  (<bc>continue))
+(<bc>global-set make-spawnable-x)
+
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>global make-spawnable-x)
+  (<bc>local 2)
+  (<bc>closure 1
+    (<bc>check-vars 2)
+    (<bc>global <common>spawn)
+    (<bc>closure-ref 0)
+    (<bc>local 1)
+    (<bc>closure 2
+      (<bc>check-vars 2)
+      (<bc>global <common>spawn)
+      (<bc>closure-ref 0)
+      (<bc>closure 1
+        (<bc>check-vars 2)
+        (<bc>global <common>recv)
+        (<bc>closure-ref 0)
+        (<bc>closure 1
+          (<bc>check-vars 2)
+          (<bc>global <common>recv)
+          (<bc>closure-ref 0)
+          (<bc>local 1)
+          (<bc>closure 2
+            (<bc>check-vars 2)
+            (<bc>global <common>send)
+            (<bc>closure 0
+              (<bc>halt))
+            (<bc>closure-ref 0)
+            (<bc>closure-ref 1)
+            (<bc>local 1)
+            (<bc>i+)
+            (<bc>apply 4))
+          (<bc>apply 2))
+        (<bc>apply 2))
+      (<bc>closure-ref 1)
+      (<bc>apply 3))
+    (<bc>local 1)
+    (<bc>apply 3))
+  (<bc>self-pid)
+  (<bc>local 3)
+  (<bc>int 1)
+  (<bc>i-)
+  (<bc>apply 4))
+(<bc>global-set spawn-and-recv-twice)
+
+(<bc>int 10)
+(<bc>global-set level)
+
+(<bc>global make-spawnable-x)
+(<bc>closure 0
+  (<bc>check-vars 2)
+  (<bc>global <common>spawn)
+  (<bc>closure 0
+    (<bc>check-vars 2)
+    (<bc>global <common>recv)
+    (<bc>closure 0
+      (<bc>check-vars 2)
+      (<bc>local 1)
+      (<bc>halt))
+    (<bc>apply 2))
+  (<bc>local 1)
+  (<bc>apply 3))
+(<bc>self-pid)
+(<bc>global level)
+(<bc>apply 4)
+
+;^1024$
+

@@ -4,36 +4,95 @@
 #include"mutexes.hpp"
 #include"executors.hpp"
 
-void MailBox::insert(ValueHolderRef & message) {
-	AppLock l(mtx);
-	messages.insert(message);
+bool MailBox::receive_message(ValueHolderRef& M, bool& is_waiting) {
+	is_waiting = false;
+	AppTryLock l(parent.mtx);
+	if(!l) return false; /*failed to lock, retry later*/
+	if(parent.stat == process_dead) return true; /*silently succeed*/
+	parent.the_mailbox.insert(M);
+	if(parent.stat == process_waiting) {
+		is_waiting = true;
+		parent.stat = process_running;
+	}
+	return true;
 }
 
-bool MailBox::recv(Object::ref & res) {
-	AppLock l(mtx);
+bool MailBox::extract_message(Object::ref& M) {
 	ValueHolderRef ref;
-        messages.remove(ref);
-	if (ref.empty()) {
-		return false;
-	} else {
-		/*Save the received message's Semispace into
-		  the heap's other spaces
+	{
+		AppLock l(parent.mtx);
+		parent.the_mailbox.remove(ref);
+		/*changing to process_waiting *must* be
+		done atomically here.
 		*/
+		if (ref.empty()) {
+			parent.stat = process_waiting;
+			return false;
+		}
+	}
+	/*Save the received message's Semispace into
+	  the heap's other spaces
+	*/
+	parent.heap().other_spaces.insert(ref);
+	M = parent.heap().other_spaces.value();
+	return true;
+}
+
+bool MailBox::try_extract_message(Object::ref& M, bool& has_message) {
+	ValueHolderRef ref;
+	has_message = false;
+	{
+		AppTryLock l(parent.mtx);
+		if(!l) return false;
+		parent.the_mailbox.remove(ref);
+	}
+	if(ref.empty()) {
+		return true;
+	} else {
+		has_message = true;
 		parent.heap().other_spaces.insert(ref);
-		res = parent.heap().other_spaces.value();
+		M = parent.heap().other_spaces.value();
 		return true;
 	}
 }
 
-bool MailBox::empty() {
-	AppLock l(mtx);
-	return messages.empty();
-}
+class ValueHolderRefLockingReturner {
+private:
+	AppMutex& source_mutex;
+	ValueHolderRef& source;
 
-void MailBox::clear() {
-	AppLock l(mtx);
-	ValueHolderRef tmp;
-	messages.swap(tmp);
+	ValueHolderRefLockingReturner(void); // disallowed!
+public:
+
+	ValueHolderRef ref;
+
+	ValueHolderRefLockingReturner(
+			AppMutex& nsource_mutex,
+			ValueHolderRef& nsource)
+		: source_mutex(nsource_mutex),
+		  source(nsource) {
+		AppLock l(source_mutex);
+		source.swap(ref);
+	}
+	~ValueHolderRefLockingReturner() {
+		AppLock l(source_mutex);
+		source.swap(ref);
+		/*should really just push it all at once,
+		but simpler this way
+		*/
+		ValueHolderRef tmp;
+		 while(!ref.empty()) {
+			ref.remove(tmp);
+			source.insert(tmp);
+		}
+	}
+};
+
+void MailBox::traverse(HeapTraverser* ht) {
+	ValueHolderRefLockingReturner tmp(parent.mtx, parent.the_mailbox);
+	if(!tmp.ref.empty()) {
+		tmp.ref->traverse_objects(ht);
+	}
 }
 
 HlPid* Process::spawn(Object::ref cont) {
@@ -81,36 +140,16 @@ Refer to doc/process-gc.txt and in particular src/workers.cpp
 
 bool Process::waiting_and_not_black(void) {
 	AppLock l(mtx);
-	return (stat == process_waiting) && !black;
-}
-
-bool Process::receive_message(ValueHolderRef& M, bool& is_waiting) {
-	is_waiting = false;
-	AppTryLock l(mtx);
-	if(!l) return false; /*failed to lock, retry later*/
-	if(stat == process_dead) return true; /*silently succeed*/
-	mbox.insert(M);
-	if(stat == process_waiting) {
-		is_waiting = true;
-		stat = process_running;
-	}
-	return true;
-}
-
-bool Process::extract_message(Object::ref & M) {
-	AppLock l(mtx);
-	if (mbox.recv(M)) {
-		return true;
-	} else {
-		stat = process_waiting;
-		return false;
-	}
+	/*need to also check if process is dead.  Dead processes don't actually do anything*/
+	return (stat == process_waiting || stat == process_dead) && !black;
 }
 
 bool Process::anesthesize(void) {
 	AppLock l(mtx);
 	if(stat == process_waiting && !black) {
 		stat = process_anesthesized;
+		return true;
+	} else if(stat == process_dead && !black) {
 		return true;
 	} else {
 		return false;
@@ -119,7 +158,9 @@ bool Process::anesthesize(void) {
 
 bool Process::unanesthesize(void) {
 	AppLock l(mtx);
-	if (mbox.empty()) {
+	if(stat == process_dead) {
+		return false;
+	} else if (the_mailbox.empty()) {
 		stat = process_waiting;
 		return false;
 	} else {
@@ -135,7 +176,7 @@ bool Process::unanesthesize(void) {
 
 void Process::kill(void) {
 	stat = process_dead;
-	mbox.clear();
+	the_mailbox.reset();
 	global_cache.clear();
 	invalid_globals.clear();
 	free_heap();
@@ -143,7 +184,7 @@ void Process::kill(void) {
 void Process::atomic_kill(void) {
 	{AppLock l(mtx);
 		stat = process_dead;
-		mbox.clear();
+		the_mailbox.reset();
 	}
 	/*used only when running anyway; since we're dead,
 	no need to lock
@@ -160,10 +201,6 @@ void Process::atomic_kill(void) {
 
 Heap& Process::heap(void) {
 	return *this;
-}
-
-MailBox& Process::mailbox(void) {
-	return mbox;
 }
 
 /*
@@ -255,7 +292,12 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		involves a lock.
 		*/
 		invalidate_changed_globals();
-		return ::execute(*this, reductions, Q, 0);
+		ProcessStatus nstat = ::execute(*this, reductions, Q, 0);
+		if(nstat == process_dead) {
+			AppLock l(mtx);
+			stat = process_dead;
+		}
+		return nstat;
 	} /*catch(HlError& h) ...*/
 	/*In the future, when we catch an HlError,
 	get the process's error handler and force it

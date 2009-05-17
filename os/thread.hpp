@@ -2,6 +2,8 @@
 #define THREAD_H
 
 #include <pthread.h>
+#include <semaphore.h>
+#include <errno.h>
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -72,6 +74,31 @@ public:
   // ctor, that is unlikely to happen.
   void signal(void) { pthread_cond_signal(&cv); }
   void broadcast(void) { pthread_cond_broadcast(&cv); }
+};
+
+class Semaphore : boost::noncopyable {
+private:
+  sem_t sm;
+public:
+  Semaphore(unsigned int val = 0) { sem_init(&sm, 0, val);  }
+  ~Semaphore() { sem_destroy(&sm); }
+  void post(void) { sem_post(&sm); }
+  void wait(void) {
+    int rv;
+    do {
+      errno = 0;
+      rv = sem_wait(&sm);
+    } while(rv < 0 && errno == EINTR);
+  }
+  bool try_wait(void) {
+    int rv;
+    do {
+      errno = 0;
+      rv = sem_trywait(&sm);
+    } while(rv < 0 && errno == EINTR);
+    if(rv < 0 && errno == EAGAIN) return 0;
+    else return 1;
+  }
 };
 
 #endif // THREAD_H
