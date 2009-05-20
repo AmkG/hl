@@ -52,11 +52,11 @@
             ; check if it's a local variable reference
             (aif
               (and (aref param) (~aglobal param!var) (env param!var))
-                 `( (,(sym:string '<bc> op '-local-push) ,it))
+                 `( (,(sym:string op "-local-push") ,it))
               (is-closure-ref-self param)
                  ; closure values in arc2c are numbered from 1->N, but
                  ; in snap are numbered 0->N-1
-                 `( (,(sym:string '<bc> op '-clos-push)
+                 `( (,(sym:string op "-clos-push")
                      ,(- ((cadr param!subx) 'val) 1)))
               ; else
                  `( ,@(bytecodegen param env)
