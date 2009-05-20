@@ -41,6 +41,8 @@
     (if (an-axiom h)
       (make-prim (xe-exprs (cdr e) cte) h)
       (let b (and (ident-expr? h) (xe-lookup h cte))
+        ; !! unfortunately, in this file a special form is
+        ; !! called a macro T.T .  Bad choice of terminology
         (if (amacro b)
           (b!expander e cte)
           (make-app (xe-exprs e cte)))))))
