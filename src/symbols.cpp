@@ -25,7 +25,7 @@ void Symbol::copy_value_to(ValueHolderRef& p) {
 }
 void Symbol::copy_value_to_and_add_notify(ValueHolderRef& p, Process* R) {
 	{AppLock l(m);
-	   if (p.empty()) {
+	   if (value.empty()) {
 			// no value associated with this symbol
 			throw_HlError("unbound variable");
 		}
