@@ -18,7 +18,7 @@
               alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self makeproper rfn pos complement dotted len on
               index copy mappend cadr cddr len> it some assert given case
-              >= > keep idfn rev - mem
+              >= > keep idfn rev - mem max
               ; types
               int num char table string sym bool)
 
