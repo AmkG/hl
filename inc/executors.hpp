@@ -78,6 +78,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(b_continue)
 	A_BYTECODE(continue_local)
 	A_BYTECODE(continue_on_clos)
+	A_BYTECODE(disclose)
 	A_BYTECODE(empty_event_set)
 	A_BYTECODE(enclose)
 	A_BYTECODE(event_poll)

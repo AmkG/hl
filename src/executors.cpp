@@ -190,6 +190,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
       ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
+      ("<bc>disclose", THE_BYTECODE_LABEL(disclose))
       ("<bc>empty-event-set",	THE_BYTECODE_LABEL(empty_event_set))
       ("<bc>enclose", THE_BYTECODE_LABEL(enclose), ARG_INT)
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
@@ -606,6 +607,24 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.restack(2);
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+	 // take a closure, leave a list on the stack with
+	 // the bytecode object and the enclosed vars
+	 BYTECODE(disclose): {
+		 Closure *c = expect_type<Closure>(stack.top());
+		 stack.pop();
+		 stack.push(c->code());
+		 int sz = c->size();
+		 for (int i = 0; i < sz; ++i)
+			 stack.push((*c)[i]);
+		 // list's end
+		 stack.push(Object::nil());
+		 // build the list
+		 sz += 1; // for the bytecode object
+		 for (int i = 0; i < sz; ++i)
+			 bytecode_cons(proc, proc.stack);
+		 // complete list is on the stack now
+		 SETCLOS(clos);
+	 } NEXT_BYTECODE;
     BYTECODE(empty_event_set): {
       bytecode_<&empty_event_set>(stack);
     } NEXT_BYTECODE;

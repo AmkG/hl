@@ -45,3 +45,33 @@
 (<bc>apply 2)
 
 ;^23$
+
+; *** disclose
+
+(<bc>lit-t)
+(<bc>closure 1
+  (<bc>halt))
+(<bc>disclose)
+(<bc>halt)
+
+;^\(#<<hl>bytecode> t\)$
+
+; *** disclose (order of enclosed vars)
+
+(<bc>int 7)
+(<bc>lit-t)
+(<bc>closure 2
+  (<bc>halt))
+(<bc>disclose)
+(<bc>halt)
+
+;^\(#<<hl>bytecode> 7 t\)$
+
+; *** disclose (no enclosed vars)
+
+(<bc>closure 0
+  (<bc>halt))
+(<bc>disclose)
+(<bc>halt)
+
+;^\(#<<hl>bytecode>\)$
