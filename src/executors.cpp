@@ -167,7 +167,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
       ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
-      ("<bc>build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT)
       ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT)
       ("<bc>build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
        ARG_INT)
@@ -192,6 +191,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
       ("<bc>empty-event-set",	THE_BYTECODE_LABEL(empty_event_set))
+      ("<bc>enclose", THE_BYTECODE_LABEL(enclose), ARG_INT)
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
       ("<bc>event-wait",	THE_BYTECODE_LABEL(event_wait))
       ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
@@ -428,17 +428,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_ref): {
       bytecode2_<&BinObj::bin_ref>( stack );
     } NEXT_BYTECODE;
-    BYTECODE(build_closure): {
-      INTPARAM(N);
-      Closure* nclos = Closure::NewClosure(proc, N);
-      nclos->codereset(stack.top()); stack.pop();
-      SETCLOS(clos); // allocation may invalidate clos
-      for(int i = N; i ; --i){
-        (*nclos)[i - 1] = stack.top();
-        stack.pop();
-      }
-      stack.push(Object::to_ref(nclos));
-    } NEXT_BYTECODE;
     BYTECODE(build_k_closure): {
     k_closure_perform_create:
       INTPARAM(N);
@@ -619,6 +608,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(empty_event_set): {
       bytecode_<&empty_event_set>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(enclose): {
+      INTPARAM(N);
+      Closure* nclos = Closure::NewClosure(proc, N);
+      nclos->codereset(stack.top()); stack.pop();
+      SETCLOS(clos); // allocation may invalidate clos
+      for(int i = N; i ; --i){
+        (*nclos)[i - 1] = stack.top();
+        stack.pop();
+      }
+      stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(event_poll): {
       bytecode_<&event_poll>(proc, stack);

@@ -141,6 +141,7 @@ inline void bytecode_lit_t(Process&proc, ProcessStack& stack){
 inline void bytecode_local(ProcessStack& stack, int N){
 	stack.push(stack[N]);
 }
+
 inline void bytecode_global_set(Process& proc, ProcessStack& stack,
 		Symbol *S){
 	/*global-set has to retain the stack top! This is because

@@ -312,11 +312,6 @@ AsOp* Assembler::get_operation(Symbol *s) {
 
 bool AssemblerExecutor::run(Process & proc, size_t & reductions) {
 	assembler.go(proc);
-	// wrap the bytecode in a closure
-	Closure *c = Closure::NewClosure(proc, 0);
-	c->codereset(proc.stack.top()); proc.stack.pop();
-	proc.stack.push(Object::to_ref(c));
-
 	return false;
 }
 

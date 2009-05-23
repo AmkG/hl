@@ -13,8 +13,35 @@
 (<bc>cons)
 
 (<bc>do-executor <executor>assemble)
+(<bc>enclose 0)
 (<bc>k-closure 0
   (<bc>halt))
 (<bc>apply 2)
 
 ;^1$
+
+; ***
+
+(<bc>int 23)
+
+(<bc>sym <bc>closure-ref)
+(<bc>int 0)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>cons)
+
+(<bc>sym <bc>halt)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>lit-nil)
+(<bc>cons)
+
+(<bc>cons)
+
+(<bc>do-executor <executor>assemble)
+(<bc>enclose 1)
+(<bc>k-closure 0
+  (<bc>halt))
+(<bc>apply 2)
+
+;^23$

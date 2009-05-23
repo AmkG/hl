@@ -57,7 +57,7 @@ public:
 
 class ClosureAs : public GenClosureAs {
 public:
-  ClosureAs() : GenClosureAs("<bc>build-closure", "<bc>closure") {}
+  ClosureAs() : GenClosureAs("<bc>enclose", "<bc>closure") {}
 };
 
 class KClosureAs : public GenClosureAs {
