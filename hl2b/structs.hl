@@ -78,7 +78,8 @@
 
 ; list of known bytecodes accessible directly to the user
 (set axioms* '(<axiom>acquire <axiom>car <axiom>scar <axiom>cdr <axiom>scdr 
-               <axiom>char <axiom>composeo <axiom>cons <axiom>f-to-i 
+               <axiom>char <axiom>composeo <axiom>cons <axiom>enclose
+               <axiom>disclose <axiom>assemble <axiom>f-to-i 
                <axiom>halt <axiom>i-to-f <axiom>is <axiom>ccc <axiom>monomethod
                <axiom>reducto <axiom>recv <axiom>release <axiom>rep 
                <axiom>self-pid <axiom>send <axiom>spawn <axiom>string-create

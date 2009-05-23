@@ -235,12 +235,23 @@
                                     (car f!subx)
                                     (f-environment:properify f!params)
                                     (if f!continuation (len closed)))))))
+            <axiom>assemble
+              ; assemble right now is an executor
+              ; !! this axiom modifies its input
+              ; !! <common>assemble must give it a copy
+              `(,@(mappend [bytecodegen _ env] ast!subx)
+                (<bc>do-executor <executor>assemble))
             <axiom>car
               (w/local-push (car ast!subx) '<bc>car)
             <axiom>cdr
               (w/local-push (car ast!subx) '<bc>cdr)
             <axiom>cons
               (direct-compile ast!subx '<bc>cons)
+            <axiom>enclose
+              ; ast!subx should hold the bytecode and a list of values
+              ; to enclose
+              `(,@(mappend [bytecodegen _ env] ast!subx)
+                (<bc>enclose ,(- (len ast!subx) 1))) ; don't count the bytecode
             <axiom>halt
               (w/local-push (car ast!subx) '<bc>halt)
             <axiom>type
