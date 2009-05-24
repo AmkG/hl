@@ -41,9 +41,7 @@
     (if (an-axiom h)
       (make-prim (xe-exprs (cdr e) cte) h)
       (let b (and (ident-expr? h) (xe-lookup h cte))
-        ; !! unfortunately, in this file a special form is
-        ; !! called a macro T.T .  Bad choice of terminology
-        (if (amacro b)
+        (if (asf b)
           (b!expander e cte)
           (make-app (xe-exprs e cte)))))))
 
@@ -71,96 +69,83 @@
 ;(add-macro / 2)
 ;(add-macro mod 2)
 
-(push (make-macro 'do
-  (fn (e cte)
-    (if
-      (is (len (cdr e)) 0)
-        (xe nil cte)
-      (is (len (cdr e)) 1)
-        (xe (cadr e) cte)
-        (make-seq (xe-exprs (cdr e) cte))))) initial-ctes*)
+(mac def-sf (name (e cte) . body)
+  `(push (make-sf ',name (fn (,e ,cte) ,@body)) initial-ctes*))
 
-(push (make-macro 'let
-  (fn (e cte)
-    (if (>= (len (cdr e)) 1)
-      (xe (list (+ (list 'fn (list e.1)) (cut e 3)) e.2) cte)
-      (err "let expects a binding")))) initial-ctes*)
+(def-sf do (e cte)
+  (if
+    (is (len (cdr e)) 0)
+      (xe nil cte)
+    (is (len (cdr e)) 1)
+      (xe (cadr e) cte)
+    (make-seq (xe-exprs (cdr e) cte))))
 
-(push (make-macro 'or
-  (fn (e cte)
-    (if
-      (is (len (cdr e)) 0)
-        (xe nil cte)
-      (is (len (cdr e)) 1)
-        (xe (cadr e) cte)
-        (xe `((lambda (t1 t2) (if t1 t1 (t2))) ,(cadr e) (lambda () (or ,@(cddr e)))) cte)))) initial-ctes*)
+(def-sf let (e cte)
+  (if (>= (len (cdr e)) 1)
+    (xe (list (+ (list 'fn (list e.1)) (cut e 3)) e.2) cte)
+    (err "let expects a binding")))
 
-(push (make-macro 'and
-  (fn (e cte)
-    (if
-      (is (len (cdr e)) 0)
-        (xe t cte)
-      (is (len (cdr e)) 1)
-        (xe (cadr e) cte)
-        (xe `((lambda (t1 t2) (if t1 (t2) t1)) ,(cadr e) (lambda () (and ,@(cddr e)))) cte)))) initial-ctes*)
+(def-sf or (e cte)
+  (if
+    (is (len (cdr e)) 0)
+      (xe nil cte)
+    (is (len (cdr e)) 1)
+      (xe (cadr e) cte)
+      (xe `((lambda (t1 t2) (if t1 t1 (t2))) ,(cadr e) (lambda () (or ,@(cddr e)))) cte)))
 
-(push (make-macro '=
-  (fn (e cte)
-    (xe (cons 'set (cdr e)) cte))) initial-ctes*)
+(def-sf and (e cte)
+  (if
+    (is (len (cdr e)) 0)
+      (xe t cte)
+    (is (len (cdr e)) 1)
+      (xe (cadr e) cte)
+      (xe `((lambda (t1 t2) (if t1 (t2) t1)) ,(cadr e) (lambda () (and ,@(cddr e)))) cte)))
 
-(push (make-macro 'def
-  (fn (e cte)
-    (xe `(set ,(cadr e) (fn ,(car:cddr e) ,@(cdr:cddr e))) cte))) initial-ctes*)
+(def-sf = (e cte)
+  (xe (cons 'set (cdr e)) cte))
+
+(def-sf def (e cte)
+  (xe `(set ,(cadr e) (fn ,(car:cddr e) ,@(cdr:cddr e))) cte))
 
 ;-----------------------------------------------------------------------------
-; all the macros above this line should eventually be ported
-; into lib-ac.scm.arc or in our version of arc.arc
+; all the special forms above this line should eventually be converted to
+; macros into hl.hl
 
-(push (make-macro 'quote
-  (fn (e cte)
-    (if (is (len (cdr e)) 1)
-      ; simple constants may be safely unquoted
-      (make-quote '() (cadr e))
-      (err "quote expects 1 arg")))) initial-ctes*)
+(def-sf quote (e cte)
+  (if (is (len (cdr e)) 1)
+    ; TODO: simple constants may be safely unquoted
+    (make-quote '() (cadr e))
+    (err "quote expects 1 arg")))
 
-(push (make-macro 'set
-  (fn (e cte)
-    (if (is (len (cdr e)) 2)
-      (let b (xe-lookup (cadr e) cte)
-        (if (avar b)
-          (make-set (xe-exprs (cddr e) cte) b)
-          (err "can't set a nonvariable" e)))
-      (err "set expects 2 args")))) initial-ctes*)
+(def-sf set (e cte)
+  (if (is (len (cdr e)) 2)
+    (let b (xe-lookup (cadr e) cte)
+      (if (avar b)
+        (make-set (xe-exprs (cddr e) cte) b)
+        (err "can't set a nonvariable" e)))
+    (err "set expects 2 args")))
 
-(push (make-macro 'if
-  (fn (e cte)
-    (if
-      (is (len (cdr e)) 3)
-        (make-cnd (xe-exprs (cdr e) cte))
-      (is (len (cdr e)) 2)
-        (xe `(if ,(cadr e) ,(car:cddr e) nil) cte)
-        (err "if expects 2 or 3 args")))) initial-ctes*)
+(def-sf if (e cte)
+  (if
+    (is (len (cdr e)) 3)
+      (make-cnd (xe-exprs (cdr e) cte))
+    (is (len (cdr e)) 2)
+      (xe `(if ,(cadr e) ,(car:cddr e) nil) cte)
+    (err "if expects 2 or 3 args")))
 
-(push (make-macro '<axiom>lambda
-  (fn (e cte)
-    (let (_ exp-params . body) e
-      (if (>= (len (cdr e)) 1)
-        (withs
-          ; support proper and improper lists
-          ; as argument list: (arg arg) or (arg . arg)
-          (params (map-improper new-var exp-params)
-           proper-params (if (alist params) (make-proper-list params) (cons params nil))
-           new-cte (extend proper-params cte))
-          (make-lam (list:xe (cons 'do body) new-cte) params))
-        (err "fn expects a parameter list"))))) initial-ctes*)
-
-(push (make-macro 'symeval
-  (fn (e cte)
-    (if (isnt 2 (len e)) (err "symeval expects 1 arg"))
-    (let (_ form) e
-      (if (caris form 'quote)
-          (make-ref '() (xe-lookup (cadr form) '()))
-          (make-prim (list:xe form cte) '<axiom>symeval))))) initial-ctes*)
+(def-sf <axiom>lambda (e cte)
+  (let (_ exp-params . body) e
+    (if (>= (len (cdr e)) 1)
+      (withs
+        ; support proper and improper lists
+        ; as argument list: (arg arg) or (arg . arg)
+        (params (map-improper new-var exp-params)
+         proper-params (if (alist params) 
+                         (make-proper-list params) 
+                         (cons params nil))
+         new-cte (extend proper-params cte))
+        (make-lam (list:xe (cons 'do body) new-cte) params))
+      (err "fn expects a parameter list"))))
 
 (def make-initial-cte ()
   initial-ctes*)

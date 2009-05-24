@@ -17,11 +17,11 @@
 ; a special form (not really a macro, at least not
 ; an Arc-style macro, since the output of the macro
 ; should be an AST, not a list)
-(def make-macro (id expander)
-  (listtab `((type macro) (id ,id) (expander ,expander))))
+(def make-sf (id expander)
+  (listtab `((type sf) (id ,id) (expander ,expander))))
 
-(def amacro (x)
-  (and (isa x 'table) (is x!type 'macro)))
+(def asf (x)
+  (and (isa x 'table) (is x!type 'sf)))
 
 ;----------------------------------------AST's
 
