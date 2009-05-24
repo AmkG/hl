@@ -303,6 +303,8 @@
               `((<bc>char ,(coerce val 'int)))
             (isa val 'num)
               `((<bc>float ,val))
+            (isa val 'sym)
+              `((<bc>sym ,val))
             ; else
               (do (prn "----unsupported literal type")
                   (ppr-sexp:source ast)
