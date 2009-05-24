@@ -3,6 +3,7 @@
 #include "processes.hpp"
 #include"types.hpp"
 #include"aio.hpp"
+#include "symbols.hpp"
 #include<boost/shared_ptr.hpp>
 
 /*
@@ -108,6 +109,20 @@ inline void bytecode_clos_push_(Process& proc, ProcessStack& stack,
 }
 
 /*---------------------------------------------------------------------------*/
+
+inline void bytecode_bounded(ProcessStack& stack) {
+	Object::ref o = stack.top(); stack.pop();
+	if (is_a<Symbol*>(o)) {
+		Symbol *s = as_a<Symbol*>(o);
+		if (s->unbounded()) {
+			stack.push(Object::nil());
+		} else {
+			stack.push(Object::t());
+		}
+	} else {
+		throw_HlError("<bc>bounded expects a symbol on the stack");
+	}
+}
 
 /*parameters are on-stack*/
 inline void bytecode_cons(Process& proc, ProcessStack& stack){

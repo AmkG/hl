@@ -167,6 +167,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
       ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
+      ("<bc>bounded",		THE_BYTECODE_LABEL(bounded))
       ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT)
       ("<bc>build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
        ARG_INT)
@@ -429,6 +430,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_ref): {
       bytecode2_<&BinObj::bin_ref>( stack );
     } NEXT_BYTECODE;
+	 BYTECODE(bounded): {
+		 bytecode_bounded(stack);
+	 } NEXT_BYTECODE;
     BYTECODE(build_k_closure): {
     k_closure_perform_create:
       INTPARAM(N);

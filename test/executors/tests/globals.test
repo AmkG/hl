@@ -40,3 +40,39 @@
 
 ;^0$
 
+; *** unbounded
+
+(<bc>sym s)
+(<bc>bounded)
+(<bc>halt)
+
+;^nil$
+
+; *** bounded
+
+(<bc>int 1)
+(<bc>global-set s)
+(<bc>sym s)
+(<bc>bounded)
+(<bc>halt)
+
+;^t$
+
+; *** unbounded, then bounded
+
+(<bc>sym s)
+(<bc>bounded)
+(<bc>if
+  (<bc>int 2)
+  (<bc>halt))
+(<bc>lit-t)
+(<bc>global-set s)
+(<bc>sym s)
+(<bc>bounded)
+(<bc>if
+  (<bc>int 11)
+  (<bc>halt))
+(<bc>int 1)
+(<bc>halt)
+
+;^11$

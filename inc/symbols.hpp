@@ -26,6 +26,9 @@ class Symbol {
 
 public:
 
+	// return true if no value is bound to this symbol
+	bool unbounded() const { return value.empty(); }
+
 	void copy_value_to(ValueHolderRef&);
 	void copy_value_to_and_add_notify(ValueHolderRef&, Process*);
 	void set_value(Object::ref);
