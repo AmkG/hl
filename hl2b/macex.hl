@@ -1,0 +1,26 @@
+; macro expansion
+
+(in-package compiler)
+(using <hl>v0)
+
+; recursively macroexpands code
+(def macex (e)
+  (if (atom e) 
+    e
+    (let op (car e)
+      (if 
+        (is op '<axiom>lambda)
+          `(<axiom>lambda ,(cadr e) ,@(map macex (cddr e)))
+        (is op '<axiom>quote)
+          e
+        (and (isa op 'sym)
+             (bound op)
+             (isa (symeval op) 'mac))
+          ; we have a macro
+          (let expander (rep (symeval op))
+            ; macros receives different args in hl and hl-arc-f
+            (if bootstrap*
+              (macex (apply expander (cdr e)))
+              (macex (apply expander (table) (cdr e)))))
+        ; a list
+        (map macex code)))))

@@ -32,6 +32,9 @@
 
 (interface v0 compile)
 
+; this var tells if we are bootstrapping the compiler or not
+(set bootstrap *t)
+
 ; strictly, "compiled-and-executed-files"
 (set files* '("structs.hl" "bytecodegen.hl" 
               "quote-lift.hl" "utils.hl" "closures.hl" "cps.hl"
