@@ -102,7 +102,6 @@ void Bytecode::push(bytecode_t b) {
     bytecode_t *c = code.get();
     for (size_t i = 0; i<codeSize; i++)
       nb[i] = c[i];
-    delete [] c;
     code.reset(nb);
     codeSize *= 2;
   }

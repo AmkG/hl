@@ -18,13 +18,18 @@
               alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self makeproper rfn pos complement dotted len on
               index copy mappend cadr cddr len> it some assert given case
-              >= > keep idfn rev - mem max mapeach
+              >= > keep idfn rev - mem max mapeach atom bound rep apply
               ; types
               int num char table string sym bool)
 
 (set <hl>unpkg <arc>unpkg)
 (set <hl>ssyntax <arc>ssyntax)
 (set <hl>pos <arc>pos)
+
+; fix differences between the host and the target
+(mac <axiom>lambda (args . body)
+  `(fn ,args ,@body))
+(set <axiom>tag <arc>annotate)
 
 ; the compiler package
 (in-package compiler)
@@ -33,12 +38,12 @@
 (interface v0 compile)
 
 ; this var tells if we are bootstrapping the compiler or not
-(set bootstrap *t)
+(set bootstrap* t)
 
 ; strictly, "compiled-and-executed-files"
 (set files* '("structs.hl" "bytecodegen.hl" 
               "quote-lift.hl" "utils.hl" "closures.hl" "cps.hl"
-              "sharedvars.hl"  "xe.hl"))
+              "sharedvars.hl"  "xe.hl" "macex.hl"))
 ; need also *another* set of files for "compiled-only-but-not-executed-files"
 
 ; load all the files
@@ -58,7 +63,7 @@
   ; called from the command line
   ; compile and run the program
   (<arc>w/infile in (<arc>argv 1)
-    (let prog `((<axiom>lambda () ,@(<arc>readall in)))
+    (let prog (<arc>readall in)
       (<arc>w/outfile tmp "/tmp/hl-tmp"
         ; not the best thing to do, pipe-to would be better if we had it
         ; put the default continuation
@@ -67,8 +72,14 @@
                        (<bc>local 1) 
                        (<bc>halt))
                     tmp)
-        (each expr (compile-to-bytecode prog)
-          (prn expr)
-          (<arc>write expr tmp)))))
-  ; run the bytecode
+        (each expr prog
+          ; for each expression, we compile it & then eval it
+          ; when bootstrapping evaluation is done in the host
+          ; and the compiled result is not executed
+          ;(if bootstrap*
+          ;  (<arc>eval expr))
+          (each bc (compile-to-bytecode prog)
+            (prn bc) ; for debugging
+            (<arc>write bc tmp))))))
+  ; run the bytecode (only for testing, will be removed in the future)
   (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))

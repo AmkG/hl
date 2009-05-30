@@ -258,7 +258,7 @@
               (w/local-push (car ast!subx) '<bc>type)
             <axiom>rep
               (w/local-push (car ast!subx) '<bc>rep)
-            <axiom>annotate
+            <axiom>tag
               (direct-compile ast!subx '<bc>tag)
             <axiom>apply
               (direct-compile ast!subx '<bc>apply-list)
@@ -509,10 +509,12 @@
     ; !! - this change was done to generalize
     ; !! the special handling of 'compose
     (withs (e (symbol-syntax e)
+            e (<compiler>macex e)
             e (xe e)
             e (sharedvars-convert-assert e)
             e (quote-lift e)
             e (cps-convert e)
             e (closure-convert e))
-      (prn:source e)
+      ;(prn (rep (symeval 'def)))
+      ;(prn:source e)
       (bytecodegen-top e))))

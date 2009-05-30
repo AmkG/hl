@@ -104,8 +104,8 @@
 (def-sf = (e cte)
   (xe (cons 'set (cdr e)) cte))
 
-(def-sf def (e cte)
-  (xe `(set ,(cadr e) (fn ,(car:cddr e) ,@(cdr:cddr e))) cte))
+;(def-sf def (e cte)
+;  (xe `(set ,(cadr e) (fn ,(car:cddr e) ,@(cdr:cddr e))) cte))
 
 ;-----------------------------------------------------------------------------
 ; all the special forms above this line should eventually be converted to
@@ -117,7 +117,7 @@
     (make-quote '() (cadr e))
     (err "quote expects 1 arg")))
 
-(def-sf set (e cte)
+(def-sf <axiom>set (e cte)
   (if (is (len (cdr e)) 2)
     (let b (xe-lookup (cadr e) cte)
       (if (avar b)
