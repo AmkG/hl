@@ -37,17 +37,32 @@ static inline Executor* THE_EXECUTOR(void) {
 	return new E();
 }
 
+class NON_STD { };
+
 class InitialAssignments {
 public:
 	InitialAssignments const& operator()(
 			char const* s,
 			_bytecode_label l,
-                        bytecode_arg_type tp = ARG_NONE) const{
+                        bytecode_arg_type tp = ARG_NONE) const {
                 Symbol *opcode = symbols->lookup(s);
 		bytetb[opcode] = l;
                 inv_bytetb[l] = opcode;
                 assembler.regArg(l, tp);
 		return *this;
+	}
+	InitialAssignments const& operator()(
+			char const* s,
+			_bytecode_label l,
+			NON_STD) const {
+		(*this)(s, l);
+	}
+	InitialAssignments const& operator()(
+			char const* s,
+			_bytecode_label l,
+			bytecode_arg_type tp,
+			NON_STD) const {
+		(*this)(s, l, tp);
 	}
 	InitialAssignments const& operator()(
 			char const* s,
@@ -203,8 +218,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push), ARG_INT)
       ("<bc>i-to-f",		THE_BYTECODE_LABEL(i_to_f))
       ("<bc>is",		THE_BYTECODE_LABEL(is))
-      ("<bc>jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT) // replacement for 'if
-      //("<bc>if-local",		THE_BYTECODE_LABEL(if_local))
+      ("<bc>jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT,
+         NON_STD() ) // replacement for 'if
       ("<bc>int",			THE_BYTECODE_LABEL(b_int), ARG_INT)
       ("<bc>i/o-accept",	THE_BYTECODE_LABEL(io_accept))
       ("<bc>i/o-appendfile",	THE_BYTECODE_LABEL(io_appendfile))
@@ -265,7 +280,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>type-local-push",	THE_BYTECODE_LABEL(type_local_push))
       ("<bc>type-clos-push",	THE_BYTECODE_LABEL(type_clos_push))
       ("<bc>variadic",		THE_BYTECODE_LABEL(variadic), ARG_INT)
-      ("<bc>do-executor",       THE_BYTECODE_LABEL(do_executor), ARG_SYMBOL)
+      ("<bc>do-executor",       THE_BYTECODE_LABEL(do_executor), ARG_SYMBOL,
+        NON_STD())
       ("<bc>i+",                    THE_BYTECODE_LABEL(iplus))
       ("<bc>i-",                    THE_BYTECODE_LABEL(iminus))
       ("<bc>i*",                    THE_BYTECODE_LABEL(imul))
