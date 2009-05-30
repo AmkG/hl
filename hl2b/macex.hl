@@ -15,7 +15,7 @@
           e
         (and (isa op 'sym)
              (bound op)
-             (isa (<axiom>symeval op) 'mac))
+             (isa (<axiom>symeval op) '<hl>mac))
           ; we have a macro
           (let expander (rep (<axiom>symeval op))
             ; macros receives different args in hl and hl-arc-f

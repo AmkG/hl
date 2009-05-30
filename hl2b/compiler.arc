@@ -27,9 +27,15 @@
 (set <hl>pos <arc>pos)
 
 ; fix differences between the host and the target
+; this is actually a superset, i.e. they do *at least* what their hl
+; counterpart do
 (mac <axiom>lambda (args . body)
   `(fn ,args ,@body))
 (set <axiom>tag <arc>annotate)
+(set <axiom>cons <arc>cons)
+(set <axiom>i- -)
+(set <axiom>i+ +)
+(set <axiom>i< <)
 
 ; the compiler package
 (in-package compiler)
@@ -63,7 +69,8 @@
   ; called from the command line
   ; compile and run the program
   (<arc>w/infile in (<arc>argv 1)
-    (let prog (<arc>readall in)
+    (withs (exprs (<arc>readall in)
+            prog `((<axiom>lambda () ,@exprs)))
       (<arc>w/outfile tmp "/tmp/hl-tmp"
         ; not the best thing to do, pipe-to would be better if we had it
         ; put the default continuation
@@ -72,14 +79,18 @@
                        (<bc>local 1) 
                        (<bc>halt))
                     tmp)
-        (each expr prog
+        (each expr exprs
           ; for each expression, we compile it & then eval it
           ; when bootstrapping evaluation is done in the host
           ; and the compiled result is not executed
-          ;(if bootstrap*
-          ;  (<arc>eval expr))
-          (each bc (compile-to-bytecode prog)
-            (prn bc) ; for debugging
-            (<arc>write bc tmp))))))
+          ; WARNING: the *whole* file is evaluated before compilation
+          ; takes place. This means that if a global var is redefined
+          ; by the compiled code, during compilation only the last definition
+          ; will be available. This shouldn't be a problem in practice.
+          (if bootstrap*
+            (<arc>eval (<compiler>macex expr))))
+        (each bc (compile-to-bytecode prog)
+          (prn bc) ; for debugging
+          (<arc>write bc tmp)))))
   ; run the bytecode (only for testing, will be removed in the future)
   (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))
