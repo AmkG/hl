@@ -1,6 +1,6 @@
 The following functions/macros must be implemented in order to
 bootstrap hl2b. They're shown together with their dependencies on the
-right. The type (function or macro) is shown on the right together
+right. The type (function or macro) is shown on the left together
 with its current status (implemented/not implemented).
 
 - [m][ ] def -- fn do
