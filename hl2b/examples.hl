@@ -1,14 +1,22 @@
 ; Some working examples of hl code
+; to run:
+; $ hl compiler.arc examples.hl
 
 ; basic stuff
 
 (<axiom>set list (<axiom>lambda l l))
 
-(<axiom>set def 
+(<axiom>set mac
   (<axiom>tag (<axiom>quote <hl>mac)
     (<axiom>lambda (name args . body)
       (list (<axiom>quote <axiom>set) name 
-        (<axiom>cons (<axiom>quote <axiom>lambda) (<axiom>cons args body))))))
+        (list (<axiom>quote <axiom>tag) (<axiom>quote (<axiom>quote <hl>mac))
+          (<axiom>cons (<axiom>quote <axiom>lambda) 
+                       (<axiom>cons args body)))))))
+
+(mac def (name args . body)
+  (list (<axiom>quote <axiom>set) name
+    (<axiom>cons (<axiom>quote <axiom>lambda) (<axiom>cons args body))))
 
 (def no (x) (<axiom>if x nil t))
 
@@ -48,3 +56,16 @@
 
 ; uncomment to stress the GC a little
 ; (build 1000000)
+
+; let (no destructuring)
+
+(mac let (var val . body)
+  (list (<axiom>cons (<axiom>quote <axiom>lambda) 
+                     (<axiom>cons (list var) body)) val))
+
+(<axiom>set x 99)
+
+(let x (<axiom>i+ 4 5)
+  (<axiom>set x (<axiom>i+ x 1))
+  (<axiom>set x (<axiom>i* x 10))
+  x)

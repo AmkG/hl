@@ -31,10 +31,12 @@
 ; counterpart do
 (mac <axiom>lambda (args . body)
   `(fn ,args ,@body))
+
 (set <axiom>tag <arc>annotate)
 (set <axiom>cons <arc>cons)
 (set <axiom>i- -)
 (set <axiom>i+ +)
+(set <axiom>i* *)
 (set <axiom>i< <)
 (set <axiom>is is)
 (set <axiom>cdr cdr)
