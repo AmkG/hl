@@ -102,7 +102,7 @@
 (def send (to x)
   (<axiom>send to x))
 
-; spawn a process, send it out pid and receive a value
+; spawn a process, send it our pid and receive a value
 
 (let pid (spawn (<axiom>lambda () (send (recv) 42)))
   (send pid (<axiom>self-pid))
