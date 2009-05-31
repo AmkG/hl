@@ -2,6 +2,10 @@
 ; to run:
 ; $ hl compiler.arc examples.hl
 
+; these two are temporarily needed
+(<axiom>set >start-host-eval nil)
+(<axiom>set >stop-host-eval t)
+
 ; basic stuff
 
 (<axiom>set list (<axiom>lambda l l))
@@ -69,3 +73,41 @@
   (<axiom>set x (<axiom>i+ x 1))
   (<axiom>set x (<axiom>i* x 10))
   x)
+
+; time to spawn some processes
+; hl-arc-f has no processes, so we have to stop evaluation
+
+(<axiom>set res t)
+
+>stop-host-eval
+
+; definitions of recv/spawn/send
+
+(def recv ()
+  (<axiom>recv))
+
+(<axiom>set spawn-cont-code* 
+            (<axiom>assemble
+              (list (list (<axiom>quote <bc>check-vars) 1)
+                    (list (<axiom>quote <bc>closure-ref) 0)
+                    (list (<axiom>quote <bc>k-closure) 0 
+                      (list (<axiom>quote <bc>check-vars) 2) 
+                      (list (<axiom>quote <bc>halt)))
+                    (list (<axiom>quote <bc>apply) 2))))
+
+(def spawn (f)
+  ; <axiom>enclose is still to fix
+  (<axiom>spawn (<axiom>enclose f spawn-cont-code*)))
+
+(def send (to x)
+  (<axiom>send to x))
+
+; spawn a process, send it out pid and receive a value
+
+(let pid (spawn (<axiom>lambda () (send (recv) 42)))
+  (send pid (<axiom>self-pid))
+  (<axiom>set res (recv)))
+
+>start-host-eval
+
+res

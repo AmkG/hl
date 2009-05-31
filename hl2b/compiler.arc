@@ -50,6 +50,10 @@
 
 ; this var tells if we are bootstrapping the compiler or not
 (set bootstrap* t)
+; tells if the host should eval the code before compiling it
+; eval is needed to get macros to work while bootstrapping
+; but the host doesn't support some things (mainly async I/O & processes)
+(set stop-host-eval* nil)
 
 ; strictly, "compiled-and-executed-files"
 (set files* '("structs.hl" "bytecodegen.hl" 
@@ -92,8 +96,13 @@
           ; takes place. This means that if a global var is redefined
           ; by the compiled code, during compilation only the last definition
           ; will be available. This shouldn't be a problem in practice.
-          (if bootstrap*
-            (<arc>eval (<compiler>macex expr))))
+          (if
+            (is expr (unpkg '>stop-host-eval))
+              (set stop-host-eval* t)
+            (is expr (unpkg '>start-host-eval))
+              (set stop-host-eval* nil)
+            (and bootstrap* (no stop-host-eval*))
+              (<arc>eval (<compiler>macex expr))))
         (each bc (compile-to-bytecode prog)
           (prn bc) ; for debugging
           (<arc>write bc tmp)))))
