@@ -1,0 +1,42 @@
+The following functions/macros must be implemented in order to
+bootstrap hl2b. They're shown together with their dependencies on the
+right. The type (function or macro) is shown on the right together
+with its current status (implemented/not implemented).
+
+- [m][ ] def -- fn do
+- [m][ ] do
+- [m][ ] mac -- fn do
+- [m][ ] if
+- [m][ ] and -- if
+- [m][ ] or -- if
+- [f][ ] no
+- [m][ ] each -- w/uniq let maptable afn alist when isa for
+- [f][ ] load -- w/infile w/uniq whiler read eval
+- [f][ ] string
+- [f][ ] unpkg
+- [m][ ] = -- ; depends if it has to be supported completely
+- [m][ ] w/infile -- infile after close
+- [m][ ] let -- fn
+- [m][ ] with -- fn map
+- [m][ ] withs -- fn let
+- [m][ ] fn
+- [m][ ] afn -- fn
+- [f][ ] require -- load
+- [m][ ] w/uniq -- uniq
+- [f][ ] coerce
+- [f][ ] +
+- [m][ ] push -- w/uniq let atwiths setforms
+- [f][ ] listtab -- let map fn
+- [m][ ] givens -- withs
+- [m][ ] make-br-fn
+- [m][ ] ++ -- isa w/uniq let atwiths setforms
+- [f][ ] acons
+- [f][ ] ssyntax
+- [f][ ] isnt -- no is
+- [f][ ] caris -- and acons is
+- [m][ ] in -- let or w/uniq
+- [f][ ] type
+- [f][ ] isa -- is type
+- [f][ ] alist
+
+To be completed....
