@@ -1,0 +1,50 @@
+; Some working examples of hl code
+
+; basic stuff
+
+(<axiom>set list (<axiom>lambda l l))
+
+(<axiom>set def 
+  (<axiom>tag (<axiom>quote <hl>mac)
+    (<axiom>lambda (name args . body)
+      (list (<axiom>quote <axiom>set) name 
+        (<axiom>cons (<axiom>quote <axiom>lambda) (<axiom>cons args body))))))
+
+(def no (x) (<axiom>if x nil t))
+
+; good old Fibonacci
+
+(def fib (n)
+  (<axiom>if (<axiom>i< n 2)
+    1
+    (<axiom>i+ (fib (<axiom>i- n 1)) (fib (<axiom>i- n 2)))))
+
+(fib 5)
+
+; counters
+
+(def mk-count (x)
+  (<axiom>lambda () (<axiom>set x (<axiom>i+ x 1))))
+(<axiom>set c1 (mk-count 9))
+(<axiom>set c2 (mk-count 3))
+(c1)
+(c2)
+(c1)
+(c2)
+
+; a little consing
+
+(def build (n) 
+  (<axiom>if (<axiom>is n 0) 
+    nil 
+    (<axiom>cons n (build (<axiom>i- n 1)))))
+
+(def last (l)
+  (<axiom>if (no (<axiom>cdr l))
+    (<axiom>car l)
+    (last (<axiom>cdr l))))
+
+(last (build 1000))
+
+; uncomment to stress the GC a little
+; (build 1000000)

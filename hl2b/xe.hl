@@ -111,7 +111,7 @@
 ; all the special forms above this line should eventually be converted to
 ; macros into hl.hl
 
-(def-sf quote (e cte)
+(def-sf <axiom>quote (e cte)
   (if (is (len (cdr e)) 1)
     ; TODO: simple constants may be safely unquoted
     (make-quote '() (cadr e))
@@ -125,7 +125,7 @@
         (err "can't set a nonvariable" e)))
     (err "set expects 2 args")))
 
-(def-sf if (e cte)
+(def-sf <axiom>if (e cte)
   (if
     (is (len (cdr e)) 3)
       (make-cnd (xe-exprs (cdr e) cte))

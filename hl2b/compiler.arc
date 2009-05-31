@@ -36,6 +36,9 @@
 (set <axiom>i- -)
 (set <axiom>i+ +)
 (set <axiom>i< <)
+(set <axiom>is is)
+(set <axiom>cdr cdr)
+(set <axiom>car car)
 
 ; the compiler package
 (in-package compiler)
