@@ -77,29 +77,43 @@
   (and (isa x 'table) (is x!type 'prim)))
 
 ; list of known bytecodes accessible directly to the user
-(set axioms* '(<axiom>acquire <axiom>car <axiom>scar <axiom>cdr <axiom>scdr 
-               <axiom>char <axiom>composeo <axiom>cons <axiom>enclose
-               <axiom>disclose <axiom>assemble <axiom>f-to-i 
-               <axiom>halt <axiom>i-to-f <axiom>is <axiom>ccc <axiom>monomethod
-               <axiom>reducto <axiom>recv <axiom>release <axiom>rep 
-               <axiom>self-pid <axiom>send <axiom>spawn <axiom>string-create
-               <axiom>string-length <axiom>string-ref <axiom>string-sref 
-               <axiom>sym <axiom>symeval <axiom>table-create <axiom>table-ref 
-               <axiom>table-sref <axiom>table-keys <axiom>tag <axiom>try-recv 
-               <axiom>type <axiom>do-executor <axiom>i+ <axiom>i- <axiom>i* 
-               <axiom>i/ <axiom>imod <axiom>i< <axiom>f+ <axiom>f- <axiom>f* 
-               <axiom>f/ <axiom>f< <axiom>l-to-b <axiom>b-ref
-               ; I/O
-               <axiom>i/o-accept <axiom>i/o-appendfile <axiom>i/o-close
-               <axiom>i/o-connect <axiom>i/o-fsync <axiom>i/o-infile	
-               <axiom>i/o-listener <axiom>i/o-outfile	<axiom>i/o-pipe		
-               <axiom>i/o-read <axiom>i/o-seek <axiom>i/o-stderr 
-               <axiom>i/o-stdin <axiom>i/o-stdout <axiom>i/o-tell	
-               <axiom>i/o-write))
+; each bytecode is associated with the number of args it expects
+; '* means variadic
+; TODO: add a minimum to variadic
+(set axioms* 
+  (listtab '((<axiom>acquire 0) (<axiom>car 1) (<axiom>scar 2) (<axiom>cdr 1)
+             (<axiom>scdr 2) (<axiom>char 1) (<axiom>composeo 0) 
+             (<axiom>cons 2) (<axiom>enclose *) (<axiom>disclose 1)
+             (<axiom>assemble 1) (<axiom>f-to-i 1) (<axiom>halt 0)
+             (<axiom>i-to-f 1) (<axiom>is 2) (<axiom>ccc 1) 
+             (<axiom>monomethod *) (<axiom>reducto 0) (<axiom>recv 0)
+             (<axiom>release 0) (<axiom>rep 1) (<axiom>self-pid 0)
+             (<axiom>send 2) (<axiom>spawn 1) (<axiom>string-create *)
+             (<axiom>string-length 1) (<axiom>string-ref 2) 
+             (<axiom>string-sref 3) (<axiom>sym 1) (<axiom>symeval 1) 
+             (<axiom>table-create 0) (<axiom>table-ref 2) (<axiom>table-sref 3)
+             (<axiom>table-keys 1) (<axiom>tag 2) (<axiom>try-recv 0) 
+             (<axiom>type 1) (<axiom>do-executor 1) (<axiom>i+ 2) (<axiom>i- 2)
+             (<axiom>i* 2) (<axiom>i/ 2) (<axiom>imod 2) (<axiom>i< 2) 
+             (<axiom>f+ 2) (<axiom>f- 2) (<axiom>f* 2) (<axiom>f/ 2) 
+             (<axiom>f< 2) (<axiom>l-to-b 1) (<axiom>b-ref 2)
+             ; I/O
+             (<axiom>i/o-accept 2) (<axiom>i/o-appendfile 2) 
+             (<axiom>i/o-close 1) (<axiom>i/o-connect 3) (<axiom>i/o-fsync 2)
+             (<axiom>i/o-infile 2) (<axiom>i/o-listener 2) 
+             (<axiom>i/o-outfile 2)	(<axiom>i/o-pipe 0) (<axiom>i/o-read 3)
+             (<axiom>i/o-seek 2) (<axiom>i/o-stderr 0) (<axiom>i/o-stdin 0)
+             (<axiom>i/o-stdout 0) (<axiom>i/o-tell 1) (<axiom>i/o-write 3))))
+
+(def check-prim-num-args (op n)
+  (let expect (axioms* op)
+    (if (and expect (no (is expect '*)) (no (is n expect)))
+      (err (string "Not enough arguments given to primitive " op ": " 
+                   n " given, " expect " expected.")))))
 
 ; check if x is an axiom
 (def an-axiom (x)
-  (and (isa x 'sym) (mem x axioms*)))
+  (and (isa x 'sym) (axioms* x)))
 
 ; a function call (a function *app*lication)
 (def make-app (subx)
