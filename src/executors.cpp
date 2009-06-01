@@ -117,7 +117,6 @@ void Bytecode::push(bytecode_t b) {
     bytecode_t *c = code.get();
     for (size_t i = 0; i<codeSize; i++)
       nb[i] = c[i];
-    delete [] c;
     code.reset(nb);
     codeSize *= 2;
   }
@@ -648,6 +647,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(empty_event_set): {
       bytecode_<&empty_event_set>(stack);
     } NEXT_BYTECODE;
+	 // TODO: fix to take a list of values to enclose
     BYTECODE(enclose): {
       INTPARAM(N);
       Closure* nclos = Closure::NewClosure(proc, N);

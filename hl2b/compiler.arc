@@ -18,13 +18,29 @@
               alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self makeproper rfn pos complement dotted len on
               index copy mappend cadr cddr len> it some assert given case
-              >= > keep idfn rev - mem max mapeach
+              >= > keep idfn rev - mem max mapeach atom bound rep apply
               ; types
               int num char table string sym bool)
 
 (set <hl>unpkg <arc>unpkg)
 (set <hl>ssyntax <arc>ssyntax)
 (set <hl>pos <arc>pos)
+
+; fix differences between the host and the target
+; this is actually a superset, i.e. they do *at least* what their hl
+; counterpart do
+(mac <axiom>lambda (args . body)
+  `(fn ,args ,@body))
+
+(set <axiom>tag <arc>annotate)
+(set <axiom>cons <arc>cons)
+(set <axiom>i- -)
+(set <axiom>i+ +)
+(set <axiom>i* *)
+(set <axiom>i< <)
+(set <axiom>is is)
+(set <axiom>cdr cdr)
+(set <axiom>car car)
 
 ; the compiler package
 (in-package compiler)
@@ -33,12 +49,16 @@
 (interface v0 compile)
 
 ; this var tells if we are bootstrapping the compiler or not
-(set bootstrap *t)
+(set bootstrap* t)
+; tells if the host should eval the code before compiling it
+; eval is needed to get macros to work while bootstrapping
+; but the host doesn't support some things (mainly async I/O & processes)
+(set stop-host-eval* nil)
 
 ; strictly, "compiled-and-executed-files"
 (set files* '("structs.hl" "bytecodegen.hl" 
               "quote-lift.hl" "utils.hl" "closures.hl" "cps.hl"
-              "sharedvars.hl"  "xe.hl"))
+              "sharedvars.hl"  "xe.hl" "macex.hl"))
 ; need also *another* set of files for "compiled-only-but-not-executed-files"
 
 ; load all the files
@@ -58,7 +78,8 @@
   ; called from the command line
   ; compile and run the program
   (<arc>w/infile in (<arc>argv 1)
-    (let prog `((<axiom>lambda () ,@(<arc>readall in)))
+    (withs (exprs (<arc>readall in)
+            prog `((<axiom>lambda () ,@exprs)))
       (<arc>w/outfile tmp "/tmp/hl-tmp"
         ; not the best thing to do, pipe-to would be better if we had it
         ; put the default continuation
@@ -67,8 +88,23 @@
                        (<bc>local 1) 
                        (<bc>halt))
                     tmp)
-        (each expr (compile-to-bytecode prog)
-          (prn expr)
-          (<arc>write expr tmp)))))
-  ; run the bytecode
+        (each expr exprs
+          ; for each expression, we compile it & then eval it
+          ; when bootstrapping evaluation is done in the host
+          ; and the compiled result is not executed
+          ; WARNING: the *whole* file is evaluated before compilation
+          ; takes place. This means that if a global var is redefined
+          ; by the compiled code, during compilation only the last definition
+          ; will be available. This shouldn't be a problem in practice.
+          (if
+            (is expr (unpkg '>stop-host-eval))
+              (set stop-host-eval* t)
+            (is expr (unpkg '>start-host-eval))
+              (set stop-host-eval* nil)
+            (and bootstrap* (no stop-host-eval*))
+              (<arc>eval (<compiler>macex expr))))
+        (each bc (compile-to-bytecode prog)
+          (prn bc) ; for debugging
+          (<arc>write bc tmp)))))
+  ; run the bytecode (only for testing, will be removed in the future)
   (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))
