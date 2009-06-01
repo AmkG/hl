@@ -88,7 +88,14 @@
                <axiom>table-sref <axiom>table-keys <axiom>tag <axiom>try-recv 
                <axiom>type <axiom>do-executor <axiom>i+ <axiom>i- <axiom>i* 
                <axiom>i/ <axiom>imod <axiom>i< <axiom>f+ <axiom>f- <axiom>f* 
-               <axiom>f/ <axiom>f<))
+               <axiom>f/ <axiom>f< <axiom>l-to-b
+               ; I/O
+               <axiom>i/o-accept <axiom>i/o-appendfile <axiom>i/o-close
+               <axiom>i/o-connect <axiom>i/o-fsync <axiom>i/o-infile	
+               <axiom>i/o-listener <axiom>i/o-outfile	<axiom>i/o-pipe		
+               <axiom>i/o-read <axiom>i/o-seek <axiom>i/o-stderr 
+               <axiom>i/o-stdin <axiom>i/o-stdout <axiom>i/o-tell	
+               <axiom>i/o-write))
 
 ; check if x is an axiom
 (def an-axiom (x)

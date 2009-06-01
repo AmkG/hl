@@ -542,7 +542,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_char): {
       INTPARAM(N);
       bytecode_char(stack, N);
-    }
+    } NEXT_BYTECODE;
     BYTECODE(check_vars): {
       INTPARAM(N);
       bytecode_check_vars(stack, N);

@@ -111,3 +111,20 @@
 >start-host-eval
 
 res
+
+; Hello, World!
+
+; map over a string, return a list
+(def mapstr (f s i)
+  (<axiom>if (<axiom>i< i (<axiom>string-length s))
+    (<axiom>cons (f (<axiom>string-ref s i)) (mapstr f s (<axiom>i+ i 1)))
+    nil))
+
+(def id (x) x)
+
+>stop-host-eval
+
+(let o (<axiom>i/o-stdout)
+  (<axiom>i/o-write o (<axiom>l-to-b (mapstr id "Hello, World!\n" 0))))
+
+>start-host-eval
