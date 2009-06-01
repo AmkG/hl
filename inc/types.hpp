@@ -247,7 +247,16 @@ public:
 	static Object::ref length(Object::ref);
 	static Object::ref string_ref(Object::ref, Object::ref);
 
+	/*conversion to and from C++ std::strings
+	std::string's are assumed to be UTF-8
+	*/
 	std::string to_cpp_string(void) const;
+	/*return on stack top*/
+	static void from_cpp_string(
+		Heap& hp,
+		ProcessStack& stack,
+		std::string
+	);
 };
 
 class HlStringImpl : public GenericDerivedVariadic<HlStringImpl> {

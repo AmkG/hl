@@ -157,6 +157,83 @@ std::string HlString::to_cpp_string(void) const {
 	} else return std::string("");
 }
 
+static inline bool partial_utf8_char(unsigned char c) { /*Pure*/
+	return c >= 128 && c < 192;
+}
+static inline uint32_t extract_utf8(unsigned char c) { /*Pure*/
+	return c & 63;
+}
+
+void HlString::from_cpp_string(
+		Heap& hp,
+		ProcessStack& stack,
+		std::string s) {
+	/*Generate a vector of UnicodeChar's first*/
+	std::vector<UnicodeChar> rv;
+	size_t sz = s.size();
+	for(size_t i = 0; i < sz; ++i) { // not foreach-able
+		unsigned char c = s[i];
+		/*TODO*/
+		if(c > 128) {
+			if(c >= 240 && i + 3 < sz
+					/*check succeeding 3 bytes are
+					ensure correct range
+					*/
+					&& partial_utf8_char(s[i+1])
+					&& partial_utf8_char(s[i+2])
+					&& partial_utf8_char(s[i+3])
+					) {
+				/*push back a single code point and skip
+				three bytes.
+				*/
+				rv.push_back(
+					UnicodeChar(
+						((uint32_t)c) * 262144
+						+ extract_utf8(s[i+1]) * 4096
+						+ extract_utf8(s[i+2]) * 64
+						+ extract_utf8(s[i+3])
+					)
+				);
+				i += 3;
+			} else if(c >= 224 && i + 2 < sz
+					&& partial_utf8_char(s[i+1])
+					&& partial_utf8_char(s[i+2])
+					) {
+				/*push back and skip*/
+				rv.push_back(
+					UnicodeChar(
+						((uint32_t)c) * 4096
+						+ extract_utf8(s[i+1]) * 64
+						+ extract_utf8(s[i+2])
+					)
+				);
+				i += 2;
+			} else if(c >= 192 && i + 1 < sz
+					&& partial_utf8_char(s[i+1])
+					) {
+				rv.push_back(
+					UnicodeChar(
+						((uint32_t)c) * 64
+						+ extract_utf8(s[i+1])
+					)
+				);
+				i += 1;
+			} /*else ignore character*/
+		} else {
+			rv.push_back(UnicodeChar(c));
+		}
+	}
+	/*convert vector*/
+	HlStringImpl* si = hp.create_variadic<HlStringImpl>(rv.size());
+	for(size_t i = 0; i < rv.size(); ++i) {
+		(*si)[i] = Object::to_ref(rv[i]);
+	}
+	stack.push(Object::to_ref<Generic*>(si));
+	HlString* rvs = hp.create<HlString>();
+	rvs->impl = stack.top();
+	stack.top() = Object::to_ref<Generic*>(rvs);
+}
+
 /*-----------------------------------------------------------------------------
 HlTable
 -----------------------------------------------------------------------------*/
