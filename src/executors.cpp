@@ -249,9 +249,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
       ("<bc>release",		THE_BYTECODE_LABEL(release))
       ("<bc>remove-event",	THE_BYTECODE_LABEL(remove_event))
-      ("<bc>rep",			THE_BYTECODE_LABEL(rep))
+      ("<bc>rep",		THE_BYTECODE_LABEL(rep))
       ("<bc>rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("<bc>rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+      ("<bc>s-to-sy",		THE_BYTECODE_LABEL(s_to_sy))
       ("<bc>self-pid", THE_BYTECODE_LABEL(self_pid))
       ("<bc>send",		THE_BYTECODE_LABEL(send))
       ("<bc>sleep",		THE_BYTECODE_LABEL(sleep))
@@ -267,6 +268,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>sv-ref-local-push",    THE_BYTECODE_LABEL(sv_ref_local_push), ARG_INT)
       ("<bc>sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push), ARG_INT)
       ("<bc>sv-set",		THE_BYTECODE_LABEL(sv_set))
+      ("<bc>sy-to-s",		THE_BYTECODE_LABEL(sy_to_s))
       ("<bc>sym",			THE_BYTECODE_LABEL(sym), ARG_SYMBOL)
       ("<bc>symeval",		THE_BYTECODE_LABEL(symeval), ARG_SYMBOL)
       ("<bc>system",		THE_BYTECODE_LABEL(system))
@@ -987,6 +989,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N);
       bytecode_clos_push_<rep>(stack, *clos, N);
     } NEXT_BYTECODE;
+    BYTECODE(s_to_sy): {
+      bytecode_s_to_sy(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
     BYTECODE(tag): {
       bytecode_tag(proc,stack);
     } NEXT_BYTECODE;
@@ -1099,6 +1105,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(sv_set): {
       bytecode2_<&sv_set>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sy_to_s): {
+      bytecode_sy_to_s(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(sym): {
       SYMPARAM(S);

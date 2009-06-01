@@ -5,6 +5,7 @@
 #include"aio.hpp"
 #include "symbols.hpp"
 #include<boost/shared_ptr.hpp>
+#include<string>
 
 /*
 By defining the actual bytecode implementation
@@ -179,6 +180,22 @@ inline void bytecode_sv_set(ProcessStack& stack){
 	stack.pop();
 }
 */
+inline void bytecode_s_to_sy(Process& proc, ProcessStack& stack) {
+	HlString* hls = expect_type<HlString>(stack.top(),
+		"'<bc>s-to-sy expects a string"
+	);
+	std::string s = hls->to_cpp_string();
+	Symbol* sy = symbols->lookup(s);
+	stack.top() = Object::to_ref(sy);
+}
+inline void bytecode_sy_to_s(Process& proc, ProcessStack& stack) {
+	if(!is_a<Symbol*>(stack.top())) {
+		throw_HlError("<bc>sy-to-s expects a symbol");
+	}
+	Symbol* sy = as_a<Symbol*>(stack.top());
+	std::string s = sy->getPrintName();
+	HlString::from_cpp_string(proc, stack, s);
+}
 inline void bytecode_sym(Process& proc, ProcessStack& stack, Symbol *S) {
   stack.push(Object::to_ref(S));
 }
