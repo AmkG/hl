@@ -88,7 +88,7 @@
                <axiom>table-sref <axiom>table-keys <axiom>tag <axiom>try-recv 
                <axiom>type <axiom>do-executor <axiom>i+ <axiom>i- <axiom>i* 
                <axiom>i/ <axiom>imod <axiom>i< <axiom>f+ <axiom>f- <axiom>f* 
-               <axiom>f/ <axiom>f< <axiom>l-to-b
+               <axiom>f/ <axiom>f< <axiom>l-to-b <axiom>b-ref
                ; I/O
                <axiom>i/o-accept <axiom>i/o-appendfile <axiom>i/o-close
                <axiom>i/o-connect <axiom>i/o-fsync <axiom>i/o-infile	

@@ -220,7 +220,7 @@ void HlString::from_cpp_string(
 				i += 1;
 			} /*else ignore character*/
 		} else {
-			rv.push_back(UnicodeChar(c));
+			rv.push_back(UnicodeChar((char)c));
 		}
 	}
 	/*convert vector*/
