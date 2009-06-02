@@ -195,8 +195,7 @@ public:
   }
   bool reusable() { return !nonreusable; }
 
-  static Closure* NewKClosure(Heap & h, Object::ref owner, 
-															Object::ref next_k, size_t n);
+  static Closure* NewKClosure(Heap & h, ProcessStack stack, size_t n);
   static Closure* NewClosure(Heap & h, size_t n);
 
   Object::ref type(void) const {
@@ -217,6 +216,8 @@ public:
 	Object::ref return_to() {
 		return owner;
 	}
+
+	void print_trace(std::ostream & o);
 
 };
 

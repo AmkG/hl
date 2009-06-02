@@ -330,6 +330,9 @@ public:
 		bytecode_cons(proc, proc.stack);
 	}
 
+	void print_info(std::ostream & o) {
+		o << "Name: " << name << " in file " << file << " at line " << line;
+	}
 
 	// setters
 	void set_name(Object::ref n) {
