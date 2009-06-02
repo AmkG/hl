@@ -103,7 +103,11 @@
              (<axiom>i/o-infile 2) (<axiom>i/o-listener 2) 
              (<axiom>i/o-outfile 2)	(<axiom>i/o-pipe 0) (<axiom>i/o-read 3)
              (<axiom>i/o-seek 2) (<axiom>i/o-stderr 0) (<axiom>i/o-stdin 0)
-             (<axiom>i/o-stdout 0) (<axiom>i/o-tell 1) (<axiom>i/o-write 3))))
+             (<axiom>i/o-stdout 0) (<axiom>i/o-tell 1) (<axiom>i/o-write 3)
+             ; Events
+             (<axiom>event-wait 0) (<axiom>event-poll 0) (<axiom>add-event 1)
+             (<axiom>remove-event 1) (<axiom>empty-event-set 0) 
+             (<axiom>only-running 0))))
 
 (def check-prim-num-args (op n)
   (let expect (axioms* op)
