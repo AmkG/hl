@@ -182,11 +182,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
       ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
       ("<bc>bounded",		THE_BYTECODE_LABEL(bounded))
-      ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT)
+      /*these implement the actual bytecodes <bc>k-closure,
+      <bc>k-closure-recreate, and <bc>k-closure-reuse.
+      */
+      ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT,
+         NON_STD() )
       ("<bc>build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
-       ARG_INT)
+       ARG_INT,
+         NON_STD() )
       ("<bc>build-k-closure-reuse", THE_BYTECODE_LABEL(build_k_closure_reuse), 
-       ARG_INT)
+       ARG_INT,
+         NON_STD() )
       ("<bc>car",			THE_BYTECODE_LABEL(car))
       ("<bc>scar",                  THE_BYTECODE_LABEL(scar))
       ("<bc>car-local-push",	THE_BYTECODE_LABEL(car_local_push), ARG_INT)
@@ -205,9 +211,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
       ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
-      ("<bc>disclose", THE_BYTECODE_LABEL(disclose))
+      /*this implements <common>disclose*/
+      // !! Could also be done as an Executor
+      ("<bc>disclose", THE_BYTECODE_LABEL(disclose), NON_STD() )
       ("<bc>empty-event-set",	THE_BYTECODE_LABEL(empty_event_set))
-      ("<bc>enclose", THE_BYTECODE_LABEL(enclose), ARG_INT)
+      /*this implements <bc>closure*/
+      ("<bc>enclose", THE_BYTECODE_LABEL(enclose), ARG_INT,
+         NON_STD() )
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
       ("<bc>event-wait",	THE_BYTECODE_LABEL(event_wait))
       ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
@@ -244,8 +254,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>local",		THE_BYTECODE_LABEL(local), ARG_INT)
       ("<bc>monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("<bc>only-running",	THE_BYTECODE_LABEL(only_running))
-      ("<bc>reducto",		THE_BYTECODE_LABEL(reducto))
       ("<bc>recv", THE_BYTECODE_LABEL(recv))
+      ("<bc>reducto",		THE_BYTECODE_LABEL(reducto))
       ("<bc>reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
       ("<bc>release",		THE_BYTECODE_LABEL(release))
       ("<bc>remove-event",	THE_BYTECODE_LABEL(remove_event))
