@@ -296,8 +296,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>f/",                    THE_BYTECODE_LABEL(fdiv))
       ("<bc>f<",                    THE_BYTECODE_LABEL(fless))
       /*declare executors*/
-      ("<executor>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
-      ("<executor>assemble", THE_EXECUTOR<AssemblerExecutor>())
+      ("<impl>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
+      ("<impl>assemble",		THE_EXECUTOR<AssemblerExecutor>())
       /*assign bultin global*/
       ;/*end initializer*/
 
