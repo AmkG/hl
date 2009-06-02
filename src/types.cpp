@@ -1,6 +1,9 @@
 #include "all_defines.hpp"
 #include "types.hpp"
 #include "processes.hpp"
+#include "executors.hpp"
+
+#include <iostream>
 
 /*-----------------------------------------------------------------------------
 Cons
@@ -42,9 +45,17 @@ Closure* Closure::NewKClosure(Heap & h, ProcessStack & stack, size_t n) {
   return c;
 }
 
+Closure* Closure::NewKClosure(Heap & h, size_t n) {
+  Closure *c = h.lifo_create_variadic<Closure>(n);
+  c->body = Object::nil();
+  c->nonreusable = false;
+  c->kontinuation = true;
+  return c;
+}
+
 void Closure::print_trace(std::ostream & o) {
 	if (kontinuation) {
-		if (onwer != Object::nil()) {
+		if (owner != Object::nil()) {
 			o << "Called by ";
 			expect_type<Bytecode>(expect_type<Closure>(owner)->body)->print_info(o);
 		} else {
@@ -52,7 +63,7 @@ void Closure::print_trace(std::ostream & o) {
 		}
 		o << "\n";
 		if (next_k != Object::nil()) {
-			expect_type<Closure>(next_k)->print_trace();
+			expect_type<Closure>(next_k)->print_trace(o);
 		}
 	} else {
 		o << "Within ";

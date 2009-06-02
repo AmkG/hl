@@ -16,6 +16,11 @@
 
 using namespace std;
 
+void throw_HlError(const char *str) {
+  std::cerr << "Error: " << str << "\n";
+	exit(1);
+}
+
 void throw_OverBrokenHeart(Generic*) {
   throw_HlError("overbrokenheart");
 }

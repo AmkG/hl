@@ -25,8 +25,9 @@ void Symbol::copy_value_to(ValueHolderRef& p) {
 }
 void Symbol::copy_value_to_and_add_notify(ValueHolderRef& p, Process* R) {
 	{AppLock l(m);
-	   if (value.empty()) {
+	  if (value.empty()) {
 			// no value associated with this symbol
+			show_HlError(R->stack, ("unbound variable: " + printname).c_str());
 			throw_HlError("unbound variable");
 		}
 		value->clone(p);

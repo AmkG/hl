@@ -5,6 +5,7 @@
 #include "objects.hpp"
 #include "reader.hpp" // for Bytecode classes
 #include "types.hpp"
+#include "bytecodes.hpp"
 
 #include <map>
 #include <set>
@@ -324,7 +325,7 @@ public:
 		proc.stack.push(name);
 		proc.stack.push(file);
 		proc.stack.push(line);
-		proc.stack.push(Object::nil);
+		proc.stack.push(Object::nil());
 		bytecode_cons(proc, proc.stack);
 		bytecode_cons(proc, proc.stack);
 		bytecode_cons(proc, proc.stack);

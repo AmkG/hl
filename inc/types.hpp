@@ -195,7 +195,8 @@ public:
   }
   bool reusable() { return !nonreusable; }
 
-  static Closure* NewKClosure(Heap & h, ProcessStack stack, size_t n);
+  static Closure* NewKClosure(Heap & h, ProcessStack & stack, size_t n);
+  static Closure* NewKClosure(Heap & h, size_t n);
   static Closure* NewClosure(Heap & h, size_t n);
 
   Object::ref type(void) const {
@@ -204,7 +205,8 @@ public:
 
   void traverse_references(GenericTraverser *gt) {
     gt->traverse(body);    
-		gt->traverse(creator);
+		gt->traverse(owner);
+		gt->traverse(next_k);
     for(size_t i = 0; i < sz; ++i) {
       gt->traverse(index(i));
     }

@@ -138,10 +138,10 @@ void Bytecode::push(const char *s, intptr_t val) {
 void show_HlError(ProcessStack stack, const char *str) {
   std::cerr << "Error: " << str << "\n";
 	if (maybe_type<Closure>(stack[0])) {
-		expect_type<Closure>(stack[0])->print_trace();
+		expect_type<Closure>(stack[0])->print_trace(std::cerr);
 	}
 	if (maybe_type<Closure>(stack[1])) {
-		expect_type<Closure>(stack[1])->print_trace();
+		expect_type<Closure>(stack[1])->print_trace(std::cerr);
 	}
   exit(1);
 }
