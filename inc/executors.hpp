@@ -269,10 +269,16 @@ private:
   size_t nextCode; // next free position in code
   size_t nextPos; // next free position in variadic space
 
+	// debug infos
+	Object::ref name; // name of the containing function
+	Object::ref file;
+	Object::ref line;
+
 public:
   Bytecode(size_t sz) 
     : GenericDerivedVariadic<Bytecode>(sz), codeSize(0), nextCode(0), 
-      nextPos(0) {}
+      nextPos(0), name(Object::nil()), file(Object::nil()), line(Object::nil())
+	{}
   virtual ~Bytecode() {}
 
   Object::ref& operator[](size_t i) {
@@ -308,7 +314,36 @@ public:
     for(size_t i = 0; i < nextPos; ++i) {
       gt->traverse(index(i));
     }
+		gt->traverse(name);
+		gt->traverse(file);
+		gt->traverse(line);
   }
+
+	// push a list of debug informations
+	void info(Process & proc) {
+		proc.stack.push(name);
+		proc.stack.push(file);
+		proc.stack.push(line);
+		proc.stack.push(Object::nil);
+		bytecode_cons(proc, proc.stack);
+		bytecode_cons(proc, proc.stack);
+		bytecode_cons(proc, proc.stack);
+	}
+
+
+	// setters
+	void set_name(Object::ref n) {
+		name = name;
+	}
+
+	void set_file(Object::ref f) {
+		file = f;
+	}
+
+	void set_line(Object::ref l) {
+		line = l;
+	}
+
 };
 
 #ifdef BYTECODE_DEBUG

@@ -451,7 +451,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(build_k_closure): {
     k_closure_perform_create:
       INTPARAM(N);
-      Closure *nclos = Closure::NewKClosure(proc, N);
+      Closure *nclos = Closure::NewKClosure(proc, stack[0], stack[1], N);
       nclos->codereset(stack.top()); stack.pop();
       SETCLOS(clos);
       for(int i = N; i ; --i){

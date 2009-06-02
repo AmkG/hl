@@ -32,9 +32,12 @@ Closure* Closure::NewClosure(Heap & h, size_t n) {
   return c;
 }
 
-Closure* Closure::NewKClosure(Heap & h, size_t n) {
+Closure* Closure::NewKClosure(Heap & h, Object::ref owner, 
+															Object::ref next_k, size_t n) {
   Closure *c = h.lifo_create_variadic<Closure>(n);
   c->body = Object::nil();
+	c->next_k = next_k;
+	c->owner = owner;
   c->nonreusable = false;
   c->kontinuation = true;
   return c;
