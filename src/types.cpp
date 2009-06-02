@@ -38,8 +38,12 @@ Closure* Closure::NewClosure(Heap & h, size_t n) {
 Closure* Closure::NewKClosure(Heap & h, ProcessStack & stack, size_t n) {
   Closure *c = h.lifo_create_variadic<Closure>(n);
   c->body = Object::nil();
-	c->next_k = stack[1];
-	c->owner = stack[0];
+	if (stack.size() > 0 && maybe_type<Closure>(stack[0])) {
+		c->owner = stack[0];
+	}
+	if (stack.size() > 1 && maybe_type<Closure>(stack[1])) {
+		c->next_k = stack[1];
+	}
   c->nonreusable = false;
   c->kontinuation = true;
   return c;
@@ -56,10 +60,10 @@ Closure* Closure::NewKClosure(Heap & h, size_t n) {
 void Closure::print_trace(std::ostream & o) {
 	if (kontinuation) {
 		if (owner != Object::nil()) {
-			o << "Called by ";
+			o << "\tCalled by ";
 			expect_type<Bytecode>(expect_type<Closure>(owner)->body)->print_info(o);
 		} else {
-			o << " no info";
+			o << "\tno info";
 		}
 		o << "\n";
 		if (next_k != Object::nil()) {
@@ -68,6 +72,7 @@ void Closure::print_trace(std::ostream & o) {
 	} else {
 		o << "Within ";
 		expect_type<Bytecode>(body)->print_info(o);
+		o << "\n";
 	}
 }
 

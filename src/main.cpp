@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 		p = new Process();
 		read_sequence(*p, in);
 		assembler.go(*p);
-		Closure *k = Closure::NewKClosure(*p, 0);
+		Closure *k = Closure::NewClosure(*p, 0);
 		k->codereset(p->stack.top()); p->stack.pop();
 		p->stack.push(Object::to_ref(k)); // entry point
 		// process will be deleted by workers

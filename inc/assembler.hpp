@@ -105,7 +105,7 @@ public:
   virtual size_t n_bytecodes() { return 0; }
 };
 
-class DbgNameAs : public AsOp {
+class DbgNameAs : public DbgAs {
 public:
 	void assemble(Process & proc);
 };

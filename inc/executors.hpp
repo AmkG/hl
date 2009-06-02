@@ -332,12 +332,19 @@ public:
 	}
 
 	void print_info(std::ostream & o) {
-		o << "Name: " << name << " in file " << file << " at line " << line;
+		o << name;
+		if (file != Object::nil()) {
+			o << " in file " << file;
+			// line has no meaning without file
+			if (line != Object::nil()) { 
+				o << " at line: " << line;
+			}
+		}
 	}
 
 	// setters
 	void set_name(Object::ref n) {
-		name = name;
+		name = n;
 	}
 
 	void set_file(Object::ref f) {
