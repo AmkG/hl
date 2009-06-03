@@ -60,17 +60,23 @@ Closure* Closure::NewKClosure(Heap & h, size_t n) {
 void Closure::print_trace(std::ostream & o) {
 	if (kontinuation) {
 		if (owner != Object::nil()) {
-			o << "\tCalled by ";
-			expect_type<Bytecode>(expect_type<Closure>(owner)->body)->print_info(o);
+			Closure *c = expect_type<Closure>(owner);
+			if (c->kontinuation) {
+				// walk up continuation chain
+				c->print_trace(o);
+			} else {
+				o << "\tCalled by ";
+				expect_type<Bytecode>(c->body)->print_info(o);
+				o << "\n";
+				if (next_k != Object::nil()) {
+					expect_type<Closure>(next_k)->print_trace(o);
+				}
+			}
 		} else {
 			o << "\tno info";
 		}
-		o << "\n";
-		if (next_k != Object::nil()) {
-			expect_type<Closure>(next_k)->print_trace(o);
-		}
 	} else {
-		o << "Within ";
+		o << "\tCalled by ";
 		expect_type<Bytecode>(body)->print_info(o);
 		o << "\n";
 	}

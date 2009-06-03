@@ -137,11 +137,13 @@ void Bytecode::push(const char *s, intptr_t val) {
 
 void show_HlError(ProcessStack stack, const char *str) {
   std::cerr << "Error: " << str << "\n";
-	if (maybe_type<Closure>(stack[0])) {
-		expect_type<Closure>(stack[0])->print_trace(std::cerr);
+	Closure *c = 0;
+	if (c = maybe_type<Closure>(stack[0])) {
+		c->print_trace(std::cerr);
 	}
-	if (maybe_type<Closure>(stack[1])) {
-		expect_type<Closure>(stack[1])->print_trace(std::cerr);
+	// print trace only of the first continuation found
+	if (c && !c->is_cont() && (c = maybe_type<Closure>(stack[1]))) {
+		c->print_trace(std::cerr);
 	}
   exit(1);
 }
@@ -474,9 +476,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(build_k_closure_recreate): {
       /*TODO: insert debug checking for is_a<Generic*> here*/
-      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
+			//      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       /*put a random object in stack[0]*/
-      stack[0] = stack[1];
+      //stack[0] = stack[1];
+			// !! SETCLOS will fail!!
       /****/ goto k_closure_perform_create; /****/
     } NEXT_BYTECODE;
     /*attempts to reuse the current

@@ -219,6 +219,8 @@ public:
 		return owner;
 	}
 
+	bool is_cont() { return kontinuation; }
+
 	void print_trace(std::ostream & o);
 
 };
