@@ -24,7 +24,7 @@
 (def sharedvars-convert (ast)
   (with (sc [map sharedvars-convert _]
          ; flip the arguments to make-lam
-         make-fn (fn (x y) (make-lam y x))
+         make-fn (fn (x y dbg) (make-lam y x dbg))
          transform nil
          transform-shared nil)
     ; creates a function whose shared variables
@@ -98,10 +98,12 @@
                proper-params)
           (= proper-params (properify params))
           (if (some [some _ proper-params] shared)
-              (transform params
-                         (sc ast!subx)
-                         (keep [some _ proper-params] shared))
-              (make-lam (sc ast!subx) params)))
+              (let lam (transform params
+                                  (sc ast!subx)
+                                  (keep [some _ proper-params] shared))
+                (= lam!dbg ast!dbg)
+                lam)
+              (make-lam (sc ast!subx) params ast!dbg)))
       (aseq ast)
         (make-seq (sc ast!subx)))))
 

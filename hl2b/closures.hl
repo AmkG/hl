@@ -25,8 +25,12 @@
            args (map cc (cdr ast!subx)))
           (if (alam fun)
             (make-app:cons
-              ((if fun!continuation make-cont make-lam)
-                (list:cc (car fun!subx)) fun!params) args)
+              (with (sub (list:cc (car fun!subx))
+                     par fun!params)
+                (if fun!continuation 
+                  (make-cont sub par)
+                  (make-lam sub par fun!dbg)))
+              args)
             (let f (cc fun)
               (make-app:cons (make-prim (list f (make-lit '() 0)) '<axiom>closure-ref) (cons f args)))))
       (alam ast)
@@ -35,9 +39,12 @@
            new-self-var (new-var 'self))
           (make-prim
             (cons
-              ((if ast!continuation make-cont make-lam)
-                (list:convert (car ast!subx) new-self-var new-free-vars)
-                (cons new-self-var ast!params))
+              (with (sub (list:convert (car ast!subx) 
+                                       new-self-var new-free-vars)
+                     par (cons new-self-var ast!params))
+                (if ast!continuation 
+                  (make-cont sub par)
+                  (make-lam sub par ast!dbg)))
               (map [cc (make-ref '() _)] new-free-vars))
             '<axiom>closure))
       (aseq ast) ; Impossible after CPS
@@ -47,5 +54,6 @@
     (cc ast)))
 
 (def closure-convert (ast top-k-var)
-  (make-lam (list (convert ast nil '())) (list (new-var 'self) top-k-var)))
+  (make-lam (list (convert ast nil '())) (list (new-var 'self) top-k-var) 
+            (table)))
 

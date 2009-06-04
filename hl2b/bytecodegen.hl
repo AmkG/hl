@@ -225,6 +225,8 @@
                     `( ,@(mappend [bytecodegen _ env] closed)
                        (,(if f!continuation '<bc>k-closure '<bc>closure)
                                 ,(len closed)
+                                ; debug name of the closure (may be nil)
+                                (<dbg>name ,(f!dbg 'name))
                                 ; add check for correct arguments here
                                 ,(if (~dotted f!params)
                                      `(<bc>check-vars ,(len f!params))
@@ -353,6 +355,7 @@
       `(,(if (~dotted ast!params)
            `(<bc>check-vars ,(len ast!params))
            `(<bc>variadic ,(- (len:properify ast!params) 1)))
+         (<dbg>name ,(unpkg 'top-level))
          ,@(bytecodegen (car ast!subx)
                         (with (rv (table)
                                params (properify ast!params))

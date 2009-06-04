@@ -127,8 +127,9 @@
   (and (isa x 'table) (is x!type 'app)))
 
 ; a function form (a *lam*bda)
-(def make-lam (subx params)
-  (listtab `((type lam) (subx ,subx) (params ,params))))
+; dbg-info is an hash table
+(def make-lam (subx params (o dbg-info (table)))
+  (listtab `((type lam) (subx ,subx) (params ,params) (dbg ,dbg-info))))
 
 (def alam (x)
   (and (isa x 'table) (is x!type 'lam)))

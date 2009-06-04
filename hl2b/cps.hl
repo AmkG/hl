@@ -27,11 +27,11 @@
       (let fun (car ast!subx)
         (if (alam fun)
           ; let form
-          (cps-list (cdr ast!subx) [make-app (cons (make-lam (list:cps-seq fun!subx k-ast) fun!params) _)])
+          (cps-list (cdr ast!subx) [make-app (cons (make-lam (list:cps-seq fun!subx k-ast) fun!params fun!dbg) _)])
           (cps-list ast!subx [make-app (cons (car _) (cons k-ast (cdr _)))])))
     (alam ast)
       (let k (new-var 'k)
-        (make-app:list k-ast (make-lam (list:cps-seq ast!subx (make-ref '() k)) (cons k ast!params))))
+        (make-app:list k-ast (make-lam (list:cps-seq ast!subx (make-ref '() k)) (cons k ast!params) ast!dbg)))
     (aseq ast)
       (cps-seq ast!subx k-ast)
       (err "unknown ast" ast)))

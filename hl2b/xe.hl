@@ -121,7 +121,15 @@
   (if (is (len (cdr e)) 2)
     (let b (xe-lookup (cadr e) cte)
       (if (avar b)
-        (make-set (xe-exprs (cddr e) cte) b)
+        (withs (subx (xe-exprs (cddr e) cte)
+                s1 (car subx))
+          ; if a lambda expression, give it a debug name
+          (when (alam s1)
+            ; !! this information is lost when rebuilding the ast
+            ; !! during successive compilation passes
+            (let dbg s1!dbg
+              (= dbg!name b!id)))
+          (make-set subx b))
         (err "can't set a nonvariable" e)))
     (err "set expects 2 args")))
 
