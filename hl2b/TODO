@@ -37,6 +37,45 @@ with its current status (implemented/not implemented).
 - [m][ ] in -- let or w/uniq
 - [f][ ] type
 - [f][ ] isa -- is type
-- [f][ ] alist
-
-To be completed....
+- [f][ ] alist -- type
+- [f][ ] err - builtin?
+- [f][ ] is
+- [f][ ] car
+- [f][ ] cons
+- [f][ ] cdr
+- [f][ ] map -- map1
+- [f][ ] orf -- some
+- [m][ ] awhen -- when
+- [m][ ] do
+- [m][ ] trav+ -- rfn when
+- [m][ ] when
+- [m][ ] ontable -- maptable
+- [f][ ] list
+- [m][ ] aif -- if
+- [m][ ] zap -- with afn map atwiths setforms
+- [m][ ] rfn -- fn
+- [f][ ] pos
+- [f][ ] complement -- compose no
+- [f][ ] dotted -- atom and or
+- [f][ ] len
+- [m][ ] on
+- [f][ ] copy -- forlen ontable newstring map
+- [f][ ] mappend -- join-inner map
+- [f][ ] cadr -- car cdr
+- [f][ ] cddr -- cdr
+- [f][ ] len> -- len >
+- [f][ ] some -- testify
+- [m][ ] given -- let
+- [m][ ] case -- caselet
+- [f][ ] >=
+- [f][ ] >
+- [f][ ] keep
+- [f][ ] idfn
+- [f][ ] rev
+- [f][ ] -
+- [f][ ] mem
+- [f][ ] max -- best
+- [m][ ] mapeach -- map1
+- [f][ ] atom
+- [f][ ] bound
+- [f][ ] rep

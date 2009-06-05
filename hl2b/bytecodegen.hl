@@ -192,8 +192,9 @@
                       (ppr-sexp:source ast)
                       nil))))
       (aprim ast)
-        (given op      ast!op
-               params  ast!subx
+        (with (op      ast!op
+               params  ast!subx)
+          (check-prim-num-args op (len params))
           (case op
             <axiom>closure-ref
               ; make sure we are referring to the

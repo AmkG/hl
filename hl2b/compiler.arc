@@ -16,7 +16,7 @@
               let with withs fn afn require w/uniq coerce + push listtab
               givens make-br-fn ++ acons ssyntax isnt caris _ in type isa
               alist err is car cons cdr map orf awhen do trav+ when ontable
-              list aif zap self makeproper rfn pos complement dotted len on
+              list aif zap self rfn pos complement dotted len on
               index copy mappend cadr cddr len> it some assert given case
               >= > keep idfn rev - mem max mapeach atom bound rep apply
               ; types

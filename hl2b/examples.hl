@@ -111,3 +111,44 @@
 >start-host-eval
 
 res
+
+; Hello, World!
+
+; map over a string, return a list
+(def mapstr (f s i)
+  (<axiom>if (<axiom>i< i (<axiom>string-length s))
+    (<axiom>cons (f (<axiom>string-ref s i)) (mapstr f s (<axiom>i+ i 1)))
+    nil))
+
+(def id (x) x)
+
+>stop-host-eval
+
+(let o (<axiom>i/o-stdout)
+  (<axiom>i/o-write (<axiom>self-pid) o (<axiom>l-to-b (mapstr id "Hello, World!\n" 0))))
+
+>start-host-eval
+
+; read some chars until eof
+
+(mac afn (args . body)
+  (list (<axiom>quote let) (<axiom>quote self) nil
+    (list (<axiom>quote <axiom>set) (<axiom>quote self)
+      (<axiom>cons (<axiom>quote <axiom>lambda) (<axiom>cons args body)))))
+
+(mac do body
+  (list 
+    (<axiom>cons (<axiom>quote <axiom>lambda) (<axiom>cons nil body))))
+
+>stop-host-eval
+
+(let i (<axiom>i/o-stdin)
+  (let o (<axiom>i/o-stdout)
+    ((afn ()
+       (let c (<axiom>b-ref (<axiom>i/o-read (<axiom>self-pid) i 1) 0)
+         (<axiom>if c
+           (do
+             (<axiom>i/o-write (<axiom>self-pid) o c)
+             (self))))))))
+
+>start-host-eval
