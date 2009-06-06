@@ -3,6 +3,7 @@
 #include "types.hpp"
 #include "processes.hpp"
 #include "symbols.hpp"
+#include "executors.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -158,6 +159,7 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
     Generic *g = as_a<Generic*>(obj);
     Float *f;
     Cons *c;
+		Closure *l;
     if (f = dynamic_cast<Float*>(g)) {
       out.setf(std::ios::showpoint);
       out << f->get();
@@ -175,7 +177,11 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
         out << ")";
       else
         out << " . " << r << ")";
-    } else {
+    } else if (l = dynamic_cast<Closure*>(g)) {
+			out << "#<fn: ";
+			expect_type<Bytecode>(l->code())->print_info(out);
+			out << ">";
+		} else {
 	    std::string name = as_a<Symbol*>(type(obj))->getPrintName();
 	    out << "#<" << name << ">";
     }

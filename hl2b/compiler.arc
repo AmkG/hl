@@ -83,7 +83,8 @@
       (<arc>w/outfile tmp "/tmp/hl-tmp"
         ; not the best thing to do, pipe-to would be better if we had it
         ; put the default continuation
-        (<arc>write '(<bc>k-closure 0 
+        (<arc>write '(<bc>k-closure 0
+                       (<dbg>name final-return)
                        (<bc>check-vars 2) 
                        (<bc>local 1) 
                        (<bc>halt))
