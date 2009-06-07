@@ -124,13 +124,6 @@ size_t IfAs::disassemble(Process & proc, size_t i) {
   return end;
 }
 
-void DbgNameAs::assemble(Process & proc) {
-	proc.stack.top(); proc.stack.pop(); // no seq arg
-	Object::ref name = proc.stack.top(); proc.stack.pop();
-	// set the debug information
-	expect_type<Bytecode>(proc.stack.top())->set_name(name);
-}
-
 Assembler assembler;
 
 void Assembler::go(Process & proc) {

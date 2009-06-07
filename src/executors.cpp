@@ -323,7 +323,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     assembler.reg<IfAs>(symbols->lookup("<bc>if"), 
 			THE_BYTECODE_LABEL(jmp_nil));
     assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL);
-    assembler.reg<DbgNameAs>(symbols->lookup("<dbg>name"), NULL);
+    assembler.reg<DbgInfoAs<&Bytecode::set_name> >(symbols->lookup("<dbg>name"), NULL);
+    assembler.reg<DbgInfoAs<&Bytecode::set_line> >(symbols->lookup("<dbg>line"), NULL);
+    assembler.reg<DbgInfoAs<&Bytecode::set_file> >(symbols->lookup("<dbg>file"), NULL);
 
     /*
      * build and assemble various bytecode sequences

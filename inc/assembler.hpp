@@ -99,16 +99,24 @@ public:
   size_t disassemble(Process & proc, size_t i);
 };
 
-class DbgAs : public AsOp {
+// associate debug information to the current Bytecode
+// parameterized on the information setter function
+template <void (*S)(Bytecode *b, Object::ref info)>
+class DbgInfoAs : public AsOp {
 public:
-  size_t disassemble(Process & proc, size_t i) { return i+1; }
-  virtual size_t n_bytecodes() { return 0; }
-};
+	size_t disassemble(Process & proc, size_t i) { return i+1; }
+	virtual size_t n_bytecodes() { return 0; }
 
-class DbgNameAs : public DbgAs {
-public:
 	void assemble(Process & proc);
 };
+
+template <void (*S)(Bytecode *b, Object::ref info)>
+void DbgInfoAs<S>::assemble(Process & proc) {
+	proc.stack.top(); proc.stack.pop(); // no seq arg
+	Object::ref info = proc.stack.top(); proc.stack.pop();
+	// set the debug information
+	(*S)(expect_type<Bytecode>(proc.stack.top()), info);
+}
 
 class Assembler {
 private:
