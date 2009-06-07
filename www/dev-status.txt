@@ -12,7 +12,7 @@ built**".  Currently, these are what we are working on:
 * <img src='done.png'> Garbage Collector.  **Done.**
 * <img src='done.png'> Strings.  **Done.**
 * <img src='done.png'> Tables.  **Done.**
-* <img src='doing.png'> Thread Pool.  *Doing...*
+* <img src='done.png'> Thread Pool.  **Done**
 * <img src='done.png'> Asynchronous I/O framework.  **Done.**
 * <img src='undone.png'> TCP/IP socket I/O.  <small>not
   started</small>
