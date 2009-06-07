@@ -567,10 +567,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_closure_ref(stack, *clos, N);
     } NEXT_BYTECODE;
     BYTECODE(composeo): {
+      // create continuation
+      Closure& kclos = *Closure::NewKClosure(proc, stack, 2); 
+      SETCLOS(clos); // clos invalidated by allocation
       /*destructure closure*/
       stack.push((*clos)[0]);
       stack[0] = (*clos)[1];
-      Closure& kclos = *Closure::NewKClosure(proc, stack, 2); 
       // !! should really avoid SymbolsTable::lookup() due to
       // !! increased lock contention
       kclos.codereset(proc.global_read(symbols->lookup("<impl>composeo-cont-body")));
@@ -911,9 +913,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
           common case
         */
       } else {
-        stack[0] = (*clos)[2]; // f2
+	// call NewKClosure before modifying stack[0] & stack[1]
         size_t saved_params = params - 2;
         Closure & kclos = *Closure::NewKClosure(proc, stack, saved_params + 3);
+        stack[0] = (*clos)[2]; // f2
         // !! should really avoid SymbolsTable::lookup() due to
         // !! increased lock contention
         kclos.codereset(proc.global_read(symbols->lookup("<impl>reducto-cont-body")));

@@ -195,6 +195,10 @@ public:
   }
   bool reusable() { return !nonreusable; }
 
+  // Warning: 
+  // when calling NewKClosure stack[0] must contain the current
+  // continuation OR stack[0] must hold the current closure and stack[1] the
+  // current continuation
   static Closure* NewKClosure(Heap & h, ProcessStack & stack, size_t n);
   static Closure* NewKClosure(Heap & h, size_t n);
   static Closure* NewClosure(Heap & h, size_t n);
