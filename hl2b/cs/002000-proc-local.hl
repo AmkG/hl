@@ -1,0 +1,20 @@
+
+; these functions are portable across machines
+
+(<axiom>set <common>proc-locals
+  (<axiom>lambda ()
+    ((<axiom>lambda (pl)
+       ; if the proc-local slot is nil,
+       ; assign with a table
+       (<axiom>if pl
+                  pl
+                  ((<axiom>lambda (new-pl)
+                     (<axiom>proc-local-set
+                       new-pl)
+                     new-pl)
+                   (<axiom>table-create))))
+     ; <axiom>proc-local is part of specifications
+     (<axiom>proc-local))))
+
+(<axiom>set <hl>proc-locals <common>proc-locals)
+

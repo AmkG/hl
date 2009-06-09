@@ -1,0 +1,25 @@
+
+
+; these functions are not portable across
+; machines.
+
+(<axiom>set <common>assemble
+  (<axiom>lambda (x)
+    ; this axiom is not in the specifications
+    (<axiom>assemble x)))
+
+(<axiom>set <common>enclose
+  (<axiom>lambda (b . vs)
+    ; this axiom is not in the specifications
+    (<axiom>enclose b vs)))
+
+(<axiom>set <common>disclose
+  (<axiom>lambda (f)
+    ; this axiom is not in the specifications
+    (<axiom>disclose f)))
+
+(<axiom>set <common>disassemble
+  (<axiom>lambda (b)
+    ; this axiom is not in the specifications
+    (<axiom>disassemble b)))
+
