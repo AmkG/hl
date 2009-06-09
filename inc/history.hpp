@@ -12,14 +12,22 @@
  */
 class History {
 private:
-	boost::circular_buffer<Object::ref> ring;
-	typedef boost::circular_buffer<Object::ref>::reverse_iterator ring_it;
+	typedef boost::circular_buffer<Object::ref> inner_ring;
+	typedef boost::circular_buffer<inner_ring> outer_ring;
+	outer_ring ring;
+
 public:
-	History(size_t sz) : ring(sz) {}
+	History(size_t depth, size_t breadth) : ring(sz) {}
 
 	// record a function (closure) call -- may delete the oldest call
 	inline void enter(Object::ref clos) {
-		ring.push_back(clos);
+		ring.push_back(outer_ring(breadth, 1, clos));
+	}
+
+	// record a function call in tail position
+	inline void enter_tail(Object::ref clos) {
+		inner_ring::iterator last = ring.end()-1;
+		last->push_back(clos);
 	}
 
 	// record a function return (i.e. a continuation call)
@@ -36,9 +44,11 @@ public:
 
 void History::to_list(Process & proc) {
 	size_t count = 0;
-	for (ring_it i = ring.rbegin(); i != ring.rend(); ++i) {
-		proc.stack.push(*i);
-		count++;
+	for (outer_ring::reverse_iterator i = ring.rbegin(); i != ring.rend(); ++i) {
+		for (inner_ring::reverse_iterator j = i->rbegin(); j != i->rend(); ++i) {
+			proc.stack.push(*j);
+			count++;
+		}
 	}
 	proc.stack.push(Object::nil());
 	// build the list
@@ -48,8 +58,10 @@ void History::to_list(Process & proc) {
 }
 
 void History::traverse(GenericTraverser *gt) {
-	for (ring_it i = ring.rbegin(); i != ring.rend(); ++i) {
-		gt->traverse(*i);
+	for (outer_ring::reverse_iterator i = ring.rbegin(); i != ring.rend(); ++i) {
+		for (inner_ring::reverse_iterator j = i->rbegin(); j != i->rend(); ++i) {
+			gt->traverse(*j);
+		}
 	}
 }
 
