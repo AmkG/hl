@@ -43,3 +43,11 @@ expected to be loaded in order, just from listing this
 directory.
 
 
+Contexting
+----------
+
+Each file assumes that it is given its own context.  That
+is, it assumes that it is "loaded" independently of each
+other, and that any imported symbols from one file do not
+affect any other file.
+
