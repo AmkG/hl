@@ -12,7 +12,7 @@ built**".  Currently, these are what we are working on:
 * <img src='done.png'> Garbage Collector.  **Done.**
 * <img src='done.png'> Strings.  **Done.**
 * <img src='done.png'> Tables.  **Done.**
-* <img src='done.png'> Thread Pool.  **Done**
+* <img src='done.png'> Thread Pool.  **Done.**
 * <img src='done.png'> Asynchronous I/O framework.  **Done.**
 * <img src='undone.png'> TCP/IP socket I/O.  <small>not
   started</small>
@@ -21,14 +21,16 @@ built**".  Currently, these are what we are working on:
 * <img src='undone.png'> Signal Handling.  <small>not
   started</small>
 * <img src='doing.png'> Runtime Executable.  *Doing...*
+* <img src='doing.png'> Debug Information Framework.
+  *Doing...*
 * <img src='doing.png'> Expression Compiler (on Arc-F).
   *Doing...*
 * <img src='undone.png'> Expression Compiler (self-compiling).
   <small>not started</small>
-* <img src='undone.png'> Common Layer of [base
-  system](legit-base-system.html).  <small>not started</small>
-* <img src='undone.png'> Standard Layer of [base
-  system](legit-base-system.html).  <small>not started</small>
+* <img src='doing.png'> Common Layer of [base
+  system](legit-base-system.html).  *Doing...*
+* <img src='doing.png'> Standard Layer of [base
+  system](legit-base-system.html).  *Doing...*
 * <img src='doing.png'> Documentation.  [*Doing...*](book.html)
 
 More steps may be added, moved, and inserted in the future as we
