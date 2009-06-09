@@ -7,6 +7,9 @@
 
 #include <boost/circular_buffer.hpp>
 
+class Process;
+class GenericTraverser;
+
 /*
  * Keep the history of the last function calls
  */
@@ -15,18 +18,19 @@ private:
 	typedef boost::circular_buffer<Object::ref> inner_ring;
 	typedef boost::circular_buffer<inner_ring> outer_ring;
 	outer_ring ring;
+	size_t breadth;
 
 public:
-	History(size_t depth, size_t breadth) : ring(sz) {}
+	History(size_t depth, size_t breadth) : ring(depth), breadth(breadth) {}
 
 	// record a function (closure) call -- may delete the oldest call
 	inline void enter(Object::ref clos) {
-		ring.push_back(outer_ring(breadth, 1, clos));
+		ring.push_back(inner_ring(breadth, 1, clos));
 	}
 
 	// record a function call in tail position
 	inline void enter_tail(Object::ref clos) {
-		inner_ring::iterator last = ring.end()-1;
+		outer_ring::reverse_iterator last = ring.rbegin();
 		last->push_back(clos);
 	}
 
@@ -41,28 +45,5 @@ public:
 	// traverse the history
 	void traverse(GenericTraverser* gt);
 };
-
-void History::to_list(Process & proc) {
-	size_t count = 0;
-	for (outer_ring::reverse_iterator i = ring.rbegin(); i != ring.rend(); ++i) {
-		for (inner_ring::reverse_iterator j = i->rbegin(); j != i->rend(); ++i) {
-			proc.stack.push(*j);
-			count++;
-		}
-	}
-	proc.stack.push(Object::nil());
-	// build the list
-	while (count-- > 0) {
-		bytecode_cons(proc, proc.stack);
-	}
-}
-
-void History::traverse(GenericTraverser *gt) {
-	for (outer_ring::reverse_iterator i = ring.rbegin(); i != ring.rend(); ++i) {
-		for (inner_ring::reverse_iterator j = i->rbegin(); j != i->rend(); ++i) {
-			gt->traverse(*j);
-		}
-	}
-}
 
 #endif // HISTORY_H

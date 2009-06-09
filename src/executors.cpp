@@ -205,6 +205,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
       ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
+			("<bc>debug-call", THE_BYTECODE_LABEL(debug_call))
+			("<bc>debug-tail-call", THE_BYTECODE_LABEL(debug_tail_call))
+			("<bc>debug-cont-call", THE_BYTECODE_LABEL(debug_cont_call))
+			("<bc>debug-backtrace", THE_BYTECODE_LABEL(debug_backtrace))
       ("<bc>disclose", THE_BYTECODE_LABEL(disclose))
       ("<bc>empty-event-set",	THE_BYTECODE_LABEL(empty_event_set))
       ("<bc>enclose", THE_BYTECODE_LABEL(enclose), ARG_INT)
@@ -626,6 +630,26 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.restack(2);
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+		// register a function call
+		// expect closure to register in stack[0]
+		BYTECODE(debug_call): {
+			proc.history.enter(stack[0]);
+		} NEXT_BYTECODE;
+		// similar ro debug_call, but register a tail call
+		BYTECODE(debug_tail_call): {
+			proc.history.enter_tail(stack[0]);
+		} NEXT_BYTECODE;
+		// a continuation call is registered as a return from
+		// a non tail function call 
+		BYTECODE(debug_cont_call): {
+			proc.history.leave();
+		} NEXT_BYTECODE;
+		// leave a list of called closures on the stack
+		BYTECODE(debug_backtrace): {
+			proc.history.to_list(proc);
+			// to_list allocates memory
+			SETCLOS(clos);
+		} NEXT_BYTECODE;
 	 // take a closure, leave a list on the stack with
 	 // the bytecode object and the enclosed vars
 	 BYTECODE(disclose): {

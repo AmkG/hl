@@ -21,6 +21,7 @@ libhlvm_a_SOURCES = \
 	reader.cpp \
 	workers.cpp \
 	assembler.cpp \
+	history.cpp \
 	../inc/aio.hpp \
 	../inc/all_defines.hpp \
 	../inc/bytecodes.hpp \
@@ -41,6 +42,7 @@ libhlvm_a_SOURCES = \
 	../inc/workarounds.hpp \
 	../inc/workers.hpp \
 	../inc/assembler.hpp \
+	../inc/history.hpp \
 	../os/thread.hpp
 
 bin_PROGRAMS = hl

@@ -3,6 +3,7 @@
 
 #include"heaps.hpp"
 #include"lockeds.hpp"
+#include"history.hpp"
 
 #include <vector>
 #include <map>
@@ -281,7 +282,9 @@ public:
 		  notification_mtx(),
 		  invalid_globals(),
 		  bytecode_slot(),
-		  multipush(0) { }
+		  multipush(0),
+			history(32, 16) // TODO: take values from the user
+	{ }
 
 /*-----------------------------------------------------------------------------
 Global Variable Access
@@ -383,6 +386,7 @@ For process-level garbage collection
 	MailBox mailbox(void) { return MailBox(*this); }
 
 	ProcessStack stack;
+	History history;
 
 	virtual void scan_root_object(GenericTraverser* gt);
 
