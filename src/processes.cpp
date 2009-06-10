@@ -277,6 +277,8 @@ void Process::scan_root_object(GenericTraverser* gt) {
         }
 
 	/*insert code for traversing process-local vars here*/
+	gt->traverse(proc_local_slot);
+	gt->traverse(err_handler_slot);
 }
 
 /*
