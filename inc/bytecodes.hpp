@@ -436,4 +436,14 @@ inline void bytecode_io_pipe(Process& proc, ProcessStack& stack) {
 	bytecode_cons(proc, stack);
 }
 
+/*proc-local and err-handler*/
+template<Object::ref (Process::*F)>
+inline void bytecode_proc_get(Process& proc, ProcessStack& stack) {
+	stack.push(proc.*F);
+}
+template<Object::ref (Process::*F)>
+inline void bytecode_proc_set(Process& proc, ProcessStack& stack) {
+	proc.*F = stack.top();
+}
+
 #endif //BYTECODES_H

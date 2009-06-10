@@ -218,6 +218,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*this implements <bc>closure*/
       ("<bc>enclose", THE_BYTECODE_LABEL(enclose), ARG_INT,
          NON_STD() )
+      ("<bc>err-handler",	THE_BYTECODE_LABEL(err_handler))
+      ("<bc>err-handler-set",	THE_BYTECODE_LABEL(err_handler_set))
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
       ("<bc>event-wait",	THE_BYTECODE_LABEL(event_wait))
       ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
@@ -254,6 +256,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>local",		THE_BYTECODE_LABEL(local), ARG_INT)
       ("<bc>monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("<bc>only-running",	THE_BYTECODE_LABEL(only_running))
+      ("<bc>proc-local",	THE_BYTECODE_LABEL(proc_local))
+      ("<bc>proc-local-set",	THE_BYTECODE_LABEL(proc_local_set))
       ("<bc>recv", THE_BYTECODE_LABEL(recv))
       ("<bc>reducto",		THE_BYTECODE_LABEL(reducto))
       ("<bc>reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
@@ -671,6 +675,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       }
       stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
+    BYTECODE(err_handler): {
+      bytecode_proc_get<&Process::err_handler_slot>(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(err_handler_set): {
+      bytecode_proc_set<&Process::err_handler_slot>(proc, stack);
+    } NEXT_BYTECODE;
     BYTECODE(event_poll): {
       bytecode_<&event_poll>(proc, stack);
       SETCLOS(clos); // event-poll may allocate, allocation may invalidate clos
@@ -848,6 +858,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(only_running): {
       bytecode_<&only_running>(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(proc_local): {
+      bytecode_proc_get<&Process::proc_local_slot>(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(proc_local_set): {
+      bytecode_proc_set<&Process::proc_local_slot>(proc, stack);
     } NEXT_BYTECODE;
     // call current continuation
     BYTECODE(recv): {
