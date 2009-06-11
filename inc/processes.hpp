@@ -229,7 +229,7 @@ public:
 	// take a continuation (allocated in the current process)
 	// and return the HlPid (also allocated in the current process)
 	// of the newly created process
-	// spawned process si *not* registered or added to a workqueue
+	// spawned process is *not* registered or added to a workqueue
 	HlPid* spawn(Object::ref cont);
 
 	/*RAII class for extra roots*/
@@ -271,6 +271,11 @@ public:
 	or k-closure-recreate.
 	*/
 	Object::ref bytecode_slot;
+
+	/*the process-local slot*/
+	Object::ref proc_local_slot;
+	/*current error handler slot*/
+	Object::ref err_handler_slot;
 
 	Process(void)
 		: stat(process_running),

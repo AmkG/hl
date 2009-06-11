@@ -1,0 +1,53 @@
+
+Common and Standard Directory
+=============================
+
+The `hl2b/cs/` directory contains the code for this
+implementation of the `hl` [Common][1] and [Standard][2]
+Layers.
+
+[1]: http://hl-language.sourceforge.net/legit-common.html
+[2]: http://hl-language.sourceforge.net/legit-standard.html
+
+Note that code for both Layers are interspersed with one
+another; the main difference is the package they are put in.
+In addition, because this *is* an implementation of `hl`,
+it makes use of the `<impl>` package for many private
+details.
+
+In some cases, for `<common>`, we use the IDEAL-REAL macro
+to show a possible (but possibly slow) implementation in
+actual, standards-compliant `hl`, then show how it's
+actually implemented in this implementation using special
+bytecodes or built-in functions.  Mostly the `REAL` part is
+just a reference to the built-in whatever, since it would
+be implemented in C++.
+
+
+File Naming
+-----------
+
+Files are named in the form `NNNNNN-description.hl`, where
+`NNNNNN` is a six-digit decimal number.  Files are
+intended to be compiled and executed in the order of the
+given decimal number.
+
+Since it may be necessary at some point in the future to
+insert files between other files, the numbering is started
+at `001000` and skips 1000 each time, until we do need to
+insert files between  others, in which case the skip isn't
+1000 anymore.
+
+This convention allows us to easily see how files are
+expected to be loaded in order, just from listing this
+directory.
+
+
+Contexting
+----------
+
+Each file assumes that it is given its own context.  That
+is, it assumes that it is "loaded" independently of each
+other, and that any imported symbols from one file do not
+affect any other file.
+

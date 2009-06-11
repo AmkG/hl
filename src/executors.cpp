@@ -182,12 +182,19 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
       ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
       ("<bc>bounded",		THE_BYTECODE_LABEL(bounded))
-      ("<bc>build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT)
-      ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT)
+      /*these implement the actual bytecodes <bc>closure, <bc>k-closure,
+      <bc>k-closure-recreate, and <bc>k-closure-reuse.
+      */
+      ("<bc>build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT, 
+			 NON_STD())
+      ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT,
+         NON_STD() )
       ("<bc>build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
-       ARG_INT)
+       ARG_INT,
+         NON_STD() )
       ("<bc>build-k-closure-reuse", THE_BYTECODE_LABEL(build_k_closure_reuse), 
-       ARG_INT)
+       ARG_INT,
+         NON_STD() )
       ("<bc>car",			THE_BYTECODE_LABEL(car))
       ("<bc>scar",                  THE_BYTECODE_LABEL(scar))
       ("<bc>car-local-push",	THE_BYTECODE_LABEL(car_local_push), ARG_INT)
@@ -206,9 +213,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
       ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
-      ("<bc>disclose", THE_BYTECODE_LABEL(disclose))
+      /*this implements <common>disclose*/
+      // !! Could also be done as an Executor
+      ("<bc>disclose", THE_BYTECODE_LABEL(disclose), NON_STD() )
       ("<bc>empty-event-set",	THE_BYTECODE_LABEL(empty_event_set))
-      ("<bc>enclose", THE_BYTECODE_LABEL(enclose))
+      ("<bc>enclose", THE_BYTECODE_LABEL(enclose), NON_STD())
+      ("<bc>err-handler",	THE_BYTECODE_LABEL(err_handler))
+      ("<bc>err-handler-set",	THE_BYTECODE_LABEL(err_handler_set))
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
       ("<bc>event-wait",	THE_BYTECODE_LABEL(event_wait))
       ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
@@ -245,14 +256,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>local",		THE_BYTECODE_LABEL(local), ARG_INT)
       ("<bc>monomethod",		THE_BYTECODE_LABEL(monomethod))
       ("<bc>only-running",	THE_BYTECODE_LABEL(only_running))
-      ("<bc>reducto",		THE_BYTECODE_LABEL(reducto))
+      ("<bc>proc-local",	THE_BYTECODE_LABEL(proc_local))
+      ("<bc>proc-local-set",	THE_BYTECODE_LABEL(proc_local_set))
       ("<bc>recv", THE_BYTECODE_LABEL(recv))
+      ("<bc>reducto",		THE_BYTECODE_LABEL(reducto))
       ("<bc>reducto-continuation",   THE_BYTECODE_LABEL(reducto_continuation))
       ("<bc>release",		THE_BYTECODE_LABEL(release))
       ("<bc>remove-event",	THE_BYTECODE_LABEL(remove_event))
-      ("<bc>rep",			THE_BYTECODE_LABEL(rep))
+      ("<bc>rep",		THE_BYTECODE_LABEL(rep))
       ("<bc>rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("<bc>rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
+      ("<bc>s-to-sy",		THE_BYTECODE_LABEL(s_to_sy))
       ("<bc>self-pid", THE_BYTECODE_LABEL(self_pid))
       ("<bc>send",		THE_BYTECODE_LABEL(send))
       ("<bc>sleep",		THE_BYTECODE_LABEL(sleep))
@@ -268,6 +282,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>sv-ref-local-push",    THE_BYTECODE_LABEL(sv_ref_local_push), ARG_INT)
       ("<bc>sv-ref-clos-push",	THE_BYTECODE_LABEL(sv_ref_clos_push), ARG_INT)
       ("<bc>sv-set",		THE_BYTECODE_LABEL(sv_set))
+      ("<bc>sy-to-s",		THE_BYTECODE_LABEL(sy_to_s))
       ("<bc>sym",			THE_BYTECODE_LABEL(sym), ARG_SYMBOL)
       ("<bc>symeval",		THE_BYTECODE_LABEL(symeval), ARG_SYMBOL)
       ("<bc>system",		THE_BYTECODE_LABEL(system))
@@ -295,8 +310,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>f/",                    THE_BYTECODE_LABEL(fdiv))
       ("<bc>f<",                    THE_BYTECODE_LABEL(fless))
       /*declare executors*/
-      ("<executor>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
-      ("<executor>assemble", THE_EXECUTOR<AssemblerExecutor>())
+      ("<impl>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
+      ("<impl>assemble",		THE_EXECUTOR<AssemblerExecutor>())
       /*assign bultin global*/
       ;/*end initializer*/
 
@@ -682,6 +697,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 			nclos->codereset(body);
 			stack.push(Object::to_ref(nclos));
 		} NEXT_BYTECODE;
+    BYTECODE(err_handler): {
+      bytecode_proc_get<&Process::err_handler_slot>(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(err_handler_set): {
+      bytecode_proc_set<&Process::err_handler_slot>(proc, stack);
+    } NEXT_BYTECODE;
     BYTECODE(event_poll): {
       bytecode_<&event_poll>(proc, stack);
       SETCLOS(clos); // event-poll may allocate, allocation may invalidate clos
@@ -860,6 +881,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(only_running): {
       bytecode_<&only_running>(proc, stack);
     } NEXT_BYTECODE;
+    BYTECODE(proc_local): {
+      bytecode_proc_get<&Process::proc_local_slot>(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(proc_local_set): {
+      bytecode_proc_set<&Process::proc_local_slot>(proc, stack);
+    } NEXT_BYTECODE;
     // call current continuation
     BYTECODE(recv): {
       Object::ref msg;
@@ -1010,6 +1037,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N);
       bytecode_clos_push_<rep>(stack, *clos, N);
     } NEXT_BYTECODE;
+    BYTECODE(s_to_sy): {
+      bytecode_s_to_sy(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
+    } NEXT_BYTECODE;
     BYTECODE(tag): {
       bytecode_tag(proc,stack);
     } NEXT_BYTECODE;
@@ -1122,6 +1153,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(sv_set): {
       bytecode2_<&sv_set>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sy_to_s): {
+      bytecode_sy_to_s(proc, stack);
+      SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(sym): {
       SYMPARAM(S);

@@ -1,0 +1,80 @@
+
+(in-package impl)
+
+(import <axiom>quote quote)
+(import <axiom>set =)
+(import <axiom>lambda fn)
+
+; these functions are not portable across
+; implementations.
+; these functions must be provided by
+; all implementations.
+
+(= <impl>spawn-helper
+   (<common>assemble
+     '((<bc>check-vars 1)
+       (<bc>closure-ref 0)
+       (<bc>k-closure 0
+         (<bc>halt))
+       (<bc>apply 2))))
+
+(= <common>spawn
+   (fn (f)
+     ; this axiom is not in the specifications
+     ; this axiom has special requirements and
+     ; is not only unrecommended for direct
+     ; use because it's not specced, it also
+     ; does strange things
+     (<axiom>spawn
+       (<common>enclose
+         <impl>spawn-helper
+         f))))
+
+(= <common>send
+   (fn (pid msg)
+     ; this axiom is not in the specifications
+     ; this axiom has special requirements and
+     ; is not only unrecommended for direct
+     ; use because it's not specced, it also
+     ; does strange things
+     (<axiom>send pid msg)))
+
+(= <common>recv
+   (fn ()
+     ; this axiom is not in the specifications
+     ; this axiom has special requirements and
+     ; is not only unrecommended for direct
+     ; use because it's not specced, it also
+     ; does strange things
+     (<axiom>recv)))
+
+(= <common>try-recv
+   (fn (pass fail)
+     ; this axiom is not in the specifications
+     ; this axiom has special requirements and
+     ; is not only unrecommended for direct
+     ; use because it's not specced, it also
+     ; does strange things
+     (<axiom>try-recv pass fail)))
+
+(= <common>my-pid
+   (fn ()
+     ; this axiom is not in the specifications
+     (<axiom>self-pid)))
+
+
+; these functions are portable across machines
+
+(= <hl>spawn
+   (fn (f) (<common>spawn f)))
+(= <hl>send
+   (fn (pid msg) (<common>send pid msg)))
+(= <hl>recv
+   (fn () (<common>recv)))
+(= <hl>try-recv
+   (fn (pass fail) (<common>try-recv pass fail)))
+(= <hl>my-pid
+   (fn () (<common>my-pid)))
+
+
+

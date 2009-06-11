@@ -12,7 +12,7 @@
 
 (<bc>cons)
 
-(<bc>do-executor <executor>assemble)
+(<bc>do-executor <impl>assemble)
 (<bc>lit-nil)
 (<bc>enclose)
 (<bc>k-closure 0
@@ -37,7 +37,7 @@
 
 (<bc>cons)
 
-(<bc>do-executor <executor>assemble)
+(<bc>do-executor <impl>assemble)
 (<bc>int 23)
 (<bc>lit-nil)
 (<bc>cons)

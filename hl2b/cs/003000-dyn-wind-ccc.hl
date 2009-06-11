@@ -1,0 +1,191 @@
+
+(in-package impl)
+
+(import <axiom>quote quote)
+(import <axiom>lambda fn)
+(import <axiom>set =)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>cons cons)
+; reminder: use only 2 args!
+(import <axiom>is is)
+; reminder: use only 3-arg-form!
+(import <axiom>if if)
+
+; The process-local <hl>dynamic-wind-context is a
+; cons cell whose car is dynamic-wind-context, and
+; whose cdr is the previous cons cell.
+; The dynamic-wind-context is another cons cell
+; whose car is the wind-in and whose cdr is the
+; unwind.
+;
+; a cons cell:
+;    O->car
+; cdr|
+;    v
+;
+;
+; $<hl>dynamic-wind-context:
+;
+;    O->  O-> wind-in
+;    |    |
+;    |    v
+;    |    wind-out
+;    v
+;    O->  O-> wind-in
+;    |    |
+;    |    v
+;    |    wind-out
+;    v
+;    ...
+;
+; The wind-in is called when entering the
+; context.  The wind-out is called when
+; exiting the context.
+;
+; the above structure is part of the
+; specifications.
+
+; this function is portable
+; across machines
+
+; with (base-ccc ...
+;       go-target ...)
+((fn (base-ccc)
+   (= <hl>ccc
+     (fn (f)
+       ; let target $<hl>dynamic-wind-context
+       ((fn (target)
+          (base-ccc
+            (fn (real-k)
+              (f
+                (fn (rv)
+                  ; do
+                  ((fn ()
+                     ; perform unwinding/rewinding
+                     (<common>wind-to target)
+                     (real-k rv))))))))
+        ((<common>proc-locals) '<hl>dynamic-wind-context)))))
+ ; definition of base-ccc above
+ (<common>enclose
+   (<common>assemble
+     '((<bc>ccc)))))
+
+; this function is not portable
+; across machines, and must be
+; provided on all machines.
+(= <common>wind-to
+  (fn (dst)
+    (<impl>wind-to ((<common>proc-locals) '<hl>dynamic-wind-context)
+                   dst)))
+
+; internal function
+(= <impl>wind-to
+  (fn (src dst)
+    (if (is src dst)
+      ; do nothing if already at dst
+      ()
+      ; otherwise, have to check between rewind, unwind, or
+      ; rewind-unwind
+      ; w/nil (rewind unwind reunwind)
+      ((fn (rewind unwind reunwind src-ln dst-ln set-wind-cxt)
+
+         ; can't safely move these to top-level as <impl>:
+         ; these call into user code, so their continuations
+         ; can't refer to <impl>
+         ; <common>wind-to itself is safe because it's
+         ; specced
+
+         ; rewind when src < dst.
+         (= rewind
+           (fn (src src-ln dst dst-ln to-rewind)
+             ; have we reached the destination depth?
+             (if (is src-ln dst-ln)
+               ; reached the case where src depth == dst depth
+               ; i.e. a simultaneous rewind+unwind
+               (reunwind src dst to-rewind)
+               ; not yet - save the current dst in to-rewind
+               (rewind src src-ln
+                       (cdr dst) (<axiom>i- dst-ln 1)
+                       (cons dst to-rewind)))))
+         ; rewind when src depth == dst depth
+         ; perform unwinding+defer rewinding until
+         ; they are equal
+         (= reunwind
+           (fn (src dst to-rewind)
+             ; is src == dst?
+             (if (is (car src) (car dst))
+               ; final rewind
+               ((fn (rewind-loop)
+                  ; to-rewind is a reverse cons list of
+                  ; cons entries.
+                  (= rewind-loop
+                    (fn (to-rewind)
+                      (if to-rewind
+                        ((fn (entry)
+                           ; make sure wind-in succeeds before
+                           ; actually winding
+                           ((car (car entry)))
+                           (set-wind-cxt entry)
+                           (rewind-loop (cdr to-rewind)))
+                         (car to-rewind)))))
+                  (rewind-loop to-rewind))
+                nil)
+               ; not yet - unwind, then save rewinding
+               ((fn ()
+                  ; unwind first before calling wind-out
+                  (set-wind-cxt (cdr src))
+                  ((cdr (car src)))
+                  ; continue re-unwind
+                  (reunwind (cdr src) (cdr dst)
+                            (cons dst to-rewind)))))))
+         ; unwind when dst < src
+         (= unwind
+           (fn (src src-ln dst dst-ln)
+             (if (is src-ln dst-ln)
+               ; finally, re-unwind
+               (reunwind src dst '())
+               ; unwind
+               ((fn ()
+                  (set-wind-cxt (cdr src))
+                  ((cdr (car src)))
+                  (unwind (cdr src) (<axiom>i- src-ln 1) dst dst-ln))))))
+         ; check whether to unwind, rewind, or reunwind
+         (if (is src-ln dst-ln)
+             (reunwind src dst '())
+             (if (i< src-ln dst-ln)
+                 (rewind src src-ln dst dst-ln '())
+                 (unwind src src-ln dst dst-ln))))
+       nil nil nil
+       ; src-ln and dst-ln
+       (<hl>len src) (<hl>len dst)
+       ; set-wind-cxt
+       (fn (x)
+         (<axiom>table-sref (<common>proc-locals)
+           x
+           '<hl>dynamic-wind-context))))))
+
+; this function is portable
+; across machines
+(= <hl>dynamic-wind
+  (fn (bf f af)
+    (bf)
+    ((fn (pl)
+       ((fn (old-cxt)
+          ; wind
+          (<axiom>table-sref pl
+            (cons (cons bf af) old-cxt)
+            '<hl>dynamic-wind-context))
+          ((fn (rv)
+             ; wind-to handles unwinding
+             ; (we want to allow the user to fool
+             ; around with the <hl>dynamic-wind-context
+             ; process-local)
+             (<common>wind-to old-cxt)
+             rv)
+           (f))
+        (<axiom>table-ref pl '<hl>dynamic-wind-context)))
+     (<common>proc-locals))))
+
+
+
