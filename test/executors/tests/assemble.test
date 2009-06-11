@@ -13,7 +13,8 @@
 (<bc>cons)
 
 (<bc>do-executor <executor>assemble)
-(<bc>enclose 0)
+(<bc>lit-nil)
+(<bc>enclose)
 (<bc>k-closure 0
   (<bc>halt))
 (<bc>apply 2)
@@ -21,8 +22,6 @@
 ;^1$
 
 ; ***
-
-(<bc>int 23)
 
 (<bc>sym <bc>closure-ref)
 (<bc>int 0)
@@ -39,7 +38,10 @@
 (<bc>cons)
 
 (<bc>do-executor <executor>assemble)
-(<bc>enclose 1)
+(<bc>int 23)
+(<bc>lit-nil)
+(<bc>cons)
+(<bc>enclose)
 (<bc>k-closure 0
   (<bc>halt))
 (<bc>apply 2)

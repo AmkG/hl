@@ -59,6 +59,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(apply_k_release)
         A_BYTECODE(b_ref)
 	A_BYTECODE(bounded)
+	A_BYTECODE(build_closure)
 	A_BYTECODE(build_k_closure)
 	A_BYTECODE(build_k_closure_recreate)
 	A_BYTECODE(build_k_closure_reuse)
