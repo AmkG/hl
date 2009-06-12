@@ -706,5 +706,28 @@ public:
 
 };
 
+/*-----------------------------------------------------------------------------
+Accessor Objects
+-----------------------------------------------------------------------------*/
+/* Objects returned by '<bc>accessor are simply
+plain Closure's, but whose last entry is an object
+of type AccessorSlot below.
+'<bc>disclose skips the last entry if it is an
+AccessorSlot entry.
+'<bc>accessor-ref checks the last entry if it
+is an AccessorSlot entry and returns its value
+if so.
+*/
+class AccessorSlot : public GenericDerived<AccessorSlot> {
+public:
+	Object::ref slot;
+	void traverse_references(GenericTraverser* gt) {
+		gt->traverse(slot);
+	}
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_unspecified);
+	}
+};
+
 #endif //TYPES_H
 

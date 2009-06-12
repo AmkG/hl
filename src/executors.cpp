@@ -174,6 +174,8 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     InitialAssignments()
       /*built-in functions accessible via $*/
       /*bytecodes*/
+      ("<bc>accessor",		THE_BYTECODE_LABEL(accessor))
+      ("<bc>accessor-ref",	THE_BYTECODE_LABEL(accessor_ref))
       ("<bc>acquire",		THE_BYTECODE_LABEL(acquire))
       ("<bc>add-event",		THE_BYTECODE_LABEL(add_event))
       ("<bc>apply",		THE_BYTECODE_LABEL(apply), ARG_INT)
@@ -400,6 +402,59 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   bytecode = clos->code();
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
+    BYTECODE(accessor): {
+      /*check types*/
+      Closure* orig =
+      expect_type<Closure>(stack.top(2),
+        "'accessor expects two functions, first param is not a function"
+      );
+      expect_type<Closure>(stack.top(1),
+        "'accessor expects two functions, second param is not a function"
+      );
+      /*fixups*/
+      size_t sz = orig->size();
+      /*if original already had a write accessor, overwrite it
+      in the return value
+      */
+      if(sz > 0 && maybe_type<AccessorSlot>((*orig)[sz - 1])) {
+        --sz;
+      }
+      /*alloc*/
+      stack.push(
+        Object::to_ref<Generic*>(proc.create_variadic<Closure>(sz + 1))
+      );
+      // top(3) = prog, top(2) = writer, top(1) = return value
+      AccessorSlot* slot = proc.create<AccessorSlot>();
+      /*re-read*/
+      orig = known_type<Closure>(stack.top(3));
+      Closure* rv = known_type<Closure>(stack.top(1));
+      for(size_t i = 0; i < sz; ++i) {
+        (*rv)[i] = (*orig)[i];
+      }
+      rv->codereset(orig->code());
+      /*load slot*/
+      (*rv)[sz] = Object::to_ref<Generic*>(slot);
+      slot->slot = stack.top(2);
+      /*manipulate stack*/
+      stack.top(3) = stack.top(1);
+      stack.pop(2);
+    } NEXT_BYTECODE;
+    BYTECODE(accessor_ref): {
+      Closure* v = expect_type<Closure>( stack.top(),
+        "'accessor-ref expects a function"
+      );
+      size_t sz = v->size();
+      if(sz == 0) {
+        stack.top() = Object::nil();
+      } else {
+        AccessorSlot* slot = maybe_type<AccessorSlot>((*v)[sz - 1]);
+        if(slot) {
+          stack.top() = slot->slot;
+        } else {
+          stack.top() = Object::nil();
+        }
+      }
+    } NEXT_BYTECODE;
     BYTECODE(acquire): {
       proc.global_acquire();
     } NEXT_BYTECODE;
@@ -649,6 +704,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
        stack.pop();
        stack.push(c->code());
        int sz = c->size();
+       /*skip the last entry if this Closure has an
+       accessor slot
+       */
+       if(sz > 0 && maybe_type<AccessorSlot>((*c)[sz - 1])) {
+         --sz;
+       }
        for (int i = 0; i < sz; ++i)
       	 stack.push((*c)[i]);
        // list's end
@@ -663,7 +724,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(empty_event_set): {
       bytecode_<&empty_event_set>(stack);
     } NEXT_BYTECODE;
-	 // TODO: fix to take a list of values to enclose
+    // TODO: fix to take a list of values to enclose
     BYTECODE(enclose): {
       INTPARAM(N);
       Closure* nclos = Closure::NewClosure(proc, N);

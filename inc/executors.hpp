@@ -51,6 +51,8 @@
 #define A_BYTECODE(x) BYTECODE_ENUM(x),
 #define END_DECLARE_BYTECODES __null_bytecode };
 DECLARE_BYTECODES
+	A_BYTECODE(accessor)
+	A_BYTECODE(accessor_ref)
 	A_BYTECODE(acquire)
 	A_BYTECODE(add_event)
 	A_BYTECODE(apply)
