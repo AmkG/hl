@@ -1,0 +1,78 @@
+(in-package impl)
+
+(import <axiom>quote quote)
+(import <axiom>set =)
+(import <hl>spawn spawn)
+(import <hl>send send)
+(import <hl>recv recv)
+(import <hl>try-recv try-recv)
+(import <hl>my-pid my-pid)
+(import <axiom>lambda fn)
+
+(import <axiom>cons cons)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+
+; reminder: only two-arg form!
+(import <axiom>is is)
+; reminder: only three-arg form!
+(import <axiom>if if)
+
+(= <impl>gvl-f
+   (fn ()
+     (<impl>gvl-acquire (recv) '())))
+(= <impl>gvl-acquire
+   (fn (owner pendings)
+     (send owner (my-pid))
+     (<impl>gvl-check-release owner (recv) pendings)))
+(= <impl>gvl-check-release
+   (fn (owner req pendings)
+     (if (is owner req)
+         ; release
+         ((fn ()
+            (send owner (my-pid))
+            (if pendings
+                (<impl>gvl-acquire (car pendings) (cdr pendings))
+                (<impl>gvl-f))))
+         ; another requester, put in pending
+         (<impl>gvl-check-release
+           owner (recv) (cons req pendings)))))
+(= <impl>gvl-p
+   (spawn
+     <impl>gvl-f))
+
+; waits for a message exactly equal to
+; <impl>gvl-p
+(= <impl>gvl-loop
+   (fn (pendings)
+     ((fn (msg)
+        (if (is msg <impl>gvl-p)
+            (<impl>gvl-resend (my-pid) pendings)
+            (<impl>gvl-loop (cons msg pendings))))
+      (recv))))
+; resends the given pending messages
+; to itself
+(= <impl>gvl-resend
+   (fn (self pendings)
+     (if pendings
+         ((fn ()
+            ; resend other messages
+            (send self (car pendings))
+            (<impl>gvl-resend (cdr pendings))))
+         ())))
+
+(= <common>acquire-gvl
+   (fn ()
+     (send <impl>gvl-p (my-pid))
+     (<impl>gvl-loop '())
+     (<axiom>acquire)
+     nil))
+
+(= <common>release-gvl
+   (fn ()
+     (<axiom>release)
+     (send <impl>gvl-p (my-pid))
+     (<impl>gvl-loop '())
+     nil))
+
+
