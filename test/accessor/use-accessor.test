@@ -1,0 +1,28 @@
+
+(<bc>closure 0
+  (<bc>check-vars 3)
+  (<bc>car)
+  (<bc>continue))
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>local 3)
+  (<bc>local 2)
+  (<bc>scar)
+  (<bc>continue))
+(<bc>accessor)
+(<bc>global-set car)
+
+(<bc>closure 0
+  (<bc>check-vars 2)
+  (<bc>int 1)
+  (<bc>int 2)
+  (<bc>cons)
+  (<bc>global car)
+  (<bc>local 1)
+  (<bc>local 2)
+  (<bc>apply 3))
+(<bc>k-closure 0
+  (<bc>halt))
+(<bc>apply 2)
+
+;^1$
