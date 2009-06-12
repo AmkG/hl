@@ -75,4 +75,23 @@
      (<impl>gvl-loop '())
      nil))
 
+(= <common>call-w/gvl
+   (fn (f)
+     ((fn (acquired)
+        (if acquired
+            (f)
+            ((fn (rv)
+               (<common>dynamic-wind
+                 (fn ()
+                   (<common>acquire-gvl)
+                   (<axiom>table-sref (<common>proc-locals) t '<common>gvl-acquired))
+                 (fn ()
+                   (= rv (f)))
+                 (fn ()
+                   (<axiom>table-sref (<common>proc-locals) nil '<common>gvl-acquired)
+                   (<common>release-gvl)))
+               rv)
+             nil)))
+      (<common>proc-local '<common>gvl-acquired))))
+
 
