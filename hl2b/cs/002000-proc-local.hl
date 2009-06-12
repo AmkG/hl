@@ -18,3 +18,14 @@
 
 (<axiom>set <hl>proc-locals <common>proc-locals)
 
+(<axiom>set <hl>proc-local
+  (<axiom>accessor
+    (<axiom>lambda (k)
+      ((<axiom>lambda (pl)
+         (pl k))
+       (<common>proc-locals)))
+    (<axiom>lambda (v k)
+      ((<axiom>lambda (pl)
+         (<axiom>table-sref pl v k))
+       (<common>proc-locals)))))
+
