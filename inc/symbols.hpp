@@ -39,7 +39,7 @@ public:
 	*/
 	void clean_notification_list(std::set<Process*> const& dead);
 
-	std::string getPrintName() { return printname; } // for debugging
+	std::string getPrintName() { return printname; }
 	/*WARNING! not thread safe. intended for use during soft-stop*/
 	void traverse_objects(HeapTraverser* ht) {
 		value->traverse_objects(ht);

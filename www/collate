@@ -50,8 +50,8 @@ echo "&raquo; <b>`echo $1 | cut -d "." -f -1`</b></small></div>" >> $2
 tail -n +3 $1 | markdown >> $2
 
 # generation
-echo '<div id="genline">updated ' >> $2
-date >> $2
+echo '<div id="genline">Updated ' >> $2
+git log -n 1 $1 | grep "^Date" >> $2
 echo '</div>' >> $2
 
 cat >> $2 <<ENDHTML

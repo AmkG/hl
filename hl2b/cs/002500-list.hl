@@ -1,0 +1,63 @@
+
+(import <axiom>quote quote)
+
+; these functions are portable
+
+(<axiom>set <hl>list
+  (<axiom>lambda x x))
+
+; this initial version assumes
+; cons cells.  later we will
+; add methods for other data
+; types.
+
+(<axiom>set <hl>len
+  (<common>enclose
+    (<common>assemble
+      '((<bc>monomethod)))
+    ; let rv (table)
+    ((<axiom>lambda (rv)
+       ; ---- method for <hl>cons
+       (<axiom>table-sref rv
+         ; let loop nil ; really an (rfn loop ...)
+         ((<axiom>lambda (loop)
+            (<axiom>set loop
+              (<axiom>lambda (l acc)
+                (<axiom>if l
+                  ; would prefer using a monomethod to
+                  ; check type, but darn it, writing monomethods
+                  ; while we don't have the macro framework just
+                  ; HURTS.
+                  (<axiom>if (<axiom>is (<axiom>type l) '<hl>cons)
+                    (loop (<axiom>cdr l) (<axiom>i+ acc 1))
+                    (<hl>err
+                      '<hl>type
+                      "len: improper list"))
+                  acc)))
+            ; len entry point for cons cells
+            (<axiom>lambda (l)
+              ; (t <hl>named <hl>len)  ; maybe?
+              (loop l 0)))
+          nil)
+         '<hl>cons)
+       ; ---- method for <hl>bool
+       (<axiom>table-sref rv
+         (<axiom>lambda (v)
+           (<axiom>if v
+             (<hl>err '<hl>value "len: attempt to get the length of truth")
+             0))
+         '<hl>bool)
+       ; ---- generic method
+       (<axiom>table-sref rv
+         (<axiom>lambda (x)
+           (<hl>err
+             '<hl>type
+             "len: can't get length of object of unknown type")
+           ; allow continuation to <hl>err to have access
+           ; to variable
+           (<hl>list x))
+         'nil)
+       ; return the table
+       rv)
+     (<axiom>table-create))))
+
