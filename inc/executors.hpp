@@ -343,16 +343,16 @@ public:
 	}
 
 	// setters
-	void set_name(Object::ref n) {
-		name = n;
+	static void set_name(Bytecode *b, Object::ref n) {
+		b->name = n;
 	}
 
-	void set_file(Object::ref f) {
-		file = f;
+	static void set_file(Bytecode *b, Object::ref f) {
+		b->file = f;
 	}
 
-	void set_line(Object::ref l) {
-		line = l;
+	static void set_line(Bytecode *b, Object::ref l) {
+		b->line = l;
 	}
 
 };

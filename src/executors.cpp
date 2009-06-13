@@ -330,7 +330,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     assembler.reg<IfAs>(symbols->lookup("<bc>if"), 
 			THE_BYTECODE_LABEL(jmp_nil));
     assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL);
-    assembler.reg<DbgNameAs>(symbols->lookup("<bc>debug-name"), NULL);
+    assembler.reg<DbgInfoAs<&Bytecode::set_name> >(symbols->lookup("<bc>debug-name"), NULL);
+    assembler.reg<DbgInfoAs<&Bytecode::set_line> >(symbols->lookup("<bc>debug-line"), NULL);
+    assembler.reg<DbgInfoAs<&Bytecode::set_file> >(symbols->lookup("<bc>debug-file"), NULL);
 
     /*
      * build and assemble various bytecode sequences
@@ -585,9 +587,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_closure_ref(stack, *clos, N);
     } NEXT_BYTECODE;
     BYTECODE(composeo): {
+      SETCLOS(clos); // clos invalidated by allocation
       /*destructure closure*/
       stack.push((*clos)[0]);
       stack[0] = (*clos)[1];
+      // create continuation
       Closure& kclos = *Closure::NewKClosure(proc, 2); 
       // !! should really avoid SymbolsTable::lookup() due to
       // !! increased lock contention
@@ -973,13 +977,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
           common case
         */
       } else {
-        stack[0] = (*clos)[2]; // f2
         size_t saved_params = params - 2;
-        Closure & kclos = *Closure::NewKClosure(proc, saved_params + 3);
+        stack[0] = (*clos)[2]; // f2
         // !! should really avoid SymbolsTable::lookup() due to
         // !! increased lock contention
-        kclos.codereset(proc.global_read(symbols->lookup("<impl>reducto-cont-body")));
+        Closure & kclos = *Closure::NewKClosure(proc, saved_params + 3);
         // clos is now invalid
+        kclos.codereset(proc.global_read(symbols->lookup("<impl>reducto-cont-body")));
         kclos[0] = stack[0]; // f2
         kclos[1] = stack[1];
         /*** placeholder ***/

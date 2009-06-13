@@ -1,0 +1,53 @@
+(<axiom>set >start-host-eval nil)
+(<axiom>set >stop-host-eval t)
+
+; basic stuff
+
+(<axiom>set list (<axiom>lambda l l))
+
+(<axiom>set mac
+  (<axiom>tag (<axiom>quote <hl>mac)
+    (<axiom>lambda (name args . body)
+      (list (<axiom>quote <axiom>set) name 
+        (list (<axiom>quote <axiom>tag) (<axiom>quote (<axiom>quote <hl>mac))
+          (<axiom>cons (<axiom>quote <axiom>lambda) 
+                       (<axiom>cons args body)))))))
+
+(mac def (name args . body)
+  (list (<axiom>quote <axiom>set) name
+    (<axiom>cons (<axiom>quote <axiom>lambda) (<axiom>cons args body))))
+
+; defined a few functions
+
+(def + (x y)
+  (<axiom>i+ x y))
+
+(def g (x)
+  (+ (+ 3 4) (+ 6 (+ x k)))) ; error here
+
+(def f (y)
+  (+ (g y) 1))
+
+(def h (j)
+  (+ (+ 1 2) (+ (f j) (f 0))))
+
+(def rec (n)
+  (<axiom>if (<axiom>is n 0)
+    k ; error here
+    (+ 1 (rec (+ n -1)))))
+
+(def r-1 (n)
+  (+ 1 (r-2 (+ n -1))))
+
+(def r-2 (n)
+  (<axiom>if (<axiom>is n 0)
+    k ; error here
+    (+ 1 (r-1 n))))
+
+>stop-host-eval
+
+; uncomment one of the following to get an error
+
+;(h 90)
+;(rec 10)
+(r-2 10)
