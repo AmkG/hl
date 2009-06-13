@@ -99,6 +99,17 @@ public:
   size_t disassemble(Process & proc, size_t i);
 };
 
+class DbgAs : public AsOp {
+public:
+  size_t disassemble(Process & proc, size_t i) { return i+1; }
+  virtual size_t n_bytecodes() { return 0; }
+};
+
+class DbgNameAs : public DbgAs {
+public:
+	void assemble(Process & proc);
+};
+
 class Assembler {
 private:
   typedef std::map<Symbol*, AsOp*> sym_op_tbl;

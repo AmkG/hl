@@ -162,9 +162,17 @@ private:
   Object::ref body;
   bool nonreusable;
   bool kontinuation;
+
+	// continuations only:
+	// pointer to sorrounding closure
+	Object::ref owner;
+	// next continuation in the continuation chain
+	Object::ref next_k;
+
 public:
   Closure(size_t sz) : GenericDerivedVariadic<Closure>(sz), 
-                       nonreusable(true) {}
+                       nonreusable(true), owner(Object::nil()), 
+											 next_k(Object::nil()) {}
   Object::ref& operator[](size_t i) { 
     if (i < size())
       return index(i);
@@ -194,6 +202,7 @@ public:
   }
   bool reusable() { return !nonreusable; }
 
+  static Closure* NewKClosure(Heap & h, ProcessStack & stack, size_t n);
   static Closure* NewKClosure(Heap & h, size_t n);
   static Closure* NewClosure(Heap & h, size_t n);
 
@@ -202,11 +211,25 @@ public:
   }
 
   void traverse_references(GenericTraverser *gt) {
-    gt->traverse(body);
+    gt->traverse(body);    
+		gt->traverse(owner);
+		gt->traverse(next_k);
     for(size_t i = 0; i < sz; ++i) {
       gt->traverse(index(i));
     }
   }
+
+	Object::ref next() {
+		return next_k;
+	}
+	Object::ref return_to() {
+		return owner;
+	}
+
+	bool is_cont() { return kontinuation; }
+
+	void print_trace(std::ostream & o);
+
 };
 
 /*-----------------------------------------------------------------------------

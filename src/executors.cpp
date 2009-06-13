@@ -135,6 +135,19 @@ void Bytecode::push(const char *s, intptr_t val) {
   push(symbols->lookup(s), val);
 }
 
+void show_HlError(ProcessStack stack, const char *str) {
+  std::cerr << "Error: " << str << "\n";
+	Closure *c = 0;
+	if (c = maybe_type<Closure>(stack[0])) {
+		c->print_trace(std::cerr);
+	}
+	// print trace only of the first continuation found
+	if (c && !c->is_cont() && (c = maybe_type<Closure>(stack[1]))) {
+		c->print_trace(std::cerr);
+	}
+  exit(1);
+}
+
 /*attempts to deallocate the specified object if it's a reusable
 continuation closure
 */
@@ -330,6 +343,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     assembler.reg<IfAs>(symbols->lookup("<bc>if"), 
 			THE_BYTECODE_LABEL(jmp_nil));
     assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL);
+    assembler.reg<DbgNameAs>(symbols->lookup("<dbg>name"), NULL);
 
     /*
      * build and assemble various bytecode sequences
@@ -482,7 +496,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(build_k_closure): {
     k_closure_perform_create:
       INTPARAM(N);
-      Closure *nclos = Closure::NewKClosure(proc, N);
+      Closure *nclos = Closure::NewKClosure(proc, stack, N);
       nclos->codereset(stack.top()); stack.pop();
       SETCLOS(clos);
       for(int i = N; i ; --i){
@@ -493,9 +507,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(build_k_closure_recreate): {
       /*TODO: insert debug checking for is_a<Generic*> here*/
-      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
+			//      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       /*put a random object in stack[0]*/
-      stack[0] = stack[1];
+      //stack[0] = stack[1];
+			// !! SETCLOS will fail!!
       /****/ goto k_closure_perform_create; /****/
     } NEXT_BYTECODE;
     /*attempts to reuse the current
@@ -511,7 +526,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       Closure *nclos = expect_type<Closure>(stack[0], "Closure expected!");
       if(!nclos->reusable()) {
         // Use the size of the current closure
-        nclos = Closure::NewKClosure(proc, clos->size());
+        nclos = Closure::NewKClosure(proc, stack, clos->size());
         //clos is now invalid
         SETCLOS(clos);
         nclos->codereset(stack.top()); stack.pop();
@@ -586,7 +601,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*destructure closure*/
       stack.push((*clos)[0]);
       stack[0] = (*clos)[1];
-      Closure& kclos = *Closure::NewKClosure(proc, 2); 
+      Closure& kclos = *Closure::NewKClosure(proc, stack, 2); 
       // !! should really avoid SymbolsTable::lookup() due to
       // !! increased lock contention
       kclos.codereset(proc.global_read(symbols->lookup("<impl>composeo-cont-body")));
@@ -974,7 +989,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
         stack[0] = (*clos)[2]; // f2
         size_t saved_params = params - 2;
-        Closure & kclos = *Closure::NewKClosure(proc, saved_params + 3);
+        Closure & kclos = *Closure::NewKClosure(proc, stack, saved_params + 3);
         // !! should really avoid SymbolsTable::lookup() due to
         // !! increased lock contention
         kclos.codereset(proc.global_read(symbols->lookup("<impl>reducto-cont-body")));
@@ -1019,7 +1034,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
             closure and an index number, to
             reduce memory allocation.
           */
-          Closure & nclos = *Closure::NewKClosure(proc, 
+          Closure & nclos = *Closure::NewKClosure(proc, stack,
                                                   // save only necessary
                                                   clos->size() - NN + 3);
           // !! should really avoid SymbolsTable::lookup() due to
