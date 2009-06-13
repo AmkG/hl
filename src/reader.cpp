@@ -178,9 +178,7 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
       else
         out << " . " << r << ")";
     } else if (l = dynamic_cast<Closure*>(g)) {
-			out << "#<fn: ";
-			expect_type<Bytecode>(l->code())->print_info(out);
-			out << ">";
+			out << "#<fn>";
 		} else {
 	    std::string name = as_a<Symbol*>(type(obj))->getPrintName();
 	    out << "#<" << name << ">";

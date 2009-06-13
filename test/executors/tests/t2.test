@@ -36,4 +36,4 @@
 (<bc>float asymbol)
 (<bc>halt)
 
-;^Error: assemble: wrong type for complex argument$
+;^Error: assemble: wrong type for complex argument

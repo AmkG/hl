@@ -24,7 +24,7 @@
 (def sharedvars-convert (ast)
   (with (sc [map sharedvars-convert _]
          ; flip the arguments to make-lam
-         make-fn (fn (x y dbg) (make-lam y x dbg))
+         make-fn (fn (x y (o dbg (table))) (make-lam y x dbg))
          transform nil
          transform-shared nil)
     ; creates a function whose shared variables

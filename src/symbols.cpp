@@ -27,8 +27,7 @@ void Symbol::copy_value_to_and_add_notify(ValueHolderRef& p, Process* R) {
 	{AppLock l(m);
 	  if (value.empty()) {
 			// no value associated with this symbol
-			show_HlError(R->stack, ("unbound variable: " + printname).c_str());
-			throw_HlError("unbound variable");
+			throw_HlError(("unbound variable: " + printname).c_str());
 		}
 		value->clone(p);
 		/*check for dead processes in notification list*/

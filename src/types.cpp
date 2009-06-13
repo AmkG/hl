@@ -35,59 +35,12 @@ Closure* Closure::NewClosure(Heap & h, size_t n) {
   return c;
 }
 
-Closure* Closure::NewKClosure(Heap & h, ProcessStack & stack, size_t n) {
-  Closure *c = h.lifo_create_variadic<Closure>(n);
-  c->body = Object::nil();
-	Closure *owner;
-
-	if (stack.size() > 0 && (owner = maybe_type<Closure>(stack[0]))) {
-		if (owner->kontinuation) {
-			// this continuation has been created by another continuation
-			// next_k is then in stack[0]
-			// and we have no owner
-			c->next_k = stack[0];
-		} else {
-			c->owner = stack[0];
-			if (stack.size() > 1 && maybe_type<Closure>(stack[1])) {
-				c->next_k = stack[1];
-			}
-		}
-	}
-
-  c->nonreusable = false;
-  c->kontinuation = true;
-
-  return c;
-}
-
 Closure* Closure::NewKClosure(Heap & h, size_t n) {
   Closure *c = h.lifo_create_variadic<Closure>(n);
   c->body = Object::nil();
   c->nonreusable = false;
   c->kontinuation = true;
   return c;
-}
-
-void Closure::print_trace(std::ostream & o) {
-	if (kontinuation) {
-		Object::ref cc = Object::to_ref(this);
-		while (cc != Object::nil()) {
-			Closure *k = expect_type<Closure>(cc);
-			Closure *caller = maybe_type<Closure>(k->owner);
-			// if the caller is a continuation, ignore it
-			if (caller && !caller->kontinuation) {
-				o << "\tCalled by: ";
-				expect_type<Bytecode>(caller->body)->print_info(o);
-				o << "\n";
-			}
-			// walk up continuation chain
-			cc = k->next_k;
-		}
-	} else {
-		o << "\tCalled by: ";
-		expect_type<Bytecode>(body)->print_info(o);
-		o << "\n";
-	}
 }
 
 /*-----------------------------------------------------------------------------

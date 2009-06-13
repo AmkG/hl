@@ -135,19 +135,6 @@ void Bytecode::push(const char *s, intptr_t val) {
   push(symbols->lookup(s), val);
 }
 
-void show_HlError(ProcessStack stack, const char *str) {
-  std::cerr << "Error: " << str << "\n";
-	Closure *c = 0;
-	if (c = maybe_type<Closure>(stack[0])) {
-		c->print_trace(std::cerr);
-	}
-	// print trace only of the first continuation found
-	if (c && !c->is_cont() && (c = maybe_type<Closure>(stack[1]))) {
-		c->print_trace(std::cerr);
-	}
-  exit(1);
-}
-
 /*attempts to deallocate the specified object if it's a reusable
 continuation closure
 */
@@ -343,7 +330,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     assembler.reg<IfAs>(symbols->lookup("<bc>if"), 
 			THE_BYTECODE_LABEL(jmp_nil));
     assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL);
-    assembler.reg<DbgNameAs>(symbols->lookup("<dbg>name"), NULL);
+    assembler.reg<DbgNameAs>(symbols->lookup("<bc>debug-name"), NULL);
 
     /*
      * build and assemble various bytecode sequences
@@ -496,7 +483,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(build_k_closure): {
     k_closure_perform_create:
       INTPARAM(N);
-      Closure *nclos = Closure::NewKClosure(proc, stack, N);
+      Closure *nclos = Closure::NewKClosure(proc, N);
       nclos->codereset(stack.top()); stack.pop();
       SETCLOS(clos);
       for(int i = N; i ; --i){
@@ -526,7 +513,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       Closure *nclos = expect_type<Closure>(stack[0], "Closure expected!");
       if(!nclos->reusable()) {
         // Use the size of the current closure
-        nclos = Closure::NewKClosure(proc, stack, clos->size());
+        nclos = Closure::NewKClosure(proc, clos->size());
         //clos is now invalid
         SETCLOS(clos);
         nclos->codereset(stack.top()); stack.pop();
@@ -601,7 +588,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*destructure closure*/
       stack.push((*clos)[0]);
       stack[0] = (*clos)[1];
-      Closure& kclos = *Closure::NewKClosure(proc, stack, 2); 
+      Closure& kclos = *Closure::NewKClosure(proc, 2); 
       // !! should really avoid SymbolsTable::lookup() due to
       // !! increased lock contention
       kclos.codereset(proc.global_read(symbols->lookup("<impl>composeo-cont-body")));
@@ -765,7 +752,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(halt): {
       stack.restack(1);
-      //std::cerr<<"halt\n";
       return process_dead;
     } NEXT_BYTECODE;
     BYTECODE(halt_local_push): {
@@ -989,7 +975,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       } else {
         stack[0] = (*clos)[2]; // f2
         size_t saved_params = params - 2;
-        Closure & kclos = *Closure::NewKClosure(proc, stack, saved_params + 3);
+        Closure & kclos = *Closure::NewKClosure(proc, saved_params + 3);
         // !! should really avoid SymbolsTable::lookup() due to
         // !! increased lock contention
         kclos.codereset(proc.global_read(symbols->lookup("<impl>reducto-cont-body")));
@@ -1034,7 +1020,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
             closure and an index number, to
             reduce memory allocation.
           */
-          Closure & nclos = *Closure::NewKClosure(proc, stack,
+          Closure & nclos = *Closure::NewKClosure(proc,
                                                   // save only necessary
                                                   clos->size() - NN + 3);
           // !! should really avoid SymbolsTable::lookup() due to
@@ -1134,9 +1120,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     // call current continuation, passing the pid of created process
+		// !! WARNING: <bc>spawn MUST be called WITHIN a closure NOT a
+		// !! continuation, since it expects current continuation in
+		// !! stack[1], not in stack[0]
     BYTECODE(spawn): {
-      //std::cerr << "spawning\n";
-      AllWorkers &w = AllWorkers::getInstance();
+			AllWorkers &w = AllWorkers::getInstance();
       // create new process 
       HlPid *spawned = proc.spawn(stack.top()); stack.pop();
       // release cpu as soon as possible
@@ -1148,8 +1136,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       w.register_process(spawned->process);
       // w.workqueue_push(spawned->process);
       Q = spawned->process; // next to run
-      //std::cerr << "spawned\n";
-      return process_change;
+			return process_change;
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack

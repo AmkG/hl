@@ -342,17 +342,6 @@ public:
 		bytecode_cons(proc, proc.stack);
 	}
 
-	void print_info(std::ostream & o) {
-		o << name;
-		if (file != Object::nil()) {
-			o << " in file " << file;
-			// line has no meaning without file
-			if (line != Object::nil()) { 
-				o << " at line: " << line;
-			}
-		}
-	}
-
 	// setters
 	void set_name(Object::ref n) {
 		name = n;

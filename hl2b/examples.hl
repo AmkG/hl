@@ -95,9 +95,12 @@
                       (list (<axiom>quote <bc>halt)))
                     (list (<axiom>quote <bc>apply) 2))))
 
-(def spawn (f)
+(def spawn-me (f)
   ; <axiom>enclose is still to fix
-  (<axiom>spawn (<axiom>enclose f spawn-cont-code*)))
+  (<axiom>spawn f))
+
+(def spawn (f)
+  (spawn-me (<axiom>enclose spawn-cont-code* (list f))))
 
 (def send (to x)
   (<axiom>send to x))
@@ -142,13 +145,13 @@ res
 
 >stop-host-eval
 
-(let i (<axiom>i/o-stdin)
-  (let o (<axiom>i/o-stdout)
-    ((afn ()
-       (let c (<axiom>b-ref (<axiom>i/o-read (<axiom>self-pid) i 1) 0)
-         (<axiom>if c
-           (do
-             (<axiom>i/o-write (<axiom>self-pid) o c)
-             (self))))))))
+;(let i (<axiom>i/o-stdin)
+;  (let o (<axiom>i/o-stdout)
+;    ((afn ()
+;       (let c (<axiom>b-ref (<axiom>i/o-read (<axiom>self-pid) i 1) 0)
+;         (<axiom>if c
+;           (do
+;             (<axiom>i/o-write (<axiom>self-pid) o c)
+;             (self))))))))
 
->start-host-eval
+;>start-host-eval

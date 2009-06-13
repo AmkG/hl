@@ -51,8 +51,6 @@ public:
   }
 };
 
-void show_HlError(ProcessStack stack, const char *str);
-
 enum ProcessStatus {
 	process_dead,
 	process_waiting,
