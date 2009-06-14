@@ -1,0 +1,122 @@
+
+
+(in-package impl)
+(import <hl>def def)
+(import <axiom>quote quote)
+(import <axiom>cons cons)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>if if)
+(import <axiom>fn fn)
+(import <axiom>is is)
+(import <axiom>type type)
+(import <axiom>table-sref table-sref)
+(import <axiom>table-ref table-ref)
+(import <axiom>table-create table)
+
+; these functions are non-portable
+; across machines.
+
+(def (<common>polymorph f sig m)
+  (if (if sig (is '<hl>cons (type sig)) t)
+      '()
+      (<hl>err '<hl>type "'polymorph expects a cons list for signature - " sig))
+  ((fn (sig)
+     (if sig
+         ((fn ()
+            (if (cdr sig)
+                (<hl>err '<hl>value
+                         "'polymorph supports only monomorphic methods at this version")
+                '())
+            (if (<impl>polymorph-is-monomorphic f)
+                ; extract existing table
+                ((fn (tb)
+                   (table-sref
+                     tb
+                     m
+                     (car sig))
+                   (<impl>monomorph tb))
+                 (<impl>polymorph-monomorphic-table f))
+                ; create new table
+                ((fn (tb)
+                   (table-sref
+                     tb
+                     f
+                     nil)
+                   (table-sref
+                     tb
+                     m
+                     (car sig))
+                   (<impl>monomorph tb))
+                 (table)))))
+         ; replace generic method
+         (if (<impl>polymorph-is-monomorphic f)
+             ((fn (tb)
+                (table-sref tb m nil)
+                (<impl>monomorph tb))
+              (<impl>polymorph-monomorphic-table f))
+             ; already a generic function, so
+             ; return m
+             m)))
+   (<impl>normalize-sig sig)))
+
+((fn (bc)
+  (def (<impl>monomorph tb)
+    (<common>enclose bc tb)))
+ (<common>assemble '((<bc>monomorph))))
+
+(def (<impl>polymorph-monomorphic-table f)
+  ((fn (tb)
+     (<impl>polymorph-copy-table tb))
+   (car (cdr (<common>disclose f)))))
+(def (<impl>polymorph-copy-table tb)
+  (<impl>polymorph-copy-table-loop
+    (table)
+    tb
+    (<axiom>table-keys tb)))
+(def (<impl>polymorph-copy-table-loop rv tb keys)
+  (if keys
+      ((fn (k)
+         (table-sref rv (table-ref tb k) k)
+         (<impl>polymorph-copy-table-loop rv tb (cdr keys)))
+       (car keys))
+      rv))
+
+(def (<impl>polymorph-normalize-sig sig)
+  (if sig
+      (if (car sig)
+          (cons (car sig) (<impl>polymorph-normalize-sig (cdr sig)))
+          ; maybe run of nils
+          (if (<impl>polymorph-run-nils (cdr sig))
+              nil
+              ; kinda inefficient for lists like
+              ;   (nil nil nil t)
+              ; probably not important, we don't expect
+              ; polymorphing to be efficient
+              (cons (car sig) (<impl>polymorph-normalize-sig (cdr sig)))))
+      '()))
+
+(def (<impl>polymorph-run-nils sig)
+  (if sig
+      ((fn ()
+         (if (is '<hl>cons (type sig))
+             '()
+             (<hl>err '<hl>type "'polymorph expects a cons list for signature - " sig))
+         (if (car sig)
+             nil
+             (<impl>polymorph-run-nils (cdr sig)))))
+      t))
+
+; this function is portable across machines
+
+(def (<hl>polymorph f sig m . rest)
+  (if rest
+      (<axiom>apply-list
+        <hl>polymorph
+        (cons
+          (<common>polymorph
+            f sig m)
+          rest))
+      (<common>polymorph
+        f sig m)))
+
