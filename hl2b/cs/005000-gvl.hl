@@ -2,11 +2,11 @@
 
 (import <axiom>quote quote)
 (import <axiom>set =)
-(import <hl>spawn spawn)
-(import <hl>send send)
-(import <hl>recv recv)
-(import <hl>try-recv try-recv)
-(import <hl>my-pid my-pid)
+(import <common>spawn spawn)
+(import <common>send send)
+(import <common>recv recv)
+(import <common>try-recv try-recv)
+(import <common>my-pid my-pid)
 (import <axiom>lambda fn)
 
 (import <axiom>cons cons)

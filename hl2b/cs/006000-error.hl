@@ -1,0 +1,44 @@
+
+(in-package impl)
+(import <hl>def def)
+(import <axiom>lambda fn)
+(import <axiom>if if)
+(import <axiom>tag tag)
+(import <axiom>set =)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>cons cons)
+
+(def (<hl>err-throw k e)
+  ((<axiom>err-handler) k e))
+
+(def (<hl>err tp . rest)
+  (<hl>ccc
+    (fn (k)
+      (err-throw k
+        (if rest
+            (tag tp
+                 rest)
+            tp)))))
+
+(def (<hl>on-err ef bf)
+  ((fn (real-k errval)
+     (<hl>ccc
+       (fn (k)
+         (= real-k k)))
+     (if errval
+         (ef (car errval) (cdr errval))
+         ((fn (old-err)
+            (<hl>dynamic-wind
+              (fn ()
+                (<axiom>err-handler-set
+                  (fn (k e)
+                    (= errval (cons k e))
+                    (real-k t))))
+              bf
+              (fn ()
+                (<axiom>err-handler-set
+                  old-err))))
+          (<axiom>err-handler))))
+   nil nil))
+
