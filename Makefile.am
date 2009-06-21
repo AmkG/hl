@@ -4,3 +4,6 @@ OTHER_INCLUDES += -I@BOOST_PATH@
 endif
 
 SUBDIRS = src test
+
+test_vm:
+	perl test/dotest.pl 'src/hl --bc ' test/executors/tests

@@ -184,9 +184,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
       ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
       ("<bc>bounded",		THE_BYTECODE_LABEL(bounded))
-      /*these implement the actual bytecodes <bc>k-closure,
+      /*these implement the actual bytecodes <bc>closure, <bc>k-closure,
       <bc>k-closure-recreate, and <bc>k-closure-reuse.
       */
+      ("<bc>build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT, 
+			 NON_STD())
       ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT,
          NON_STD() )
       ("<bc>build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
@@ -217,9 +219,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       // !! Could also be done as an Executor
       ("<bc>disclose", THE_BYTECODE_LABEL(disclose), NON_STD() )
       ("<bc>empty-event-set",	THE_BYTECODE_LABEL(empty_event_set))
-      /*this implements <bc>closure*/
-      ("<bc>enclose", THE_BYTECODE_LABEL(enclose), ARG_INT,
-         NON_STD() )
+      ("<bc>enclose", THE_BYTECODE_LABEL(enclose), NON_STD())
       ("<bc>err-handler",	THE_BYTECODE_LABEL(err_handler))
       ("<bc>err-handler-set",	THE_BYTECODE_LABEL(err_handler_set))
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
@@ -519,6 +519,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
 	 BYTECODE(bounded): {
 		 bytecode_bounded(stack);
 	 } NEXT_BYTECODE;
+	 BYTECODE(build_closure): {
+		 INTPARAM(N);
+		 Closure* nclos = Closure::NewClosure(proc, N);
+		 nclos->codereset(stack.top()); stack.pop();
+		 SETCLOS(clos); // allocation may invalidate clos
+		 for(int i = N; i ; --i){
+			 (*nclos)[i - 1] = stack.top();
+			 stack.pop();
+		 }
+		 stack.push(Object::to_ref(nclos));
+	 } NEXT_BYTECODE;
     BYTECODE(build_k_closure): {
     k_closure_perform_create:
       INTPARAM(N);
@@ -724,16 +735,27 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(empty_event_set): {
       bytecode_<&empty_event_set>(stack);
     } NEXT_BYTECODE;
-    // TODO: fix to take a list of values to enclose
+    // take a bytecode object and a list of values to enclose
     BYTECODE(enclose): {
-      INTPARAM(N);
-      Closure* nclos = Closure::NewClosure(proc, N);
-      nclos->codereset(stack.top()); stack.pop();
-      SETCLOS(clos); // allocation may invalidate clos
-      for(int i = N; i ; --i){
-        (*nclos)[i - 1] = stack.top();
-        stack.pop();
+      Object::ref vals = stack.top(); stack.pop();
+      // unrolls vals in the stack
+      size_t n = 0; // count number of values
+      for (Object::ref lst = vals; maybe_type<Cons>(lst); lst = cdr(lst)) {
+      	stack.push(car(lst));
+      	n++;
       }
+      Closure* nclos = Closure::NewClosure(proc, n);
+      SETCLOS(clos); // allocation may invalidate clos
+      // enclose values
+      for(int i = n; i; --i){
+      	(*nclos)[i - 1] = stack.top();
+      	stack.pop();
+      }
+      // get the bytecode
+      Object::ref body = stack.top(); stack.pop();
+      // body must be a bytecode
+      check_type<Bytecode>(body);
+      nclos->codereset(body);
       stack.push(Object::to_ref(nclos));
     } NEXT_BYTECODE;
     BYTECODE(err_handler): {
