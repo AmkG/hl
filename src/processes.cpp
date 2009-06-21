@@ -326,7 +326,8 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		history.to_list(*this);
 		stack.restack(3);
 		// reset history
-		// ...
+		history.reset();
+		history.enter(stack[0]);
 		return process_running;
 	}
 }

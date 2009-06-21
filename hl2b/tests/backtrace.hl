@@ -1,4 +1,4 @@
-(<axiom>set >start-host-eval nil)
+ (<axiom>set >start-host-eval nil)
 (<axiom>set >stop-host-eval t)
 
 ; basic stuff
@@ -42,10 +42,15 @@
 (def r-2 (n)
   (<axiom>if (<axiom>is n 0)
     k ; error here
-    (+ 1 (r-1 n))))
+    (r-1 n)))
 
 (def map1 (f l)
   (<axiom>if l (<axiom>cons (f (<axiom>car l)) (map1 f (<axiom>cdr l)))))
+
+(def a (n)
+  (+ n 2)
+  (h n)
+  (g 2))
 
 (def <hl>default-handler* (bt)
   (map1 (<axiom>lambda (f) 
@@ -56,8 +61,7 @@
 
 ; uncomment one of the following to get an error
 
-;(h 90)
-;(rec 10)
-(r-2 10)
-;(<hl>default-handler (list r-1 r-2))
-;(map1 (<axiom>lambda (x) x) (list 1 2))
+;(a 10)
+;(h 10)
+;(rec 3)
+(r-2 20)

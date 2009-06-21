@@ -21,25 +21,19 @@ private:
 	size_t breadth;
 
 public:
-	History(size_t depth, size_t breadth) : ring(depth), breadth(breadth) {
-		ring.push_back(inner_ring(breadth));
-	}
+	History(size_t depth, size_t breadth);
+
+	// reset the history
+	void reset();
 
 	// record a function (closure) call -- may delete the oldest call
-	inline void enter(Object::ref clos) {
-		ring.push_back(inner_ring(breadth, 1, clos));
-	}
+	void enter(Object::ref clos);
 
 	// record a function call in tail position
-	inline void enter_tail(Object::ref clos) {
-		outer_ring::reverse_iterator last = ring.rbegin();
-		last->push_back(clos);
-	}
+	void enter_tail(Object::ref clos);
 
 	// record a function return (i.e. a continuation call)
-	inline void leave() {
-		ring.pop_back();
-	}
+	void leave();
 
 	// push a list of the last functions called in the process stack
 	void to_list(Process & proc);
