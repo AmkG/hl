@@ -4,6 +4,14 @@
 ; dependency on external lib?
 ;(require "lib/proto-table.arc")
 
+; take function call params
+; return function call debugging bytecode
+(def debug-call (params)
+  (let N (len params)
+    (if (aref (cadr params)) ; use caller continuation: a tail call
+      `(<bc>debug-tail-call ,N)
+      `(<bc>debug-call ,N))))
+
 (def bytecodegen (ast (o env (table 'top 0)) (o cont-clos))
   ; (ppr-sexp:source ast)
   (withs (is-closure-ref-self
@@ -143,6 +151,7 @@
                            ; arc2c counts the function code as closure.0
                            ; snap does not, so convert closure.N to
                            ; (closure (- N 1))
+                           (<bc>debug-cont-call)
                            (<bc>continue-on-clos ,(- ((cadr k!subx) 'val) 1))))
                     ; check if current function is a continuation and
                     ; if we need to create a continuation for this
@@ -166,12 +175,14 @@
                                  (car k-fn!subx)
                                  (f-environment k-fn!params)
                                  (max cont-clos (len k-closed))))
+                           ,(debug-call params)
                            (<bc>apply-invert-k ,(+ 2 (len params)))))
                     ; check if continuation anyway - continuations
                     ; that don't reuse or recreate their closures
                     ; should use apply-k-release
                     cont-clos
                       `( ,@(apply-pushall params)
+                         ,(debug-call params)
                          (<bc>apply-k-release ,(len params)))
                     ; check if return-type call (first param is ref
                     ; to local[1], and two params (continuation and
@@ -180,13 +191,16 @@
                       ; now check if return value is a variable reference
                       (let (k rv) params
                         (if (and (aref rv) (~aglobal rv!var))
-                            `( (<bc>continue-local ,(env rv!var)))
+                            `( (<bc>debug-cont-call)
+                               (<bc>continue-local ,(env rv!var)))
                             `( ,@(bytecodegen rv env)
+                               (<bc>debug-cont-call)
                                (<bc>continue))))
                     ; ordinary apply
                        ; NOTE! assumes that subexpressions here cannot
                        ; be 'let forms
                       `( ,@(apply-pushall params)
+                         ,(debug-call params)
                          (<bc>apply ,(len params))))
                   (do (prn "----expected (<axiom>closure-ref _ 0) on apply")
                       (ppr-sexp:source ast)
@@ -263,7 +277,9 @@
             <axiom>tag
               (direct-compile ast!subx '<bc>tag)
             <axiom>apply
-              (direct-compile ast!subx '<bc>apply-list)
+              `(,@(mappend [bytecodegen _ env] ast!subx)
+                ,(debug-call ast!subx)
+                (<bc>apply-list))
             <axiom>sharedvar
               (w/local-push (car ast!subx) '<bc>sv)
             <axiom>sharedvar-read

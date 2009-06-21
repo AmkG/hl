@@ -15,11 +15,6 @@
 
 using namespace std;
 
-void throw_HlError(const char *str) {
-  cout << "Error: " << str << endl << flush;
-  exit(1);
-}
-
 void throw_OverBrokenHeart(Generic*) {
   throw_HlError("overbrokenheart");
 }

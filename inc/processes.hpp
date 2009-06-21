@@ -7,9 +7,18 @@
 
 #include <vector>
 #include <map>
+#include <string>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
+
+class HlError {
+private:
+	std::string info; // UTF-8
+public:
+	HlError(const char *c) : info(c) {}
+	std::string err_str() { return info; }
+};
 
 void throw_HlError(char const*);
 

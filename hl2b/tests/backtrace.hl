@@ -17,7 +17,7 @@
   (list (<axiom>quote <axiom>set) name
     (<axiom>cons (<axiom>quote <axiom>lambda) (<axiom>cons args body))))
 
-; defined a few functions
+; define a few functions
 
 (def + (x y)
   (<axiom>i+ x y))
@@ -44,6 +44,14 @@
     k ; error here
     (+ 1 (r-1 n))))
 
+(def map1 (f l)
+  (<axiom>if l (<axiom>cons (f (<axiom>car l)) (map1 f (<axiom>cdr l)))))
+
+(def <hl>default-handler* (bt)
+  (map1 (<axiom>lambda (f) 
+          (<axiom>debug-bytecode-info (<axiom>car (<axiom>disclose f))))
+        bt))
+
 >stop-host-eval
 
 ; uncomment one of the following to get an error
@@ -51,3 +59,5 @@
 ;(h 90)
 ;(rec 10)
 (r-2 10)
+;(<hl>default-handler (list r-1 r-2))
+;(map1 (<axiom>lambda (x) x) (list 1 2))

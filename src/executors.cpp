@@ -213,10 +213,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
       ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
-			("<bc>debug-call", THE_BYTECODE_LABEL(debug_call), ARG_INT)
-			("<bc>debug-tail-call", THE_BYTECODE_LABEL(debug_tail_call), ARG_INT)
-			("<bc>debug-cont-call", THE_BYTECODE_LABEL(debug_cont_call))
 			("<bc>debug-backtrace", THE_BYTECODE_LABEL(debug_backtrace))
+			("<bc>debug-bytecode-info", THE_BYTECODE_LABEL(debug_bytecode_info))
+			("<bc>debug-call", THE_BYTECODE_LABEL(debug_call), ARG_INT)
+			("<bc>debug-cont-call", THE_BYTECODE_LABEL(debug_cont_call))
+			("<bc>debug-tail-call", THE_BYTECODE_LABEL(debug_tail_call), ARG_INT)
       /*this implements <common>disclose*/
       // !! Could also be done as an Executor
       ("<bc>disclose", THE_BYTECODE_LABEL(disclose), NON_STD() )
@@ -663,6 +664,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.restack(2);
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+		// take a bytecode object from the stack
+		// leave a list holding (name file line) of the bytecode
+		BYTECODE(debug_bytecode_info): {
+			Bytecode *b = expect_type<Bytecode>(stack.top()); stack.pop();
+			b->info(proc);
+		} NEXT_BYTECODE;
 		// register a function call
 		// expect closure to register in stack.top(N)
 		BYTECODE(debug_call): {

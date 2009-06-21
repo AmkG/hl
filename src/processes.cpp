@@ -3,6 +3,13 @@
 #include"processes.hpp"
 #include"mutexes.hpp"
 #include"executors.hpp"
+#include"assembler.hpp"
+
+void throw_HlError(const char *str) {
+  //std::cerr << "Error: " << str << "\n";
+	//exit(1);
+	throw HlError(str);
+}
 
 bool MailBox::receive_message(ValueHolderRef& M, bool& is_waiting) {
 	is_waiting = false;
@@ -261,7 +268,9 @@ void Process::global_acquire( void ) {
  */
 
 void Process::scan_root_object(GenericTraverser* gt) {
+	std::cerr<<"here\n";
 	for(size_t i = 0; i < stack.size(); ++i) {
+		std::cerr<<"scan: "<<stack[i]<<"\n";
 		gt->traverse(stack[i]);
 	}
 	typedef std::map<Symbol*, Object::ref>::iterator cache_it;
@@ -279,6 +288,8 @@ void Process::scan_root_object(GenericTraverser* gt) {
 	/*insert code for traversing process-local vars here*/
 	gt->traverse(proc_local_slot);
 	gt->traverse(err_handler_slot);
+	/*traverse call history*/
+	history.traverse(gt);
 }
 
 /*
@@ -286,7 +297,7 @@ void Process::scan_root_object(GenericTraverser* gt) {
  */
 
 ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
-	/*try*/ {
+	try {
 		/*only do this here, because we don't give
 		very strict assurances about when a process
 		"sends" a global to all the other processes
@@ -300,12 +311,25 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 			stat = process_dead;
 		}
 		return nstat;
-	} /*catch(HlError& h) ...*/
-	/*In the future, when we catch an HlError,
-	get the process's error handler and force it
-	onto the stack for future execution. i.e.
-	transform a C-side exception into an hl-side
-	invocation of (err 'type "message")
-	*/
+	} catch(HlError& h) {
+		/*when we catch an HlError,
+			get the process's error handler and force it
+			onto the stack for future execution. i.e.
+			transform a C-side exception into an hl-side
+			invocation of (err 'type "message")
+		*/
+		Closure *k = Closure::NewKClosure(*this, 0);
+		Object::ref halt_bytecode = 
+			Assembler::inline_assemble(*this, "(<bc>check-vars 2) (<bc>halt)");
+		k->codereset(halt_bytecode);
+		Object::ref handler = global_read(symbols->lookup("<hl>default-handler*"));
+		stack.push(handler);
+		stack.push(Object::to_ref(k));
+		history.to_list(*this);
+		stack.restack(3);
+		// reset history
+		// ...
+		return process_running;
+	}
 }
 

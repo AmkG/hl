@@ -9,7 +9,7 @@
 
 class Process;
 class GenericTraverser;
-
+#include <iostream>
 /*
  * Keep the history of the last function calls
  */
@@ -21,7 +21,9 @@ private:
 	size_t breadth;
 
 public:
-	History(size_t depth, size_t breadth) : ring(depth), breadth(breadth) {}
+	History(size_t depth, size_t breadth) : ring(depth), breadth(breadth) {
+		ring.push_back(inner_ring(breadth));
+	}
 
 	// record a function (closure) call -- may delete the oldest call
 	inline void enter(Object::ref clos) {
