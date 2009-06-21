@@ -268,9 +268,7 @@ void Process::global_acquire( void ) {
  */
 
 void Process::scan_root_object(GenericTraverser* gt) {
-	std::cerr<<"here\n";
 	for(size_t i = 0; i < stack.size(); ++i) {
-		std::cerr<<"scan: "<<stack[i]<<"\n";
 		gt->traverse(stack[i]);
 	}
 	typedef std::map<Symbol*, Object::ref>::iterator cache_it;

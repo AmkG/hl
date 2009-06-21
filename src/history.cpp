@@ -10,8 +10,6 @@ void History::to_list(Process & proc) {
 	for (outer_ring::iterator i = ring.begin()+sz-1; sz>0; --i, --sz) {
 		int sz = i->size();
 		for (inner_ring::iterator j = i->begin()+sz-1; sz>0; --j, --sz) {
-			std::cerr<<sz<<"\n";
-			std::cerr<<*j<<"\n";
 			proc.stack.push(*j);
 			count++;
 		}
@@ -24,7 +22,6 @@ void History::to_list(Process & proc) {
 }
 
 void History::traverse(GenericTraverser *gt) {
-	std::cerr<<"trav\n";
 	int sz = ring.size();
 	for (outer_ring::iterator i = ring.begin()+sz-1; sz>0; --i, --sz) {
 		int sz = i->size();
