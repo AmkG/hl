@@ -3,7 +3,7 @@ if BOOST_PATH_SPECIFIED
 OTHER_INCLUDES += -I@BOOST_PATH@
 endif
 
-AM_CPPFLAGS = $(OTHER_INCLUDES) -I../inc -I../os -I..
+AM_CPPFLAGS = $(OTHER_INCLUDES) -I@srcdir@/../inc -I@srcdir@/../os -I@srcdir@/..
 LDFLAGS = @PTHREAD_LIB@
 
 noinst_LIBRARIES = libhlvm.a
@@ -23,6 +23,7 @@ libhlvm_a_SOURCES = \
 	assembler.cpp \
 	../inc/aio.hpp \
 	../inc/all_defines.hpp \
+	../inc/assembler.hpp \
 	../inc/bytecodes.hpp \
 	../inc/executors.hpp \
 	../inc/generics.hpp \
@@ -31,6 +32,7 @@ libhlvm_a_SOURCES = \
 	../inc/intrusives.hpp \
 	../inc/lockeds.hpp \
 	../inc/mutexes.hpp \
+	../inc/obj_aio.hpp \
 	../inc/objects.hpp \
 	../inc/processes.hpp \
 	../inc/reader.hpp \
@@ -40,7 +42,6 @@ libhlvm_a_SOURCES = \
 	../inc/unichars.hpp \
 	../inc/workarounds.hpp \
 	../inc/workers.hpp \
-	../inc/assembler.hpp \
 	../os/thread.hpp
 
 bin_PROGRAMS = hl
