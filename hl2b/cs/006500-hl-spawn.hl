@@ -1,0 +1,26 @@
+
+(in-package impl)
+
+(import <axiom>quote quote)
+(import <axiom>set =)
+(import <axiom>lambda fn)
+
+; these functions are portable across machines
+
+(= <hl>spawn
+   (fn (f)
+     (<common>spawn
+       (fn ()
+         (on-err (fn (k e)
+                   (<hl>report-error k e))
+                 f)))))
+(= <hl>send
+   (fn (pid msg) (<common>send pid msg)))
+(= <hl>recv
+   (fn () (<common>recv)))
+(= <hl>try-recv
+   (fn (pass fail) (<common>try-recv pass fail)))
+(= <hl>my-pid
+   (fn () (<common>my-pid)))
+
+

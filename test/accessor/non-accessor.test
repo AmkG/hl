@@ -1,0 +1,8 @@
+
+(<bc>closure 0
+  (<bc>halt))
+(<bc>accessor-ref)
+(<bc>halt)
+
+;^nil$
+

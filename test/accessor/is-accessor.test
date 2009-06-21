@@ -1,0 +1,27 @@
+
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>local 2)
+  (<bc>local 3)
+  (<bc>accessor)
+  (<bc>local 4)
+  (<bc>accessor-ref)
+  (<bc>local 3)
+  (<bc>is)
+  (<bc>continue))
+(<bc>k-closure 0
+  (<bc>halt))
+(<bc>closure 0
+  (<bc>check-vars 3)
+  (<bc>car)
+  (<bc>continue))
+(<bc>closure 0
+  (<bc>check-vars 4)
+  (<bc>local 3)
+  (<bc>local 2)
+  (<bc>scar)
+  (<bc>continue))
+(<bc>apply 4)
+
+;^t$
+

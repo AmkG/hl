@@ -63,18 +63,5 @@
      (<axiom>self-pid)))
 
 
-; these functions are portable across machines
-
-(= <hl>spawn
-   (fn (f) (<common>spawn f)))
-(= <hl>send
-   (fn (pid msg) (<common>send pid msg)))
-(= <hl>recv
-   (fn () (<common>recv)))
-(= <hl>try-recv
-   (fn (pass fail) (<common>try-recv pass fail)))
-(= <hl>my-pid
-   (fn () (<common>my-pid)))
-
 
 

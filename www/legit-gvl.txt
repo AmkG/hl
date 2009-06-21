@@ -128,10 +128,18 @@ function without any additional protection.
         (example))) ; call-w/gvl in (example) will act like 'do
 
 In order to determine if the current process already owns the
-GVL, the implementation may use a slot in the `process-locals`
-table provided by the Common Layer.  Attempting to replace the
-process-locals table while within the execution context of this
-function will result in undefined behavior.
+GVL, the implementation uses the `<common>gvl-acquired` slot in
+the `process-locals` table provided by the Common Layer.  This
+slot is set to a true value when te current process already owns
+the GVL.
+
+Attempting to replace the process-locals table while within the
+execution context of this function will result in undefined
+behavior.  For example, an implementation may retain a reference
+to the table before passing control to the given user function;
+if the given function subsequently replaces the entire
+process-locals table, the implementation and the user function
+will end up using different tables.
 
 `w/gvl` Macro
 -------------
