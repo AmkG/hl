@@ -150,7 +150,6 @@
                            ; arc2c counts the function code as closure.0
                            ; snap does not, so convert closure.N to
                            ; (closure (- N 1))
-                           (<bc>debug-cont-call)
                            (<bc>continue-on-clos ,(- ((cadr k!subx) 'val) 1))))
                     ; check if current function is a continuation and
                     ; if we need to create a continuation for this
@@ -190,10 +189,8 @@
                       ; now check if return value is a variable reference
                       (let (k rv) params
                         (if (and (aref rv) (~aglobal rv!var))
-                            `( (<bc>debug-cont-call)
-                               (<bc>continue-local ,(env rv!var)))
+                            `( (<bc>continue-local ,(env rv!var)))
                             `( ,@(bytecodegen rv env)
-                               (<bc>debug-cont-call)
                                (<bc>continue))))
                     ; ordinary apply
                        ; NOTE! assumes that subexpressions here cannot

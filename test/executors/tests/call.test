@@ -1,12 +1,3 @@
-(<bc>int 1)
-(<bc>k-closure 0
-  (<bc>halt))
-(<bc>apply 2)
-
-;^Error
-
-; *** calling a cons
-
 (<bc>closure 0
   (<bc>check-vars 4)
   (<bc>local 2)
