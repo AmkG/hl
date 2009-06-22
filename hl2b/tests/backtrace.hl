@@ -52,12 +52,14 @@
   (h n)
   (g 2))
 
-(def <hl>default-handler* (bt)
+(def my-handler (bt)
   (map1 (<axiom>lambda (f) 
           (<axiom>debug-bytecode-info (<axiom>car (<axiom>disclose f))))
         bt))
 
 >stop-host-eval
+
+(<axiom>err-handler-set my-handler)
 
 ; uncomment one of the following to get an error
 

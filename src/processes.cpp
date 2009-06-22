@@ -320,9 +320,9 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		Object::ref halt_bytecode = 
 			Assembler::inline_assemble(*this, "(<bc>check-vars 2) (<bc>halt)");
 		k->codereset(halt_bytecode);
-		Object::ref handler = global_read(symbols->lookup("<hl>default-handler*"));
-		stack.push(handler);
+		stack.push(err_handler_slot);
 		stack.push(Object::to_ref(k));
+		// TODO: pass error message in a HlString
 		history.to_list(*this);
 		stack.restack(3);
 		// reset history
@@ -331,4 +331,3 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		return process_running;
 	}
 }
-
