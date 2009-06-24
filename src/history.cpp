@@ -16,14 +16,22 @@ void History::reset() {
 
 void History::enter(Object::ref clos) {
 	inner_ring i(breadth);
-	i.push_back(clos);
+	Item it;
+	it.clos = clos;
+	i.push_back(it);
 	ring.push_back(i);
 	// ?? for some reason, after insertion capacity must be set again
 	ring.rbegin()->set_capacity(breadth);
 }
 
 void History::enter_tail(Object::ref clos) {
- 	ring.rbegin()->push_back(clos);
+	Item i;
+	i.clos = clos;
+ 	ring.rbegin()->push_back(i);
+}
+
+void History::push_arg(Object::ref arg) {
+	ring.rbegin()->rbegin()->args.push_back(arg);
 }
 
 void History::leave() {
@@ -32,13 +40,26 @@ void History::leave() {
 	}
 }
 
+// returned list is of type
+// ((functon arg1 ... argn) ...)
 void History::to_list(Process & proc) {
+	ProcessStack & s = proc.stack;
 	size_t count = 0; // number of elements in the history
 	int sz = ring.size();
 	for (outer_ring::iterator i = ring.begin()+sz-1; sz>0; --i, --sz) {
 		int sz = i->size();
 		for (inner_ring::iterator j = i->begin()+sz-1; sz>0; --j, --sz) {
-			proc.stack.push(*j);
+			// build inner list
+			int nelem = 1 + j->args.size(); // +1 for clos
+			s.push(j->clos);
+			for (std::vector<Object::ref>::iterator k = j->args.begin(); 
+					 k != j->args.end(); ++k) {
+				s.push(*k);
+			}
+			s.push(Object::nil());
+			for (int i=0; i<nelem; ++i) {
+				bytecode_cons(proc, s);
+			}
 			count++;
 		}
 	}
@@ -54,7 +75,12 @@ void History::traverse(GenericTraverser *gt) {
 	for (outer_ring::iterator i = ring.begin()+sz-1; sz>0; --i, --sz) {
 		int sz = i->size();
 		for (inner_ring::iterator j = i->begin()+sz-1; sz>0; --j, --sz) {
-			gt->traverse(*j);
+			gt->traverse(j->clos);
+			// traverse args
+			for (std::vector<Object::ref>::iterator k = j->args.begin(); 
+					 k != j->args.end(); ++k) {
+				gt->traverse(*k);
+			}
 		}
 	}
 }

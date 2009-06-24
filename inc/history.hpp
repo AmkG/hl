@@ -6,16 +6,23 @@
 #define BOOST_CB_DISABLE_DEBUG
 
 #include <boost/circular_buffer.hpp>
+#include <vector>
 
 class Process;
 class GenericTraverser;
-#include <iostream>
+
 /*
  * Keep the history of the last function calls
  */
 class History {
 private:
-	typedef boost::circular_buffer<Object::ref> inner_ring;
+	class Item {
+	public:
+		Object::ref clos; // registered function
+		std::vector<Object::ref> args; // args passed to function
+	};
+
+	typedef boost::circular_buffer<Item> inner_ring;
 	typedef boost::circular_buffer<inner_ring> outer_ring;
 	outer_ring ring;
 	size_t breadth;
@@ -31,6 +38,9 @@ public:
 
 	// record a function call in tail position
 	void enter_tail(Object::ref clos);
+
+	// record an argument for the current function call
+	void push_arg(Object::ref arg);
 
 	// record a function return (i.e. a continuation call)
 	void leave();

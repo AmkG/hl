@@ -49,12 +49,15 @@
 
 (def a (n)
   (+ n 2)
-  (h n)
+  (h (list 1 2))
   (g 2))
 
 (def my-handler (bt)
-  (map1 (<axiom>lambda (f) 
-          (<axiom>debug-bytecode-info (<axiom>car (<axiom>disclose f))))
+  (map1 (<axiom>lambda (info)
+          (<axiom>cons
+            (<axiom>debug-bytecode-info 
+              (<axiom>car (<axiom>disclose (<axiom>car info))))
+            (<axiom>cdr info)))
         bt))
 
 >stop-host-eval
@@ -65,5 +68,5 @@
 
 ;(a 10)
 ;(h 10)
-;(rec 3)
-(r-2 20)
+(rec 3)
+;(r-2 20)
