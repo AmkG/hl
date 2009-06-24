@@ -52,13 +52,14 @@
   (h (list 1 2))
   (g 2))
 
-(def my-handler (bt)
-  (map1 (<axiom>lambda (info)
-          (<axiom>cons
-            (<axiom>debug-bytecode-info 
-              (<axiom>car (<axiom>disclose (<axiom>car info))))
-            (<axiom>cdr info)))
-        bt))
+(def my-handler (msg bt)
+  (<axiom>cons msg
+    (map1 (<axiom>lambda (info)
+            (<axiom>cons
+              (<axiom>debug-bytecode-info 
+                (<axiom>car (<axiom>disclose (<axiom>car info))))
+              (<axiom>cdr info)))
+          bt)))
 
 >stop-host-eval
 

@@ -160,6 +160,7 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
     Float *f;
     Cons *c;
 		Closure *l;
+		HlString *str;
     if (f = dynamic_cast<Float*>(g)) {
       out.setf(std::ios::showpoint);
       out << f->get();
@@ -179,6 +180,8 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
         out << " . " << r << ")";
     } else if (l = dynamic_cast<Closure*>(g)) {
 			out << "#<fn>";
+		} else if (str = maybe_type<HlString>(obj)) {
+			out << '"' << str->to_cpp_string() << '"';
 		} else {
 	    std::string name = as_a<Symbol*>(type(obj))->getPrintName();
 	    out << "#<" << name << ">";

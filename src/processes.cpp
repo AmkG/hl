@@ -322,9 +322,11 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		k->codereset(halt_bytecode);
 		stack.push(err_handler_slot);
 		stack.push(Object::to_ref(k));
-		// TODO: pass error message in a HlString
+		// pass error message in a HlString
+		HlString::from_cpp_string(*this, stack, h.err_str());
+		// history info
 		history.to_list(*this);
-		stack.restack(3);
+		stack.restack(4);
 		// reset history
 		history.reset();
 		history.enter(stack[0]);
