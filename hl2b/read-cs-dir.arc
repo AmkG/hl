@@ -37,7 +37,7 @@
 
 ; returns a list of all expressions
 (def read-cs-dir ()
-  (w/collect:each f (list-cs-files)
+  (w/collect:each f (sort < (list-cs-files))
     (with (context (cxt)
            eof     (uniq)
            e       ())
