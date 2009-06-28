@@ -1,0 +1,92 @@
+; full fn syntax
+
+; TODO: add package declarations
+
+(def arg-name (a) a!name)
+(def arg-type (a) a!type)
+(def arg-expr (a) a!expr)
+
+(def caddr (x) (cadr:cdr x))
+
+(def mk-arg (name expr type)
+  (listtab (list (list 'name name) (list 'expr expr) (list 'type type))))
+
+; make destructuring arg
+(def mk-darg (name expr)
+  (mk-arg name expr 'dest))
+
+; destructure argument
+(def des-arg (a gs pos)
+  (if 
+    (isa a 'sym)
+      (list (mk-darg a (list pos gs)))
+    (acons a)
+      (let gs-2 (if (is pos 'top) gs (uniq))
+        (join (if (is pos 'top)
+                nil 
+                (list (mk-darg gs-2 (list pos gs))))
+              (des-arg (car a) gs-2 '<axiom>car)
+              (if (cdr a) 
+                (des-arg (cdr a) gs-2 '<axiom>cdr)
+                nil)))
+    (no a)
+      nil
+    (err:string "Can't destructure: " a)))
+
+; is x an optional arguments?
+(def is-opt (x)
+  (and (acons x) (is (car x) 'o)))
+
+(def collect-args (args)
+  (if
+    (no args)
+      nil
+    (and args (no (acons args))) ; rest arg
+      (list (mk-arg args nil 'rest))
+    (isa (car args) 'sym)
+      (cons (mk-arg (car args) nil 'simple)
+            (collect-args (cdr args)))
+    (is-opt (car args))
+      (let o (car args)
+        (cons (mk-arg (cadr o) (caddr o) 'opt)
+              (collect-args (cdr args))))
+    (acons (car args))
+      (let name (uniq)
+        (cons (mk-arg name (des-arg (car args) name 'top) 'dest)
+              (collect-args (cdr args))))
+    (err:string "Unknow arg type:" args)))
+
+(def expand-args (args body)
+  ((afn (args a-rest) ; auxiliary rest parameter name (for optional args)
+     (if args
+       (let a (car args)
+         (case (arg-type a)
+            simple (self (cdr args) a-rest)
+            rest (self (cdr args) a-rest)
+            opt (let a-rest (or a-rest (uniq))
+                  `((let ,(arg-name a) (if (<axiom>cdr ,a-rest)
+                                         ; rest arg specified
+                                         (<axiom>car ,a-rest)
+                                         ; not specified, use default
+                                         ,(arg-expr a))
+                      ; advance auxiliary rest arg by one
+                      ,@(self (cdr args) `(<axiom>cdr ,a-rest)))))
+            dest `((withs ,(mappend (fn (loc) 
+                                      `(,(arg-name loc) ,(arg-expr loc)))
+                                    (arg-expr a))
+                     ,@(self (cdr args) a-rest)))
+            (err:string "Unknown arg: " a)))
+       body))
+   args nil))
+
+(def args->lambda-list (args)
+ ; TODO...
+ args)
+
+(def expand-fn (arglist body)
+  (let args (collect-args arglist)
+    `(<axiom>lambda ,(args->lambda-list args)
+       ,@(expand-args args body))))
+
+(mac <hl>fn (args . body)
+  (expand-fn args body))
