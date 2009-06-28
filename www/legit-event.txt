@@ -237,7 +237,7 @@ A message composed of a `cons`-cell list of three element
 `'<common>remove-event`, `src-pid`, and `event` requests that
 the specified event be removed from The Event Set.  In
 response, the Central Event Process will send a two-element
-`cons`-cell list copmosed of `(event retval)` to `src-pid` when
+`cons`-cell list composed of `(event retval)` to `src-pid` when
 it has handled the removal of the event, where `retval` is `t`
 if the event was removed, or `nil` if it was not removed (for
 example if the event has already triggered).
