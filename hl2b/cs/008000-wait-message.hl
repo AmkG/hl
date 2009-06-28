@@ -18,7 +18,9 @@
   ; - fns must be a cons-cell list of
   ;   true functions (using callable
   ;   objects results in unspecified
-  ;   behavior).
+  ;   behavior.  using other sequence
+  ;   types results in unspecified
+  ;   behavior.).
   ; - each function is a unary function.
   ;   The function accepts a potential
   ;   message for matching.  If the
@@ -91,6 +93,9 @@
           (<common>proc-locals)
           nil)))
    (<common>check-messages fns)))
+
+(def (<common>handle-message fns)
+  ((<common>wait-message fns)))
 
 (def (<impl>find-match m fns)
   ((fn (curfn next)
