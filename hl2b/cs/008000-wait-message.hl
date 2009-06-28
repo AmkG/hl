@@ -94,6 +94,9 @@
           nil)))
    (<common>check-messages fns)))
 
+(def (<common>handle-message fns)
+  ((<common>wait-message fns)))
+
 (def (<impl>find-match m fns)
   ((fn (curfn next)
      ((fn (match)
