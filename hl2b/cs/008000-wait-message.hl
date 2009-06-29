@@ -30,17 +30,41 @@
   ; - returns a nullary function, or nil.
   ; - pending messages are kept on the
   ;   process-local <common>mailbox
-  ((fn (pl check-loop try-loop)
+  ((fn (pl first-check check-loop try-loop)
+     (= first-check
+        (fn ()
+          ((fn (msgs)
+             (if msgs
+                 ((fn (match)
+                    (if match
+                        ((fn ()
+                           ; remove from mailbox
+                           (<axiom>table-sref
+                             pl
+                             (cdr msgs)
+                             '<common>mailbox)
+                           match))
+                        ((fn (n)
+                           (if n
+                               (check-loop msgs n)
+                               (try-loop)))
+                         (cdr msgs))))
+                  (<impl>check-message-find-match (car msgs) fns))
+                 (try-loop)))
+           (<axiom>table-ref pl '<common>mailbox))))
      (= check-loop
-        (fn (msgs)
-          ((fn (match msgs)
+        (fn (msgs n)
+          ((fn (match nn)
              (if match
-                 match
-                 (if msgs
-                     (check-loop msgs)
+                 ((fn ()
+                    ; remove it from the mailbox
+                    (<axiom>scdr msgs nn)
+                    match))
+                 (if nn
+                     (check-loop n nn)
                      nil)))
-           (<impl>find-match (car msgs) fns)
-           (cdr msgs))))
+           (<impl>check-message-find-match (car n) fns)
+           (cdr n))))
      (= try-loop
         (fn ()
           (try-recv
@@ -55,13 +79,13 @@
                           (cons m (<axiom>table-ref pl '<common>mailbox))
                           '<common>mailbox)
                         (try-loop)))))
-               (<impl>find-match m fns)))
+               (<impl>check-message-find-match m fns)))
             (fn () nil))))
      ((fn (match1)
         (if match1
             match1
             (try-loop)))
-      (check-loop (<axiom>table-ref pl '<common>mailbox))))
+      (first-check)))
    (<common>proc-locals)
    nil
    nil))
@@ -87,7 +111,7 @@
                                 (cons m (<axiom>table-ref pl '<common>mailbox))
                                 '<common>mailbox)
                               (wait-loop)))))
-                     (<impl>find-match m fns)))
+                     (<impl>check-message-find-match m fns)))
                   (recv))))
             (wait-loop))
           (<common>proc-locals)
@@ -97,13 +121,13 @@
 (def (<common>handle-message fns)
   ((<common>wait-message fns)))
 
-(def (<impl>find-match m fns)
+(def (<impl>check-message-find-match m fns)
   ((fn (curfn next)
      ((fn (match)
         (if match
             match
             (if next
-                (<impl>find-match m next)
+                (<impl>check-message-find-match m next)
                 nil)))
       (curfn m)))
    (car fns)
