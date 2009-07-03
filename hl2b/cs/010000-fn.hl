@@ -1,6 +1,9 @@
 ; full fn syntax
 
-; TODO: add package declarations
+; TODO: add proper package declarations
+
+(in-package full-fn)
+;(using <arc>v3)
 
 (def arg-name (a) a!name)
 (def arg-type (a) a!type)
@@ -56,15 +59,18 @@
               (collect-args (cdr args))))
     (err:string "Unknow arg type:" args)))
 
-(def expand-args (args body)
+(def expand-args (args body rest-arg)
   ((afn (args a-rest) ; auxiliary rest parameter name (for optional args)
      (if args
        (let a (car args)
          (case (arg-type a)
             simple (self (cdr args) a-rest)
-            rest (self (cdr args) a-rest)
+            rest (if (and a-rest (no (is a-rest (arg-name a)))) 
+                   `((let ,(arg-name a) ,a-rest
+                      ,@(self (cdr args) a-rest)))
+                    (self (cdr args) a-rest))
             opt (let a-rest (or a-rest (uniq))
-                  `((let ,(arg-name a) (if (<axiom>cdr ,a-rest)
+                  `((let ,(arg-name a) (if ,a-rest
                                          ; rest arg specified
                                          (<axiom>car ,a-rest)
                                          ; not specified, use default
@@ -77,16 +83,30 @@
                      ,@(self (cdr args) a-rest)))
             (err:string "Unknown arg: " a)))
        body))
-   args nil))
+   args rest-arg))
 
-(def args->lambda-list (args)
- ; TODO...
- args)
+(def find-rest-arg-name (args)
+  (if (find [is (arg-type _) 'opt] args)
+    ; opt args require auxiliary rest arg
+    (uniq)
+    (aif (find [is (arg-type _) 'rest] args)
+      (arg-name it)
+      nil)))
+
+(def args->lambda-list (args rest-name)
+  ((afn (a)
+     (if (no a)
+       rest-name
+       (if (in (arg-type (car a)) 'opt 'rest)
+         (self (cdr a)) ; skip
+         (cons (arg-name (car a)) (self (cdr a))))))
+   args))
 
 (def expand-fn (arglist body)
-  (let args (collect-args arglist)
-    `(<axiom>lambda ,(args->lambda-list args)
-       ,@(expand-args args body))))
+  (withs (args (collect-args arglist)
+          rest-name (find-rest-arg-name args))
+    `(<axiom>lambda ,(args->lambda-list args rest-name)
+       ,@(expand-args args body rest-name))))
 
 (mac <hl>fn (args . body)
   (expand-fn args body))
