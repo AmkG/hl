@@ -1,0 +1,98 @@
+
+(in-package impl)
+(import <hl>def def)
+(import <axiom>is is)
+(import <axiom>type type)
+(import <axiom>cons cons)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>if if)
+(import <axiom>lambda fn)
+(import <axiom>quote quote)
+(import <axiom>set =)
+
+(def <impl>central-event-message-handler
+     (<hl>list
+       (fn (m)
+         (if (is (type m) '<hl>cons)
+             (if (is (car m) '<common>add-event)
+                 ((fn (m)
+                    (if (is (type m) '<hl>cons)
+                        ((fn (pid m)
+                           (if (is (type pid) '<hl>pid)
+                               (if (is (type m) '<hl>cons)
+                                   ((fn (ev m)
+                                      (if m nil
+                                            (if (is (type ev) '<hl>event)
+                                                (fn ()
+                                                  ; actual payload
+                                                  (<axiom>add-event ev)
+                                                  (<common>send pid (<hl>list ev)))
+                                                nil)))
+                                    (car m) (cdr m))
+                                   nil)
+                               nil))
+                         (car m) (cdr m))
+                        nil))
+                  (cdr m))
+                 (if (is (car m) '<common>remove-event)
+                     ((fn (m)
+                        (if (is (type m) '<hl>cons)
+                            ((fn (pid m)
+                               (if (is (type pid) '<hl>pid)
+                                   (if (is (type m) '<hl>cons)
+                                       ((fn (ev m)
+                                          (if m nil
+                                                (if (is (type ev) '<hl>event)
+                                                    (fn ()
+                                                      ; actual payload
+                                                      (<common>send pid (<hl>list ev (<axiom>remove-event ev))))
+                                                    nil)))
+                                        (car m) (cdr m))
+                                       nil)
+                                   nil))
+                             (car m) (cdr m))
+                            nil))
+                      (cdr m))
+                     nil))
+             nil))
+       ; this bit skips unrecognized messages.
+       (fn (m) (fn () nil))))
+
+(def <common>central-event
+     (<common>spawn
+       (fn ()
+         ((fn (main-loop handling-loop check-message-loop)
+            (= main-loop
+               (fn ()
+                 (<common>handle-message
+                   <impl>central-event-message-handler)
+                 (if (<axiom>empty-event-set)
+                     (main-loop)
+                     (handling-loop))))
+            (= handling-loop
+               (fn ()
+                 ; must get only-running flag first,
+                 ; before we go through the mailbox.
+                 ((fn (only-running)
+                    (check-message-loop)
+                    (if only-running
+                        (<axiom>event-wait)
+                        (<axiom>event-poll))
+                    (if (<axiom>empty-event-set)
+                        (main-loop)
+                        (handling-loop)))
+                  (<axiom>only-running))))
+            (= check-message-loop
+               (fn ()
+                 ((fn (thunk)
+                    (if thunk
+                        ((fn ()
+                           (thunk)
+                           (check-message-loop)))
+                        nil))
+                  (<common>check-messages
+                    <impl>central-event-message-handler))))
+            (main-loop))
+          nil nil nil))))
+
