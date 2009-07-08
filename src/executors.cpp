@@ -182,6 +182,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k), ARG_INT)
       ("<bc>apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
+      ("<bc>arg-dispatch",	THE_BYTECODE_LABEL(arg_dispatch), ARG_INT)
       ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
       ("<bc>bounded",		THE_BYTECODE_LABEL(bounded))
       /*these implement the actual bytecodes <bc>closure, <bc>k-closure,
@@ -511,6 +512,23 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         bytecode_<&cdr>(stack);
       }
       stack.pop();
+      /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
+    BYTECODE(arg_dispatch): {
+      /* implements dispatching based on
+       * number of hl-side arguments.
+       * Given 0 to (N-2) arguments,
+       * passes to the corresponding
+       * function in the current
+       * closure.  For (N-1) or more
+       * arguments, passes to the last
+       * function in the current
+       * closure.
+       */
+      INTPARAM(N);
+      size_t as = stack.size() - 2;
+      if(as > N - 1) as = N - 1;
+      stack[0] = (*clos)[as];
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     BYTECODE(b_ref): {
