@@ -225,10 +225,9 @@ inline Object::ref io_fsync(Process& host, Object::ref proc, Object::ref port) {
 
 inline Object::ref io_listener(Process& host, Object::ref proc, Object::ref port) {
 	#ifdef DEBUG
-		expect_type<HlIOPort>(
-			port,
-			"listener: expected an I/O port for port"
-		);
+		if(!is_a<int>(port)) {
+			throw_HlError("listener: expected an integer for I/O port number");
+		}
 	#endif
 	boost::shared_ptr<ProcessInvoker> pi = create_process_invoker(proc);
 	try {
