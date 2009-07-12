@@ -1,0 +1,95 @@
+
+(in-package impl)
+(import <hl>def def)
+; three-arg-form only
+(import <axiom>if if)
+; single symbol assigment form only
+(import <axiom>set =)
+(import <axiom>cons cons)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+; no destructuring
+(import <axiom>lambda fn)
+(import <axiom>tag tag)
+(import <axiom>type type)
+(import <axiom>rep rep)
+(import <common>spawn spawn)
+(import <common>check-messages check-messages)
+(import <common>wait-message wait-message)
+(import <common>handle-message handle-message)
+(import <hl>list list)
+(import <hl>polymorph polymorph)
+(import <hl>err-throw err)
+
+(def (<common>port-wrap ob name)
+  (tag '<hl>port
+       (<impl>port-wrap-proc ob name)))
+
+(def (<impl>port-wrap-proc ob name)
+  ; on error, all replies become (==> pid tid e k)
+  ; ('writeb pid tid b)
+  ;   (==> pid tid)
+  ;   - write a byte
+  ; ('writec pid tid c)
+  ;   (==> pid tid)
+  ;   - write a character
+  ; ('writes pid tid s)
+  ;   (==> pid tid)
+  ;   - write a string
+  ; ('readb pid tid)
+  ;   (==> pid tid b)
+  ;   - reads a byte
+  ; ('unreadb pid tid b)
+  ;   (==> pid tid)
+  ;   - pushes back a byte into the buffer
+  ; ('readc pid tid)
+  ;   (==> pid tid b)
+  ;   - reads a character
+  ; ('unreadc pid tid c)
+  ;   (==> pid tid)
+  ;   - pushes back a character into the buffer
+  ; ('close pid tid)
+  ;   (==> pid tid)
+  ;   - calls (<hl>close ob)
+  ; ('flush pid tid)
+  ;   (==> pid tid)
+  ;   - flushes the write buffer
+  ; ('fsync pid tid)
+  ;   (==> pid tid)
+  ;   - flushes the write buffer, then calls
+  ;     (<hl>fsync ob)
+  ; ('info pid tid)
+  ;   (==> pid tid name line-number)
+  ;   - returns the given filename during
+  ;     construction, and the current
+  ;     line-number.
+  ;   - never errors.
+  ;   - name could be whatever the given
+  ;     name was at construction (i.e.
+  ;     any object).
+  (spawn
+    ((fn (self handlers ln)
+       ; ln = line number
+       (= handlers
+          (list
+            (polymorph
+              (fn (m) nil)
+              '(<hl>cons)
+              (fn (m)
+                ()))))
+       (= self
+          (fn ()
+            (handle-message handlers)
+            (self)))
+       self)
+     nil nil 1)))
+
+(def (<hl>port-wrap ob . rest)
+  ((fn (name)
+     (<common>port-wrap ob name))
+   (if rest
+       (if (cdr rest)
+           (err (tag '<hl>apply "too many arguments"))
+           (car rest))
+       nil)))
+
