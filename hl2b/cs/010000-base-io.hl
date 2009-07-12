@@ -55,7 +55,16 @@
      (handle-i/o (<axiom>i/o-read (my-pid) p 512)))
 
    (defm (<hl>i/o-put (t p <hl>ioport) b)
-     (handle-i/o (<axiom>i/o-write (my-pid) p b)))
+     ((fn (rv)
+         ; the write event can return
+         ; a smaller binary object,
+         ; indicating that it was unable
+         ; to write the given
+         ; object completely
+         (if rv
+             (<hl>i/o-put p rv)
+             nil))
+       (handle-i/o (<axiom>i/o-write (my-pid) p b))))
 
    (defm (<hl>accept (t p <hl>ioport))
      (handle-i/o (<axiom>i/o-accept (my-pid) p)))
