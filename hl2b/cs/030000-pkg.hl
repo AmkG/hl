@@ -1,0 +1,42 @@
+; implementation of packages, ported from the scheme version in hl-arc-f
+
+(in-package pkg)
+(use-package <hl>v1)
+
+(interface v1)
+
+; create a new empty package
+(def (pkg name)
+  (tag 'pkg (list 
+              (table) ; mapping: unpackaged symbol -> symbol 
+              (table) ; mapping: packaged interface symbol -> 
+                      ;          list of interface members
+              name)))
+
+(def (apkg x)
+  (isa x 'pkg))
+
+; mapping: package name symbol -> package object
+(def pkgs* (table))
+
+; t if s is a symbol with explicit package name
+(def (pkg-sym s)
+  (and (asym s)
+       (pkg-str (string s))))
+
+(def (pkg-str s)
+  (and (> (len s) 2)
+       (is (s 0) #\<)
+       (find #\> (cut s 1))))
+
+; get symbol without package
+(def (unpkg s)
+  (if (pkg-sym s)
+    (cut s (+ (find #\> s) 1))
+    s))
+
+; get package name of symbol
+(def (pkg-of s)
+  (if (pkg-sym s)
+    (cut s 1 (fund #\> s))))
+
