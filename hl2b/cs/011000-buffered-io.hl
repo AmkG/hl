@@ -1,2 +1,102 @@
-()
+
+(in-package impl)
+(import <hl>def def)
+(import <axiom>tag tag)
+(import <axiom>type type)
+(import <axiom>rep rep)
+(import <hl>table table)
+(import <axiom>if if)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <hl>with with)
+(import <hl>err err)
+(import <hl>defm defm)
+(import <hl>let let)
+(import <hl>withs withs)
+(import <hl>do do)
+(import <axiom>is is)
+
+(import <axiom>table-ref ref)
+(import <axiom>table-sref sref)
+(import <axiom>b-ref bref)
+(import <axiom>i+ +)
+(import <axiom>i< <)
+
+(def (<common>buffered-port-wrap ob name)
+  (tag '<hl>buffered-port
+       (table
+         '<hl>object                            ob
+         '<hl>name                              name
+         ; number of 10's (newlines) encountered in
+         ; input byte stream
+         '<hl>line-number                       nil
+         ; number of 13's (returns) encountered in
+         ; input byte stream
+         '<hl>mac-line-number                   nil
+         ; read buffer stream
+         '<hl>unread-buff                       nil
+         '<hl>read-buff                         nil
+         '<hl>read-ind                          nil
+         '<hl>read-len                          nil
+         ; write buffer stream
+         '<hl>write-head                        nil
+         '<hl>write-tail                        nil
+         '<hl>write-len                         0)))
+
+(def (<hl>buffered-port-wrap ob . rest)
+  (if rest
+      (with (name (car rest)
+             ex   (cdr rest))
+        (if ex
+            (err '<hl>apply "too many arguments")
+            (<common>buffered-port-wrap ob name)))
+      ; no given name...
+      (<common>buffered-port-wrap ob nil)))
+
+(def (<hl>readb p)
+  (err '<hl>type "attempt to read from a non-port-like object"))
+
+(defm (<hl>readb (t p <hl>buffered-port))
+  (withs (tb   (rep p)
+          unr  (ref tb '<hl>unread-buff))
+    (if unr
+        (with (rv    (car unr)
+               unr+1 (cdr unr))
+          (sref tb unr+1 '<hl>unread-buff)
+          rv)
+        (let rb (ref tb '<hl>read-buff)
+          (if rb
+              (withs (ind     (ref tb '<hl>read-ind)
+                      ind+1   (+ ind 1)
+                      len     (ref tb '<hl>read-len)
+                      rv      (bref rb ind))
+                ; consumed buffer?
+                (if (< ind+1 len)
+                    ; not yet - replace index
+                    (sref tb ind+1 '<hl>read-ind)
+                    ; yes - drop read buffer
+                    (sref tb nil '<hl>read-buff))
+                rv)
+              ; no read-buffer: try to read
+              (let nrb (<hl>i/o-get (ref tb '<hl>object))
+                (if nrb
+                    ; got something - check that it's
+                    ; a binobj
+                    (if (if (is (type nrb) '<hl>binobj)
+                            (is (rep nrb) nrb) ; not tagged?
+                            nil)
+                        (let len (<axiom>b-len nrb)
+                          (if (< len 1)
+                              ; length 0 or worse... treat as eof
+                              nil
+                                  ; load buffer, then restart!
+                              (do (sref tb 0   '<hl>read-ind)
+                                  (sref tb len '<hl>read-len)
+                                  (sref tb nrb '<hl>read-buff)
+                                  ; restart
+                                  (<hl>readb p))))
+                        ; not really a binobj - fail!
+                        (err '<hl>type "contract violation, i/o-get returned non-binobj"))
+                    nil)))))))
+
 
