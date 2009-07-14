@@ -1,0 +1,30 @@
+
+(in-package impl)
+(import <hl>def def)
+(import <hl>let let)
+(import <axiom>set =)
+(import <axiom>if if)
+(import <hl>with with)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+
+(let table-loop nil
+  (= table-loop
+     (fn (rv rest)
+       (if rest
+           (with (k  (car rest)
+                  vs (cdr rest))
+             (if vs
+                 (with (v     (car vs)
+                        nrest (cdr vs))
+                   (<axiom>table-sref rv v k)
+                   (table-loop rv nrest))
+                 rv))
+           rv)))
+  (def (<hl>table . rest)
+    (let rv (<axiom>table-create)
+      (if rest
+          (table-loop rv rest)
+          rv))))
+
+
