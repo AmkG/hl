@@ -29,10 +29,10 @@
          '<hl>name                              name
          ; number of 10's (newlines) encountered in
          ; input byte stream
-         '<hl>line-number                       nil
+         '<hl>line-number                       1
          ; number of 13's (returns) encountered in
          ; input byte stream
-         '<hl>mac-line-number                   nil
+         '<hl>mac-line-number                   1
          ; read buffer stream
          '<hl>unread-buff                       nil
          '<hl>read-buff                         nil
@@ -56,47 +56,56 @@
 (def (<hl>readb p)
   (err '<hl>type "attempt to read from a non-port-like object"))
 
-(defm (<hl>readb (t p <hl>buffered-port))
-  (withs (tb   (rep p)
-          unr  (ref tb '<hl>unread-buff))
-    (if unr
-        (with (rv    (car unr)
-               unr+1 (cdr unr))
-          (sref tb unr+1 '<hl>unread-buff)
-          rv)
-        (let rb (ref tb '<hl>read-buff)
-          (if rb
-              (withs (ind     (ref tb '<hl>read-ind)
-                      ind+1   (+ ind 1)
-                      len     (ref tb '<hl>read-len)
-                      rv      (bref rb ind))
-                ; consumed buffer?
-                (if (< ind+1 len)
-                    ; not yet - replace index
-                    (sref tb ind+1 '<hl>read-ind)
-                    ; yes - drop read buffer
-                    (sref tb nil '<hl>read-buff))
-                rv)
-              ; no read-buffer: try to read
-              (let nrb (<hl>i/o-get (ref tb '<hl>object))
-                (if nrb
-                    ; got something - check that it's
-                    ; a binobj
-                    (if (if (is (type nrb) '<hl>binobj)
-                            (is (rep nrb) nrb) ; not tagged?
-                            nil)
-                        (let len (<axiom>b-len nrb)
-                          (if (< len 1)
-                              ; length 0 or worse... treat as eof
-                              nil
-                                  ; load buffer, then restart!
-                              (do (sref tb 0   '<hl>read-ind)
-                                  (sref tb len '<hl>read-len)
-                                  (sref tb nrb '<hl>read-buff)
-                                  ; restart
-                                  (<hl>readb p))))
-                        ; not really a binobj - fail!
-                        (err '<hl>type "contract violation, i/o-get returned non-binobj"))
-                    nil)))))))
-
+(let inner-readb nil
+  (= inner-readb
+     (fn (tb)
+       (let unr (ref tb '<hl>unreadb-buff)
+         (if unr
+             (with (rv    (car unr)
+                    unr+1 (cdr unr))
+               (sref tb unr+1 '<hl>unread-buff)
+               rv)
+             (let rb (ref tb '<hl>read-buff)
+               (if rb
+                   (withs (ind     (ref tb '<hl>read-ind)
+                           ind+1   (+ ind 1)
+                           len     (ref tb '<hl>read-len)
+                           rv      (bref rb ind))
+                     ; consumed buffer?
+                     (if (< ind+1 len)
+                         ; not yet - replace index
+                         (sref tb ind+1 '<hl>read-ind)
+                         ; yes - drop read buffer
+                         (sref tb nil '<hl>read-buff))
+                     rv)
+                   ; no read-buffer: try to read
+                   (let nrb (<hl>i/o-get (ref tb '<hl>object))
+                     (if nrb
+                         ; got something - check that it's
+                         ; a binobj
+                         (if (if (is (type nrb) '<hl>binobj)
+                                 (is (rep nrb) nrb) ; not tagged?
+                                 nil)
+                             (let len (<axiom>b-len nrb)
+                               (if (< len 1)
+                                   ; length 0 or worse... treat as eof
+                                   nil
+                                       ; load buffer, then restart!
+                                   (do (sref tb 0   '<hl>read-ind)
+                                       (sref tb len '<hl>read-len)
+                                       (sref tb nrb '<hl>read-buff)
+                                       ; restart
+                                       (inner-readb tb))))
+                             ; not really a binobj - fail!
+                             (err '<hl>type "contract violation, i/o-get returned non-binobj"))
+                         nil))))))))
+  (defm (<hl>readb (t p <hl>buffered-port))
+    (withs (tb (rep p)
+            rv (inner-readb tb))
+      (if (is rv 10)
+          (sref tb (+ 1 (ref tb '<hl>line-number)) '<hl>line-number)
+          (if (is rv 13)
+              (sref tb (+ 1 (ref tb '<hl>mac-line-number)) '<hl>mac-line-number)
+              nil))
+      rv)))
 
