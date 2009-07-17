@@ -1,9 +1,38 @@
 ; implementation of packages, ported from the scheme version in hl-arc-f
 
-(in-package pkg)
-(use-package <hl>v1)
+(in-package impl)
+(using <hl>v1)
 
-(interface v1)
+; NOTES:
+; be very careful of the separation between
+; <hl> and <common> .  <common> cannot be
+; sent across machines.  <hl> can.  This
+; usually means that <hl> must be wrappers
+; that call <common>, because <common> must
+; be provided by all machines.
+;
+; (def (<common>foo x)
+;            ; implementation specific, so cannot
+;            ; be sent across machines.
+;   (let foo (<impl>foo)
+;     foo))
+; (def (<hl>foo x)
+;   ; call the implementation-specific
+;   ; function; all implementations should
+;   ; have it, but its contents will vary
+;   ; across implementations.
+;   (<common>foo x))
+
+; Differences in emitted code:
+;
+;  input                     arc-f output                        hl output
+; (in-package foo)                t                                  t
+; (using <foo>foo)                t                        (<hl>require "foo.hl")
+; (interface <foo>bar nitz)       t           (<hl>add-interface "foo" "bar" (list <foo>nitz))
+; (import <foo>bar nitz)          t                                  t
+;
+; in order to improve arc-compatibility in cs/ files, should probably
+; just use (in-package) and (import)
 
 ; create a new empty package
 (def (pkg-new name)

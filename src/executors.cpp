@@ -184,6 +184,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
       ("<bc>arg-dispatch",	THE_BYTECODE_LABEL(arg_dispatch), ARG_INT)
       ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
+      ("<bc>b-len",		THE_BYTECODE_LABEL(b_len))
       ("<bc>bounded",		THE_BYTECODE_LABEL(bounded))
       /*these implement the actual bytecodes <bc>closure, <bc>k-closure,
       <bc>k-closure-recreate, and <bc>k-closure-reuse.
@@ -539,6 +540,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(b_ref): {
       bytecode2_<&BinObj::bin_ref>( stack );
+    } NEXT_BYTECODE;
+    BYTECODE(b_len): {
+      bytecode_<&BinObj::bin_len>( stack );
     } NEXT_BYTECODE;
 	 BYTECODE(bounded): {
 		 bytecode_bounded(stack);
