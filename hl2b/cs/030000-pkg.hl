@@ -46,6 +46,9 @@
   (isa x 'pkg))
 
 ; mapping: package name symbol -> package object
+; UNRELIABLE.  Each process gets its own copy
+; of the table.  I suggest using a process
+; instead of a global variable.
 (def pkgs* (table))
 
 ; t if s is a symbol with explicit package name
@@ -119,9 +122,18 @@
 (def (iface-lookup s)
   (iface-of-pkg (the-pkg (pkg-of s)) s))
 
+; NOTE: contexts in hl need to keep track of
+; more than just the package.  In addition,
+; there is no facility to change the representation
+; of a tagged type - the tagged type is not mutable
+; by deliberate design choice.
 (def (mk-ctx)
-  (tag 'ctx (the-pkg "User")))
+  (tag '<hl>ctx
+    (table
+      '<hl>current-package (the-pkg "User"))))
 
 (def (actx x)
-  (isa x 'ctx))
+  nil)
+(defm (actx (t x <hl>actx))
+  t)
 
