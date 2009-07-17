@@ -6,7 +6,7 @@
 (interface v1)
 
 ; create a new empty package
-(def (pkg name)
+(def (pkg-new name)
   (tag 'pkg (list 
               (table) ; mapping: unpackaged symbol -> symbol 
               (table) ; mapping: packaged interface symbol -> 
@@ -39,4 +39,60 @@
 (def (pkg-of s)
   (if (pkg-sym s)
     (cut s 1 (fund #\> s))))
+
+(def (canonicalize-sym s)
+  (withs (ss (str s)
+          pm (pkg-str ss))
+    (if pm
+      ; check package
+      (with (pak (pkg-of s)
+             no-pkg (unpkg s))
+        (if (in no-pkg t nil) s
+            (is pak (sym "")) no-pkg ; <>x == x
+            s))
+      ; no special markings
+      s)))
+
+(def (canonicalize-all ex)
+  (if
+    (asym ex) (canonicalize-sym ex)
+    (acons ex) (cons (canonicalize-all (car ex))
+                     (canonicalize-all (cdr ex)))
+    ex))
+
+(def (the-pkg s)
+  (if (isa 'string s)
+    (if (or (pkg-str s) (find #\> s))
+      nil
+      (or (pkgs* (sym s))
+          (let pak (pkg-new s)
+            (= (pkgs* (sym s)) pak))))
+    nil))
+
+(def (pkg-ref pak s)
+  (if (asym s)
+    (if (pkg-sym s)
+      s
+      (let tb ((ref pak) 1)
+        (or (tb s)
+            (= (tb s) gen (sym (str #\< (pkg-of s) #\> s))))))
+    s))
+
+(def (pkg-sref pak packaged unpackaged)
+  (= (((rep pak) 1) unpackaged) packaged))
+
+(def (iface-of-pkg pak s)
+  ((iface-tbl-of-pkg pak) s))
+
+(def (iface-tbl-of-pkg pak)
+  ((rep pak) 2))
+
+(def (iface-lookup s)
+  (iface-of-pkg (the-pkg (pkg-of s)) s))
+
+(def (mk-ctx)
+  (tag 'ctx (the-pkg "User")))
+
+(def (actx x)
+  (isa x 'ctx))
 
