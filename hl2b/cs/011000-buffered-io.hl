@@ -8,6 +8,7 @@
 (import <axiom>if if)
 (import <axiom>car car)
 (import <axiom>cdr cdr)
+(import <axiom>cons cons)
 (import <hl>with with)
 (import <hl>err err)
 (import <hl>defm defm)
@@ -108,4 +109,53 @@
               (sref tb (+ 1 (ref tb '<hl>mac-line-number)) '<hl>mac-line-number)
               nil))
       rv)))
+
+(def (<hl>unreadb p b)
+  (err '<hl>type "attempt to unread into non-port-like object"))
+(def (<hl>writeb p b)
+  (err '<hl>type "attempt to write into non-port-like object"))
+(let byte-check
+     (polymorph
+       (fn (c e)
+         (err '<hl>type e))
+       '(<hl>int)
+       (fn (c e)
+         (if (< c 0)
+             (= c (+ c 256))
+             ())
+         (if (< c 0)
+             (err '<hl>value e)
+             (if (< 255 c)
+                 (err '<hl>value e)
+                 c))))
+  (defm (<hl>unreadb (t p <hl>buffered-port) b)
+    (withs (b   (byte-check b "invalid byte type or value in unread")
+            tb  (rep p)
+            unb (ref tb '<hl>unread-buff)
+            fallback
+            (fn ()
+              (sref tb (cons b unb) '<hl>unread-buff)))
+      (if unb
+          (fallback)
+          ; check if there's a read buffer, and the
+          ; previous byte is the same as the given b
+          ; - in such a case, we can just
+          ; decrement the index
+          ; (we do this to reduce consing)
+          (let rb (ref tb '<hl>read-buff)
+            (if rb
+                (let i   (ref tb '<hl>read-ind)
+                  (if (< i 1)
+                      ; at position zero anyway, so
+                      ; can't decrement any more
+                      (fallback)
+                      (withs (i-1 (- i 1)
+                              ob  (bref rb i-1))
+                        (if (is ob b)
+                            (sref tb i-1 '<hl>read-ind)
+                            (fallback)))))
+                (fallback)))))
+    b)
+  (defm (<hl>writeb (t p <hl>buffered-port) b)
+    ()))
 
