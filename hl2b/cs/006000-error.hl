@@ -9,17 +9,16 @@
 (import <axiom>cdr cdr)
 (import <axiom>cons cons)
 
-(def (<hl>err-throw k e)
-  ((<axiom>err-handler) k e))
+(def (<hl>err-throw e h)
+  ((<axiom>err-handler) e h))
 
 (def (<hl>err tp . rest)
-  (<hl>ccc
-    (fn (k)
-      (err-throw k
-        (if rest
-            (tag tp
-                 rest)
-            tp)))))
+  (err-throw
+    (if rest
+        (tag tp
+             rest)
+        tp)
+    (<axiom>get-history)))
 
 (def (<hl>on-err ef bf)
   ((fn (real-k errval)
@@ -32,8 +31,8 @@
             (<hl>dynamic-wind
               (fn ()
                 (<axiom>err-handler-set
-                  (fn (k e)
-                    (= errval (cons k e))
+                  (fn (e h)
+                    (= errval (cons e h))
                     (real-k t))))
               bf
               (fn ()

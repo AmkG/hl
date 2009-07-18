@@ -19,7 +19,7 @@
 (import <common>handle-message handle-message)
 (import <hl>list list)
 (import <hl>polymorph polymorph)
-(import <hl>err-throw err)
+(import <hl>err err)
 
 (def (<common>port-wrap ob name)
   (tag '<hl>port
