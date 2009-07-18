@@ -21,6 +21,7 @@
 (import <axiom>table-sref sref)
 (import <axiom>b-ref bref)
 (import <axiom>i+ +)
+(import <axiom>i- -)
 (import <axiom>i< <)
 
 (def (<common>buffered-port-wrap ob name)
@@ -135,6 +136,11 @@
             fallback
             (fn ()
               (sref tb (cons b unb) '<hl>unread-buff)))
+      (if (is b 10)
+          (sref tb (- (ref tb '<hl>line-number) 1) '<hl>line-number)
+          (if (is b 13)
+              (sref tb (- (ref tb '<hl>mac-line-number) 1) '<hl>mac-line-number)
+              ()))
       (if unb
           (fallback)
           ; check if there's a read buffer, and the
