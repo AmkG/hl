@@ -96,6 +96,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(event_poll)
 	A_BYTECODE(event_wait)
 	A_BYTECODE(f_to_i)
+	A_BYTECODE(get_history)
 	A_BYTECODE(global)
 	A_BYTECODE(global_set)
 	A_BYTECODE(halt)

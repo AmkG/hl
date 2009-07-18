@@ -230,6 +230,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
       ("<bc>event-wait",	THE_BYTECODE_LABEL(event_wait))
       ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
+			("<bc>get-history", THE_BYTECODE_LABEL(get_history))
       ("<bc>global",		THE_BYTECODE_LABEL(global), ARG_SYMBOL)
       ("<bc>global-set",		THE_BYTECODE_LABEL(global_set), ARG_SYMBOL)
       ("<bc>halt",		THE_BYTECODE_LABEL(halt))
@@ -836,6 +837,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(f_to_i): {
       bytecode_<&f_to_i>(stack);
     } NEXT_BYTECODE;
+		// get current history
+		BYTECODE(get_history): {
+			proc.history.to_list(proc);
+			SETCLOS(clos);
+		} NEXT_BYTECODE;
     BYTECODE(global): {
       SYMPARAM(S);
       bytecode_global(proc, stack, S);

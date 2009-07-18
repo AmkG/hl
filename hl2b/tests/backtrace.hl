@@ -52,14 +52,24 @@
   (h (list 1 2))
   (g 2))
 
+(def info-from-bt (bt)
+  (map1 (<axiom>lambda (info)
+          (<axiom>cons
+            (<axiom>debug-bytecode-info 
+              (<axiom>car (<axiom>disclose (<axiom>car info))))
+            (<axiom>cdr info)))
+        bt))
+
 (def my-handler (msg bt)
-  (<axiom>cons msg
-    (map1 (<axiom>lambda (info)
-            (<axiom>cons
-              (<axiom>debug-bytecode-info 
-                (<axiom>car (<axiom>disclose (<axiom>car info))))
-              (<axiom>cdr info)))
-          bt)))
+  (<axiom>cons msg (info-from-bt bt)))
+
+(def fail ()
+  (<axiom>cons "Failure" (info-from-bt (<axiom>get-history))))
+
+(def will-fail (n)
+  (<axiom>if (<axiom>is n 0)
+    (fail)
+    (will-fail (<axiom>i- n 1))))
 
 >stop-host-eval
 
@@ -69,5 +79,6 @@
 
 ;(a 10)
 ;(h 10)
-(rec 3)
+;(rec 3)
 ;(r-2 20)
+(will-fail 6)
