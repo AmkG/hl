@@ -697,7 +697,7 @@ public:
 
 	static Object::ref bin_ref(Object::ref dat, Object::ref off) {
 		#ifdef DEBUG
-			expect_type<Cons>(
+			expect_type<BinObj>(
 				dat,
 				"b-ref: expected a binary object"
 			);
@@ -710,6 +710,18 @@ public:
 		#endif
 		return Object::to_ref<int>(
 			(*known_type<BinObj>(dat))[as_a<int>(off)]
+		);
+	}
+
+	static Object::ref bin_len(Object::ref dat) {
+		#ifdef DEBUG
+			expect_type<BinObj>(
+				dat,
+				"b-len: expected a binary object"
+			);
+		#endif
+		return Object::to_ref<int>(
+			known_type<BinObj>(dat)->size()
 		);
 	}
 

@@ -182,7 +182,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>apply-invert-k",	THE_BYTECODE_LABEL(apply_invert_k), ARG_INT)
       ("<bc>apply-k-release",	THE_BYTECODE_LABEL(apply_k_release), ARG_INT)
       ("<bc>apply-list",	THE_BYTECODE_LABEL(apply_list), ARG_INT)
+      ("<bc>arg-dispatch",	THE_BYTECODE_LABEL(arg_dispatch), ARG_INT)
       ("<bc>b-ref",		THE_BYTECODE_LABEL(b_ref))
+      ("<bc>b-len",		THE_BYTECODE_LABEL(b_len))
       ("<bc>bounded",		THE_BYTECODE_LABEL(bounded))
       /*these implement the actual bytecodes <bc>closure, <bc>k-closure,
       <bc>k-closure-recreate, and <bc>k-closure-reuse.
@@ -209,7 +211,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>check-vars",	       THE_BYTECODE_LABEL(check_vars), ARG_INT)
       ("<bc>closure-ref",	      THE_BYTECODE_LABEL(closure_ref), ARG_INT)
       ("<bc>composeo",		THE_BYTECODE_LABEL(composeo))
-      ("<bc>composeo-continuation",  THE_BYTECODE_LABEL(composeo_continuation))
       ("<bc>cons",		THE_BYTECODE_LABEL(cons))
       ("<bc>const-ref",     THE_BYTECODE_LABEL(const_ref), ARG_INT)
       ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
@@ -347,7 +348,14 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     symbols->lookup("<impl>ccc-fn-body")->
       set_value(Assembler::inline_assemble(proc, "(<bc>check-vars 3) (<bc>continue-on-clos 0)"));
     symbols->lookup("<impl>composeo-cont-body")->
-      set_value(Assembler::inline_assemble(proc, "(<bc>composeo-continuation ) (<bc>continue)"));
+      set_value(Assembler::inline_assemble(proc,
+        "(<bc>check-vars 2) "
+        "(<bc>closure-ref 0) "
+        "(<bc>closure-ref 1) "
+        "(<bc>local 1) "
+        "(<bc>apply-k-release 3) "
+        )
+      );
 
     return process_dead;
   }
@@ -520,8 +528,28 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.pop();
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
+    BYTECODE(arg_dispatch): {
+      /* implements dispatching based on
+       * number of hl-side arguments.
+       * Given 0 to (N-2) arguments,
+       * passes to the corresponding
+       * function in the current
+       * closure.  For (N-1) or more
+       * arguments, passes to the last
+       * function in the current
+       * closure.
+       */
+      INTPARAM(N);
+      size_t as = stack.size() - 2;
+      if(as > N - 1) as = N - 1;
+      stack[0] = (*clos)[as];
+      /***/ DOCALL(); /***/
+    } NEXT_BYTECODE;
     BYTECODE(b_ref): {
       bytecode2_<&BinObj::bin_ref>( stack );
+    } NEXT_BYTECODE;
+    BYTECODE(b_len): {
+      bytecode_<&BinObj::bin_len>( stack );
     } NEXT_BYTECODE;
 	 BYTECODE(bounded): {
 		 bytecode_bounded(stack);
@@ -657,20 +685,12 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       // !! increased lock contention
       kclos.codereset(proc.global_read(symbols->lookup("<impl>composeo-cont-body")));
       // clos is now invalid
-      /*continuation*/
-      kclos[0] = stack[1];
       /*next function*/
-      kclos[1] = stack.top(); stack.pop();
+      kclos[0] = stack.top(); stack.pop();
+      /*continuation*/
+      kclos[1] = stack[1];
       stack[1] = Object::to_ref(&kclos);
       // this will revalidate clos
-      /***/ DOCALL(); /***/
-    } NEXT_BYTECODE;
-    BYTECODE(composeo_continuation): {
-      stack.push((*clos)[1]);
-      stack.push((*clos)[0]);
-      stack.push(stack[1]);
-      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
-      stack.restack(3);
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     BYTECODE(cons): {

@@ -1,0 +1,189 @@
+
+(in-package impl)
+(import <hl>def def)
+(import <hl>defm defm)
+(import <hl>err err)
+(import <axiom>quote quote)
+(import <axiom>is is)
+(import <axiom>type type)
+(import <hl>send send)
+(import <hl>recv recv)
+(import <hl>my-pid my-pid)
+(import <hl>list list)
+(import <axiom>cons cons)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>lambda fn)
+; use only variable assignment form
+(import <hl>set =)
+; use only 3-arg form
+(import <axiom>if if)
+
+(def (<hl>base-infile f)
+  (err '<hl>type "'infile expects a string for filename"))
+(def (<hl>base-outfile f)
+  (err '<hl>type "'outfile expects a string for filename"))
+(def (<hl>base-appendfile f)
+  (err '<hl>type "'appendfile expects a string for filename"))
+(def (<hl>i/o-get f)
+  (err '<hl>type "'i/o-get expects an I/O port"))
+(def (<hl>i/o-put f)
+  (err '<hl>type "'i/o-put expects an I/O port"))
+(def (<hl>close p)
+  (err '<hl>type "'close expects an I/O port"))
+(def (<hl>fsync p)
+  (err '<hl>type "'fsync expects an I/O port"))
+(def (<hl>base-listener pn)
+  (err '<hl>type "'listener expects a port number"))
+(def (<hl>sleep m)
+  (err '<hl>type "'sleep expects an integer for time"))
+(def (<hl>system c)
+  (err '<hl>type "'system expects a string for command"))
+
+((fn (handle-i/o)
+
+   (defm (<hl>base-infile (t f <hl>string))
+     (handle-i/o (<axiom>i/o-infile (my-pid) f)))
+
+   (defm (<hl>base-outfile (t f <hl>string))
+     (handle-i/o (<axiom>i/o-outfile (my-pid) f))))
+
+   (defm (<hl>base-appendfile (t f <hl>string))
+     (handle-i/o (<axiom>i/o-appendfile (my-pid) f))))
+
+   (defm (<hl>i/o-get (t p <hl>ioport))
+     (handle-i/o (<axiom>i/o-read (my-pid) p 512)))
+
+   (defm (<hl>i/o-put (t p <hl>ioport) b)
+     ((fn (rv)
+         ; the write event can return
+         ; a smaller binary object,
+         ; indicating that it was unable
+         ; to write the given
+         ; object completely
+         (if rv
+             (<hl>i/o-put p rv)
+             nil))
+       (handle-i/o (<axiom>i/o-write (my-pid) p b))))
+
+   (defm (<hl>accept (t p <hl>ioport))
+     (handle-i/o (<axiom>i/o-accept (my-pid) p)))
+
+   (def (<hl>connect h pn)
+     (handle-i/o (<axiom>i/o-connect (my-pid) h pn)))
+
+   (defm (<hl>close (t p <hl>ioport))
+     (<axiom>close p))
+
+   (defm (<hl>fsync (t p <hl>ioport))
+     (handle-i/o (<axiom>fsync (my-pid) p)))
+
+   (defm (<hl>sleep (t m <hl>int))
+     (handle-i/o (<axiom>sleep (my-pid) m)))
+   (defm (<hl>sleep (t m <hl>float))
+     (<hl>sleep (<axiom>f-to-i m)))
+
+   (defm (<hl>system (t c <hl>string))
+     (handle-i/o (<axiom>system (my-pid) c)))
+
+ ; must be wrapped, can't use <impl> -
+ ; I/O functions must be portable across
+ ; machines (err, why?)
+
+ ; handle-i/o
+ (<hl>polymorph
+   (fn (ob)
+     ob)
+   '(<hl>i/o)
+   (fn (e)
+     (err e))
+   '(<hl>event)
+   ((fn (add-event remove-event wait-event)
+      (fn (ev)
+        ((fn (done result)
+           (dynamic-wind
+             (fn ()
+               (add-event ev))
+             (fn ()
+               (= result (wait-event ev))
+               (= done t))
+             (fn ()
+               (if done
+                   nil
+                   ; something aborted the operation
+                   (remove-event ev))))
+           result)
+         nil nil)))
+    ; add-event
+    ; - adds an event to the central event process
+    (fn (ev)
+      (send <common>central-event
+            (list '<common>add-event
+                  (my-pid)
+                  ev))
+      (<common>handle-message
+        (list
+          (<hl>polymorph
+            (fn (m) nil)
+            '(<hl>cons)
+            (fn (m)
+              (if (if (is (car m) ev)
+                      (is (cdr m) nil)
+                      nil)
+                  (fn ()
+                    ())
+                  nil))))))
+    ; remove-event
+    ; - removes the event from the central event process
+    (fn (ev)
+      (send <common>central-event
+        (list '<common>remove-event
+              (my-pid)
+              ev))
+      (<common>handle-message
+        (list
+          (<hl>polymorph
+            (fn (m) nil)
+            '(<hl>cons)
+            (fn (m)
+              ((fn (ma md)
+                 (if (if (is ma ev)
+                         (if (is (type md) '<hl>cons)
+                             (is (cdr md) nil)
+                             nil)
+                         nil)
+                     (if (car m)
+                         ; successfully removed
+                         (fn () nil)
+                         ; unsuccessfully removed...
+                         ; probably completed before
+                         ; we could remove it.
+                         (fn ()
+                           ; clear its message from the
+                           ; queue, maybe only...
+                           (<common>check-messages ; not sure if completed, so...
+                             (list
+                               (<hl>polymorph
+                                 (fn (m) nil)
+                                 '(<hl>cons)
+                                 (fn (m)
+                                   (if (is (car m) ev)
+                                       (fn () nil)
+                                       nil)))))))
+                     nil))
+               (car m)
+               (cdr m)))))))
+    ; wait-event
+    ; - waits for an event to be done.
+    (fn (ev)
+      (<common>handle-message
+        (list
+          (<hl>polymorph
+            (fn (m) nil)
+            '(<hl>cons)
+            (fn (m)
+              (if (is (car m) ev)
+                  (fn ()
+                    (cdr m))
+                  nil)))))))))
+

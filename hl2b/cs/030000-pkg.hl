@@ -1,0 +1,139 @@
+; implementation of packages, ported from the scheme version in hl-arc-f
+
+(in-package impl)
+(using <hl>v1)
+
+; NOTES:
+; be very careful of the separation between
+; <hl> and <common> .  <common> cannot be
+; sent across machines.  <hl> can.  This
+; usually means that <hl> must be wrappers
+; that call <common>, because <common> must
+; be provided by all machines.
+;
+; (def (<common>foo x)
+;            ; implementation specific, so cannot
+;            ; be sent across machines.
+;   (let foo (<impl>foo)
+;     foo))
+; (def (<hl>foo x)
+;   ; call the implementation-specific
+;   ; function; all implementations should
+;   ; have it, but its contents will vary
+;   ; across implementations.
+;   (<common>foo x))
+
+; Differences in emitted code:
+;
+;  input                     arc-f output                        hl output
+; (in-package foo)                t                                  t
+; (using <foo>foo)                t                        (<hl>require "foo.hl")
+; (interface <foo>bar nitz)       t           (<hl>add-interface "foo" "bar" (list <foo>nitz))
+; (import <foo>bar nitz)          t                                  t
+;
+; in order to improve arc-compatibility in cs/ files, should probably
+; just use (in-package) and (import)
+
+; create a new empty package
+(def (pkg-new name)
+  (tag 'pkg (list 
+              (table) ; mapping: unpackaged symbol -> symbol 
+              (table) ; mapping: packaged interface symbol -> 
+                      ;          list of interface members
+              name)))
+
+(def (apkg x)
+  (isa x 'pkg))
+
+; mapping: package name symbol -> package object
+; UNRELIABLE.  Each process gets its own copy
+; of the table.  I suggest using a process
+; instead of a global variable.
+(def pkgs* (table))
+
+; t if s is a symbol with explicit package name
+(def (pkg-sym s)
+  (and (asym s)
+       (pkg-str (string s))))
+
+(def (pkg-str s)
+  (and (> (len s) 2)
+       (is (s 0) #\<)
+       (find #\> (cut s 1))))
+
+; get symbol without package
+(def (unpkg s)
+  (if (pkg-sym s)
+    (cut s (+ (find #\> s) 1))
+    s))
+
+; get package name of symbol
+(def (pkg-of s)
+  (if (pkg-sym s)
+    (cut s 1 (fund #\> s))))
+
+(def (canonicalize-sym s)
+  (withs (ss (str s)
+          pm (pkg-str ss))
+    (if pm
+      ; check package
+      (with (pak (pkg-of s)
+             no-pkg (unpkg s))
+        (if (in no-pkg t nil) s
+            (is pak (sym "")) no-pkg ; <>x == x
+            s))
+      ; no special markings
+      s)))
+
+(def (canonicalize-all ex)
+  (if
+    (asym ex) (canonicalize-sym ex)
+    (acons ex) (cons (canonicalize-all (car ex))
+                     (canonicalize-all (cdr ex)))
+    ex))
+
+(def (the-pkg s)
+  (if (isa 'string s)
+    (if (or (pkg-str s) (find #\> s))
+      nil
+      (or (pkgs* (sym s))
+          (let pak (pkg-new s)
+            (= (pkgs* (sym s)) pak))))
+    nil))
+
+(def (pkg-ref pak s)
+  (if (asym s)
+    (if (pkg-sym s)
+      s
+      (let tb ((ref pak) 1)
+        (or (tb s)
+            (= (tb s) gen (sym (str #\< (pkg-of s) #\> s))))))
+    s))
+
+(def (pkg-sref pak packaged unpackaged)
+  (= (((rep pak) 1) unpackaged) packaged))
+
+(def (iface-of-pkg pak s)
+  ((iface-tbl-of-pkg pak) s))
+
+(def (iface-tbl-of-pkg pak)
+  ((rep pak) 2))
+
+(def (iface-lookup s)
+  (iface-of-pkg (the-pkg (pkg-of s)) s))
+
+; NOTE: contexts in hl need to keep track of
+; more than just the package.  In addition,
+; there is no facility to change the representation
+; of a tagged type - the tagged type is not mutable
+; by deliberate design choice.
+(def (mk-ctx)
+  (tag '<hl>ctx
+    (table
+      '<hl>current-package (the-pkg "User"))))
+
+(def (actx x)
+  nil)
+(defm (actx (t x <hl>actx))
+  t)
+

@@ -1,0 +1,137 @@
+; message waiting framework
+
+(in-package impl)
+(import <hl>def def)
+(import <common>send send)
+(import <common>recv recv)
+(import <common>try-recv try-recv)
+(import <axiom>lambda fn)
+(import <axiom>if if)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>cons cons)
+
+(def (<common>check-messages fns)
+  ; <common>check-messages
+  ; - checks received messages without
+  ;   blocking.
+  ; - fns must be a cons-cell list of
+  ;   true functions (using callable
+  ;   objects results in unspecified
+  ;   behavior.  using other sequence
+  ;   types results in unspecified
+  ;   behavior.).
+  ; - each function is a unary function.
+  ;   The function accepts a potential
+  ;   message for matching.  If the
+  ;   message matches, it returns a
+  ;   nullary function, otherwise it
+  ;   returns nil.
+  ; - returns a nullary function, or nil.
+  ; - pending messages are kept on the
+  ;   process-local <common>mailbox
+  ((fn (pl first-check check-loop try-loop)
+     (= first-check
+        (fn ()
+          ((fn (msgs)
+             (if msgs
+                 ((fn (match)
+                    (if match
+                        ((fn ()
+                           ; remove from mailbox
+                           (<axiom>table-sref
+                             pl
+                             (cdr msgs)
+                             '<common>mailbox)
+                           match))
+                        ((fn (n)
+                           (if n
+                               (check-loop msgs n)
+                               (try-loop)))
+                         (cdr msgs))))
+                  (<impl>check-message-find-match (car msgs) fns))
+                 (try-loop)))
+           (<axiom>table-ref pl '<common>mailbox))))
+     (= check-loop
+        (fn (msgs n)
+          ((fn (match nn)
+             (if match
+                 ((fn ()
+                    ; remove it from the mailbox
+                    (<axiom>scdr msgs nn)
+                    match))
+                 (if nn
+                     (check-loop n nn)
+                     nil)))
+           (<impl>check-message-find-match (car n) fns)
+           (cdr n))))
+     (= try-loop
+        (fn ()
+          (try-recv
+            (fn (m)
+              ((fn (match)
+                 (if match
+                     match
+                     ((fn ()
+                        ; save it on the mailbox.
+                        (<axiom>table-sref
+                          pl
+                          (cons m (<axiom>table-ref pl '<common>mailbox))
+                          '<common>mailbox)
+                        (try-loop)))))
+               (<impl>check-message-find-match m fns)))
+            (fn () nil))))
+     ((fn (match1)
+        (if match1
+            match1
+            (try-loop)))
+      (first-check)))
+   (<common>proc-locals)
+   nil
+   nil))
+
+(def (<common>wait-message fns)
+  ; <common>wait-message
+  ; - similar to above, except it waits
+  ;   for a message if none is available.
+  ((fn (match1)
+     (if match1
+         match1
+         ((fn (pl wait-loop)
+            (= wait-loop
+               (fn ()
+                 ((fn (m)
+                    ((fn (match)
+                       (if match
+                           match
+                           ((fn ()
+                              ; save it on the mailbox
+                              (<axiom>table-sref
+                                pl
+                                (cons m (<axiom>table-ref pl '<common>mailbox))
+                                '<common>mailbox)
+                              (wait-loop)))))
+                     (<impl>check-message-find-match m fns)))
+                  (recv))))
+            (wait-loop))
+          (<common>proc-locals)
+          nil)))
+   (<common>check-messages fns)))
+
+(def (<common>handle-message fns)
+  ((<common>wait-message fns)))
+
+(def (<impl>check-message-find-match m fns)
+  ((fn (curfn next)
+     ((fn (match)
+        (if match
+            match
+            (if next
+                (<impl>check-message-find-match m next)
+                nil)))
+      (curfn m)))
+   (car fns)
+   (cdr fns)))
+
+
+
