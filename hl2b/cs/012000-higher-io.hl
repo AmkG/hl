@@ -26,7 +26,7 @@
        (<impl>port-wrap-proc ob name)))
 
 (def (<impl>port-wrap-proc ob name)
-  ; on error, all replies become (==> pid tid e k)
+  ; on error, all replies become (==> pid tid e h)
   ; ('writeb pid tid b)
   ;   (==> pid tid)
   ;   - write a byte
