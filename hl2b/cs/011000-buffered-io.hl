@@ -175,7 +175,7 @@
       (withs (b   (byte-check b "invalid byte type or value in write")
               tb  (rep p)
               ln  (ref tb '<hl>write-len))
-        (if (< 128 write-len)
+        (if (< 128 ln)
             (do (flush-core tb)
                 (= ln 0))
             ())
