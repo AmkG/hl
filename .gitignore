@@ -10,3 +10,4 @@ Makefile
 stamp-h1
 missing
 config.h
+.deps
