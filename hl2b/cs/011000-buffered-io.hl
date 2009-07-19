@@ -115,6 +115,8 @@
   (err '<hl>type "attempt to unread into non-port-like object"))
 (def (<hl>writeb p b)
   (err '<hl>type "attempt to write into non-port-like object"))
+(def (<hl>flush p b)
+  (err '<hl>type "attempt to flush non-port-like object"))
 (let byte-check
      (polymorph
        (fn (c e)
@@ -162,6 +164,34 @@
                             (fallback)))))
                 (fallback)))))
     b)
-  (defm (<hl>writeb (t p <hl>buffered-port) b)
-    ()))
+  (let flush-core
+       (fn (tb)
+         (let b (<axiom>l-to-b (ref tb '<hl>write-head))
+           (sref tb nil '<hl>write-head)
+           (sref tb nil '<hl>write-tail)
+           (sref tb 0   '<hl>write-len)
+           (<hl>i/o-put (ref tb '<hl>object) b)))
+    (defm (<hl>writeb (t p <hl>buffered-port) b)
+      (withs (b   (byte-check b "invalid byte type or value in write")
+              tb  (rep p)
+              ln  (ref tb '<hl>write-len))
+        (if (< 128 write-len)
+            (do (flush-core tb)
+                (= ln 0))
+            ())
+        ; append to list
+        (let hd (ref tb '<hl>write-head)
+          (if hd
+              (let tl (ref tb '<hl>write-tail)
+                (sref tb (<axiom>scdr tl (cons b nil)) '<hl>write-tail)
+              (sref tb (sref tb (cons b nil) '<hl>write-head) '<hl>write-tail))))
+        (sref tb (+ 1 ln) '<hl>write-len)
+        b))
+    (defm (<hl>flush (t p <hl>buffered-port))
+      (withs (tb (rep p)
+              hd (ref tb '<hl>write-head))
+        (if hd
+            (flush-core tb)
+            nil)
+        t))))
 
