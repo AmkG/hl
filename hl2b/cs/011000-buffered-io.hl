@@ -193,5 +193,21 @@
         (if hd
             (flush-core tb)
             nil)
-        t))))
+        t))
+    (defm (<hl>fsync (t p <hl>buffered-port))
+      (withs (tb (rep p)
+              ob (ref tb '<hl>object)
+              hd (ref tb '<hl>write-head))
+        (if hd
+            (flush-core tb)
+            nil)
+        (<hl>fsync ob)))
+    (defm (<hl>close (t p <hl>buffered-port))
+      (withs (tb (rep p)
+              ob (ref tb '<hl>object))
+        (if hd
+            (flush-core tb)
+            nil)
+        (<hl>close ob)))))
+
 
