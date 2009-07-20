@@ -130,10 +130,53 @@
 (def (mk-ctx)
   (tag '<hl>ctx
     (table
-      '<hl>current-package (the-pkg "User"))))
+      '<hl>cur-pkg (the-pkg "User"))))
 
-(def (actx x)
-  nil)
+(def (actx x) nil)
+
 (defm (actx (t x <hl>actx))
   t)
+
+(def (ctx-ref-reuse ctx ex)
+  (if (acons ex)
+    (if (ctx-meta (car ex))
+      (ctx-ref ctx ex)
+      (do 
+        (= (car ex) (ctx-ref-reuse-inner ctx (car ex)))
+        (= (cdr ex) (ctx-ref-reuse-inner ctx (cdr ex)))
+        ex))
+    (ctx-ref-reuse-inner ctx ex)))
+
+(def (ctx-ref-reuse-inner ctx ex)
+  (if 
+    (asym ex)
+      (if (ssyntax ex)
+        (ctx-ref-reuse-inner ctx (ssyntax-expand ex)) ; ??
+        (pkg-ref (pkf-of-ctx ctx) ex))
+    (acons ex)
+      (do 
+        (= (car ex) (ctx-ref-reuse-inner ctx (car ex)))
+        (= (cdr ex) (ctx-ref-reuse-inner ctx (cdr ex)))
+        ex)
+    ex))
+
+(def (ctx-meta head)
+  (in head 'in-package 'using 'import 'interface))
+
+(def (ctx-meta-compile ctx expr)
+  (let head (car expr)
+    (case head
+      in-package t
+      using `(let ctx (mk-ctx)
+               (ctx-ref ctx '(in-package ,(sym (pkg-name (pkg-of-ctx ctx)))))
+               (ctx-ref ctx '(using ,(cadr expr)))
+               t)
+      interface (withs (pak (pkg-of-ctx ctx)
+                        parms (map [if (acons _) 
+                                     (map [pkg-ref pak _] _)
+                                     (pkg-ref pkg a)]
+                                   (cdr expr)))
+                  `(let ctx (mk-ctx)
+                     (ctx-ref ctx ,@parms)))
+      import `(pkg-sref (the-pkg ,(pkg-name (pkg-of-ctx ctx))) ,(cdr expr)))))
 
