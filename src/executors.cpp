@@ -279,6 +279,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>send",		THE_BYTECODE_LABEL(send))
       ("<bc>sleep",		THE_BYTECODE_LABEL(sleep))
       ("<bc>spawn",		THE_BYTECODE_LABEL(spawn))
+      ("<bc>string-build",	THE_BYTECODE_LABEL(string_build))
       ("<bc>string-create",	THE_BYTECODE_LABEL(string_create), ARG_INT)
       ("<bc>string-length",		THE_BYTECODE_LABEL(string_length))
       ("<bc>string-ref",		THE_BYTECODE_LABEL(string_ref))
@@ -1237,6 +1238,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       // w.workqueue_push(spawned->process);
       Q = spawned->process; // next to run
 			return process_change;
+    } NEXT_BYTECODE;
+    BYTECODE(string_build): {
+      int N = as_a<int>(stack.top()); stack.pop();
+      bytecode_string_build( proc, stack, N );
+      SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack

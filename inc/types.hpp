@@ -249,6 +249,8 @@ public:
 
 	/*creates a string from the characters on stack.top(N) to stack.top(1)*/
 	static void stack_create(Heap& hp, ProcessStack& stack, size_t N);
+	/*creates a string of size N with null characters*/
+	static void length_create(Heap& hp, ProcessStack& stack, size_t N);
 	Object::ref type(void) const {
 		return Object::to_ref(symbol_string);
 	}

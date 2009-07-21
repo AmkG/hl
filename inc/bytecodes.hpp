@@ -411,6 +411,9 @@ inline void bytecode_fless(Process & p, ProcessStack & stack) {
 }
 
 /*consider whether this can be factored out*/
+inline void bytecode_string_build(Heap& hp, ProcessStack& stack, int N) {
+	HlString::length_create( hp, stack, N );
+}
 inline void bytecode_string_create(Heap& hp, ProcessStack& stack, int N) {
 	HlString::stack_create( hp, stack, N );
 }

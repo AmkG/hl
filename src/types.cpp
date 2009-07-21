@@ -101,6 +101,19 @@ void HlString::stack_create(Heap& hp, ProcessStack& stack, size_t N) {
 	Tp->impl = stack.top();
 	stack.top() = Object::to_ref(Tp);
 }
+void HlString::length_create(Heap& hp, ProcessStack& stack, size_t N) {
+	/*first, create the implementation*/
+	HlStringImpl* Sp = hp.create_variadic<HlStringImpl>(N);
+	for(size_t i = 0; i < N; ++i) {
+		/*fill with NUL characters*/
+		(*Sp)[i] = Object::to_ref(UnicodeChar((char)0));
+	}
+	/*save on the stack*/
+	stack.push(Object::to_ref(Sp));
+	HlString* Tp = hp.create<HlString>();
+	Tp->impl = stack.top();
+	stack.top() = Object::to_ref(Tp);
+}
 
 bool HlString::is(Object::ref o) const {
 	HlString* hs = maybe_type<HlString>(o);

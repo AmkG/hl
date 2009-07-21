@@ -146,6 +146,7 @@ DECLARE_BYTECODES
         A_BYTECODE(send)
         A_BYTECODE(sleep)
         A_BYTECODE(spawn)
+	A_BYTECODE(string_build)
 	A_BYTECODE(string_create)
 	A_BYTECODE(string_length)
 	A_BYTECODE(string_ref)
