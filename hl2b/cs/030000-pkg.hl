@@ -36,6 +36,10 @@
 
 ; create a new empty package
 (def (pkg-new name)
+  ; UNRELIABLE.  Each process gets
+  ; its own copy of the package.
+  ; I suggest using a process instead
+  ; of a plain tagged data structure.
   (tag 'pkg (list 
               (table) ; mapping: unpackaged symbol -> symbol 
               (table) ; mapping: packaged interface symbol -> 
@@ -80,7 +84,7 @@
       (with (pak (pkg-of s)
              no-pkg (unpkg s))
         (if (in no-pkg t nil) s
-            (is pak (sym "")) no-pkg ; <>x == x
+            (is pak (sym "")) no-pkg ; <>x == x, except for <>t and <>nil
             s))
       ; no special markings
       s)))
