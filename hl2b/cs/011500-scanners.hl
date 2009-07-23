@@ -1,0 +1,274 @@
+
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>mac mac)
+(import <hl>defm defm)
+(import <hl>let let)
+(import <hl>do do)
+(import <hl>with with)
+(import <hl>withs withs)
+
+(import <hl>w/collect w/collect)
+(import <hl>base-collect base-collect)
+(import <hl>base-each base-each)
+(import <hl>base-collect-on base-collect-on)
+
+(import <hl>list list)
+(import <hl>len len)
+(import <hl>polymorph polymorph)
+
+(import <hl>scanner scanner)
+(import <hl>unscan unscan)
+(import <hl>car car)
+(import <hl>cdr cdr)
+
+(import <hl>cons cons)
+(import <hl>string string)
+(import <hl>table table)
+(import <hl>bool bool)
+(import <hl>char char)
+
+(import <axiom>if if)
+(import <axiom>set =)
+(import <axiom>lambda fn)
+(import <axiom>i< <)
+(import <axiom>i+ +)
+(import <axiom>i- -)
+(import <axiom>is is)
+
+(import <hl>err err)
+
+(def (cons a b) (<axiom>cons a b))
+(def (base-collect bf)
+  (with (hd  nil
+         tl  nil)
+    (bf
+      (fn (i)
+        (if hd
+            (= tl (<axiom>scdr tl (<axiom>cons i nil)))
+            (= tl (= hd (<axiom>cons i nil))))
+        i))
+    hd))
+(mac (w/collect . rest)
+  ; `(symeval!base-collect (fn () ,@rest))
+  ; =>
+  ; `((symeval (quote base-collect)) (fn () ,@rest))
+  (list
+    (list '<axiom>symeval
+          (list 'quote
+                'base-collect))
+    (<axiom>cons
+      'fn
+      (<axiom>cons '()
+         rest))))
+
+(def (scanner s)
+  (err '<hl>type "can't convert to scanner sequence"))
+; scanners
+(defm (scanner (t s cons)) s)
+(defm (scanner (t s bool)) s)
+; sequences
+(let table-loop nil
+  (= table-loop
+     (fn (rv tb ks)
+       (if ks
+           (let k (<axiom>car ks)
+             (table-loop
+               (<axiom>cons
+                 (<axiom>cons k (<axiom>table-ref tb k))
+                 rv)
+               tb
+               (<axiom>cdr ks)))
+           rv)))
+  (defm (scanner (t s table))
+    (table-loop nil s (<axiom>table-keys s))))
+(let string-loop nil
+  (= string-loop
+     ; in the future we might prefer to
+     ; implement string pointers and use
+     ; those.
+     (fn (collect s i ln)
+       (if (< i ln)
+           (do (collect (<axiom>string-ref s i))
+               (string-loop s (+ i 1) ln))
+           ())))
+  (defm (scanner (t s string))
+    (base-collect
+      (fn (collect)
+        (string-loop s 0 (<axiom>string-length s))))))
+
+(def (unscan s scan)
+  (err '<hl>type "can't reconstitute from scanner sequence"))
+; scanners
+(defm (unscan (t s cons) scan) scan)
+(defm (unscan (t s bool) scan) scan)
+; sequences
+(with (table-loop nil
+       cons-check
+       (polymorph
+         (fn (c)
+           (err '<hl>type "can't unscan non-cons-cells into tables"))
+         '(cons)
+         (fn (c) c)))
+  (= table-loop
+     (fn (rv ps)
+       (if ps
+           (withs (p   (cons-check (car ps))
+                   k   (<axiom>car p)
+                   v   (<axiom>cdr p))
+             (<axiom>table-sref rv v k)
+             (table-loop rv (cdr ps)))
+           rv)))
+  (defm (unscan (t s table))
+    (table-loop (<axiom>table-create) s)))
+(with (string-loop nil
+       char-check
+       (polymorph
+         (fn (c)
+           (err '<hl>type "can't unscan non-characters into string"))
+         '(char)
+         (fn (c) c)))
+  (= string-loop
+     (fn (rv i cs)
+       (if cs
+           (do (<axiom>string-sref rv (char-check (car cs)) i)
+               (string-loop rv (+ i 1) (cdr cs)))
+           rv)))
+  (defm (unscan (t s string) scan)
+    (withs (ln (len scan)
+            rv (<axiom>string-build ln))
+      (string-loop rv 0 scan))))
+
+; redefinition of len
+(let len-loop nil
+  (= len-loop
+     (fn (s n)
+       (if s
+           (len-loop (cdr s) (+ n 1))
+           n)))
+  (= len
+     (fn (s)
+       (len-loop (scanner s) 0))))
+(defm (len (t s string))
+  (<axiom>string-length s))
+(defm (len (t s table))
+  (len (<axiom>table-keys s)))
+(defm (len (t s bool)) 0)
+
+(def (car s)
+  (err '<hl>type "attempt to get 'car of non-scanner"))
+(def (cdr s)
+  (err '<hl>type "attempt to get 'cdr of non-scanner"))
+; scanner
+(defm (car (t s bool)) nil)
+(defm (cdr (t s bool)) nil)
+(defm (car (t s cons)) (<axiom>car s))
+(defm (cdr (t s cons)) (<axiom>cdr s))
+
+; sequence traversal
+(with (each-loop nil
+       skip-loop nil)
+  (= each-loop
+     (fn (seq bf)
+       (if seq
+           (if (bf (car seq))
+               (each-loop (cdr seq) bf)
+               ())
+           ())))
+  (= skip-loop
+     (fn (seq skip bf)
+       (if (< 0 skip)
+           (skip-loop (cdr seq) (- skip 1) bf)
+           (each-loop seq bf))))
+  (def (base-each seq skip bf)
+    (skip-loop (scanner seq) skip bf)))
+; sequences
+(let string-loop nil
+  ; CHANGE-ON-STRING-POINTER
+  ; in the future, we might want to implement
+  ; string pointers, so that we won't have
+  ; an index here.
+  (= string-loop
+     (fn (s i ln bf)
+       (if (< i ln)
+           (if (bf (<axiom>string-ref s i))
+               (string-loop s (+ i 1) ln bf)
+               ())
+           ())))
+  (defm (base-each (t seq string) skip bf)
+    (string-loop seq skip (<axiom>string-length seq) bf)))
+(with (table-loop nil
+       skip-loop  nil)
+  (= table-loop
+     (fn (tb ks bf)
+       (if ks
+           (withs (k (<axiom>car ks)
+                   v (<axiom>table-ref tb k))
+             (if (bf (<axiom>cons k v))
+                 (table-loop tb (<axiom>cdr ks) bf)
+                 ()))
+           ())))
+  (= skip-loop
+     (fn (tb ks skip bf)
+       (if (< 0 skip)
+           (skip-loop tb (<axiom>cdr ks) (- skip 1) bf)
+           (table-loop tb ks bf))))
+  (defm (base-each (t seq table) skip bf)
+    (skip-loop seq (<axiom>table-keys seq) skip bf)))
+
+; sequence re-creation
+(def (base-collect-on seq bf)
+  (unscan seq (base-collect bf)))
+; sequence
+(with (char-check
+       (polymorph
+           (fn (c)
+             (err '<hl>type "can't collect non-characters into string"))
+           '(char)
+           (fn (c) c))
+       ; CHANGE-ON-STRING-BUILDER
+       string-reload
+       (fn (dst src i ln)
+         (if (is i ln)
+             dst
+             (do ()))))
+  ; CHANGE-ON-STRING-BUILDER
+  (defm (base-collect-on (t seq string) bf)
+    (withs (lno (<axiom>string-length seq)
+            ln  (if (< lno 1) 42 lno)
+            rv  (<axiom>string-build ln)
+            i   0)
+      (bf
+        (fn (c)
+          (let c (char-check c)
+            (if (is i ln)
+                (withs (nln (+ ln ln)
+                        nrv (<axiom>string-build nln))
+                  (string-reload nrv rv 0 ln)
+                  (= ln nln)
+                  (= rv nrv)
+                  (= i 0))
+                ())
+            (<axiom>string-sref rv c i)
+            (= i (+ i 1)))
+          c))
+      (if (is i ln)
+          rv
+          (let nrv (<axiom>string-build i)
+            (string-reload nrv rv 0 i))))))
+(let cons-check
+     (polymorph
+       (fn (c)
+         (err '<hl>type "can't collect non-cons-cell into table"))
+       '(<hl>cons)
+       (fn (c) c))
+  (defm (base-collect-on (t seq table) bf)
+    (let rv (<axiom>table-create)
+      (bf
+        (fn (c)
+          (let c (cons-check c)
+            (<axiom>table-sref rv (<axiom>car c) (<axiom>cdr c)))
+          c))
+      rv)))
+
