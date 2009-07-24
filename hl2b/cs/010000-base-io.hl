@@ -46,10 +46,10 @@
      (handle-i/o (<axiom>i/o-infile (my-pid) f)))
 
    (defm (<hl>base-outfile (t f <hl>string))
-     (handle-i/o (<axiom>i/o-outfile (my-pid) f))))
+     (handle-i/o (<axiom>i/o-outfile (my-pid) f)))
 
    (defm (<hl>base-appendfile (t f <hl>string))
-     (handle-i/o (<axiom>i/o-appendfile (my-pid) f))))
+     (handle-i/o (<axiom>i/o-appendfile (my-pid) f)))
 
    (defm (<hl>i/o-get (t p <hl>ioport))
      (handle-i/o (<axiom>i/o-read (my-pid) p 512)))
@@ -84,7 +84,7 @@
      (<hl>sleep (<axiom>f-to-i m)))
 
    (defm (<hl>system (t c <hl>string))
-     (handle-i/o (<axiom>system (my-pid) c)))
+     (handle-i/o (<axiom>system (my-pid) c))))
 
  ; must be wrapped, can't use <impl> -
  ; I/O functions must be portable across
