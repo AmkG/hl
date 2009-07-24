@@ -8,6 +8,6 @@ the last requirement is obviously temporary and will disappear in future version
 
 To run a program saved in a file, type (within this directory):
 
-  $ hl-arc-f compiler.arc your-file.hl
+  $ hl-arc-f bootstrap.arc your-file.hl
 
 if everything is ok, the result of the last expression will be printed.
