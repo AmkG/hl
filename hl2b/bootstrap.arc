@@ -81,7 +81,8 @@
     ; compile and run the program
     (<arc>w/infile in (<arc>argv 1)
       (= exprs* (<arc>readall in)))
-    (= exprs* (read-cs-dir)))
+    (do (= exprs* (read-cs-dir))
+        (= stop-host-eval* t)))
 
 (do
   (do
@@ -96,6 +97,7 @@
                        (<bc>local 1) 
                        (<bc>halt))
                     tmp)
+        (prn "pre-eval")
         (each expr exprs
           ; for each expression, we compile it & then eval it
           ; when bootstrapping evaluation is done in the host
@@ -105,12 +107,13 @@
           ; by the compiled code, during compilation only the last definition
           ; will be available. This shouldn't be a problem in practice.
           (if
-            (is expr (unpkg '>stop-host-eval))
+            (and (isa expr 'sym) (is (unpkg expr) (unpkg '>stop-host-eval)))
               (set stop-host-eval* t)
-            (is expr (unpkg '>start-host-eval))
+            (and (isa expr 'sym) (is (unpkg expr) (unpkg '>start-host-eval)))
               (set stop-host-eval* nil)
             (and bootstrap* (no stop-host-eval*))
               (<arc>eval (<compiler>macex expr))))
+        (prn "compile")
         (each bc (compile-to-bytecode prog)
           (prn bc) ; for debugging
           (<arc>write bc tmp)))))
