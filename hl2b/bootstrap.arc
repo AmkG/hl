@@ -22,23 +22,6 @@
               ; types
               int num char table string sym bool)
 
-(mac <hl>def (spec . rest)
-  (if
-    (acons spec)
-      `((<axiom>symeval '<common>call-w/gvl)
-         (<axiom>lambda ()
-           (<axiom>set ,(car spec)
-             ; should really be <hl>fn, but for now we use
-             ; <axiom>lambda
-             (<axiom>lambda ,(cdr spec)
-               ,@rest))))
-      `((<axiom>symeval '<common>call-w/gvl)
-         (<axiom>lambda ()
-           (<axiom>set ,spec
-             ,(car rest))))))
-
-(def <common>call-w/gvl (f) (f))
-
 (set <hl>unpkg <arc>unpkg)
 (set <hl>ssyntax <arc>ssyntax)
 (set <hl>pos <arc>pos)
@@ -75,7 +58,8 @@
 ; strictly, "compiled-and-executed-files"
 (set files* '("structs.hl" "bytecodegen.hl" 
               "quote-lift.hl" "utils.hl" "closures.hl" "cps.hl"
-              "sharedvars.hl"  "xe.hl" "macex.hl"))
+              "sharedvars.hl"  "xe.hl" "macex.hl"
+              "hl.arc"))
 ; need also *another* set of files for "compiled-only-but-not-executed-files"
 
 ; load all the files
