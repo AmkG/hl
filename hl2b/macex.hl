@@ -15,11 +15,12 @@
           e
         (and (isa op 'sym)
              (bound op)
-             (isa (<axiom>symeval op) '<hl>mac))
+             (or (isa (<axiom>symeval op) '<hl>mac)
+                 (isa (<axiom>symeval op) '<arc>mac)))
           ; we have a macro
           (let expander (rep (<axiom>symeval op))
             ; macros receives different args in hl and hl-arc-f
-            (if bootstrap*
+            (if (isa (<axiom>symeval op) '<arc>mac)
               (macex (apply expander (cdr e)))
               (macex (apply expander (table) (cdr e)))))
         ; a list
