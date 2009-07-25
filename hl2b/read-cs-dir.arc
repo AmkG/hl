@@ -37,11 +37,13 @@
 
 ; returns a list of all expressions
 (def read-cs-dir ()
-  (w/collect:each f (sort < (list-cs-files))
+  (w/collect:breakable:each f (sort < (list-cs-files))
     (with (context (cxt)
            eof     (uniq)
            e       ())
       (w/infile p f
         (while (isnt (= e (read p eof)) eof)
+          (if (is e unpkg!>stop-compiling)
+              (break t))
           (collect (context e)))))))
 
