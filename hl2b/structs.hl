@@ -93,7 +93,7 @@
              (<axiom>string-length 1) (<axiom>string-ref 2) 
              (<axiom>string-sref 3) (<axiom>sym 1) (<axiom>symeval 1) 
              (<axiom>table-create 0) (<axiom>table-ref 2) (<axiom>table-sref 3)
-             (<axiom>table-keys 1) (<axiom>tag 2) (<axiom>try-recv 0) 
+             (<axiom>table-keys 1) (<axiom>tag 2) (<axiom>try-recv 2)
              (<axiom>type 1) (<axiom>do-executor 1) (<axiom>i+ 2) (<axiom>i- 2)
              (<axiom>i* 2) (<axiom>i/ 2) (<axiom>imod 2) (<axiom>i< 2) 
              (<axiom>f+ 2) (<axiom>f- 2) (<axiom>f* 2) (<axiom>f/ 2) 
