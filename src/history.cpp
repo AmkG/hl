@@ -6,8 +6,7 @@
 
 History::History(size_t depth, size_t breadth) : 
 	ring(depth), breadth(breadth) {
-	ring.push_back(inner_ring());
-	ring.rbegin()->set_capacity(breadth);
+	ring.push_back(inner_ring(breadth));
 }
 
 void History::reset() {
