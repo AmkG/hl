@@ -46,6 +46,8 @@
 (in-package compiler)
 (using <hl>v0)
 
+(set <compiler>ppr-sexp prn)
+
 (interface v0 compile)
 
 ; this var tells if we are bootstrapping the compiler or not
@@ -117,6 +119,7 @@
         (prn "compile")
         (each bc (compile-to-bytecode prog)
           (prn bc) ; for debugging
-          (<arc>write bc tmp)))))
+          (<arc>write bc tmp)
+          (<arc>writec #\newline tmp)))))
   ; run the bytecode (only for testing, will be removed in the future)
   (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))
