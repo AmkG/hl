@@ -1,0 +1,29 @@
+
+Quick Install
+-------------
+
+To install `hl`, use the following commands:
+
+	./configure
+	make
+	sudo make install # and enter password
+
+Requirements
+------------
+
+`hl` requires the following libraries:
+
+1.  Boost C++ libraries
+    - High-quality C++ libraries
+    - from http://www.boost.org/
+    - known to compile from at least 1.35.0 upwards
+    - You can use the `--with-boost=/path/to/boost` option
+      to specify the path where you have extracted Boost:
+      e.g. `./configure --with-boost=~/packages/boost_1_35_0/`
+
+`hl` has been developed on a Linux environment, but we hope to
+have it portable across multiple operating systems, with priority
+for reasonably POSIX systems.  If it somehow doesn't compile,
+please consider it a bug for now.
+
+
