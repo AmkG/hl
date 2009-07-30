@@ -7,7 +7,7 @@
 (import <axiom>car car)
 (import <axiom>cdr cdr)
 (import <axiom>if if)
-(import <axiom>fn fn)
+(import <axiom>lambda fn)
 (import <axiom>is is)
 (import <axiom>type type)
 (import <axiom>table-sref table-sref)
