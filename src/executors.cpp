@@ -333,7 +333,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     assembler.reg<KClosureReuseAs>(symbols->lookup("<bc>k-closure-reuse"), 
                                       NULL);
     assembler.reg<IfAs>(symbols->lookup("<bc>if"), 
-                                      BYTECODE_LABEL(jmp_nil));
+                              THE_BYTECODE_LABEL(jmp_nil));
     assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL);
     assembler.reg<DbgInfoAs<&Bytecode::set_name> >(symbols->lookup("<bc>debug-name"), NULL);
     assembler.reg<DbgInfoAs<&Bytecode::set_line> >(symbols->lookup("<bc>debug-line"), NULL);
