@@ -190,7 +190,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       <bc>k-closure-recreate, and <bc>k-closure-reuse.
       */
       ("<bc>build-closure", THE_BYTECODE_LABEL(build_closure), ARG_INT, 
-			 NON_STD())
+         NON_STD())
       ("<bc>build-k-closure", THE_BYTECODE_LABEL(build_k_closure), ARG_INT,
          NON_STD() )
       ("<bc>build-k-closure-recreate",THE_BYTECODE_LABEL(build_k_closure_recreate),
@@ -216,10 +216,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue",		THE_BYTECODE_LABEL(b_continue))
       ("<bc>continue-local",	THE_BYTECODE_LABEL(continue_local), ARG_INT)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
-			("<bc>debug-backtrace", THE_BYTECODE_LABEL(debug_backtrace))
-			("<bc>debug-bytecode-info", THE_BYTECODE_LABEL(debug_bytecode_info))
-			("<bc>debug-call", THE_BYTECODE_LABEL(debug_call), ARG_INT)
-			("<bc>debug-tail-call", THE_BYTECODE_LABEL(debug_tail_call), ARG_INT)
+      ("<bc>debug-backtrace", THE_BYTECODE_LABEL(debug_backtrace))
+      ("<bc>debug-bytecode-info", THE_BYTECODE_LABEL(debug_bytecode_info))
+      ("<bc>debug-call", THE_BYTECODE_LABEL(debug_call), ARG_INT)
+      ("<bc>debug-tail-call", THE_BYTECODE_LABEL(debug_tail_call), ARG_INT)
       /*this implements <common>disclose*/
       // !! Could also be done as an Executor
       ("<bc>disclose", THE_BYTECODE_LABEL(disclose), NON_STD() )
@@ -230,7 +230,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
       ("<bc>event-wait",	THE_BYTECODE_LABEL(event_wait))
       ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
-			("<bc>get-history", THE_BYTECODE_LABEL(get_history))
+      ("<bc>get-history", THE_BYTECODE_LABEL(get_history))
       ("<bc>global",		THE_BYTECODE_LABEL(global), ARG_SYMBOL)
       ("<bc>global-set",		THE_BYTECODE_LABEL(global_set), ARG_SYMBOL)
       ("<bc>halt",		THE_BYTECODE_LABEL(halt))
@@ -331,9 +331,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     assembler.reg<KClosureRecreateAs>(symbols->lookup("<bc>k-closure-recreate"),
                                       NULL);
     assembler.reg<KClosureReuseAs>(symbols->lookup("<bc>k-closure-reuse"), 
-				   NULL);
+                                      NULL);
     assembler.reg<IfAs>(symbols->lookup("<bc>if"), 
-			THE_BYTECODE_LABEL(jmp_nil));
+                                      BYTECODE_LABEL(jmp_nil));
     assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL);
     assembler.reg<DbgInfoAs<&Bytecode::set_name> >(symbols->lookup("<bc>debug-name"), NULL);
     assembler.reg<DbgInfoAs<&Bytecode::set_line> >(symbols->lookup("<bc>debug-line"), NULL);
@@ -346,7 +346,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
      */
     symbols->lookup("<impl>reducto-cont-body")->
       set_value(Assembler::inline_assemble(proc, 
-				"(<bc>reducto-continuation) (<bc>continue)"));
+        "(<bc>reducto-continuation) (<bc>continue)"));
     symbols->lookup("<impl>ccc-fn-body")->
       set_value(Assembler::inline_assemble(proc, "(<bc>check-vars 3) (<bc>continue-on-clos 0)"));
     symbols->lookup("<impl>composeo-cont-body")->
@@ -553,20 +553,20 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_len): {
       bytecode_<&BinObj::bin_len>( stack );
     } NEXT_BYTECODE;
-	 BYTECODE(bounded): {
-		 bytecode_bounded(stack);
-	 } NEXT_BYTECODE;
-	 BYTECODE(build_closure): {
-		 INTPARAM(N);
-		 Closure* nclos = Closure::NewClosure(proc, N);
-		 nclos->codereset(stack.top()); stack.pop();
-		 SETCLOS(clos); // allocation may invalidate clos
-		 for(int i = N; i ; --i){
-			 (*nclos)[i - 1] = stack.top();
-			 stack.pop();
-		 }
-		 stack.push(Object::to_ref(nclos));
-	 } NEXT_BYTECODE;
+    BYTECODE(bounded): {
+      bytecode_bounded(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(build_closure): {
+      INTPARAM(N);
+      Closure* nclos = Closure::NewClosure(proc, N);
+      nclos->codereset(stack.top()); stack.pop();
+      SETCLOS(clos); // allocation may invalidate clos
+      for(int i = N; i ; --i){
+       (*nclos)[i - 1] = stack.top();
+       stack.pop();
+      }
+      stack.push(Object::to_ref(nclos));
+    } NEXT_BYTECODE;
     BYTECODE(build_k_closure): {
     k_closure_perform_create:
       INTPARAM(N);
@@ -581,10 +581,10 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(build_k_closure_recreate): {
       /*TODO: insert debug checking for is_a<Generic*> here*/
-			//      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
+      //      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       /*put a random object in stack[0]*/
       //stack[0] = stack[1];
-			// !! SETCLOS will fail!!
+      // !! SETCLOS will fail!!
       /****/ goto k_closure_perform_create; /****/
     } NEXT_BYTECODE;
     /*attempts to reuse the current
@@ -666,11 +666,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(check_vars): {
       INTPARAM(N);
       bytecode_check_vars(stack, N);
-			// register function args
-			// skip closure & continuation
-			for (int i = 2; i < N; ++i) {
-				proc.history.push_arg(stack[i]);
-			}
+      // register function args
+      // skip closure & continuation
+      for (int i = 2; i < N; ++i) {
+        proc.history.push_arg(stack[i]);
+      }
     } NEXT_BYTECODE;
     BYTECODE(closure_ref): {
       INTPARAM(N);
@@ -715,7 +715,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_continue): {
       stack.top(2) = stack[1];
       stack.restack(2);
-			proc.history.leave();
+      proc.history.leave();
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*
@@ -729,7 +729,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push(stack[N]);
       stack.top(2) = stack[1];
       stack.restack(2);
-			proc.history.leave();
+      proc.history.leave();
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*
@@ -745,32 +745,32 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*TODO: insert debug checking for is_a<Generic*> here*/
       attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(2);
-			proc.history.leave();
+      proc.history.leave();
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
-		// take a bytecode object from the stack
-		// leave a list holding (name file line) of the bytecode
-		BYTECODE(debug_bytecode_info): {
-			Bytecode *b = expect_type<Bytecode>(stack.top()); stack.pop();
-			b->info(proc);
-		} NEXT_BYTECODE;
-		// register a function call
-		// expect closure to register in stack.top(N)
-		BYTECODE(debug_call): {
-			INTPARAM(N);
-			proc.history.enter(stack.top(N));
-		} NEXT_BYTECODE;
-		// similar ro debug_call, but register a tail call
-		BYTECODE(debug_tail_call): {
-			INTPARAM(N);
-			proc.history.enter_tail(stack.top(N));
-		} NEXT_BYTECODE;
-		// leave a list of called closures on the stack
-		BYTECODE(debug_backtrace): {
-			proc.history.to_list(proc);
-			// to_list allocates memory
-			SETCLOS(clos);
-		} NEXT_BYTECODE;
+    // take a bytecode object from the stack
+    // leave a list holding (name file line) of the bytecode
+    BYTECODE(debug_bytecode_info): {
+      Bytecode *b = expect_type<Bytecode>(stack.top()); stack.pop();
+      b->info(proc);
+    } NEXT_BYTECODE;
+    // register a function call
+    // expect closure to register in stack.top(N)
+    BYTECODE(debug_call): {
+      INTPARAM(N);
+      proc.history.enter(stack.top(N));
+    } NEXT_BYTECODE;
+    // similar ro debug_call, but register a tail call
+    BYTECODE(debug_tail_call): {
+      INTPARAM(N);
+      proc.history.enter_tail(stack.top(N));
+    } NEXT_BYTECODE;
+    // leave a list of called closures on the stack
+    BYTECODE(debug_backtrace): {
+      proc.history.to_list(proc);
+      // to_list allocates memory
+      SETCLOS(clos);
+    } NEXT_BYTECODE;
     // take a closure, leave a list on the stack with
     // the bytecode object and the enclosed vars
     BYTECODE(disclose): {
@@ -784,14 +784,16 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
        if(sz > 0 && maybe_type<AccessorSlot>((*c)[sz - 1])) {
          --sz;
        }
-       for (int i = 0; i < sz; ++i)
-      	 stack.push((*c)[i]);
+       for (int i = 0; i < sz; ++i) {
+         stack.push((*c)[i]);
+       }
        // list's end
        stack.push(Object::nil());
        // build the list
        sz += 1; // for the bytecode object
-       for (int i = 0; i < sz; ++i)
-      	 bytecode_cons(proc, proc.stack);
+       for (int i = 0; i < sz; ++i) {
+         bytecode_cons(proc, proc.stack);
+       }
        // complete list is on the stack now
        SETCLOS(clos);
     } NEXT_BYTECODE;
@@ -804,15 +806,15 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       // unrolls vals in the stack
       size_t n = 0; // count number of values
       for (Object::ref lst = vals; maybe_type<Cons>(lst); lst = cdr(lst)) {
-      	stack.push(car(lst));
-      	n++;
+        stack.push(car(lst));
+        n++;
       }
       Closure* nclos = Closure::NewClosure(proc, n);
       SETCLOS(clos); // allocation may invalidate clos
       // enclose values
       for(int i = n; i; --i){
-      	(*nclos)[i - 1] = stack.top();
-      	stack.pop();
+        (*nclos)[i - 1] = stack.top();
+        stack.pop();
       }
       // get the bytecode
       Object::ref body = stack.top(); stack.pop();
@@ -838,11 +840,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(f_to_i): {
       bytecode_<&f_to_i>(stack);
     } NEXT_BYTECODE;
-		// get current history
-		BYTECODE(get_history): {
-			proc.history.to_list(proc);
-			SETCLOS(clos);
-		} NEXT_BYTECODE;
+    // get current history
+    BYTECODE(get_history): {
+      proc.history.to_list(proc);
+      SETCLOS(clos);
+    } NEXT_BYTECODE;
     BYTECODE(global): {
       SYMPARAM(S);
       bytecode_global(proc, stack, S);
@@ -1019,14 +1021,14 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(recv): {
       Object::ref msg;
       if (proc.mailbox().extract_message(msg)) {
-	//std::cerr<<"recv: "<<msg<<"\n";
+        //std::cerr<<"recv: "<<msg<<"\n";
         stack.push(stack[1]); // current continuation
         stack.push(msg);
         stack.restack(2);
         proc.maybe_clear_other_spaces();
         DOCALL();
       } else {
-	//std::cerr<<"recv: queue empty\n";
+        //std::cerr<<"recv: queue empty\n";
         // <bc>recv is always called in tail position
         // !! NOTE!  If Process::extract_message() above ever
         // !! returns false, we should not change anything in the
@@ -1203,9 +1205,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         return process_running;
       } else {
         // prepare the stack for the next call
-	stack.push(stack[1]); // push current continuation
-	stack.push(msg); // pass a meaningful value to continuation
-	stack.restack(2);
+        stack.push(stack[1]); // push current continuation
+        stack.push(msg); // pass a meaningful value to continuation
+        stack.restack(2);
         // was process waiting?
         if (is_waiting) {
           // let the process run
@@ -1221,11 +1223,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       SETCLOS(clos); // allocation may invalidate clos
     } NEXT_BYTECODE;
     // call current continuation, passing the pid of created process
-		// !! WARNING: <bc>spawn MUST be called WITHIN a closure NOT a
-		// !! continuation, since it expects current continuation in
-		// !! stack[1], not in stack[0]
+    // !! WARNING: <bc>spawn MUST be called WITHIN a closure NOT a
+    // !! continuation, since it expects current continuation in
+    // !! stack[1], not in stack[0]
     BYTECODE(spawn): {
-			AllWorkers &w = AllWorkers::getInstance();
+      AllWorkers &w = AllWorkers::getInstance();
       // create new process 
       HlPid *spawned = proc.spawn(stack.top()); stack.pop();
       // release cpu as soon as possible
@@ -1237,7 +1239,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       w.register_process(spawned->process);
       // w.workqueue_push(spawned->process);
       Q = spawned->process; // next to run
-			return process_change;
+      return process_change;
     } NEXT_BYTECODE;
     BYTECODE(string_build): {
       int N = as_a<int>(stack.top()); stack.pop();
@@ -1363,11 +1365,11 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(variadic): {
       INTPARAM(N);
       bytecode_variadic(proc, stack, N);
-			// register args
-			// N+1 to register variadic arg
-			for (int i = 2; i < N+1; ++i) {
-				proc.history.push_arg(stack[i]);
-			}
+      // register args
+      // N+1 to register variadic arg
+      for (int i = 2; i < N+1; ++i) {
+        proc.history.push_arg(stack[i]);
+      }
       SETCLOS(clos);
     } NEXT_BYTECODE;
     BYTECODE(do_executor): {
