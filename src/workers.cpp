@@ -654,6 +654,8 @@ execute:
 	{boost::scoped_ptr<std::vector<Process*> > to_be_added;
 		Process::GrabMultipush(R, to_be_added);
 		if(to_be_added) {
+			/*make sure that the current process only-running flag goes down*/
+			Process::SetOnlyRunning(R, 0); //no possible race ...?
 			std::vector<Process*>& to_add = *to_be_added;
 			for(size_t i = 0; i < to_add.size(); ++i) {
 				Process* P = to_add[i];
