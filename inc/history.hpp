@@ -9,6 +9,7 @@
 #include <vector>
 
 class Process;
+class ProcessStack;
 class GenericTraverser;
 
 /*
@@ -27,6 +28,9 @@ private:
 	outer_ring ring;
 	size_t breadth;
 
+	// record an argument for the current function call
+	void push_arg(Object::ref arg);
+
 public:
 	History(size_t depth, size_t breadth);
 
@@ -39,8 +43,8 @@ public:
 	// record a function call in tail position
 	void enter_tail(Object::ref clos);
 
-	// record an argument for the current function call
-	void push_arg(Object::ref arg);
+	// record function call arguments held in stack
+	void register_args(ProcessStack & stack, int from, int to);
 
 	// record a function return (i.e. a continuation call)
 	void leave();

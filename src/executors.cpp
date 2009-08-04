@@ -667,9 +667,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_check_vars(stack, N);
       // register function args
       // skip closure & continuation
-      for (int i = 2; i < N; ++i) {
-        proc.history.push_arg(stack[i]);
-      }
+			proc.history.register_args(stack, 2, N);
     } NEXT_BYTECODE;
     BYTECODE(closure_ref): {
       INTPARAM(N); CLOSUREREF;
@@ -1332,9 +1330,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_variadic(proc, stack, N);
       // register args
       // N+1 to register variadic arg
-      for (int i = 2; i < N+1; ++i) {
-        proc.history.push_arg(stack[i]);
-      }
+			proc.history.register_args(stack, 2, N+1);
     } NEXT_BYTECODE;
     BYTECODE(do_executor): {
       SYMPARAM(s);

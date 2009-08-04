@@ -29,6 +29,16 @@ void History::enter_tail(Object::ref clos) {
  	ring.rbegin()->push_back(i);
 }
 
+void History::register_args(ProcessStack & stack, int from, int to) {
+	// first check if we can push the args
+	if (ring.size() > 0 && ring.rbegin()->size() > 0) {
+		for (int i = from; i < to; ++i) {
+			push_arg(stack[i]);
+		}
+	}
+	// else don't push
+}
+
 void History::push_arg(Object::ref arg) {
 	ring.rbegin()->rbegin()->args.push_back(arg);
 }
