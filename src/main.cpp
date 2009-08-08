@@ -188,15 +188,19 @@ int main(int argc, char **argv) {
 			return 2;
 		}
 
-		p = new Process();
-		read_sequence(*p, in);
-		assembler.go(*p);
-		Closure *k = Closure::NewClosure(*p, 0);
-		k->codereset(p->stack.top()); p->stack.pop();
-		p->stack.push(Object::to_ref(k)); // entry point
-		// process will be deleted by workers
-		AllWorkers &w = AllWorkers::getInstance();
-		w.initiate(3, p);
+		try {
+			p = new Process();
+			read_sequence(*p, in);
+			assembler.go(*p);
+			Closure *k = Closure::NewClosure(*p, 0);
+			k->codereset(p->stack.top()); p->stack.pop();
+			p->stack.push(Object::to_ref(k)); // entry point
+			// process will be deleted by workers
+			AllWorkers &w = AllWorkers::getInstance();
+			w.initiate(3, p);
+		} catch(HlError& h) {
+			cerr << "Error: " << h.err_str() << endl;
+		}
 		cout << p->stack.top() << endl; // print result
 	}
 
