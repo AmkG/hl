@@ -74,7 +74,7 @@
 ; get package name of symbol
 (def (pkg-of s)
   (if (pkg-sym s)
-    (cut s 1 (fund #\> s))))
+    (cut s 1 (find #\> s))))
 
 (def (canonicalize-sym s)
   (withs (ss (str s)
@@ -184,3 +184,98 @@
                      (ctx-ref ctx ,@parms)))
       import `(pkg-sref (the-pkg ,(pkg-name (pkg-of-ctx ctx))) ,(cdr expr)))))
 
+(def (ctx-ref ctx ex)
+  (if
+    (acons ex)
+      (let head (car ex)
+        (case head
+          in-package
+            (do
+              ; syntax check
+              (when (no (acons (cdr ex)))
+                (err "'in-package expects one parameter"))
+              (when (cddr ex)
+                (err "'in-package expects at most one parameter"))
+              (when (or (no (asym (cadr ex)))
+                        (pkg-sym (cadr ex)))
+                (err "'in-package expects an unpackaged symbol"))
+              (let pkg-str (string (cadr ex))
+                (pkg-of-ctx-set ctx (the-pkg pkg-str))
+                t))
+          using
+            (do
+              (when (no (is (len ex) 2))
+                (err "'using expects one argument"))
+              (when (or (no (asym (cadr ex)))
+                        (no (pkg-sym (cadr ex))))
+                (err "'using expects a packaged symbol"))
+              (withs (sym (cadr ex)
+                      ss (string sym)
+                      pak (pkg-of sym)
+                      pak-file pak
+                      pkg (the-pkg sym)
+                      int-list (iface-of-pkg pkg sym))
+                ; if package interface doesn't exist, try
+                ; 'require-ing it.
+                (when (no int-list)
+                  (require (str pak-file ".arc"))
+                  (= int-list (iface-of-pkg pkg sym)))
+                (when (no int-list)
+                  (err (str "Package interface does not exist: " ss)))
+                (let dest-pkg (pkg-of-ctx ctx)
+                  (each i int-list
+                    (pkg-sref dest-pkg i (unpkg i))))
+                t))
+          import
+            (do
+              (if (no (is (len ex) 3))
+                (err "'import expects two parameters"))
+              (if (no (pkg-sym (cadr ex)))
+                (err "first parameter to 'import should be packaged symbol"))
+              (if (pkg-sym (caddr ex))
+                (err "second parameter to 'import should be unpackaged symbol"))
+              (pkg-sref (pkg-of-ctx ctx) (cadr ex) (caddr ex))
+              t)
+          interface
+            (withs (dest-pkg (pkg-of-ctx ctx)
+                    iface nil
+                    int-tl nil
+                    add-int (fn (np)
+                              (if (no iface)
+                                (= iface (list np) int-tl iface)
+                                (= (cdr int-tl) (list np) int-tl (cdr int-tl))))
+                    remove (fn (np)
+                             (let tmp iface
+                               (= iface nil int-tl nil)
+                               (each e tmp
+                                 (let sym (pkg-ref dest-pkg e)
+                                   (if (no (find sym np))
+                                     (add-int sym))))))
+                    int-name (if (and (acons (cdr ex)) (asym (cadr ex)))
+                               (pkg-ref dest-pkg (cadr ex))
+                               (err "'interface expects a symbol for interface name"))
+                    params (map (fn (p)
+                                  (if (and (no (asym p)) (no (acons p)))
+                                    (err "'interface expects a list of symbols or removed symbols"))
+                                  (if (acons p)
+                                    (map (fn (p)
+                                           (if (no (asym p))
+                                             (err "'interface expects symbols in removed list"))
+                                           (pkg-ref dest-pkg p))
+                                         p)
+                                    (pkg-ref dest-pkg p)))
+                                (cddr ex))
+                    int-table (iface-tbl-of-pkg (the-pkg (pkg-of int-name))))
+              (each p params
+                (if (acons p)
+                  (remove p)
+                  (withs (sym (pkg-ref dest-pkg p)
+                          int (iface-lookup sym))
+                    (if int
+                      (each e int (add-int e))
+                      (add-int sym)))))
+              (= (int-table int-name) iface)
+              t)
+          t ;; default
+            (map [ctx-ref-inner ctx _] ex)))
+    (ctx-ref-inner ctx ex)))
