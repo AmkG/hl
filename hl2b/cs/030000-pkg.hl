@@ -141,6 +141,12 @@
 (defm (actx (t x <hl>actx))
   t)
 
+(def (pkg-of-ctx ctx)
+  ((rep ctx) '<hl>cur-pkg))
+
+(def (pkg-of-ctx-set ctx pkg)
+  (= ((rep ctx) '<hl>cur-pkg) pkg))
+
 (def (ctx-ref-reuse ctx ex)
   (if (acons ex)
     (if (ctx-meta (car ex))
@@ -279,3 +285,15 @@
           t ;; default
             (map [ctx-ref-inner ctx _] ex)))
     (ctx-ref-inner ctx ex)))
+
+(def (ctx-ref-inner ctx x)
+  (if
+    (asym x)
+      (if (ssyntax x)
+        (ctx-ref-reuse-inner ctx (expand-ssyntax x))
+        (pkg-ref (pkg-of-ctx ctx) x))
+    (acons x)
+      (cons
+        (ctx-ref-inner ctx (car x))
+        (ctx-ref-inner ctx (cdr x)))
+    t x))
