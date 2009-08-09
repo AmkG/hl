@@ -294,6 +294,8 @@ void Process::scan_root_object(GenericTraverser* gt) {
  * Execution
  */
 
+#include<iostream>
+
 ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 	try {
 		/*only do this here, because we don't give
@@ -310,6 +312,11 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		}
 		return nstat;
 	} catch(HlError& h) {
+		if(!err_handler_slot) {
+			std::cerr << "Unhandled hl-side error!" << std::endl;
+			std::cerr << h.err_str() << std::endl;
+			exit(1);
+		}
 		/*when we catch an HlError,
 			get the process's error handler and force it
 			onto the stack for future execution. i.e.
