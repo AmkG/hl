@@ -1,7 +1,18 @@
 ; implementation of packages, ported from the scheme version in hl-arc-f
 
-(in-package impl)
-(using <hl>v1)
+;; some definitions to be able to test on hl-arc-f
+;; only for testing purposes, work in the <User> package
+
+;(in-package impl)
+;(using <hl>v1)
+
+(import <User>def def)
+(import <arc>annotate tag)
+(import <arc>ssyntax ssyntax)
+(import <arc>ssexpand ssexpand)
+
+(mac def ((name . args) . body)
+  `(<arc>def ,name ,args ,@body)) 
 
 ; NOTES:
 ; be very careful of the separation between
@@ -34,6 +45,8 @@
 ; in order to improve arc-compatibility in cs/ files, should probably
 ; just use (in-package) and (import)
 
+(def (asym x) (isa x 'sym))
+
 ; create a new empty package
 (def (pkg-new name)
   ; UNRELIABLE.  Each process gets
@@ -53,7 +66,7 @@
 ; UNRELIABLE.  Each process gets its own copy
 ; of the table.  I suggest using a process
 ; instead of a global variable.
-(def pkgs* (table))
+(= pkgs* (table))
 
 ; t if s is a symbol with explicit package name
 (def (pkg-sym s)
@@ -109,7 +122,7 @@
   (if (asym s)
     (if (pkg-sym s)
       s
-      (let tb ((ref pak) 1)
+      (let tb ((rep pak) 1)
         (or (tb s)
             (= (tb s) gen (sym (str #\< (pkg-of s) #\> s))))))
     s))
@@ -136,10 +149,12 @@
     (table
       '<hl>cur-pkg (the-pkg "User"))))
 
-(def (actx x) nil)
+(def (actx x) (isa x '<hl>ctx))
 
-(defm (actx (t x <hl>actx))
-  t)
+;(def (actx x) nil)
+
+;(defm (actx (t x <hl>actx))
+;  t)
 
 (def (pkg-of-ctx ctx)
   ((rep ctx) '<hl>cur-pkg))
@@ -161,7 +176,7 @@
   (if 
     (asym ex)
       (if (ssyntax ex)
-        (ctx-ref-reuse-inner ctx (ssyntax-expand ex)) ; ??
+        (ctx-ref-reuse-inner ctx (ssexpand ex)) ; ??
         (pkg-ref (pkf-of-ctx ctx) ex))
     (acons ex)
       (do 
@@ -290,10 +305,16 @@
   (if
     (asym x)
       (if (ssyntax x)
-        (ctx-ref-reuse-inner ctx (expand-ssyntax x))
+        (ctx-ref-reuse-inner ctx (ssexpand x))
         (pkg-ref (pkg-of-ctx ctx) x))
     (acons x)
       (cons
         (ctx-ref-inner ctx (car x))
         (ctx-ref-inner ctx (cdr x)))
     t x))
+
+; create a new context and process lst
+; warning: modifies lst
+(def (process-in-new-ctx lst)
+  (let ctx (mk-ctx)
+    (map [ctx-ref ctx _] lst)))
