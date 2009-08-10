@@ -10,6 +10,7 @@
 (import <arc>annotate tag)
 (import <arc>ssyntax ssyntax)
 (import <arc>ssexpand ssexpand)
+(import <arc>pos pos)
 
 (mac def ((name . args) . body)
   `(<arc>def ,name ,args ,@body)) 
@@ -90,13 +91,15 @@
 ; get symbol without package
 (def (unpkg s)
   (if (pkg-sym s)
-    (cut s (+ (find #\> s) 1))
+    (let s (string s)
+      (sym (cut s (+ (pos #\> s) 1))))
     s))
 
 ; get package name of symbol
 (def (pkg-of s)
   (if (pkg-sym s)
-    (cut s 1 (find #\> s))))
+    (let s (string s)
+      (cut s 1 (pos #\> s)))))
 
 (def (canonicalize-sym s)
   (withs (ss (string s)
@@ -143,7 +146,7 @@
   ((iface-tbl-of-pkg pak) s))
 
 (def (iface-tbl-of-pkg pak)
-  ((rep pak) 2))
+  ((rep pak) 1))
 
 (def (iface-lookup s)
   (iface-of-pkg (the-pkg (pkg-of s)) s))
@@ -255,7 +258,7 @@
                       ss (string sym)
                       pak (pkg-of sym)
                       pak-file pak
-                      pkg (the-pkg sym)
+                      pkg (the-pkg pak)
                       int-list (iface-of-pkg pkg sym))
                 ; if package interface doesn't exist, try
                 ; 'require-ing it.
@@ -353,4 +356,6 @@
       ("((in-package k) l (in-package jk) (+ (p l)))" 
        (t <k>l t (<jk>+ (<jk>p <jk>l))))
       ("((in-package k) l (in-package jk) (import <k>l l) (+ (p l)))"
-       (t <k>l t t (<jk>+ (<jk>p <k>l)))))))
+       (t <k>l t t (<jk>+ (<jk>p <k>l))))
+      ("((in-package m) (interface i a b c) (in-package p) (using <m>i) a b c d)"
+       (t t t t <m>a <m>b <m>c <p>d)))))
