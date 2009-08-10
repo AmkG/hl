@@ -18,14 +18,18 @@
          (<bc>halt))
        (<bc>apply 2))))
 
-(= <common>spawn
+(= <impl>base-spawn
    (fn (f)
      ; this axiom is not in the specifications
      ; this axiom has special requirements and
      ; is not only unrecommended for direct
      ; use because it's not specced, it also
      ; does strange things
-     (<axiom>spawn
+     (<axiom>spawn f)))
+
+(= <common>spawn
+   (fn (f)
+     (<impl>base-spawn
        (<common>enclose
          <impl>spawn-helper
          f))))
