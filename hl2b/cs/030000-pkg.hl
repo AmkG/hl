@@ -320,7 +320,9 @@
                       (each e int (add-int e))
                       (add-int sym)))))
               (= (int-table int-name) iface)
-              t)
+              `(<hl>add-interface ,(pkg-name dest-pkg) 
+                                  ,(string (unpkg int-name))
+                                  (<hl>list ,@(map (fn (p) `',p) params))))
           t ;; default
             (map [ctx-ref-inner ctx _] ex)))
     (ctx-ref-inner ctx ex)))
@@ -358,8 +360,10 @@
        (t <k>l t (<jk>+ (<jk>p <jk>l))))
       ("((in-package k) l (in-package jk) (import <k>l l) (+ (p l)))"
        (t <k>l t t (<jk>+ (<jk>p <k>l))))
-      ("((in-package m) (interface i a b c) (in-package p) (using <m>i) a b c d)"
-       (t t t (<hl>require "m.hl") <m>a <m>b <m>c <p>d))
-      ("((in-package m) (interface i1 a) (interface i2 b) (in-package k) a b (using <m>i1) a b (using <m>i2) ((a . b)))"
-       (t t t t <k>a <k>b (<hl>require "m.hl") <m>a <k>b (<hl>require "m.hl")
-        ((<m>a . <m>b)))))))
+      ("((in-package m) (interface <m>i a b c) (in-package p) (using <m>i) a b c d)"
+       (t (<hl>add-interface "m" "i" (<hl>list '<m>a '<m>b '<m>c))
+        t (<hl>require "m.hl") <m>a <m>b <m>c <p>d))
+      ("((in-package m) (interface <m>i1 a) (interface <m>i2 b) (in-package k) a b (using <m>i1) a b (using <m>i2) ((a . b)))"
+       (t (<hl>add-interface "m" "i1" (<hl>list '<m>a))
+        (<hl>add-interface "m" "i2" (<hl>list '<m>b)) t <k>a <k>b 
+        (<hl>require "m.hl") <m>a <k>b (<hl>require "m.hl") ((<m>a . <m>b)))))))
