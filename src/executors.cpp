@@ -580,10 +580,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(build_k_closure_recreate): {
       /*TODO: insert debug checking for is_a<Generic*> here*/
-      //      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
+      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       /*put a random object in stack[0]*/
-      //stack[0] = stack[1];
-      // !! SETCLOS will fail!!
+      stack[0] = stack[1];
       /****/ goto k_closure_perform_create; /****/
     } NEXT_BYTECODE;
     /*attempts to reuse the current
