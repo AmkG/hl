@@ -1,7 +1,24 @@
 ; implementation of packages, ported from the scheme version in hl-arc-f
 
-(in-package impl)
-(using <hl>v1)
+;; some definitions to be able to test on hl-arc-f
+;; only for testing purposes, work in the <User> package
+
+;(in-package impl)
+;(using <hl>v1)
+
+(import <User>def def)
+(import <arc>annotate tag)
+(import <arc>ssyntax ssyntax)
+(import <arc>ssexpand ssexpand)
+
+(mac def ((name . args) . body)
+  `(<arc>def ,name ,args ,@body)) 
+
+(def (is-no-pkg x y)
+  (is x (<arc>unpkg y)))
+
+(def (caddr x)
+  (car (cddr x)))
 
 ; NOTES:
 ; be very careful of the separation between
@@ -34,6 +51,8 @@
 ; in order to improve arc-compatibility in cs/ files, should probably
 ; just use (in-package) and (import)
 
+(def (asym x) (isa x 'sym))
+
 ; create a new empty package
 (def (pkg-new name)
   ; UNRELIABLE.  Each process gets
@@ -49,11 +68,14 @@
 (def (apkg x)
   (isa x 'pkg))
 
+(def (pkg-name pkg)
+  ((rep pkg) 2))
+
 ; mapping: package name symbol -> package object
 ; UNRELIABLE.  Each process gets its own copy
 ; of the table.  I suggest using a process
 ; instead of a global variable.
-(def pkgs* (table))
+(= pkgs* (table))
 
 ; t if s is a symbol with explicit package name
 (def (pkg-sym s)
@@ -77,7 +99,7 @@
     (cut s 1 (find #\> s))))
 
 (def (canonicalize-sym s)
-  (withs (ss (str s)
+  (withs (ss (string s)
           pm (pkg-str ss))
     (if pm
       ; check package
@@ -97,7 +119,7 @@
     ex))
 
 (def (the-pkg s)
-  (if (isa 'string s)
+  (if (isa s 'string)
     (if (or (pkg-str s) (find #\> s))
       nil
       (or (pkgs* (sym s))
@@ -109,9 +131,9 @@
   (if (asym s)
     (if (pkg-sym s)
       s
-      (let tb ((ref pak) 1)
+      (let tb ((rep pak) 1)
         (or (tb s)
-            (= (tb s) gen (sym (str #\< (pkg-of s) #\> s))))))
+            (= (tb s) (sym (string #\< (pkg-name pak) #\> s))))))
     s))
 
 (def (pkg-sref pak packaged unpackaged)
@@ -136,10 +158,12 @@
     (table
       '<hl>cur-pkg (the-pkg "User"))))
 
-(def (actx x) nil)
+(def (actx x) (isa x '<hl>ctx))
 
-(defm (actx (t x <hl>actx))
-  t)
+;(def (actx x) nil)
+
+;(defm (actx (t x <hl>actx))
+;  t)
 
 (def (pkg-of-ctx ctx)
   ((rep ctx) '<hl>cur-pkg))
@@ -161,7 +185,7 @@
   (if 
     (asym ex)
       (if (ssyntax ex)
-        (ctx-ref-reuse-inner ctx (ssyntax-expand ex)) ; ??
+        (ctx-ref-reuse-inner ctx (ssexpand ex)) ; ??
         (pkg-ref (pkf-of-ctx ctx) ex))
     (acons ex)
       (do 
@@ -190,11 +214,23 @@
                      (ctx-ref ctx ,@parms)))
       import `(pkg-sref (the-pkg ,(pkg-name (pkg-of-ctx ctx))) ,(cdr expr)))))
 
+(mac no-pkg-case (x . args)
+  (w/uniq tst
+    `(let ,tst ,x
+       (if
+         ,@((afn (args)
+              (if args
+                (if (is (car args) t)
+                  `(,(cadr args))
+                  `((is-no-pkg ,tst ',(car args)) ,(cadr args)
+                    ,@(self (cddr args))))))
+             args)))))
+
 (def (ctx-ref ctx ex)
   (if
     (acons ex)
       (let head (car ex)
-        (case head
+        (no-pkg-case head
           in-package
             (do
               ; syntax check
@@ -224,10 +260,10 @@
                 ; if package interface doesn't exist, try
                 ; 'require-ing it.
                 (when (no int-list)
-                  (require (str pak-file ".arc"))
+                  (require (string pak-file ".arc"))
                   (= int-list (iface-of-pkg pkg sym)))
                 (when (no int-list)
-                  (err (str "Package interface does not exist: " ss)))
+                  (err (string "Package interface does not exist: " ss)))
                 (let dest-pkg (pkg-of-ctx ctx)
                   (each i int-list
                     (pkg-sref dest-pkg i (unpkg i))))
@@ -290,10 +326,31 @@
   (if
     (asym x)
       (if (ssyntax x)
-        (ctx-ref-reuse-inner ctx (expand-ssyntax x))
+        (ctx-ref-reuse-inner ctx (ssexpand x))
         (pkg-ref (pkg-of-ctx ctx) x))
     (acons x)
       (cons
         (ctx-ref-inner ctx (car x))
         (ctx-ref-inner ctx (cdr x)))
     t x))
+
+; create a new context and process lst
+; warning: modifies lst
+(def (process-in-new-ctx lst)
+  (let ctx (mk-ctx)
+    (map [ctx-ref ctx _] lst)))
+
+; testing
+
+(def (check x what)
+  (if x 'ok (err (string "failed: " what))))
+
+(def (test-pkg)
+  (map 
+    [check (iso (process-in-new-ctx (read (instring (car _)))) (cadr _))
+           (car _)]
+    '(("((in-package k) l)" (t <k>l))
+      ("((in-package k) l (in-package jk) (+ (p l)))" 
+       (t <k>l t (<jk>+ (<jk>p <jk>l))))
+      ("((in-package k) l (in-package jk) (import <k>l l) (+ (p l)))"
+       (t <k>l t t (<jk>+ (<jk>p <k>l)))))))
