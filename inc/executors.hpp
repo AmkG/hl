@@ -185,6 +185,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(fmul)
 	A_BYTECODE(fdiv)
 	A_BYTECODE(fless)
+	A_BYTECODE(the_null_bytecode)
 END_DECLARE_BYTECODES
 
 #ifdef BYTECODE_DEBUG
@@ -195,7 +196,7 @@ END_DECLARE_BYTECODES
 #define COLON_POST_BYTECODE_LABEL(x)
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(ENUM_BYTECODES)
 
 // use indirect goto when using GCC
 
@@ -207,6 +208,8 @@ typedef void* _bytecode_label;
 #define BYTECODE(x) BYTECODE_ENUM(x); PASTE_SYMBOLS(label_b_, x) COLON_POST_BYTECODE_LABEL(x)
 #define THE_BYTECODE_LABEL(x) &&PASTE_SYMBOLS(label_b_, x)
 
+#define NULL_BYTECODE NULL
+
 #else // __GNUC__
 
 // use an enum when using standard C
@@ -214,10 +217,13 @@ typedef void* _bytecode_label;
 typedef enum _e_bytecode_label _bytecode_label;
 #define DISPATCH_BYTECODES \
 	bytecode_t *pc = known_type<Bytecode>(known_type<Closure>(stack[0])->code())->getCode();\
+	the_dispatch_bytecodes_label:\
 	switch(pc->op)
-#define NEXT_BYTECODE {pc++; continue;}
+#define NEXT_BYTECODE {pc++; goto the_dispatch_bytecodes_label;}
 #define BYTECODE(x) case BYTECODE_ENUM(x) COLON_POST_BYTECODE_LABEL(x)
 #define THE_BYTECODE_LABEL(x) BYTECODE_ENUM(x)
+
+#define NULL_BYTECODE THE_BYTECODE_LABEL(the_null_bytecode)
 
 #endif // __GNUC__
 
