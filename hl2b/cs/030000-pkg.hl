@@ -17,6 +17,9 @@
 (def (is-no-pkg x y)
   (is x (<arc>unpkg y)))
 
+(def (caddr x)
+  (car (cddr x)))
+
 ; NOTES:
 ; be very careful of the separation between
 ; <hl> and <common> .  <common> cannot be
@@ -336,3 +339,18 @@
 (def (process-in-new-ctx lst)
   (let ctx (mk-ctx)
     (map [ctx-ref ctx _] lst)))
+
+; testing
+
+(def (check x what)
+  (if x 'ok (err (string "failed: " what))))
+
+(def (test-pkg)
+  (map 
+    [check (iso (process-in-new-ctx (read (instring (car _)))) (cadr _))
+           (car _)]
+    '(("((in-package k) l)" (t <k>l))
+      ("((in-package k) l (in-package jk) (+ (p l)))" 
+       (t <k>l t (<jk>+ (<jk>p <jk>l))))
+      ("((in-package k) l (in-package jk) (import <k>l l) (+ (p l)))"
+       (t <k>l t t (<jk>+ (<jk>p <k>l)))))))
