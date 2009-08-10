@@ -348,6 +348,7 @@
 (def (check x what)
   (if x 'ok (err (string "failed: " what))))
 
+; TODO: more testing
 (def (test-pkg)
   (map 
     [check (iso (process-in-new-ctx (read (instring (car _)))) (cadr _))
@@ -358,4 +359,6 @@
       ("((in-package k) l (in-package jk) (import <k>l l) (+ (p l)))"
        (t <k>l t t (<jk>+ (<jk>p <k>l))))
       ("((in-package m) (interface i a b c) (in-package p) (using <m>i) a b c d)"
-       (t t t t <m>a <m>b <m>c <p>d)))))
+       (t t t t <m>a <m>b <m>c <p>d))
+      ("((in-package m) (interface i1 a) (interface i2 b) (in-package k) a b (using <m>i1) a b (using <m>i2) ((a . b)))"
+       (t t t t <k>a <k>b t <m>a <k>b t ((<m>a . <m>b)))))))
