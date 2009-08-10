@@ -92,6 +92,6 @@
                    (<common>release-gvl)))
                rv)
              nil)))
-      (<common>proc-local '<common>gvl-acquired))))
+      (<axiom>table-ref (<common>proc-locals) '<common>gvl-acquired))))
 
 
