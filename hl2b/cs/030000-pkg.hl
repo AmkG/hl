@@ -14,6 +14,9 @@
 (mac def ((name . args) . body)
   `(<arc>def ,name ,args ,@body)) 
 
+(def (is-no-pkg x y)
+  (is x (<arc>unpkg y)))
+
 ; NOTES:
 ; be very careful of the separation between
 ; <hl> and <common> .  <common> cannot be
@@ -62,6 +65,9 @@
 (def (apkg x)
   (isa x 'pkg))
 
+(def (pkg-name pkg)
+  ((rep pkg) 2))
+
 ; mapping: package name symbol -> package object
 ; UNRELIABLE.  Each process gets its own copy
 ; of the table.  I suggest using a process
@@ -90,7 +96,7 @@
     (cut s 1 (find #\> s))))
 
 (def (canonicalize-sym s)
-  (withs (ss (str s)
+  (withs (ss (string s)
           pm (pkg-str ss))
     (if pm
       ; check package
@@ -110,7 +116,7 @@
     ex))
 
 (def (the-pkg s)
-  (if (isa 'string s)
+  (if (isa s 'string)
     (if (or (pkg-str s) (find #\> s))
       nil
       (or (pkgs* (sym s))
@@ -124,7 +130,7 @@
       s
       (let tb ((rep pak) 1)
         (or (tb s)
-            (= (tb s) gen (sym (str #\< (pkg-of s) #\> s))))))
+            (= (tb s) (sym (string #\< (pkg-name pak) #\> s))))))
     s))
 
 (def (pkg-sref pak packaged unpackaged)
@@ -205,11 +211,23 @@
                      (ctx-ref ctx ,@parms)))
       import `(pkg-sref (the-pkg ,(pkg-name (pkg-of-ctx ctx))) ,(cdr expr)))))
 
+(mac no-pkg-case (x . args)
+  (w/uniq tst
+    `(let ,tst ,x
+       (if
+         ,@((afn (args)
+              (if args
+                (if (is (car args) t)
+                  `(,(cadr args))
+                  `((is-no-pkg ,tst ',(car args)) ,(cadr args)
+                    ,@(self (cddr args))))))
+             args)))))
+
 (def (ctx-ref ctx ex)
   (if
     (acons ex)
       (let head (car ex)
-        (case head
+        (no-pkg-case head
           in-package
             (do
               ; syntax check
@@ -239,10 +257,10 @@
                 ; if package interface doesn't exist, try
                 ; 'require-ing it.
                 (when (no int-list)
-                  (require (str pak-file ".arc"))
+                  (require (string pak-file ".arc"))
                   (= int-list (iface-of-pkg pkg sym)))
                 (when (no int-list)
-                  (err (str "Package interface does not exist: " ss)))
+                  (err (string "Package interface does not exist: " ss)))
                 (let dest-pkg (pkg-of-ctx ctx)
                   (each i int-list
                     (pkg-sref dest-pkg i (unpkg i))))
