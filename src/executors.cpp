@@ -327,17 +327,17 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // initialize assembler operations
     assembler.reg<ClosureAs>(symbols->lookup("<bc>closure"),
                              THE_BYTECODE_LABEL(const_ref));
-    assembler.reg<KClosureAs>(symbols->lookup("<bc>k-closure"), NULL);
+    assembler.reg<KClosureAs>(symbols->lookup("<bc>k-closure"), NULL_BYTECODE);
     assembler.reg<KClosureRecreateAs>(symbols->lookup("<bc>k-closure-recreate"),
-                                      NULL);
+                                      NULL_BYTECODE);
     assembler.reg<KClosureReuseAs>(symbols->lookup("<bc>k-closure-reuse"), 
-                                      NULL);
+                                      NULL_BYTECODE);
     assembler.reg<IfAs>(symbols->lookup("<bc>if"), 
                               THE_BYTECODE_LABEL(jmp_nil));
-    assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL);
-    assembler.reg<DbgInfoAs<&Bytecode::set_name> >(symbols->lookup("<bc>debug-name"), NULL);
-    assembler.reg<DbgInfoAs<&Bytecode::set_line> >(symbols->lookup("<bc>debug-line"), NULL);
-    assembler.reg<DbgInfoAs<&Bytecode::set_file> >(symbols->lookup("<bc>debug-file"), NULL);
+    assembler.reg<ComplexAs<Float> >(symbols->lookup("<bc>float"), NULL_BYTECODE);
+    assembler.reg<DbgInfoAs<&Bytecode::set_name> >(symbols->lookup("<bc>debug-name"), NULL_BYTECODE);
+    assembler.reg<DbgInfoAs<&Bytecode::set_line> >(symbols->lookup("<bc>debug-line"), NULL_BYTECODE);
+    assembler.reg<DbgInfoAs<&Bytecode::set_file> >(symbols->lookup("<bc>debug-file"), NULL_BYTECODE);
 
     /*
      * build and assemble various bytecode sequences
