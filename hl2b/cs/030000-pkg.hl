@@ -257,20 +257,20 @@
               (withs (sym (cadr ex)
                       ss (string sym)
                       pak (pkg-of sym)
-                      pak-file pak
+                      pak-file (string pak ".hl")
                       pkg (the-pkg pak)
                       int-list (iface-of-pkg pkg sym))
                 ; if package interface doesn't exist, try
                 ; 'require-ing it.
                 (when (no int-list)
-                  (require (string pak-file ".arc"))
+                  (<hl>require pak-file)
                   (= int-list (iface-of-pkg pkg sym)))
                 (when (no int-list)
                   (err (string "Package interface does not exist: " ss)))
                 (let dest-pkg (pkg-of-ctx ctx)
                   (each i int-list
                     (pkg-sref dest-pkg i (unpkg i))))
-                t))
+                `(<hl>require ,pak-file)))
           import
             (do
               (if (no (is (len ex) 3))
@@ -359,6 +359,7 @@
       ("((in-package k) l (in-package jk) (import <k>l l) (+ (p l)))"
        (t <k>l t t (<jk>+ (<jk>p <k>l))))
       ("((in-package m) (interface i a b c) (in-package p) (using <m>i) a b c d)"
-       (t t t t <m>a <m>b <m>c <p>d))
+       (t t t (<hl>require "m.hl") <m>a <m>b <m>c <p>d))
       ("((in-package m) (interface i1 a) (interface i2 b) (in-package k) a b (using <m>i1) a b (using <m>i2) ((a . b)))"
-       (t t t t <k>a <k>b t <m>a <k>b t ((<m>a . <m>b)))))))
+       (t t t t <k>a <k>b (<hl>require "m.hl") <m>a <k>b (<hl>require "m.hl")
+        ((<m>a . <m>b)))))))
