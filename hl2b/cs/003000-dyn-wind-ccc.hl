@@ -175,7 +175,7 @@
           ; wind
           (<axiom>table-sref pl
             (cons (cons bf af) old-cxt)
-            '<hl>dynamic-wind-context))
+            '<hl>dynamic-wind-context)
           ((fn (rv)
              ; wind-to handles unwinding
              ; (we want to allow the user to fool
@@ -183,7 +183,7 @@
              ; process-local)
              (<common>wind-to old-cxt)
              rv)
-           (f))
+           (f)))
         (<axiom>table-ref pl '<hl>dynamic-wind-context)))
      (<common>proc-locals))))
 
