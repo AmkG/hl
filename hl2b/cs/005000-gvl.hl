@@ -81,7 +81,7 @@
         (if acquired
             (f)
             ((fn (rv)
-               (<common>dynamic-wind
+               (<hl>dynamic-wind
                  (fn ()
                    (<common>acquire-gvl)
                    (<axiom>table-sref (<common>proc-locals) t '<common>gvl-acquired))
