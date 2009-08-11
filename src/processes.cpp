@@ -304,12 +304,24 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		anyway, and invalidate_changed_globals()
 		involves a lock.
 		*/
+		#ifdef PROCESS_DEBUG
+			std::cerr << "Process@" << this << " executing." << std::endl;
+		#endif
 		invalidate_changed_globals();
 		ProcessStatus nstat = ::execute(*this, reductions, Q, 0);
 		if(nstat == process_dead) {
 			AppLock l(mtx);
 			stat = process_dead;
 		}
+		#ifdef PROCESS_DEBUG
+			std::cerr << "Process@" << this << " end execution";
+			switch(nstat) {
+			case process_dead:	std::cerr << ": process_dead";
+			case process_running:	std::cerr << ": process_running";
+			case process_waiting:	std::cerr << ": process_waiting";
+			}
+			std::cerr << std::endl;;
+		#endif
 		return nstat;
 	} catch(HlError& h) {
 		if(!err_handler_slot) {
