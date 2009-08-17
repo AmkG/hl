@@ -20,11 +20,40 @@ AC_ARG_WITH([boost-include], [AS_HELP_STRING([--with-boost-include], [path where
 AC_SUBST(BOOST_PATH, $boost_path)
 AM_CONDITIONAL(BOOST_PATH_SPECIFIED, test x$boost_path_specified = xtrue)
 
+# check for random libraries
+AC_CHECK_HEADERS([fcntl.h malloc.h stdint.h stdlib.h unistd.h errno.h signal.h stddef.h],[],[AC_MSG_ERROR([Your system is not as POSIX-compliant as we expected])])
+
 # check for pthreads
 AC_CHECK_HEADERS([pthread.h])
 AC_CHECK_LIB([pthread], [pthread_create], [AC_SUBST([PTHREAD_LIB], ["-lpthread"])], [AC_DEFINE([single_threaded], [1], [run in a single OS thread])])
 
 # check for BOOST libraries
-AC_CHECK_HEADERS([boost/scoped_ptr.hpp boost/shared_ptr.hpp boost/smart_ptr.hpp boost/scoped_ptr.hpp boost/noncopyable.hpp boost/intrusive_ptr.hpp], [], [AC_MSG_ERROR([You need to install BOOST (http://www.boost.org)])])
+AC_CHECK_HEADERS([boost/scoped_ptr.hpp boost/shared_ptr.hpp boost/smart_ptr.hpp boost/scoped_ptr.hpp boost/noncopyable.hpp boost/intrusive_ptr.hpp boost/circular_buffer.hpp],
+  [],
+  [AC_MSG_ERROR([You need to install BOOST (http://www.boost.org) at least version 1.35.00])])
+
+# checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_CHECK_TYPES([bool],
+  [],
+  [AC_MSG_ERROR([Your C++ compiler inexplicably does not support "bool"])])
+AC_CHECK_TYPES([ptrdiff_t],
+  [],
+  [AC_MSG_ERROR([Your libraries inexplicably do not have "ptrdiff_t"])],
+[
+#include<stddef.h>
+])
+AC_CHECK_TYPES([uintptr_t],
+  [],
+  [AC_MSG_ERROR([Your libraries inexplicably do not have "uintptr_t"])],
+[
+#include<stdint.h>
+])
+
+# checks for library functions.
+AC_CHECK_FUNCS([select strchr],[],[AC_MSG_ERROR([Your system libraries do not provide some necessary functions])])
 
 AC_OUTPUT
