@@ -14,12 +14,7 @@ Usage:
 			<< std::endl;
 	}
 */
-
-#include<stdint.h>
-#include<climits>
-
 #include"unichars.hpp"
-
 #include"workarounds.hpp"
 
 class Generic;

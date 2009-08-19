@@ -3,7 +3,27 @@ This header should be the first header in each source file,
 and should only be included once
 */
 
-#define __STDC_LIMIT_MACROS // necessary for INTPTR_MAX and INTPTR_MIN
+#include"config.h"
+
+#ifdef HAVE_PERMISSIVE_CLIMITS
+# define __STDC_LIMIT_MACROS // necessary for INTPTR_MAX and INTPTR_MIN
+# include<stdint.h>
+# include<climits>
+#endif
+
+#ifdef HAVE_INT_POINTERS
+  typedef int intptr_t;
+# include<climits>
+# define INTPTR_MIN INT_MIN
+# define INTPTR_MAX INT_MAX
+#endif
+
+#ifdef HAVE_LONG_POINTERS
+  typedef long intptr_t;
+# include<climits>
+# define INTPTR_MIN LONG_MIN
+# define INTPTR_MAX LONG_MAX
+#endif
 
 #include<boost/scoped_ptr.hpp>
 #include<boost/shared_ptr.hpp>

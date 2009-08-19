@@ -10,7 +10,7 @@ AC_LANG([C++])
 
 # basic conf
 AC_CONFIG_SRCDIR([src/main.cpp])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([inc/config.h])
 AC_CONFIG_FILES([Makefile src/Makefile test/Makefile test/executors/Makefile test/disassembler/Makefile test/reader/Makefile])
 
 # user options
@@ -46,12 +46,80 @@ AC_CHECK_TYPES([ptrdiff_t],
 [
 #include<stddef.h>
 ])
-AC_CHECK_TYPES([uintptr_t],
-  [],
-  [AC_MSG_ERROR([Your libraries inexplicably do not have "uintptr_t"])],
-[
+
+AC_MSG_CHECKING([how to get an intptr_t type with ranges])
+intptr_type=no
+if test $intptr_type = no; then
+AC_COMPILE_IFELSE(
+[[
+#define __STDC_LIMIT_MACROS // necessary for INTPTR_MAX and INTPTR_MIN
 #include<stdint.h>
+#include<climits>
+intptr_t tmp;
+#ifndef INTPTR_MIN
+# error grr
+#endif
+#ifndef INTPTR_MAX
+# error grr
+#endif
+int main(void) { return 0; }
+]],
+  [intptr_type="stdint"
+  AC_DEFINE([HAVE_PERMISSIVE_CLIMITS], [],
+    [Define this if stdint.h provides intptr_t and defining __STDC_LIMIT_MACROS makes stdint.h give correct ranges to intptr_t in C++]
+  )
 ])
+fi
+if test $intptr_type = no; then
+AC_COMPILE_IFELSE(
+[[
+#include<climits>
+#ifndef INT_MIN
+# error grr
+#endif
+#ifndef INT_MAX
+# error grr
+#endif
+int main(void) {
+  int test_array[
+    ((long int) sizeof(int)) == ((long int) sizeof(void*)) ? 1 : -1
+  ];
+  return 0;
+}
+]],
+  [intptr_type="int"
+  AC_DEFINE([HAVE_INT_POINTERS], [],
+    [Define this if type "int" are the same size as pointers]
+  )
+])
+fi
+if test $intptr_type = no; then
+AC_COMPILE_IFELSE(
+[[
+#include<climits>
+#ifndef LONG_MIN
+# error grr
+#endif
+#ifndef LONG_MAX
+# error grr
+#endif
+int main(void) {
+  int test_array[
+    ((long int) sizeof(long)) == ((long int) sizeof(void*)) ? 1 : -1
+  ];
+  return 0;
+}
+]],
+  [intptr_type="long"
+  AC_DEFINE([HAVE_LONG_POINTERS], [],
+    [Define this if type "long" are the same size as pointers]
+  )
+])
+fi
+if test $intptr_type = no; then
+  AC_MSG_ERROR([We can't find out what size pointers are])
+fi
+AC_MSG_RESULT([$intptr_type])
 
 # checks for library functions.
 AC_CHECK_FUNCS([select strchr],[],[AC_MSG_ERROR([Your system libraries do not provide some necessary functions])])
