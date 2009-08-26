@@ -118,8 +118,8 @@
               (<arc>eval (<compiler>macex expr))))
         (prn "compile")
         (each bc (compile-to-bytecode prog)
-          (prn bc) ; for debugging
           (<arc>write bc tmp)
           (<arc>writec #\newline tmp)))))
+  (prn "run")
   ; run the bytecode (only for testing, will be removed in the future)
   (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))

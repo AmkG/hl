@@ -1,0 +1,43 @@
+; basic error handling to be used during development
+
+(in-package impl)
+
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>cons cons)
+(import <axiom>if if)
+(import <axiom>is is)
+(import <axiom>lambda lambda)
+(import <axiom>set set)
+(import <axiom>type type)
+
+(set map1 
+  (lambda (f l)
+    (if l (cons (f (car l)) (map1 f (cdr l))))))
+
+; build a list holding the backtrace
+(set info-from-bt
+  (lambda (bt)
+    (map1 (lambda (info)
+            (cons
+              (if (is (type (car info)) '<hl>fn)
+                ; if a function was called, extract informations from
+                ; its bytecode (i.e. get a list of name, file, line)
+                (<axiom>debug-bytecode-info 
+                  (car (<axiom>disclose (car info))))
+                ; the called object
+                (car info))
+              ; arguments passed to the called object
+              (cdr info)))
+          bt)))
+
+(set <hl>default-error-handler
+  (lambda (msg bt)
+    ; put error message in front of the list holding the backtrace
+    ; the list returned will be printed by the VM 
+    ; (only if this is the main process)
+    ; it would be better to print it and exit, but we have no hl 'prn yet
+    ; or we may be debugging 'prn
+    (cons msg (info-from-bt bt))))
+
+(<axiom>err-handler-set <hl>default-error-handler)
