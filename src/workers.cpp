@@ -275,22 +275,26 @@ void AllWorkers::workqueue_trypop(Process*& R) {
 	};
 #endif
 
-void AllWorkers::initiate(size_t nworkers, Process* begin) {
-	#ifdef DEBUG
-		std::cerr << "#workers: " << nworkers << std::endl;
-	#endif
-	#ifndef single_threaded
-		WorkerThreadCollection wtc;
-	#endif
-	register_process(begin);
-	workqueue_push(begin);
-	Worker W(this);
-	#ifndef single_threaded
-		for(size_t i = 1; i < nworkers; ++i) {
-			wtc.launch(W);
-		}
-	#endif
-	W(1); // the 1 indicates that it is the "main" thread.
+void AllWorkers::initiate(size_t nworkers, Process* begin, ValueHolderRef& rv) {
+	{
+		begin->is_main = 1;
+		#ifdef DEBUG
+			std::cerr << "#workers: " << nworkers << std::endl;
+		#endif
+		#ifndef single_threaded
+			WorkerThreadCollection wtc;
+		#endif
+		register_process(begin);
+		workqueue_push(begin);
+		Worker W(this);
+		#ifndef single_threaded
+			for(size_t i = 1; i < nworkers; ++i) {
+				wtc.launch(W);
+			}
+		#endif
+		W(1); // the 1 indicates that it is the "main" thread.
+	}
+	return_value.swap(rv);
 }
 
 /*
@@ -298,7 +302,7 @@ void AllWorkers::initiate(size_t nworkers, Process* begin) {
  * default_timeslice 2 until workers are fully tested
  */
 
-AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), total_workers(0) {
+AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), total_workers(0), return_value() {
 }
 
 AllWorkers::~AllWorkers() {
@@ -669,6 +673,11 @@ execute:
 	switch(Rstat) {
 	case process_waiting:
 	case process_dead:
+		if(R->is_main) {
+			ValueHolderRef tmp;
+			ValueHolder::copy_object(tmp, R->stack.top());
+			parent->return_value.swap(tmp);
+		}
 		R = 0; // clear
 		break;
 	case process_change:

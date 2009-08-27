@@ -89,6 +89,8 @@ class AllWorkers : boost::noncopyable {
 
 	AllWorkers();
 	static AllWorkers workers;
+
+	LockedValueHolderRef return_value;
 public:
 
 	static AllWorkers& getInstance() {
@@ -102,7 +104,7 @@ public:
 	of work, or if someone signals an exit condition
 	The given Process* is the starting process.
 	*/
-	void initiate(size_t, Process*);
+	void initiate(size_t, Process*, ValueHolderRef&);
 
 	/*atomically register a process into U*/
 	void register_process(Process*);
