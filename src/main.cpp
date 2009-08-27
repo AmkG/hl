@@ -197,11 +197,12 @@ int main(int argc, char **argv) {
 			p->stack.push(Object::to_ref(k)); // entry point
 			// process will be deleted by workers
 			AllWorkers &w = AllWorkers::getInstance();
-			w.initiate(3, p);
+			ValueHolderRef rv;
+			w.initiate(3, p, rv);
+			cout << rv.value() << endl; // print return value
 		} catch(HlError& h) {
 			cerr << "Error: " << h.err_str() << endl;
 		}
-		cout << p->stack.top() << endl; // print result
 	}
 
 	return 0;

@@ -297,7 +297,8 @@ public:
 		  invalid_globals(),
 		  bytecode_slot(),
 		  multipush(0),
-			history(32, 16) // TODO: take values from the user
+		  history(32, 16), // TODO: take values from the user
+		  is_main(0)
 	{ }
 
 /*-----------------------------------------------------------------------------
@@ -403,6 +404,9 @@ For process-level garbage collection
 	History history;
 
 	virtual void scan_root_object(GenericTraverser* gt);
+
+	/*flags if this is the main process*/
+	bool is_main;
 
 	friend class MailBox;
 };
