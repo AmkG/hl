@@ -31,9 +31,3 @@
 
 ;^3$
 
-; *** try to pass a wrong arg to float
-
-(<bc>float asymbol)
-(<bc>halt)
-
-;^Error: assemble: wrong type for complex argument

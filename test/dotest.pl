@@ -43,7 +43,7 @@ for my $i (0..$#tests) {
     open OUT, "> $tmp_name";
     print OUT foreach (@{$tests[$i]});
     close OUT;
-    my $out = `$test_prog $tmp_name 2>&1`;
+    my $out = `$test_prog $tmp_name`;
     unlink $tmp_name;
     print "Test $i ...";
     if ($out =~ $results[$i]) {
