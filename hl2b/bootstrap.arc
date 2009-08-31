@@ -14,10 +14,10 @@
 ; specific packages, and which ones just use <arc> packages.
 (interface v0 def mac if and no or each load string unpkg prn = w/infile 
               let with withs fn afn require w/uniq coerce + push listtab
-              givens make-br-fn ++ acons ssyntax isnt caris _ in type isa
+              make-br-fn ++ acons ssyntax isnt caris _ in type isa
               alist err is car cons cdr map orf awhen do trav+ when ontable
               list aif zap self rfn pos complement dotted len on
-              index copy mappend cadr cddr len> it some assert given case
+              index copy mappend cadr cddr len> it some assert case
               >= > keep idfn rev - mem max mapeach atom bound rep apply
               ; types
               int num char table string sym bool)
