@@ -62,7 +62,7 @@
   (make-lit '() val))
 
 (def quote-lift (ast)
-  (givens ctb (quote-complex-collect ast)
+  (withs (ctb (quote-complex-collect ast)
           (arguments params) (table-key-value-lists ctb)
           arguments (map [const-expand _!val] arguments)
           transform
@@ -80,5 +80,5 @@
                                     ast))))
                          ast))
                       params)
-                    arguments)))
+                    arguments))))
     (transform ast)))

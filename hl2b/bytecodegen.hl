@@ -331,8 +331,8 @@
                   (ppr-sexp:source ast)
                   nil)))
       (aset ast)
-        (given var   ast!var
-               (val) ast!subx
+        (with (var   ast!var
+               (val) ast!subx)
           (if (aglobal var)
               `( ,@(bytecodegen val env)
                  (<bc>global-set ,var!id))
@@ -482,10 +482,10 @@
 
 ; compiles an expression to bytecode
 (def compile-to-bytecode (e)
-  (givens xe [xe _ ()]
+  (withs (xe [xe _ ()]
           top-k-var (new-var 'k)
           cps-convert [cps-convert _ top-k-var]
-          closure-convert [closure-convert _ top-k-var]
+          closure-convert [closure-convert _ top-k-var])
     ; this is stupid.... I like it!
     ; !! Probably avoid : syntax here, because
     ; !! of differences in hl and Arc-F.
