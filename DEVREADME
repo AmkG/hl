@@ -1,0 +1,62 @@
+
+README for Developers
+=====================
+
+The build supports a bunch of -D definable options which are
+intended to help in debugging and development.
+
+In order to enable these defines, use something like the
+following:
+
+	make clean  # just for paranoia, okay?
+	make CPPFLAGS="-Da_define_example -Danother_define_example"
+
+During debugging you might want to also set `CXXFLAGS` from
+the `make` command line to "`-g -O0`", because `gcc` is such a
+vain compiler it will even give debugging output at maximum
+optimization, even though the lines will jump all over and most
+variables disappear.  Assuming you use `gcc`.
+
+`single_threaded`
+-----------------
+
+Compiles the VM as single-threaded.  Recommended for now
+because the buggy thread pool thing has deadlocks.  Bad ones.
+This also makes the order of execution mostly deterministic,
+which is usually good for debugging.
+
+	make clean
+	make CPPFLAGS="-Dsingle_threaded"
+
+`BYTECODE_DEBUG`
+----------------
+
+Causes the VM to dump each bytecode encountered in sequence.
+The output is dumped to stderr.
+
+You probably want to use `-Dsingle_threaded` too because in
+multithreaded the bytecode output between multiple VM threads
+will conflict and mix into each other, which can be confusing.
+
+The output will look vaguely like:
+
+	bytecode b_int
+	parm 1
+	bytecode global
+	parm foo
+
+`PROCESS_DEBUG`
+---------------
+
+Causes the VM to dump the process being executed at each
+process switch, as well as the state of the process at the end
+of its time slice.
+
+This is useful with `-Dsingle_threaded` and `-DBYTECODE_DEBUG`
+when having very complex process structure, so that switches
+between processes are visible with the bytecode dump.
+
+This is also quite useful with multithreaded, but be careful
+since multithreaded inherently has a risk of confusing the
+dumps of other threads.
+
