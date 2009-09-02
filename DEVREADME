@@ -28,6 +28,9 @@ which is usually good for debugging.
 	make clean
 	make CPPFLAGS="-Dsingle_threaded"
 
+NOTE!  As of now `single_threaded` is always on.  To disable,
+edit inc/config.h and remove its define.
+
 `BYTECODE_DEBUG`
 ----------------
 
