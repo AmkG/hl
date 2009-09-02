@@ -76,7 +76,7 @@
 ; provided on all machines.
 (= <common>wind-to
   (fn (dst)
-    (<impl>wind-to ((<common>proc-locals) '<hl>dynamic-wind-context)
+    (<impl>wind-to (<axiom>table-ref (<common>proc-locals) '<hl>dynamic-wind-context)
                    dst)))
 
 ; internal function
@@ -153,7 +153,7 @@
          ; check whether to unwind, rewind, or reunwind
          (if (is src-ln dst-ln)
              (reunwind src dst '())
-             (if (i< src-ln dst-ln)
+             (if (<axiom>i< src-ln dst-ln)
                  (rewind src src-ln dst dst-ln '())
                  (unwind src src-ln dst dst-ln))))
        nil nil nil
