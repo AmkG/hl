@@ -124,4 +124,7 @@ AC_MSG_RESULT([$intptr_type])
 # checks for library functions.
 AC_CHECK_FUNCS([select strchr],[],[AC_MSG_ERROR([Your system libraries do not provide some necessary functions])])
 
+# some definitions that just have to be
+AC_DEFINE([single_threaded], [], [Define this for now because almkglor is lousy at multithreaded])
+
 AC_OUTPUT
