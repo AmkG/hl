@@ -1,0 +1,13 @@
+#! /bin/sh
+
+no_fail=1
+while test $no_fail = 1; do
+	make test_vm > dotest_result 2>&1;
+	if fgrep "Error" dotest_result; then
+		no_fail=0
+		echo fail
+		exit
+	else
+		echo ok
+	fi
+done
