@@ -1,0 +1,149 @@
+; utility functions necessary to run the compiler
+
+(in-package impl)
+(import <axiom>if if)
+(import <axiom>is is)
+(import <axiom>set =)
+(import <axiom>tag tag)
+(import <hl>mac mac)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>cons cons)
+(import <axiom>i+ +)
+(import <axiom>i/ /)
+(import <axiom>i- -)
+(import <axiom>imod imod)
+(import <axiom>i< <)
+
+(= list (fn args args))
+(= cadr (fn (x) (car (cdr x))))
+
+; mac
+(= mac (tag 'mac
+            (fn ((name . args) . body)
+              (list '<axiom>set name (list 'tag 'mac
+                                           (cons 'fn (cons args body)))))))
+
+(mac (def name-and-args . body)
+  ; TODO: use gvl
+  (if (is (type name-and-args) '<hl>cons)
+    (list '<axiom>set (car name-and-args)
+                      (cons 'fn (cons (cdr name-and-args) body)))
+    (list '<axiom>set name-and-args body)))
+
+(def (cddr x) (cdr (cdr x)))
+
+(def (no x) (if x nil t))
+
+(def (isa x tp) (is (type x) tp))
+
+(def (acons x) (isa x '<hl>cons))
+
+(def (atom x) (no (acons x)))
+
+(def (mem x lst)
+  (if lst
+    (if (is x (car lst)) t (mem c (cdr lst)))))
+
+(defm (string1 (t x string)) x)
+
+; count number of digits in a number
+; suppose (> i 0)
+; TODO: change to (+ 1 (f-to-i (/ (log i) (log 10)))) when we have logarithms
+(def (count-digits i)
+  (if (is i 0)
+    0
+    (+ 1 (count-digits (/ i 10)))))
+
+; fill a string with the digits of a number
+; proceed from end to start
+(def (digit-fill-string str i index)
+  (if (is i 0)
+    str
+    (do
+      (string-sref str index (i-to-c (+ (c-to-i #\0) (imod i 10))))
+      (digit-fill-string str (/ i 10) (- index 1)))))
+
+(defm (string1 (t x int))
+  (if (is x 0)
+      "0"
+      (withs (n (count-digits (if (< x 0) (- 0 x) x)) 
+              str (string-build (if (< x 0) (+ n 1) n)))
+         (if (< x 0)
+           (do
+             ; if number is negative we have an extra blank char in the 
+             ; beginning left for the sign
+             (string-sref str 0 #\-)
+             (digit-fill-string str (- 0 x) (- n 1)))
+           (digit-fill-string str x (- n 1)))
+        str)))
+
+(def (trunc x)
+  (i-to-f (f-to-i x)))
+
+(def (decimal-part x) (f- x (trunc x)))
+
+(def (fill-float-str x str i)
+  (if (is i (string-length str))
+    str
+    (let x (* x 10.0)
+      (string-sref str i (i-to-c (+ (trunc x) (c-to-i #\0))))
+      (fill-float-str (decimal-part x) str (+ i 1)))))
+
+; turn a *positive* float number into a string
+; insert n-digits decimal digits
+(def (f-to-str x n-digits)
+  (let str (string-build n-digits)
+    (string (trunc x) "." (fill-float-str (decimal-part x) str 0))))
+
+(defm (string1 (t x num))
+  (if (f< x 0.0)
+    (string "-" (fl-to-str (f- 0.0 x) 16))
+    (fl-to-str x 16)))
+
+(defm (string1 (t x char))
+  (let str (string-build 3)
+    (string-sref str 0 #\#)
+    (string-sref str 0 #\\)
+    (string-sref str 0 x)
+    str))
+
+(defm (string1 (t x sym))
+  (<axiom>sy-to-s x))
+
+(defm (string1 (t x cons))
+  ; FIXME: SLOW, lot of allocations
+  (string "("
+          ((afn (x)
+            (if
+              (no x)
+                ")"
+              (no (cdr x))
+                (string (car x) ")") 
+              (no (acons (cdr x)))
+                (string (car x) " . " (cdr x) ")")
+              (string (car x) " " (self (cdr x)))))
+           x)))
+
+(defm (string1 (t x table))
+  (string "#table" (map (fn (k) (cons k (table-ref x k))) (table-keys x))))
+
+(def (my-reduce f lst (o init-val nil))
+  ((afn (lst acc)
+      (if lst
+        (self (cdr lst) (f (car lst) acc))
+        acc))
+   lst init-val))
+
+(def (strings-append . strs)
+  (withs (n (my-reduce (fn (s acc) (+ (string-length s) acc)) strs 0)
+          s (string-build n)
+          i 0)
+    (each str strs
+      (for (j 0 (- (string-length str) 1))
+        (string-sref s i (string-ref str j))
+        (set i (+ i 1))))
+    s))
+
+(def (string . args)
+  (apply strings-append (map string1 args)))

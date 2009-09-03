@@ -2,7 +2,7 @@
 
 ; TODO: add proper package declarations
 
-(in-package full-fn)
+(in-package impl)
 ;(using <arc>v3)
 
 (def arg-name (a) a!name)
