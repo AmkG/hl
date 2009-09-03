@@ -58,7 +58,7 @@
              ; already a generic function, so
              ; return m
              m)))
-   (<impl>normalize-sig sig)))
+   (<impl>polymorph-normalize-sig sig)))
 
 ((fn (bc)
   (def (<impl>monomorph tb)
