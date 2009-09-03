@@ -4,6 +4,7 @@
 #include"mutexes.hpp"
 #include"executors.hpp"
 #include"assembler.hpp"
+#include"reader.hpp"
 
 void throw_HlError(const char *str) {
   //std::cerr << "Error: " << str << "\n";
@@ -327,6 +328,8 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		if(!err_handler_slot) {
 			std::cerr << "Unhandled hl-side error!" << std::endl;
 			std::cerr << h.err_str() << std::endl;
+			history.to_list(*this);
+			std::cerr << stack.top() << std::endl;
 			exit(1);
 		}
 		/*when we catch an HlError,
