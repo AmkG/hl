@@ -63,14 +63,14 @@
 ((fn (bc)
   (def (<impl>monomorph tb)
     (<common>enclose bc tb)))
- (<common>assemble '((<bc>monomorph))))
+ (<common>assemble '((<bc>monomethod))))
 
 (def (<impl>polymorph-is-monomorphic f)
   ((fn (bc)
      (if bc
          ((fn (first)
             (if (is (type first) '<hl>cons)
-                (is (car first) '<bc>monomorph)
+                (is (car first) '<bc>monomethod)
                 nil))
           (car bc))
          nil))
