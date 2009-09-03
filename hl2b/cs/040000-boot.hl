@@ -20,7 +20,7 @@
 
 ; mac
 (= mac (tag 'mac
-            (fn ((name . args) . body)
+            (fn (macro-info (name . args) . body)
               (list '<axiom>set name (list 'tag 'mac
                                            (cons 'fn (cons args body)))))))
 
