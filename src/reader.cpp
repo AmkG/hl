@@ -159,8 +159,8 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
     Generic *g = as_a<Generic*>(obj);
     Float *f;
     Cons *c;
-		Closure *l;
-		HlString *str;
+    Closure *l;
+    HlString *str;
     if (f = dynamic_cast<Float*>(g)) {
       out.setf(std::ios::showpoint);
       out << f->get();
@@ -179,12 +179,19 @@ std::ostream& operator<<(std::ostream & out, Object::ref obj) {
       else
         out << " . " << r << ")";
     } else if (l = dynamic_cast<Closure*>(g)) {
-			out << "#<fn>";
-		} else if (str = maybe_type<HlString>(obj)) {
-			out << '"' << str->to_cpp_string() << '"';
-		} else {
-	    std::string name = as_a<Symbol*>(type(obj))->getPrintName();
-	    out << "#<" << name << ">";
+        Object::ref b = l->code();
+        Bytecode* bp = static_cast<Bytecode*>(as_a<Generic*>(b));
+        Object::ref n = bp->get_name();
+        if(n) {
+          out << "#<fn:" << n << ">";
+        } else {
+          out << "#<fn>";
+        }
+    } else if (str = maybe_type<HlString>(obj)) {
+        out << '"' << str->to_cpp_string() << '"';
+    } else {
+        std::string name = as_a<Symbol*>(type(obj))->getPrintName();
+        out << "#<" << name << ">";
     }
   }
   else {

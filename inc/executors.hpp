@@ -357,6 +357,9 @@ public:
 	static void set_name(Bytecode *b, Object::ref n) {
 		b->name = n;
 	}
+	Object::ref get_name(void) const {
+		return name;
+	}
 
 	static void set_file(Bytecode *b, Object::ref f) {
 		b->file = f;
