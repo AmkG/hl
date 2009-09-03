@@ -1,0 +1,87 @@
+; utility functions necessary to run the compiler
+
+(in-package impl)
+(import <axiom>if if)
+(import <axiom>is is)
+(import <axiom>set =)
+(import <axiom>tag tag)
+(import <hl>mac mac)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>cons cons)
+(import <axiom>i+ +)
+(import <axiom>i/ /)
+(import <axiom>i- -)
+(import <axiom>imod imod)
+(import <axiom>i< <)
+
+(= list (fn args args))
+(= cadr (fn (x) (car (cdr x))))
+
+; mac
+(= mac (tag 'mac
+            (fn ((name . args) . body)
+              (list '<axiom>set name (list 'tag 'mac
+                                           (cons 'fn (cons args body)))))))
+
+(mac (def name-and-args . body)
+  ; TODO: use gvl
+  (if (is (type name-and-args) '<hl>cons)
+    (list '<axiom>set (car name-and-args)
+                      (cons 'fn (cons (cdr name-and-args) body)))
+    (list '<axiom>set name-and-args body)))
+
+(def (cddr x) (cdr (cdr x)))
+
+(def (no x) (if x nil t))
+
+(def (isa x tp) (is (type x) tp))
+
+(def (acons x) (isa x '<hl>cons))
+
+(def (atom x) (no (acons x)))
+
+(def (mem x lst)
+  (if lst
+    (if (is x (car lst)) t (mem c (cdr lst)))))
+
+(defm (string1 (t x string)) x)
+
+; count number of digits in a number
+; suppose (> i 0)
+; TODO: change to (+ 1 (f-to-i (/ (log i) (log 10)))) when we have logarithms
+(def (count-digits i)
+  (if (is i 0)
+    0
+    (+ 1 (count-digits (/ i 10)))))
+
+; fill a string with the digits of a number
+; proceed from end to start
+(def (digit-fill-string str i index)
+  (if (is i 0)
+    str
+    (do
+      (string-sref str index (i-to-c (+ (c-to-i #\0) (imod i 10))))
+      (digit-fill-string str (/ i 10) (- index 1)))))
+
+(defm (string1 (t x int))
+  (if (is x 0)
+      "0"
+      (withs (n (count-digits i) 
+              str (string-build (if (< x 0) (+ n 1) n)))
+        (digit-fill-string str i (- n 1))
+        (if (< x 0)
+          ; if number is negative we have an extra blank char in the 
+          ; beginning left for the sign
+          (string-sref str 0 #\-))
+        str)))
+
+(defm (string1 (t x char))
+  (let str (string-build 3)
+    (string-sref str 0 #\#)
+    (string-sref str 0 #\\)
+    (string-sref str 0 x)
+    str))
+
+(defm (string1 (t x sym))
+  (<axiom>sy-to-s x))
