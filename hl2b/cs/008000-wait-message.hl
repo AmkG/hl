@@ -88,6 +88,7 @@
       (first-check)))
    (<common>proc-locals)
    nil
+   nil
    nil))
 
 (def (<common>wait-message fns)
