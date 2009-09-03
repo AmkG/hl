@@ -67,13 +67,15 @@
 (defm (string1 (t x int))
   (if (is x 0)
       "0"
-      (withs (n (count-digits i) 
+      (withs (n (count-digits (if (< x 0) (- 0 x) x)) 
               str (string-build (if (< x 0) (+ n 1) n)))
-        (digit-fill-string str i (- n 1))
-        (if (< x 0)
-          ; if number is negative we have an extra blank char in the 
-          ; beginning left for the sign
-          (string-sref str 0 #\-))
+         (if (< x 0)
+           (do
+             ; if number is negative we have an extra blank char in the 
+             ; beginning left for the sign
+             (string-sref str 0 #\-)
+             (digit-fill-string str (- 0 x) (- n 1)))
+           (digit-fill-string str x (- n 1)))
         str)))
 
 (defm (string1 (t x char))
