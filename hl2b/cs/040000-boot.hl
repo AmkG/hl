@@ -102,6 +102,9 @@
               (string (car x) " " (self (cdr x)))))
            x)))
 
+(defm (string1 (t x table))
+  (string "#table" (map (fn (k) (cons k (table-ref x k))) (table-keys x))))
+
 (def (my-reduce f lst (o init-val nil))
   ((afn (lst acc)
       (if lst
