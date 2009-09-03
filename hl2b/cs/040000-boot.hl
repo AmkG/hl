@@ -88,6 +88,20 @@
 (defm (string1 (t x sym))
   (<axiom>sy-to-s x))
 
+(defm (string1 (t x cons))
+  ; FIXME: SLOW, lot of allocations
+  (string "("
+          ((afn (x)
+            (if
+              (no x)
+                ")"
+              (no (cdr x))
+                (string (car x) ")") 
+              (no (acons (cdr x)))
+                (string (car x) " . " (cdr x) ")")
+              (string (car x) " " (self (cdr x)))))
+           x)))
+
 (def (my-reduce f lst (o init-val nil))
   ((afn (lst acc)
       (if lst
