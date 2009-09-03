@@ -78,6 +78,29 @@
            (digit-fill-string str x (- n 1)))
         str)))
 
+(def (trunc x)
+  (i-to-f (f-to-i x)))
+
+(def (decimal-part x) (f- x (trunc x)))
+
+(def (fill-float-str x str i)
+  (if (is i (string-length str))
+    str
+    (let x (* x 10.0)
+      (string-sref str i (i-to-c (+ (trunc x) (c-to-i #\0))))
+      (fill-float-str (decimal-part x) str (+ i 1)))))
+
+; turn a *positive* float number into a string
+; insert n-digits decimal digits
+(def (f-to-str x n-digits)
+  (let str (string-build n-digits)
+    (string (trunc x) "." (fill-float-str (decimal-part x) str 0))))
+
+(defm (string1 (t x num))
+  (if (f< x 0.0)
+    (string "-" (fl-to-str (f- 0.0 x) 16))
+    (fl-to-str x 16)))
+
 (defm (string1 (t x char))
   (let str (string-build 3)
     (string-sref str 0 #\#)
