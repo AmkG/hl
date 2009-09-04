@@ -122,7 +122,7 @@
 
 (def (<hl>polymorph f sig m . rest)
   (if rest
-      (<axiom>apply-list
+      (<common>apply-list
         <hl>polymorph
         (cons
           (<common>polymorph

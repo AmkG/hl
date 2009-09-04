@@ -272,10 +272,6 @@
               (w/local-push (car ast!subx) '<bc>rep)
             <axiom>tag
               (direct-compile ast!subx '<bc>tag)
-            <axiom>apply-list
-              `(,@(mappend [bytecodegen _ env] ast!subx)
-                ,(debug-call ast!subx (len ast!subx))
-                (<bc>apply-list))
             <axiom>sharedvar
               (w/local-push (car ast!subx) '<bc>sv)
             <axiom>sharedvar-read

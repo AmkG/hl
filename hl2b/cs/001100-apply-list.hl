@@ -1,0 +1,23 @@
+
+; (<common>apply-list f l)
+; =CPS=>
+; (<common>apply-list k f l)
+; =<bc>apply-list=>
+; (,f
+;  ,k
+;  ,l
+;  (<bc>apply-list))
+(<axiom>set <common>apply-list
+  (<common>enclose
+    (<common>assemble
+      (<axiom>quote
+        ((<bc>local 2)
+         (<bc>local 1)
+         (<bc>local 3)
+         (<bc>apply-list))))))
+
+; <common>apply-list specs:
+; - only supports 2 parameters, f and a list
+; - the given list must be proper. if improper
+;   or circular, undefined behavior.
+
