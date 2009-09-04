@@ -81,10 +81,12 @@
 ; '* means variadic
 ; TODO: add a minimum to variadic
 (set axioms* 
-  (listtab '((<axiom>acquire 0) (<axiom>car 1) (<axiom>scar 2) (<axiom>cdr 1)
+  (listtab '((<axiom>apply-list 2)
+             (<axiom>acquire 0) (<axiom>car 1) (<axiom>scar 2) (<axiom>cdr 1)
              (<axiom>scdr 2) (<axiom>char 1) (<axiom>composeo 0) 
              (<axiom>cons 2) (<axiom>debug-bytecode-info 1)
              (<axiom>err-handler-set 1) (<axiom>enclose 2) (<axiom>disclose 1)
+             (<axiom>disassemble 1)
              (<axiom>assemble 1) (<axiom>f-to-i 1) (<axiom>halt 0)
              (<axiom>i-to-f 1) (<axiom>is 2) (<axiom>ccc 1) 
              (<axiom>monomethod *) (<axiom>reducto 0) (<axiom>recv 0)

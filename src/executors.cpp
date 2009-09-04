@@ -239,6 +239,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>debug-bytecode-info", THE_BYTECODE_LABEL(debug_bytecode_info))
       ("<bc>debug-call", THE_BYTECODE_LABEL(debug_call), ARG_INT)
       ("<bc>debug-tail-call", THE_BYTECODE_LABEL(debug_tail_call), ARG_INT)
+      ("<bc>disassemble", THE_BYTECODE_LABEL(disassemble))
       /*this implements <common>disclose*/
       // !! Could also be done as an Executor
       ("<bc>disclose", THE_BYTECODE_LABEL(disclose), NON_STD() )
@@ -782,6 +783,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // leave a list of called closures on the stack
     BYTECODE(debug_backtrace): {
       proc.history.to_list(proc);
+    } NEXT_BYTECODE;
+    BYTECODE(disassemble): {
+      assembler.goBack(proc, 0, expect_type<Bytecode>(stack.top())->getLen());
     } NEXT_BYTECODE;
     // take a closure, leave a list on the stack with
     // the bytecode object and the enclosed vars
