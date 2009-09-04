@@ -15,11 +15,11 @@
          (<axiom>lambda ()
            (<axiom>set ,spec
              ,(car rest))))))
-(mac <hl>defm rest
+(mac <hl>defm (sig . rest)
   (withs (f  (rep <arc>defm)
-          rv (apply f rest))
-    ; find the <arc>polymorph and replace with
-    ; <hl>polymorph
+          rv (apply f (car sig) (cdr sig) rest)
+          (set-axiom var (poly-fn types old new))
+             rv)
     ; NOTE! differences in <arc>polymorph and
     ; <hl>polymorph:
     ;   (<arc>polymorph signature generic specific)
@@ -27,22 +27,10 @@
     ; - the change in order was done since we might
     ;   want to overload how overloading of particular
     ;   objects as generics are done
-    ((afn (v)
-       (when (acons v)
-         (when (caris v '<arc>polymorph)
-           (= (car v) '<hl>polymorph)
-           (with (first-par  (cdr  v)
-                  second-par (cddr v))
-             (= (cdr v)          second-par)
-             (= (cdr first-par)  (cdr second-par))
-             (= (cdr second-par) first-par)))
-         (self (car v))
-         (self (cdr v))))
-     rv)
     ; wrap in w/gvl
     `((<axiom>symeval '<common>call-w/gvl)
       (<axiom>lambda ()
-        ,rv))))
+        (<axiom>set ,var (<hl>polymorph ,old ,types ,new))))))
 
 (def <common>call-w/gvl (f) (f))
 
