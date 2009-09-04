@@ -45,6 +45,13 @@
   (if lst
     (if (is x (car lst)) t (mem c (cdr lst)))))
 
+(defm (len (t x cons))
+  ((afn (lst acc)
+     (if lst
+       (self (cdr lst) (+ acc 1))
+       acc))
+   x 0))
+
 (defm (string1 (t x string)) x)
 
 ; count number of digits in a number
