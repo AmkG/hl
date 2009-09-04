@@ -51,6 +51,7 @@
   (if lst
     (if (is x (car lst)) t (mem c (cdr lst)))))
 
+; AmkG: this will be moved, probably to a "scanners.hl"
 (defm (len (t x cons))
   ((afn (lst acc)
      (if lst
@@ -58,7 +59,7 @@
        acc))
    x 0))
 
-(defm (string1 (t x string)) x)
+(defm (base-string (t x string)) x)
 
 ; count number of digits in a number
 ; suppose (> i 0)
@@ -77,7 +78,7 @@
       (string-sref str index (i-to-c (+ (c-to-i #\0) (imod i 10))))
       (digit-fill-string str (/ i 10) (- index 1)))))
 
-(defm (string1 (t x int))
+(defm (base-string (t x int))
   (if (is x 0)
       "0"
       (withs (n (count-digits (if (< x 0) (- 0 x) x)) 
@@ -109,22 +110,22 @@
   (let str (string-build n-digits)
     (string (trunc x) "." (fill-float-str (decimal-part x) str 0))))
 
-(defm (string1 (t x num))
+(defm (base-string (t x num))
   (if (f< x 0.0)
     (string "-" (fl-to-str (f- 0.0 x) 16))
     (fl-to-str x 16)))
 
-(defm (string1 (t x char))
+(defm (base-string (t x char))
   (let str (string-build 3)
     (string-sref str 0 #\#)
     (string-sref str 0 #\\)
     (string-sref str 0 x)
     str))
 
-(defm (string1 (t x sym))
+(defm (base-string (t x sym))
   (<axiom>sy-to-s x))
 
-(defm (string1 (t x cons))
+(defm (base-string (t x cons))
   ; FIXME: SLOW, lot of allocations
   (string "("
           ((afn (x)
@@ -138,7 +139,7 @@
               (string (car x) " " (self (cdr x)))))
            x)))
 
-(defm (string1 (t x table))
+(defm (base-string (t x table))
   (string "#table" (map (fn (k) (cons k (table-ref x k))) (table-keys x))))
 
 (def (my-reduce f lst (o init-val nil))
@@ -159,10 +160,13 @@
     s))
 
 (def (string . args)
-  (apply strings-append (map string1 args)))
+  (apply strings-append (map base-string args)))
 
 ; coerce
 ; TODO: maybe use polymorphic 'defm instead of table based approach
+; almkglor: I agree, mostly. my intent is that instead of 'coerce,
+; we have a set of functions which mean "convert to specific type".
+; i.e. instead of (coerce foo 'int) --> (int foo)
 
 (let coerce-table (table)
   (def (coerce what into)
