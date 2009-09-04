@@ -88,6 +88,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(debug_call)
 	A_BYTECODE(debug_tail_call)
 	A_BYTECODE(debug_backtrace)
+	A_BYTECODE(disassemble)
 	A_BYTECODE(disclose)
 	A_BYTECODE(empty_event_set)
 	A_BYTECODE(enclose)
