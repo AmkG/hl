@@ -41,6 +41,12 @@
 
 (def (atom x) (no (acons x)))
 
+(def (isnt a b) (no (is a b)))
+
+(def (caris lst x) (is (car lst) x))
+
+(def (alist x) (or (isa x 'nil) (isa x '<hl>cons)))
+
 (def (mem x lst)
   (if lst
     (if (is x (car lst)) t (mem c (cdr lst)))))
@@ -202,3 +208,22 @@
     s))
 
 ; TODO: missing def-coerce for string -> int and string -> num
+
+(def (listtab al)
+  (let tb (table)
+    (each pair al
+      (table-sref tb (car al) (cadr al)))
+    tb))
+
+(def (maptable f tb)
+  (map (fn (k) (f k (table-ref tb k))) (table-keys tb)))
+
+; a lesser 'pos (no testify, no start) enough for the compiler
+(def (pos x lst)
+  ((afn (i lst)
+     (if lst
+       (if (is x (car lst)) i (self (+ i 1) (cdr lst)))))
+   0 lst))
+
+(def (complement f)
+  (fn args (no (apply f args))))
