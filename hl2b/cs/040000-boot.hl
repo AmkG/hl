@@ -24,7 +24,7 @@
               (list '<axiom>set name (list 'tag 'mac
                                            (cons 'fn (cons args body)))))))
 
-(mac (def name-and-args . body)
+(mac info (def name-and-args . body)
   ; TODO: use gvl
   (if (is (type name-and-args) '<hl>cons)
     (list '<axiom>set (car name-and-args)
@@ -147,3 +147,51 @@
 
 (def (string . args)
   (apply strings-append (map string1 args)))
+
+; coerce
+; TODO: maybe use polymorphic 'defm instead of table based approach
+
+(let coerce-table (table)
+  (def (coerce what into)
+    (if (isa what into)
+      what
+      (let f (table-ref coerce-table (cons (type what) into))
+        (if f
+          (f what)
+          (err (string "Can't coerce " what " into " into))))))
+
+  (def (def-coerce a b f)
+    (table-sref coerce-table (cons a b) f)))
+
+(def-coerce 'char 'int [c-to-i _])
+(def-coerce 'int 'char [i-to-c _])
+(def-coerce 'char 'string string)
+(def-coerce 'char 'sym [s-to-sy (string _)])
+(def-coerce 'int 'string string)
+(def-coerce 'num 'string string)
+(def-coerce 'string 'sym [s-to-sy _])
+(def-coerce 'string 'cons [str-to-lst _ 0])
+(def-coerce 'cons 'string lst-to-str)
+(def-coerce 'nil 'string (fn (x) ""))
+(def-coerce 'symbol 'string string)
+
+(def (str-to-lst s pos)
+  (if (< pos (string-length s))
+    (cons (string-ref s pos) (str-to-lst s (+ pos 1)))
+    nil))
+
+; convert a list of chars into a string
+(def (lst-to-str lst)
+  (withs (n (len lst)
+          s (string-build n))
+    ((afn (i lst)
+       (if lst
+         (let x (car lst)
+           (if (isa x 'char)
+             (string-sref s i x)
+             (err (string "Can't coerce a list containing " x " to a string")))
+           (self (+ i 1) (cdr lst)))))
+     0 lst)
+    s))
+
+; TODO: missing def-coerce for string -> int and string -> num
