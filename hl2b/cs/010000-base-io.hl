@@ -27,7 +27,7 @@
   (err '<hl>type "'appendfile expects a string for filename"))
 (def (<hl>i/o-get f)
   (err '<hl>type "'i/o-get expects an I/O port"))
-(def (<hl>i/o-put f)
+(def (<hl>i/o-put f b)
   (err '<hl>type "'i/o-put expects an I/O port"))
 (def (<hl>close p)
   (err '<hl>type "'close expects an I/O port"))
@@ -187,4 +187,10 @@
                     (cdr m))
                   nil)))))))))
 
+(<hl>i/o-put
+  (<axiom>i/o-stdin)
+  (<axiom>l-to-b
+    (list 72 10)))
+
+t
 >stop-compiling

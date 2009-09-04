@@ -15,11 +15,15 @@
 
 (<axiom>set <common>disclose
   (<axiom>lambda (f)
-    ; this axiom is not in the specifications
     (<axiom>disclose f)))
 
-(<axiom>set <common>disassemble
-  (<axiom>lambda (b)
-    ; this axiom is not in the specifications
-    (<axiom>disassemble b)))
+((<axiom>lambda (dis)
+   (<axiom>set <common>disassemble
+     (<axiom>lambda (b)
+       (dis b))))
+ (<common>enclose
+   (<common>assemble
+     (<axiom>quote
+       ; this bytecode is not in the specifications
+       ((<bc>do-executor <impl>disassemble))))))
 
