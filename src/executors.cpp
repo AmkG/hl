@@ -106,6 +106,25 @@ public:
 		return true;
 	}
 };
+class DisassemblerExecutor : public Executor {
+public:
+	bool run(Process& proc, size_t& reductions) {
+		/*given:
+			stack[0] = unused
+			stack[1] = k
+			stack[2] = a bytecode object
+		*/
+		ProcessStack& stack = proc.stack;
+		Bytecode* bp = maybe_type<Bytecode>(stack[2]);
+		if(bp) {
+			size_t ln = bp->getLen();
+			assembler.goBack(proc, 0, ln);
+		}
+		stack.restack(2);
+		reductions = 1;
+		return true;
+	}
+};
 
 void Bytecode::push(bytecode_t b) {
   if (code.get()==NULL) { // first instruction added
@@ -321,6 +340,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*declare executors*/
       ("<impl>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       ("<impl>assemble",		THE_EXECUTOR<AssemblerExecutor>())
+      ("<impl>disassemble",		THE_EXECUTOR<DisassemblerExecutor>())
       /*assign bultin global*/
       ;/*end initializer*/
 
