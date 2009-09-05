@@ -13,7 +13,7 @@
   ((<axiom>err-handler) e h))
 
 (def (<hl>err tp . rest)
-  (err-throw
+  (<hl>err-throw
     (if rest
         (tag tp
              rest)
