@@ -12,7 +12,7 @@ All members of the Axiomatic Layer begin with the prefix
 `<axiom>`.  All members of the Axiomatic Layer are special forms
 directly recognized by the compiler.  Macros assigned to the
 global variable value of these symbols are ignored by the
-compiler.
+macro-expander.
 
 Since these symbols act as special forms, they cannot be passed
 around as first-class functions; in order to work as such, they
@@ -21,7 +21,62 @@ must be wrapped in an actual function.
 The Axiomatic Layer is the only layer that contains any special
 forms (aside from any implementation-specific symbols in
 `<impl>`, which are not specified anyway); any "special forms" to
-the general user of the language are really macros.
+the general user of the language are really macros that at some
+point expand into special forms.
+
+`<axiom>lambda` vs. `<hl>fn`
+----------------------------
+
+While `<axiom>lambda` is a special form, `<hl>fn`, which is the
+user "special form", is really a macro which expands to an
+`<axiom>lambda` form.
+
+	(macex '(<hl>fn (foo) x))
+	=> (<axiom>lambda (<User>foo) <User>x)
+
+`<axiom>lambda` is required to support only the "rest" syntax
+commonly used among schemelikes.  All other special syntax, such
+as destructuring, optional, and keyword arguments, are supported
+by `<hl>fn`, and do not need to be supported by `<axiom>lambda`:
+
+	(<axiom>lambda (foo . rest)
+	  rest)
+	=> a function object
+	
+	(<axiom>lambda (foo (o b))
+	  b)
+	=> unspecified, preferably a compile-time error
+
+	(macex '(<hl>fn (foo (o b))
+	          b))
+	=> (<axiom>lambda (<User>foo . #{<hl>sym 42})
+	     ((<axiom>lambda (<User>b)
+	        b)
+	      (<axiom>if #{<hl>sym 42}
+	        ((<axiom>lambda (#{<hl>sym 43} #{<hl>sym 44})
+	           (<axiom>if #{<hl>sym 44}
+	             (<hl>err '<hl>apply
+	                      "too many parameters to function")
+	             #{<hl>sym 43}))
+	         (<hl>car #{<hl>sym 42})
+	         (<hl>cdr #{<hl>sym 42}))
+	        nil)))
+
+`<axiom>lambda` causes the compiler to emit bytecode for creating
+an "ordinary" closure.  An ordinary closure accepts, before the
+formal arguments declared by `<axiom>lambda`, a single hidden
+argument, which is a continuation closure, and is informally
+called `k` (but is not accessible to compiled user code at all).
+
+The closure-creation code emitted for `<axiom>lambda` is
+automatically subjected to continuation-passing style
+transformations by the compiler.  This also includes
+transformations for tail-call optimization.  Tail-calls in an
+ordinary closure simply pass its own continuation.  Tail-calls
+in a continuation closure pass another continuation stored in
+that closure.
+
+~! TODO
 
 Links
 -----
