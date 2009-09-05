@@ -81,6 +81,14 @@ extensions to the specifications; one requirement is that such
 functions cannot be interrupted (i.e. injecting a function into a
 process will not find such functions running or runnable).
 
+<small>it is not yet concrete, at this time, whether or not
+injecting a process - i.e. forcing a process to execute code
+that is not part of its normal flow - will be added to the
+specifications.  the main problem is that this is effectively an
+interrupt, which is hard to reason about.  in any case, such
+injections might destroy the conceptual integrity of message
+passing.</small>
+
 Reserved Axiomatic and Common
 -----------------------------
 
@@ -94,7 +102,7 @@ provided by a `<common>` function to user code cannot contain
 references to these extensions; such continuations should
 never escape `<common>`.
 
-It should be understood, however, than an implementation should
+It should be understood, however, that an implementation should
 be prepared to change its extensions when a new version of these
 specifications defines a name used in its extension.
 
