@@ -24,6 +24,8 @@
  (<common>enclose
    (<common>assemble
      (<axiom>quote
-       ; this bytecode is not in the specifications
-       ((<bc>do-executor <impl>disassemble))))))
+       ((<bc>check-vars 3)
+        (<bc>debug-tail-call 3)
+        ; this bytecode is not in the specifications
+        (<bc>do-executor <impl>disassemble))))))
 
