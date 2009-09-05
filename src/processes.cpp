@@ -339,8 +339,10 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 			invocation of (err 'type "message")
 		*/
 		Closure *k = Closure::NewKClosure(*this, 0);
-		Object::ref halt_bytecode = 
+		stack.push(Object::to_ref(k)); // inline_assemble allocates
+		Object::ref halt_bytecode =
 			Assembler::inline_assemble(*this, "(<bc>check-vars 2) (<bc>halt)");
+		k = known_type<Closure>(stack.top()); stack.pop(); // get back
 		k->codereset(halt_bytecode);
 		stack.push(err_handler_slot);
 		stack.push(Object::to_ref(k));

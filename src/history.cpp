@@ -52,6 +52,7 @@ void History::leave() {
 // returned list is of type
 // ((functon arg1 ... argn) ...)
 void History::to_list(Process & proc) {
+	// !! FIXME: to_list seems to create a list holding garbage collected memory
 	ProcessStack & s = proc.stack;
 	size_t count = 0; // number of elements in the history
 	int sz = ring.size();
