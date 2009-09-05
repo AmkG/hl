@@ -29,6 +29,8 @@
   (err '<hl>type "'i/o-get expects an I/O port"))
 (def (<hl>i/o-put f b)
   (err '<hl>type "'i/o-put expects an I/O port"))
+(def (<hl>accept p)
+  (err '<hl>type "'accept expects an I/O port"))
 (def (<hl>close p)
   (err '<hl>type "'close expects an I/O port"))
 (def (<hl>fsync p)
