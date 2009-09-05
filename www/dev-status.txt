@@ -12,7 +12,9 @@ built**".  Currently, these are what we are working on:
 * <img src='done.png'> Garbage Collector.  **Done.**
 * <img src='done.png'> Strings.  **Done.**
 * <img src='done.png'> Tables.  **Done.**
-* <img src='done.png'> Thread Pool.  **Done.**
+* <img src='undone.png'> Thread Pool.  ***FIXME***
+* <img src='done.png'> Process-level Garbage Collector.
+  **Done;** assumed to be working.
 * <img src='done.png'> Asynchronous I/O framework.  **Done.**
 * <img src='undone.png'> TCP/IP socket I/O.  <small>not
   started</small>
@@ -21,8 +23,7 @@ built**".  Currently, these are what we are working on:
 * <img src='undone.png'> Signal Handling.  <small>not
   started</small>
 * <img src='doing.png'> Runtime Executable.  *Doing...*
-* <img src='doing.png'> Debug Information Framework.
-  *Doing...*
+* <img src='done.png'> Debug Information Framework.  **Done.**
 * <img src='doing.png'> Expression Compiler (on Arc-F).
   *Doing...*
 * <img src='undone.png'> Expression Compiler (self-compiling).
