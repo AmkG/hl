@@ -18,7 +18,7 @@
 (mac <hl>defm (sig . rest)
   (withs (f  (rep <arc>defm)
           rv (apply f (car sig) (cdr sig) rest)
-          (set-axiom var (poly-fn types old new))
+          (set-axiom var (poly-fn types (fn-axiom parms . body) old))
              rv)
     ; NOTE! differences in <arc>polymorph and
     ; <hl>polymorph:
@@ -30,7 +30,7 @@
     ; wrap in w/gvl
     `((<axiom>symeval '<common>call-w/gvl)
       (<axiom>lambda ()
-        (<axiom>set ,var (<hl>polymorph ,old ,types ,new))))))
+        (<axiom>set ,var (<hl>polymorph ,old ,types (<axiom>lambda ,parms ,@body)))))))
 
 (def <common>call-w/gvl (f) (f))
 
