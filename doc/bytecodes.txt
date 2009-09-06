@@ -343,7 +343,10 @@ type
 	; intent is to create a list from a variadic
 	; number of parameters
 
-Concurrency primitives:
+Concurrency primitives.  The bytecodes below exist in the machine, but are
+not specified by the specifications; they are marked as "implementation-
+dependent".  In this particular implementation, the followin bytecodes
+handle concurrency:
 
 (<bc>spawn)
 	expect a function on the stack.
@@ -374,5 +377,21 @@ Concurrency primitives:
 	1) extract any message from the mailbox of the running process.
 	   if mailbox is empty, go to step 3, else to step 2.
 	2) call the current continuation, passing the message as the value.
+	   continue into that continuation, skipping step 3.
 	3) put the process in a waiting state.
+
+(<bc>try-recv)
+	expect the following 4-entry stack:
+		stack[0] = ignored
+		stack[1] = kontinuation
+		stack.... = any
+		stack[top 2] = function to call on success with one argument
+		stack[top 1] = function to call on failure with 0 arguments
+	must be called in tail position.
+	Operations:
+	1) extract any message from the mailbox of the running process.
+	   if mailbox is empty, go to step 3, else to step 2.
+	2) call the success function with the current continuation and
+	   the message.  continue into that function, skipping step 3.
+	3) call the failure function with the current continuation.
 
