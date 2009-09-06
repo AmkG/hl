@@ -88,7 +88,7 @@
              (<axiom>err-handler-set 1)
              (<axiom>enclose 2) (<axiom>disclose 1)
              (<axiom>disassemble 1)
-             (<axiom>assemble 1) (<axiom>f-to-i 1) (<axiom>halt 0)
+             (<axiom>assemble 1) (<axiom>f-to-i 1) (<axiom>halt 1)
              (<axiom>i-to-f 1) (<axiom>is 2) (<axiom>ccc 1) 
              (<axiom>monomethod *) (<axiom>reducto 0) (<axiom>recv 0)
              (<axiom>release 0) (<axiom>rep 1) (<axiom>self-pid 0)
