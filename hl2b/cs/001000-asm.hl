@@ -25,7 +25,6 @@
    (<common>assemble
      (<axiom>quote
        ((<bc>check-vars 3)
-        (<bc>debug-tail-call 3)
         ; this bytecode is not in the specifications
         (<bc>do-executor <impl>disassemble))))))
 

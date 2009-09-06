@@ -16,7 +16,6 @@
        (<bc>closure-ref 0)
        (<bc>k-closure 0
          (<bc>halt))
-       (<bc>debug-call 2)
        (<bc>apply 2))))
 
 (= <impl>base-spawn

@@ -14,7 +14,6 @@
         ((<bc>local 2)
          (<bc>local 1)
          (<bc>local 3)
-         (<bc>debug-tail-call 3)
          (<bc>apply-list))))))
 
 ; <common>apply-list specs:
