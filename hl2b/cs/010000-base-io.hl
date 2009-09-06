@@ -190,7 +190,7 @@
                   nil)))))))))
 
 (<hl>i/o-put
-  (<axiom>i/o-stdin)
+  (<axiom>i/o-stdout)
   (<axiom>l-to-b
     (list 72 10)))
 
