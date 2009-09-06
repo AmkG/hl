@@ -7,11 +7,13 @@ Defines a set of types for use on the hl-side.
 #include<cstring>
 #include<string>
 #include<boost/shared_ptr.hpp>
+#include<boost/scoped_ptr.hpp>
 
 #include"objects.hpp"
 #include"specializeds.hpp"
 #include"heaps.hpp"
 #include"processes.hpp"
+#include"history.hpp"
 
 /*-----------------------------------------------------------------------------
 Utility
@@ -161,11 +163,23 @@ class Closure : public GenericDerivedVariadic<Closure> {
 private:
   Object::ref body;
   bool nonreusable;
-  bool kontinuation;
+  boost::scoped_ptr<History::InnerRing> kontinuation;
 
 public:
   Closure(size_t sz) : GenericDerivedVariadic<Closure>(sz), 
-                       nonreusable(true) {}
+                       nonreusable(true),
+                       kontinuation() {}
+
+  /*copy constructor*/
+  Closure(Closure const& o)
+    : body(o.body),
+      nonreusable(true),
+      GenericDerivedVariadic<Closure>(o),
+      kontinuation(
+        o.kontinuation ?
+         new History::InnerRing(*o.kontinuation) :
+        /*else*/
+         0) { }
   Object::ref& operator[](size_t i) { 
     if (i < size())
       return index(i);
@@ -178,6 +192,7 @@ public:
     /*ban reuse for this and for every other continuation referred to*/
     Closure* kp = this;
   loop:
+    if(kp->nonreusable) return; // reuse already banned
     kp->nonreusable = true;
     for(size_t i = 0; i < kp->sz; ++i) {
       Object::ref tmp = kp->index(i);
@@ -202,13 +217,15 @@ public:
     return Object::to_ref(symbol_fn);
   }
 
-  void traverse_references(GenericTraverser *gt) {
+  void traverse_references(GenericTraverser* gt) {
     gt->traverse(body);    
     for(size_t i = 0; i < sz; ++i) {
       gt->traverse(index(i));
     }
+    if(kontinuation) kontinuation->traverse_references(gt);
   }
 
+  friend class History;
 };
 
 /*-----------------------------------------------------------------------------

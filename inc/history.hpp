@@ -23,27 +23,23 @@ private:
 	History(ProcessStack& nstack) : stack(nstack) { }
 
 public:
+	typedef std::vector<Object::ref> Item;
+	class InnerRing : public boost::circular_buffer<Item> {
+	public:
+		static const size_t breadth = 32;  // TODO: get size from user
+		InnerRing(void) : boost::circular_buffer<Item>(breadth) { }
+		void repeat_set_capacity(void) {
+			set_capacity(breadth);
+		}
+		void traverse_references(GenericTraverser*);
+	};
+
 	// push a list of the last functions called in the process stack
 	void to_list(Process & proc);
 	// called at each entry of a function
 	void entry(void);
 
 	friend class Process;
-};
-
-/*
- * Stored at each kontinuation
- */
-class HistoryInnerRing {
-private:
-	typedef std::vector<Object::ref> Item
-	boost::circular_buffer<Item> items;
-
-	void add_item(ProcessStack&);
-
-public:
-	friend class History;
-	HistoryInnerRing(void) : items(32) { } /*TODO: get length from user*/
 };
 
 #endif // HISTORY_H

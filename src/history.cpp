@@ -3,56 +3,40 @@
 #include "processes.hpp"
 #include "bytecodes.hpp"
 #include "reader.hpp"
+#include "types.hpp"
 
-History::History(size_t depth, size_t breadth) : 
-	ring(depth), breadth(breadth) {
-	ring.push_back(inner_ring(breadth));
-}
+void History::entry(void) {
+	if(known_type<Closure>(stack[0])->kontinuation) {
+		/*called a continuation: remove tail calls using this continuation*/
+		known_type<Closure>(stack[0])->kontinuation->clear();
+	} else {
+		/*called an ordinary function: add to tail calls on current continuation*/
+		if(stack.size() < 2) return;
 
-void History::reset() {
-	ring.erase(ring.begin(), ring.end());
-}
+		Closure* pkclos = maybe_type<Closure>(stack[1]);
+		if(!pkclos) return;
 
-void History::enter(Object::ref clos) {
-	inner_ring i(breadth);
-	Item it;
-	it.clos = clos;
-	i.push_back(it);
-	ring.push_back(i);
-	// ?? for some reason, after insertion capacity must be set again
-	ring.rbegin()->set_capacity(breadth);
-}
+		Closure& kclos = *pkclos;
+		if(!kclos.kontinuation) return;
 
-void History::enter_tail(Object::ref clos) {
-	Item i;
-	i.clos = clos;
- 	ring.rbegin()->push_back(i);
-}
+		InnerRing& inner_ring = *kclos.kontinuation;
+		inner_ring.push_back(Item());
+		// ?? for some reason, after insertion capacity must be set again
+		inner_ring.repeat_set_capacity();
 
-void History::register_args(ProcessStack & stack, int from, int to) {
-	// first check if we can push the args
-	if (ring.size() > 0 && ring.rbegin()->size() > 0) {
-		for (int i = from; i < to; ++i) {
-			push_arg(stack[i]);
+		Item& it = inner_ring.back();
+		it.resize(stack.size() - 1);
+		it[0] = stack[0];
+		/*skip stack[1] in the debug dump*/
+		for(size_t i = 1; i < stack.size(); ++i) {
+			it[i] = stack[i + 1];
 		}
-	}
-	// else don't push
-}
-
-void History::push_arg(Object::ref arg) {
-	ring.rbegin()->rbegin()->args.push_back(arg);
-}
-
-void History::leave() {
-	if (!ring.empty()) {
-		ring.pop_back();
 	}
 }
 
 // returned list is of type
 // ((functon arg1 ... argn) ...)
 void History::to_list(Process & proc) {
-	// !! FIXME: to_list seems to create a list holding garbage collected memory
 	ProcessStack & s = proc.stack;
 	size_t count = 0; // number of elements in the history
 	int sz = ring.size();
@@ -80,17 +64,11 @@ void History::to_list(Process & proc) {
 	}
 }
 
-void History::traverse(GenericTraverser *gt) {
-	int sz = ring.size();
-	for (outer_ring::iterator i = ring.begin()+sz-1; sz>0; --i, --sz) {
-		int sz = i->size();
-		for (inner_ring::iterator j = i->begin()+sz-1; sz>0; --j, --sz) {
-			gt->traverse(j->clos);
-			// traverse args
-			for (std::vector<Object::ref>::iterator k = j->args.begin(); 
-					 k != j->args.end(); ++k) {
-				gt->traverse(*k);
-			}
+void History::InnerRing::traverse_references(GenericTraverser* gt) {
+	for(iterator it = begin(); it != end(); ++it) {
+		for(Item::iterator vit = it->begin(); vit != it->end(); ++vit) {
+			gt->traverse(*vit);
 		}
 	}
 }
+

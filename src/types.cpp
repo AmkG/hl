@@ -2,6 +2,7 @@
 #include "types.hpp"
 #include "processes.hpp"
 #include "executors.hpp"
+#include "history.hpp"
 
 #include <iostream>
 
@@ -31,7 +32,7 @@ Closure* Closure::NewClosure(Heap & h, size_t n) {
   Closure *c = h.create_variadic<Closure>(n);
   c->body = Object::nil();
   c->nonreusable = true;
-  c->kontinuation = false;
+  c->kontinuation.reset();
   return c;
 }
 
@@ -39,7 +40,7 @@ Closure* Closure::NewKClosure(Heap & h, size_t n) {
   Closure *c = h.lifo_create_variadic<Closure>(n);
   c->body = Object::nil();
   c->nonreusable = false;
-  c->kontinuation = true;
+  c->kontinuation.reset(new History::InnerRing);
   return c;
 }
 
