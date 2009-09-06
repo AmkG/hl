@@ -38,6 +38,6 @@
     ; (only if this is the main process)
     ; it would be better to print it and exit, but we have no hl 'prn yet
     ; or we may be debugging 'prn
-    (cons msg (info-from-bt bt))))
+    (<axiom>halt (cons msg (info-from-bt bt)))))
 
 (<axiom>err-handler-set <hl>default-error-handler)
