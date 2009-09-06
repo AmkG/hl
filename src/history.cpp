@@ -25,10 +25,10 @@ void History::entry(void) {
 		inner_ring.repeat_set_capacity();
 
 		Item& it = inner_ring.front();
-		it.resize(stack.size() - 1);
+		it.resize(stack.size() - 1, Object::nil());
 		it[0] = stack[0];
 		/*skip stack[1] in the debug dump*/
-		for(size_t i = 1; i < stack.size(); ++i) {
+		for(size_t i = 1; i < (stack.size() - 1); ++i) {
 			it[i] = stack[i + 1];
 		}
 	}
