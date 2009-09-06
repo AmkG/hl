@@ -39,11 +39,12 @@ void History::entry(void) {
 void History::to_list(Process & proc) {
 	ProcessStack & s = proc.stack;
 	size_t count = 0; // number of elements in the history
-	Object::ref i = stack[1];
 	Closure* pkclos;
-	pkclos = maybe_type<Closure>(i);
-	if(!pkclos) goto end_outer_loop;
-	if(!pkclos->kontinuation) goto end_outer_loop;
+	pkclos = maybe_type<Closure>(stack[1]);
+	if(pkclos && pkclos->kontinuation) goto outer_loop;
+	pkclos = maybe_type<Closure>(stack[0]);
+	if(pkclos && pkclos->kontinuation) goto outer_loop;
+	goto end_outer_loop;
 outer_loop:
 	/*go through the kontinuation*/
 	{ InnerRing& ring = *pkclos->kontinuation;
