@@ -237,8 +237,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>continue-on-clos",	THE_BYTECODE_LABEL(continue_on_clos), ARG_INT)
       ("<bc>debug-backtrace", THE_BYTECODE_LABEL(debug_backtrace))
       ("<bc>debug-bytecode-info", THE_BYTECODE_LABEL(debug_bytecode_info))
-      ("<bc>debug-call", THE_BYTECODE_LABEL(debug_call), ARG_INT)
-      ("<bc>debug-tail-call", THE_BYTECODE_LABEL(debug_tail_call), ARG_INT)
       ("<bc>disassemble", THE_BYTECODE_LABEL(disassemble))
       /*this implements <common>disclose*/
       // !! Could also be done as an Executor
