@@ -85,8 +85,6 @@ DECLARE_BYTECODES
 	A_BYTECODE(continue_local)
 	A_BYTECODE(continue_on_clos)
 	A_BYTECODE(debug_bytecode_info)
-	A_BYTECODE(debug_call)
-	A_BYTECODE(debug_tail_call)
 	A_BYTECODE(debug_backtrace)
 	A_BYTECODE(disassemble)
 	A_BYTECODE(disclose)

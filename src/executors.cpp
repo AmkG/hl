@@ -250,7 +250,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>event-poll",	THE_BYTECODE_LABEL(event_poll))
       ("<bc>event-wait",	THE_BYTECODE_LABEL(event_wait))
       ("<bc>f-to-i",		THE_BYTECODE_LABEL(f_to_i))
-      ("<bc>get-history", THE_BYTECODE_LABEL(get_history))
       ("<bc>global",		THE_BYTECODE_LABEL(global), ARG_SYMBOL)
       ("<bc>global-set",		THE_BYTECODE_LABEL(global_set), ARG_SYMBOL)
       ("<bc>halt",		THE_BYTECODE_LABEL(halt))
@@ -687,7 +686,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       bytecode_check_vars(stack, N);
       // register function args
       // skip closure & continuation
-			proc.history.register_args(stack, 2, N);
     } NEXT_BYTECODE;
     BYTECODE(closure_ref): {
       INTPARAM(N); CLOSUREREF;
@@ -730,7 +728,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(b_continue): {
       stack.top(2) = stack[1];
       stack.restack(2);
-      proc.history.leave();
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*
@@ -744,7 +741,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push(stack[N]);
       stack.top(2) = stack[1];
       stack.restack(2);
-      proc.history.leave();
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     /*
@@ -760,7 +756,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       /*TODO: insert debug checking for is_a<Generic*> here*/
       attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(2);
-      proc.history.leave();
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
     // take a bytecode object from the stack
@@ -769,20 +764,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       Bytecode *b = expect_type<Bytecode>(stack.top()); stack.pop();
       b->info(proc);
     } NEXT_BYTECODE;
-    // register a function call
-    // expect closure to register in stack.top(N)
-    BYTECODE(debug_call): {
-      INTPARAM(N);
-      proc.history.enter(stack.top(N));
-    } NEXT_BYTECODE;
-    // similar ro debug_call, but register a tail call
-    BYTECODE(debug_tail_call): {
-      INTPARAM(N);
-      proc.history.enter_tail(stack.top(N));
-    } NEXT_BYTECODE;
     // leave a list of called closures on the stack
     BYTECODE(debug_backtrace): {
-      proc.history.to_list(proc);
+      proc.history().to_list(proc);
     } NEXT_BYTECODE;
     BYTECODE(disassemble): {
       assembler.goBack(proc, 0, expect_type<Bytecode>(stack.top())->getLen());
@@ -850,10 +834,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(f_to_i): {
       bytecode_<&f_to_i>(stack);
-    } NEXT_BYTECODE;
-    // get current history
-    BYTECODE(get_history): {
-      proc.history.to_list(proc);
     } NEXT_BYTECODE;
     BYTECODE(global): {
       SYMPARAM(S);
@@ -1352,8 +1332,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       INTPARAM(N);
       bytecode_variadic(proc, stack, N);
       // register args
-      // N+1 to register variadic arg
-			proc.history.register_args(stack, 2, N+1);
     } NEXT_BYTECODE;
     BYTECODE(do_executor): {
       SYMPARAM(s);

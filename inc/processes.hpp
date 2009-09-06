@@ -297,7 +297,6 @@ public:
 		  invalid_globals(),
 		  bytecode_slot(),
 		  multipush(0),
-		  history(32, 16), // TODO: take values from the user
 		  is_main(0)
 	{ }
 
@@ -399,9 +398,10 @@ For process-level garbage collection
 
 	/*allows access to the mailbox*/
 	MailBox mailbox(void) { return MailBox(*this); }
+	/*allows access to the history*/
+	History history(void) { return History(stack); }
 
 	ProcessStack stack;
-	History history;
 
 	virtual void scan_root_object(GenericTraverser* gt);
 

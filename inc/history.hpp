@@ -13,47 +13,37 @@ class ProcessStack;
 class GenericTraverser;
 
 /*
- * Keep the history of the last function calls
+ * Wrapper around Process, converts history information
  */
 class History {
 private:
-	class Item {
-	public:
-		Object::ref clos; // registered function
-		std::vector<Object::ref> args; // args passed to function
-	};
+	ProcessStack& stack;
 
-	typedef boost::circular_buffer<Item> inner_ring;
-	typedef boost::circular_buffer<inner_ring> outer_ring;
-	outer_ring ring;
-	size_t breadth;
-
-	// record an argument for the current function call
-	void push_arg(Object::ref arg);
+	History(void); //disallowed!
+	History(ProcessStack& nstack) : stack(nstack) { }
 
 public:
-	History(size_t depth, size_t breadth);
-
-	// reset the history
-	void reset();
-
-	// record a function (closure) call -- may delete the oldest call
-	void enter(Object::ref clos);
-
-	// record a function call in tail position
-	void enter_tail(Object::ref clos);
-
-	// record function call arguments held in stack
-	void register_args(ProcessStack & stack, int from, int to);
-
-	// record a function return (i.e. a continuation call)
-	void leave();
-
 	// push a list of the last functions called in the process stack
 	void to_list(Process & proc);
+	// called at each entry of a function
+	void entry(void);
 
-	// traverse the history
-	void traverse(GenericTraverser* gt);
+	friend class Process;
+};
+
+/*
+ * Stored at each kontinuation
+ */
+class HistoryInnerRing {
+private:
+	typedef std::vector<Object::ref> Item
+	boost::circular_buffer<Item> items;
+
+	void add_item(ProcessStack&);
+
+public:
+	friend class History;
+	HistoryInnerRing(void) : items(32) { } /*TODO: get length from user*/
 };
 
 #endif // HISTORY_H

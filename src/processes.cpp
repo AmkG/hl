@@ -287,8 +287,6 @@ void Process::scan_root_object(GenericTraverser* gt) {
 	/*insert code for traversing process-local vars here*/
 	gt->traverse(proc_local_slot);
 	gt->traverse(err_handler_slot);
-	/*traverse call history*/
-	history.traverse(gt);
 }
 
 /*
@@ -328,7 +326,7 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		if(!err_handler_slot) {
 			std::cerr << "Unhandled hl-side error!" << std::endl;
 			std::cerr << h.err_str() << std::endl;
-			history.to_list(*this);
+			history().to_list(*this);
 			std::cerr << stack.top() << std::endl;
 			exit(1);
 		}
@@ -349,11 +347,8 @@ ProcessStatus Process::execute(size_t& reductions, Process*& Q) {
 		// pass error message in a HlString
 		HlString::from_cpp_string(*this, stack, h.err_str());
 		// history info
-		history.to_list(*this);
+		history().to_list(*this);
 		stack.restack(4);
-		// reset history
-		history.reset();
-		history.enter(stack[0]);
 		return process_running;
 	}
 }
