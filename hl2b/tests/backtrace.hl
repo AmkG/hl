@@ -64,7 +64,7 @@
   (<axiom>cons msg (info-from-bt bt)))
 
 (def fail ()
-  (<axiom>cons "Failure" (info-from-bt (<axiom>get-history))))
+  (<axiom>cons "Failure" (info-from-bt (<axiom>debug-backtrace))))
 
 (def will-fail (n)
   (<axiom>if (<axiom>is n 0)

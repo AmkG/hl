@@ -12,13 +12,19 @@
 (def (<hl>err-throw e h)
   ((<axiom>err-handler) e h))
 
+(def (<common>debug-backtrace)
+  ; this axiom is not part of the specifications
+  (<axiom>debug-backtrace))
+
 (def (<hl>err tp . rest)
-  (<hl>err-throw
-    (if rest
-        (tag tp
-             rest)
-        tp)
-    (<axiom>get-history)))
+  ((fn (h)
+     (<hl>err-throw
+       (if rest
+           (tag tp
+                rest)
+           tp)
+       h))
+    (<common>debug-backtrace)))
 
 (def (<hl>on-err ef bf)
   ((fn (real-k errval)

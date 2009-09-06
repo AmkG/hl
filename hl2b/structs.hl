@@ -99,7 +99,7 @@
              (<axiom>i* 2) (<axiom>i/ 2) (<axiom>imod 2) (<axiom>i< 2) 
              (<axiom>f+ 2) (<axiom>f- 2) (<axiom>f* 2) (<axiom>f/ 2) 
              (<axiom>f< 2) (<axiom>l-to-b 1) (<axiom>b-ref 2)
-             (<axiom>get-history 0)
+             (<axiom>debug-backtrace 0)
              ; I/O
              (<axiom>i/o-accept 2) (<axiom>i/o-appendfile 2) 
              (<axiom>i/o-close 1) (<axiom>i/o-connect 3) (<axiom>i/o-fsync 2)
