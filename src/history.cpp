@@ -20,11 +20,11 @@ void History::entry(void) {
 		if(!kclos.kontinuation) return;
 
 		InnerRing& inner_ring = *kclos.kontinuation;
-		inner_ring.push_back(Item());
+		inner_ring.push_front(Item());
 		// ?? for some reason, after insertion capacity must be set again
 		inner_ring.repeat_set_capacity();
 
-		Item& it = inner_ring.back();
+		Item& it = inner_ring.front();
 		it.resize(stack.size() - 1);
 		it[0] = stack[0];
 		/*skip stack[1] in the debug dump*/
@@ -39,27 +39,47 @@ void History::entry(void) {
 void History::to_list(Process & proc) {
 	ProcessStack & s = proc.stack;
 	size_t count = 0; // number of elements in the history
-	int sz = ring.size();
-	for (outer_ring::iterator i = ring.begin()+sz-1; sz>0; --i, --sz) {
-		int sz = i->size();
-		for (inner_ring::iterator j = i->begin()+sz-1; sz>0; --j, --sz) {
-			// build inner list
-			int nelem = 1 + j->args.size(); // +1 for clos
-			s.push(j->clos);
-			for (std::vector<Object::ref>::iterator k = j->args.begin(); 
-					 k != j->args.end(); ++k) {
-				s.push(*k);
+	Object::ref i = stack[1];
+	Closure* pkclos;
+	pkclos = maybe_type<Closure>(i);
+	if(!pkclos) goto end_outer_loop;
+	if(!pkclos->kontinuation) goto end_outer_loop;
+outer_loop:
+	/*go through the kontinuation*/
+	{ InnerRing& ring = *pkclos->kontinuation;
+		for(InnerRing::iterator it = ring.begin();
+				it != ring.end();
+				++it) {
+			Item& item = *it;
+			{ size_t count = 0;
+				for(Item::iterator it = item.begin();
+						it != item.end();
+						++it) {
+					proc.stack.push(*it);
+					++count;
+				}
+				proc.stack.push(Object::nil());
+				for(; count; --count) {
+					bytecode_cons(proc, stack);
+				}
 			}
-			s.push(Object::nil());
-			for (int i=0; i<nelem; ++i) {
-				bytecode_cons(proc, s);
-			}
-			count++;
+			++count;
 		}
 	}
+	/*search for a parent continuation*/
+	for(size_t i = 0; i < pkclos->size(); ++i) {
+		Closure* npkclos = maybe_type<Closure>((*pkclos)[i]);
+		if(npkclos) {
+			if(npkclos->kontinuation) {
+				pkclos = npkclos;
+				goto outer_loop;
+			}
+		}
+	}
+end_outer_loop:
 	proc.stack.push(Object::nil());
 	// build the list
-	for (int i=0; i<count; ++i) {
+	for (; count; --count) {
 		bytecode_cons(proc, proc.stack);
 	}
 }
