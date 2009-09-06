@@ -4,13 +4,6 @@
 ; dependency on external lib?
 ;(require "lib/proto-table.arc")
 
-; take function call params
-; return function call debugging bytecode
-(def debug-call (params n)
-  (if (aref (cadr params)) ; use caller continuation: a tail call
-    `(<bc>debug-tail-call ,n)
-    `(<bc>debug-call ,n)))
-
 (def bytecodegen (ast (o env (table 'top 0)) (o cont-clos))
   ; (ppr-sexp:source ast)
   (withs (is-closure-ref-self
@@ -173,14 +166,12 @@
                                  (car k-fn!subx)
                                  (f-environment k-fn!params)
                                  (max cont-clos (len k-closed))))
-                           ,(debug-call params (+ 3 (len params)))
                            (<bc>apply-invert-k ,(+ 2 (len params)))))
                     ; check if continuation anyway - continuations
                     ; that don't reuse or recreate their closures
                     ; should use apply-k-release
                     cont-clos
                       `( ,@(apply-pushall params)
-                         ,(debug-call params (len params))
                          (<bc>apply-k-release ,(len params)))
                     ; check if return-type call (first param is ref
                     ; to local[1], and two params (continuation and
@@ -196,7 +187,6 @@
                        ; NOTE! assumes that subexpressions here cannot
                        ; be 'let forms
                       `( ,@(apply-pushall params)
-                         ,(debug-call params (len params))
                          (<bc>apply ,(len params))))
                   (do (prn "----expected (<axiom>closure-ref _ 0) on apply")
                       (ppr-sexp:source ast)
