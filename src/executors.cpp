@@ -436,6 +436,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     // clos->code(), since clos->code() may now refer to a different body
     bytecode = clos->code();
   }
+  proc.history().entry(); // enter a function
   // to start, call the closure in stack[0]
   DISPATCH_BYTECODES {
     BYTECODE(accessor): {
