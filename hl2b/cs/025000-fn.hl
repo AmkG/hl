@@ -3,25 +3,51 @@
 ; TODO: add proper package declarations
 
 (in-package impl)
-;(using <arc>v3)
 
-(def arg-name (a) a!name)
-(def arg-type (a) a!type)
-(def arg-expr (a) a!expr)
+(import <hl>def def)
+(import <hl>if if)
+(import <hl>aif aif)
+(import <hl>case case)
+(import <hl>in in)
+(import <hl>and and)
+(import <hl>let let)
+(import <hl>with with)
+(import <hl>withs withs)
+(import <hl>afn afn)
+(import <hl>no no)
+(import <hl>cadr cadr)
+(import <hl>list list)
+(import <hl>listtab listtab)
+(import <hl>mappend mappend)
+(import <hl>find find)
+(import <hl>isa isa)
+(import <hl>acons acons)
+(import <hl>join join)
+(import <hl>err err)
+(import <hl>string string)
+(import <hl>uniq uniq)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>cons cons)
+(import <axiom>is is)
 
-(def caddr (x) (cadr:cdr x))
+(def (arg-name a) a!name)
+(def (arg-type a) a!type)
+(def (arg-expr a) a!expr)
 
-(def mk-arg (name expr type)
+(def (caddr x) (car (cdr (cdr x))))
+
+(def (mk-arg name expr type)
   (listtab (list (list 'name name) (list 'expr expr) (list 'type type))))
 
 ; make destructuring arg
-(def mk-darg (name expr)
+(def (mk-darg name expr)
   (mk-arg name expr 'dest))
 
 ; destructure argument
-(def des-arg (a gs pos)
-  (if 
-    (isa a 'sym)
+(def (des-arg a gs pos)
+  (if
+    (isa a '<hl>sym)
       (list (mk-darg a (list pos gs)))
     (acons a)
       (let gs-2 (if (is pos 'top) gs (uniq))
@@ -37,10 +63,10 @@
     (err:string "Can't destructure: " a)))
 
 ; is x an optional arguments?
-(def is-opt (x)
+(def (is-opt x)
   (and (acons x) (is (car x) 'o)))
 
-(def collect-args (args)
+(def (collect-args args)
   (if
     (no args)
       nil
@@ -59,7 +85,7 @@
               (collect-args (cdr args))))
     (err:string "Unknow arg type:" args)))
 
-(def expand-args (args body rest-arg)
+(def (expand-args args body rest-arg)
   ((afn (args a-rest) ; auxiliary rest parameter name (for optional args)
      (if args
        (let a (car args)
@@ -85,7 +111,7 @@
        body))
    args rest-arg))
 
-(def find-rest-arg-name (args)
+(def (find-rest-arg-name args)
   (if (find [is (arg-type _) 'opt] args)
     ; opt args require auxiliary rest arg
     (uniq)
@@ -93,7 +119,7 @@
       (arg-name it)
       nil)))
 
-(def args->lambda-list (args rest-name)
+(def (args->lambda-list args rest-name)
   ((afn (a)
      (if (no a)
        rest-name
@@ -102,11 +128,11 @@
          (cons (arg-name (car a)) (self (cdr a))))))
    args))
 
-(def expand-fn (arglist body)
+(def (expand-fn arglist body)
   (withs (args (collect-args arglist)
           rest-name (find-rest-arg-name args))
     `(<axiom>lambda ,(args->lambda-list args rest-name)
        ,@(expand-args args body rest-name))))
 
-(mac <hl>fn (args . body)
+(mac info (<hl>fn args . body)
   (expand-fn args body))
