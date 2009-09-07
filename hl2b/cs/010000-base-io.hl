@@ -15,7 +15,7 @@
 (import <axiom>cdr cdr)
 (import <axiom>lambda fn)
 ; use only variable assignment form
-(import <hl>set =)
+(import <axiom>set =)
 ; use only 3-arg form
 (import <axiom>if if)
 
