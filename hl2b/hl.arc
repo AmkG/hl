@@ -31,6 +31,13 @@
     `((<axiom>symeval '<common>call-w/gvl)
       (<axiom>lambda ()
         (<axiom>set ,var (<hl>polymorph ,old ,types (<axiom>lambda ,parms ,@body)))))))
+; WARNING! limited 'let only, no destructuring
+(mac <hl>let (var val . rest)
+  (if (isnt (type var) 'sym)
+      (err "bootstrapping 'let does not support destructuring")
+      `((<axiom>lambda (,var)
+          ,@rest)
+        ,val)))
 
 (def <common>call-w/gvl (f) (f))
 
