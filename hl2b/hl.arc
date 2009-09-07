@@ -32,6 +32,9 @@
       (<axiom>lambda ()
         (<axiom>set ,var (<hl>polymorph ,old ,types (<axiom>lambda ,parms ,@body)))))))
 ; WARNING! limited 'let only, no destructuring
+; for bootstrapping purposes only.  Full destructuring
+; support will be added in cs/, but cs/ itself can't
+; use it.
 (mac <hl>let (var val . rest)
   (if (isnt (type var) 'sym)
       (err "bootstrapping 'let does not support destructuring")
@@ -41,6 +44,3 @@
 
 (def <common>call-w/gvl (f) (f))
 
-(mac <hl>let (name val . body)
-  ; TODO: should be '<hl>fn
-  `((<axiom>lambda (,name) ,@body) ,val))
