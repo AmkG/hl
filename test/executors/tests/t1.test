@@ -333,3 +333,11 @@
 (<bc>halt )
 
 ;^2$
+
+; *** c-to-i
+
+(<bc>char 90)
+(<bc>c-to-i)
+(<bc>halt)
+
+;^90$

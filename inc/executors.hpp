@@ -68,6 +68,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(build_k_closure)
 	A_BYTECODE(build_k_closure_recreate)
 	A_BYTECODE(build_k_closure_reuse)
+  A_BYTECODE(c_to_i)
 	A_BYTECODE(car)
 	A_BYTECODE(car_local_push)
 	A_BYTECODE(car_clos_push)

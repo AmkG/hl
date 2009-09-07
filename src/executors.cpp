@@ -218,6 +218,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>build-k-closure-reuse", THE_BYTECODE_LABEL(build_k_closure_reuse), 
        ARG_INT,
          NON_STD() )
+			("<bc>c-to-i", THE_BYTECODE_LABEL(c_to_i))
       ("<bc>car",			THE_BYTECODE_LABEL(car))
       ("<bc>scar",                  THE_BYTECODE_LABEL(scar))
       ("<bc>car-local-push",	THE_BYTECODE_LABEL(car_local_push), ARG_INT)
@@ -642,6 +643,13 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
         stack.pop();
       }
       stack.push(Object::to_ref(nclos));
+    } NEXT_BYTECODE;
+    BYTECODE(c_to_i): {
+			Object::ref c = stack.top(); stack.pop();
+			if(!is_a<UnicodeChar>(c)) {
+				throw_HlError("'c-to-i expects a character");
+			}
+			as_a<UnicodeChar>(c).push_as_int(proc);
     } NEXT_BYTECODE;
     BYTECODE(car): {
       /*exact implementation is in

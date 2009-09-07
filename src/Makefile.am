@@ -22,6 +22,7 @@ libhlvm_a_SOURCES = \
 	workers.cpp \
 	assembler.cpp \
 	history.cpp \
+	unichars.cpp \
 	../inc/aio.hpp \
 	../inc/all_defines.hpp \
 	../inc/assembler.hpp \
