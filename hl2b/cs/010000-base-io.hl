@@ -193,6 +193,3 @@
   (<axiom>i/o-stdout)
   (<axiom>l-to-b
     (list 72 10)))
-
-t
->stop-compiling
