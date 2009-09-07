@@ -41,3 +41,6 @@
 
 (def <common>call-w/gvl (f) (f))
 
+(mac <hl>let (name val . body)
+  ; TODO: should be '<hl>fn
+  `((<axiom>lambda (,name) ,@body) ,val))
