@@ -49,7 +49,7 @@
              (err "bootstrapping 'with does not support destructuring")))
     `((<axiom>lambda (,@(map verify:car (pair var-vals)))
         ,@rest)
-      ,@(map cdr (pair var-vals)))))
+      ,@(map cadr (pair var-vals)))))
 
 (def <common>call-w/gvl (f) (f))
 
