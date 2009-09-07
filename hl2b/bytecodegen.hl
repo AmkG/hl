@@ -60,7 +60,7 @@
                      ,(- ((cadr param!subx) 'val) 1)))
               ; else
                  `( ,@(bytecodegen param env)
-                    ,op)))
+                    (,op))))
           direct-compile
           (fn (params op)
             `( ,@(mappend [bytecodegen _ env] params)
