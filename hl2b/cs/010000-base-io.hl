@@ -103,7 +103,7 @@
    ((fn (add-event remove-event wait-event)
       (fn (ev)
         ((fn (done result)
-           (dynamic-wind
+           (<hl>dynamic-wind
              (fn ()
                (add-event ev))
              (fn ()
