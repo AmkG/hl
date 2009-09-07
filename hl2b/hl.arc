@@ -41,6 +41,15 @@
       `((<axiom>lambda (,var)
           ,@rest)
         ,val)))
+(mac <hl>with (var-vals . rest)
+  (let verify
+       (fn (var)
+         (if (is (type var) 'sym)
+             var
+             (err "bootstrapping 'with does not support destructuring")))
+    `((<axiom>lambda (,@(map verify:car (pair var-vals)))
+        ,@rest)
+      ,@(map cdr (pair var-vals)))))
 
 (def <common>call-w/gvl (f) (f))
 
