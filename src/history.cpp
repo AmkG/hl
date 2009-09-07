@@ -20,9 +20,9 @@ void History::entry(void) {
 		if(!kclos.kontinuation) return;
 
 		InnerRing& inner_ring = *kclos.kontinuation;
-		inner_ring.push_front(Item());
 		// ?? for some reason, after insertion capacity must be set again
 		inner_ring.repeat_set_capacity();
+		inner_ring.push_front(Item());
 
 		Item& it = inner_ring.front();
 		it.resize(stack.size() - 1, Object::nil());
