@@ -425,6 +425,15 @@ inline void bytecode_char(ProcessStack& stack, int N) {
 	stack.push( Object::to_ref(UnicodeChar((uint32_t)N)) );
 }
 
+inline void bytecode_i_to_c(ProcessStack & stack) {
+	Object::ref i = stack.top(); stack.pop();
+	if (!is_a<int>(i)) {
+		// TODO: check for bignums (when we have them)
+		throw_HlError("i-to-c expects an integer");
+	}
+	stack.push(Object::to_ref(UnicodeChar((uint32_t)as_a<int>(i))));
+}
+
 inline void bytecode_io_pipe(Process& proc, ProcessStack& stack) {
 	stack.push(
 		Object::to_ref<Generic*>(proc.create<HlIOPort>())

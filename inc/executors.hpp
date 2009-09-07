@@ -102,6 +102,7 @@ DECLARE_BYTECODES
 	A_BYTECODE(halt)
 	A_BYTECODE(halt_local_push)
 	A_BYTECODE(halt_clos_push)
+	A_BYTECODE(i_to_c)
 	A_BYTECODE(i_to_f)
 	A_BYTECODE(io_accept)
 	A_BYTECODE(io_appendfile)

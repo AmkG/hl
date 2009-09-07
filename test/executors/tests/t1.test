@@ -341,3 +341,12 @@
 (<bc>halt)
 
 ;^90$
+
+; *** (c-to-i (i-to-c 90))
+
+(<bc>int 90)
+(<bc>i-to-c)
+(<bc>c-to-i)
+(<bc>halt)
+
+;^90$

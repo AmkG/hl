@@ -254,6 +254,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>halt",		THE_BYTECODE_LABEL(halt))
       ("<bc>halt-local-push",	THE_BYTECODE_LABEL(halt_local_push), ARG_INT)
       ("<bc>halt-clos-push",	THE_BYTECODE_LABEL(halt_clos_push), ARG_INT)
+      ("<bc>i-to-c",		THE_BYTECODE_LABEL(i_to_c))
       ("<bc>i-to-f",		THE_BYTECODE_LABEL(i_to_f))
       ("<bc>is",		THE_BYTECODE_LABEL(is))
       ("<bc>jmp-nil",		THE_BYTECODE_LABEL(jmp_nil), ARG_INT,
@@ -865,6 +866,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       stack.push(clos[N]);
       stack.restack(1);
       return process_dead;
+    } NEXT_BYTECODE;
+    BYTECODE(i_to_c): {
+      bytecode_i_to_c(stack);
     } NEXT_BYTECODE;
     BYTECODE(i_to_f): {
       bytecode_<&i_to_f>(proc, stack);
