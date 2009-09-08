@@ -27,6 +27,3 @@
           (table-loop rv rest)
           rv))))
 
-(<hl>table
- 1 2 3 4)
->stop-compiling
