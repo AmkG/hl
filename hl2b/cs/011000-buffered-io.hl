@@ -118,7 +118,7 @@
 (def (<hl>flush p b)
   (err '<hl>type "attempt to flush non-port-like object"))
 (let byte-check
-     (polymorph
+     (<hl>polymorph
        (fn (c e)
          (err '<hl>type e))
        '(<hl>int)
