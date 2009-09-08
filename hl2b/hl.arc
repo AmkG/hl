@@ -50,6 +50,15 @@
     `((<axiom>lambda (,@(map verify:car (pair var-vals)))
         ,@rest)
       ,@(map cadr (pair var-vals)))))
+(mac <hl>withs (var-vals . rest)
+  (if
+    var-vals
+      (let (var val . nvars) var-vals
+        `(<hl>let ,var ,val
+           (<hl>withs ,nvars ,@rest)))
+      `((<axiom>lambda () ,@rest))))
+(mac <hl>do rest
+  `((<axiom>lambda () ,@rest)))
 
 (def <common>call-w/gvl (f) (f))
 
