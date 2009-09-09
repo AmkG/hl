@@ -176,7 +176,7 @@
               ((extract ob) v a b))
             ; 5 arguments or more
             (fn (ob . rest)
-              (<common>apply-list (extract ob) . rest))))))))
+              (<common>apply-list (extract ob) rest))))))))
 
 ; converts an arbitrary data type to a function
 (def (<hl>func ob)
