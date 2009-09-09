@@ -1,0 +1,189 @@
+(in-package impl)
+(import <hl>def def)
+(import <hl>defm defm)
+(import <hl>with with)
+(import <hl>withs withs)
+(import <hl>let let)
+(import <axiom>if if)
+(import <axiom>quote quote)
+(import <hl>err err)
+(import <axiom>set =)
+(import <axiom>lambda fn)
+
+(def (<hl>call* ob . rest)
+  (err '<hl>type "Function call on inappropriate object"))
+(def (<hl>sref ob v . rest)
+  (err '<hl>type "Can't set reference"))
+#|
+ | All expressions of the form:
+ |   (= (f . x) v)
+ | become converted to:
+ |   (<hl>sref f v . x)
+ |
+ | unlike in Arc, where there is special handling for
+ | stuff like <arc>car, instead we have an
+ | <axiom>accessor which is invoked when a function is
+ | used in sref form:
+ |   (<hl>sref car v cons-cell)
+ | =>
+ |   ((<axiom>accessor-ref car) v cons-cell)
+ |#
+
+(withs (check-fake
+        (fn (c msg)
+          (if (<axiom>is (<axiom>rep c) c)
+              c
+              (err '<hl>type msg)))
+        simple-int-check-fake
+        (<hl>polymorph
+          (fn (i non-msg fake-msg)
+            (err '<hl>type non-msg))
+          '(<hl>int)
+          (fn (i non-msg fake-msg)
+            (check-fake i fake-msg)))
+        int-check-fake
+        (fn (i non-msg fake-msg oob-msg)
+          (let i (simple-int-check-fake i non-msg fake-msg)
+            (if (<axiom>i< i 0)
+                (err '<hl>value oob-msg)
+                (if (<axiom>i< i l)
+                    i
+                    (err '<hl>value oob-msg)))))
+        is-genuine-type
+        (fn (ob ty non-msg fake-msg)
+          (if (<axiom>is (<axiom>type ob) ty)
+              (err '<hl>type non-msg)
+              (check-fake ob fake-msg))))
+
+  ; ---- table
+  (defm (<hl>call* (t ob <hl>table) k)
+    (<axiom>table-ref (check-fake ob "Attempt to look up in fake table") k))
+  (defm (<hl>sref (t ob <hl>table) v k)
+    (<axiom>table-sref (check-fake ob "Attempt to set reference in fake table") v k))
+
+  ; ---- string
+  (defm (<hl>call* (t ob <hl>string) n)
+    (let s (check-fake ob "Attempt to index fake string")
+      (<axiom>string-ref
+        s
+        (int-check-fake n "String call expects integer for index"
+                          "Attempt to use fake integer in string call"
+                          "String call index out of bounds"
+                          (<axiom>string-len s)))))
+  (defm (<hl>sref (t ob <hl>string) v n)
+    (let s (check-fake ob "Attempt to set reference in fake string")
+      (<axiom>string-sref
+        s
+        (is-genuine-type v '<hl>char "String set reference expects a character"
+                                     "Attempt to use fake character in string set reference")
+        (int-check-fake n "String set reference expects integer for index"
+                          "Attempt to use fake integer in string set reference"
+                          "String set reference index out of bounds"
+                          (<axiom>string-len s)))))
+
+  ; ---- binobj
+  (defm (<hl>call* (t ob <hl>binobj) n)
+    (let b (check-facke ob "Attempt to index fake binobj")
+      (<axiom>b-ref
+        b
+        (int-check-fake n "Binobj call expects integer for index"
+                          "Attempt to use fake integer in binobj call"
+                          "Binobj call index out of bounds"
+                          (<axiom>b-len b)))))
+
+  ; ---- cons
+  (with (cons-check
+         (<hl>polymorph
+           (fn (c)
+             (err '<hl>value "Indexed into improper list"))
+           '(<hl>bool)
+           (fn (c)
+             (if c
+                 (err '<hl>value "Indexed into improper list")
+                 (err '<hl>value "Cons cell index out of bounds")))
+           '(<hl>cons)
+           (fn (c) c))
+         ind-check
+         (fn (i)
+           (if (<axiom>i< i 0)
+               (err '<hl>value "Cons cell given negative index")
+               i))
+         cons-loop ()
+         cons-s-loop ())
+    (= cons-loop
+       (fn (c i)
+         (if (<axiom>is i 0)
+             (<axiom>car c)
+             (cons-loop
+               (cons-check (<axiom>cdr c))
+               (<axiom>i- i 1)))))
+    (= cons-s-loop
+       (fn (c a i)
+         (if (<axiom>is i 0)
+             (<axiom>scar c a)
+             (cons-s-loop
+               (cons-check (<axiom>cdr c))
+               a
+               (<axiom>i- i 1)))))
+    (defm (<hl>call* (t ob <hl>cons) n)
+      (cons-loop
+        (check-fake ob "Attempt to index fake cons cell")
+        (ind-check (simple-int-check-fake n "Cons cell call expects integer for index"
+                                            "Attempt to use fake integer in cons cell call"))))
+    (defm (<hl>sref (t ob <hl>cons) a n)
+      (cons-s-loop
+        (check-fake ob "Attempt to set reference in fake cons cell")
+        a
+        (ind-check (simple-int-check-fake n "Cons cell set reference expects integer for index"
+                                            "Attempt to use fake integer in cons cell set reference")))))
+
+  ; ---- function sref
+  #|
+   | (defm (<hl>sref (t ob <hl>fn) . rest)
+   |   (let sf (<axiom>accessor-ref (check-fake ob "Attempt to set reference in fake function"))
+   |     (if sf (<common>apply-list sf rest)
+   |            (err '<hl>type "Attempt to set reference in function without an accessor"))))
+   |#
+  (<common>call-w/gvl
+    (fn ()
+      (let extract
+           (fn (ob)
+             (let rv (<axiom>accessor-ref (check-fake ob "Attempt to set reference in fake function"))
+               (if rv
+                   rv
+                   (err '<hl>type "Attempt to set reference in function without an accessor"))))
+        (<hl>polymorph
+          <hl>sref
+          '(<hl>fn)
+          (<common>enclose
+            (<common>assemble
+              '((<bc>arg-dispatch 6)))
+            ; 0 arguments can't happen - we're polymorphing on the first argument
+            (fn () ())
+            ; 1 argument is invalid for sref, which requires
+            ; at least 2. cause an invalid number of arguments
+            ; error
+            (fn (ob v . rest) ())
+            ; 2 arguments
+            (fn (ob v)
+              ((extract ob) v))
+            ; 3 arguments
+            ; common case for e.g. (sref car v c-cell)
+            (fn (ob v a)
+              ((extract ob) v a))
+            ; 4 arguments
+            (fn (ob v a b)
+              ((extract ob) v a b))
+            ; 5 arguments or more
+            (fn (ob . rest)
+              (<common>apply-list (extract ob) . rest))))))))
+
+; converts an arbitrary data type to a function
+(def (<hl>func ob)
+  (<axiom>accessor
+    (fn rest
+      (<common>apply-list ob rest))
+    (fn rest
+      (<common>apply-list <hl>sref (<axiom>cons ob rest)))))
+
+
