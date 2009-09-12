@@ -532,7 +532,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(apply_k_release): {
       INTPARAM(N);
       /*TODO: insert debug checking for is_a<Generic*> here*/
-      //attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
+      attempt_kclos_dealloc(proc, as_a<Generic*>(stack[0]));
       stack.restack(N);
       /***/ DOCALL(); /***/
     } NEXT_BYTECODE;
