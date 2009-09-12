@@ -74,6 +74,37 @@ public:
 	friend class AppCondVar;
 };
 
+class AppDoubleLock : boost::noncopyable {
+private:
+	#ifndef single_threaded
+		char outer_lock[sizeof(AppLock)];
+		char inner_lock[sizeof(AppLock)];
+	#endif
+	AppDoubleLock(void); // disallowed!
+
+public:
+	AppDoubleLock(AppMutex& m1, AppMutex& m2) {
+		/*lock in the order of address*/
+		if(&m1 < &m2) {
+			#ifndef single_threaded
+				new((void*) outer_lock) AppLock(m1);
+				new((void*) inner_lock) AppLock(m2);
+			#endif
+		} else {
+			#ifndef single_threaded
+				new((void*) outer_lock) AppLock(m2);
+				new((void*) inner_lock) AppLock(m1);
+			#endif
+		}
+	}
+	~AppDoubleLock() {
+		#ifndef single_threaded
+			reinterpret_cast<AppLock*>(inner_lock)->~AppLock();
+			reinterpret_cast<AppLock*>(outer_lock)->~AppLock();
+		#endif
+	}
+};
+
 class AppTryLock : boost::noncopyable {
 private:
 	#ifndef single_threaded
