@@ -32,6 +32,20 @@
         ((car winner) s (cdr winner))
         s))))
 
+; split a symbol in two parts at position pos
+; character at position pos is left out
+(def (split-sym s pos)
+  (withs (s (string s)
+          ln (string-length s)
+          left (string-build pos)
+          right (string-build (- ln (+ pos 1))))
+    ((afn (i)
+       (when (< i ln)
+         (if (< i pos) (string-sref left i (string-ref s i))
+             (> i pos) (string-ref right (- i (+ pos 1)) (string-ref s i)))
+         (self (+ i 1)))) 0)
+    (cons left right)))
+
 ; get current context
 (def (current-ctx)
   ; current context is stored in a process local variable
