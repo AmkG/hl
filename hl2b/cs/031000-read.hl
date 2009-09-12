@@ -138,6 +138,11 @@
 (def (ignore c in nothing)
   nothing)
 
+; count lines
+(def (eol c in nothing)
+  (ctx-inc-line-num)
+  nothing)
+
 ; skip a comment up to end of line
 (def (comment c in nothing)
   (if (is (peekc in) #\newline)
@@ -145,6 +150,30 @@
     (do 
       (readc in) ; throw away
       (comment c in nothing))))
+
+; tells if c is a digit
+(def (adigit c)
+  (and (>= (c-to-i c) (c-to-i #\0)) (<= (c-to-i c) (c-to-i #\9))))
+
+; read a number (integer or floating point)
+(def (read-num c in nothing)
+  (with (sign (if (is c #\-) -1 1)
+         n (if (or (is c #\-) (is c #\+)) 0 (- (c-to-i c) (c-to-i #\0))))
+    (= c (readc in)) ; next
+    (while (adigit c)
+      (= n (+ (* n 10) (- (c-to-i c) (c-to-i #\0))))
+      (= c (readc in)))
+    (if (is c #\.) ; floating point
+      (let p 10.0
+        (= c (readc in))
+        (while (adigit c)
+          (= n (+ n (/ (- (c-to-i c) (c-to-i #\0)) p)))
+          (= p (* p 10))
+          (= c (readc in)))))
+    (unreadc in) ; last character read isn't part of the number
+    ; FIXME: if last character read isn't blocking, read up to a
+    ; blocking char and return a symbol 
+    (* sign n)))
 
 ; ~a
 (def (ssyntax-complement s pos)
