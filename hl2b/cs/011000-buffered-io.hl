@@ -133,9 +133,11 @@ will throw an '<hl>i/o error.
              nil)))
   (defm (<hl>readb (t p <hl>port))
     (let rv ((p '<hl>readb))
-      (if (int-in-range rv)
-          rv
-          (err '<hl>contract "contract violation on return value of 'readb - not a byte"))))
+      (if rv
+          (if (int-in-range rv)
+              rv
+              (err '<hl>contract "contract violation on return value of 'readb - not a byte"))
+          nil)))
   (defm (<hl>unreadb (t p <hl>port) v)
     (if (int-in-range v)
         ((p '<hl>unreadb) v)
