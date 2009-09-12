@@ -15,6 +15,7 @@
 (import <hl>let let)
 (import <hl>withs withs)
 (import <hl>do do)
+(import <hl>polymorph polymorph)
 (import <axiom>is is)
 
 (import <axiom>table-ref ref)
@@ -24,26 +25,475 @@
 (import <axiom>i- -)
 (import <axiom>i< <)
 
+#|
+
+Port Contract
+-------------
+
+An object of type '<hl>port is any object whose
+representation is an object that is callable with
+one argument, a symbol, called a key, denoting a
+particular "I/O request".  The called object should
+then return a function-like object which can comply
+with that I/O request, or return a nil, denoting
+that this particular port is incapable of directly
+handling that I/O request.  The return value of
+that object should be safely memoizable, i.e. the
+returned function-like, if any, must do "the same"
+thing as any other returned function-like of the
+same key, and if it ever returns nil for a key, it
+must always return nil for that key.
+
+When an object of type '<hl>port is called with
+a single argument, it is equivalent to a call on
+the representation object.
+
+	(defcall <hl>port (ob k)
+	  ((rep ob) k))
+
+The representation object may be any callable
+type; it is not required to present any other
+contract.  For example, an object that presents
+the port contract can have a representation
+that is a true function, or a table, or a user
+type that overloads '<hl>call*.
+
+Operations Required
+-------------------
+
+At minimum, the following keys must be supported:
+
+	<hl>readb
+	(def (<hl>readb p)
+	  ((p '<hl>readb)))
+
+This key returns a function-like which accepts no
+arguments and reads a byte from the port; it
+returns an integer between 0 and 255 inclusive, or
+nil to denote the end of file.  Any other return
+value is invalid.  A port may readback nils multiple
+times.
+
+If the port does not support reading, it should
+still return a function-like, which when invoked
+will throw an '<hl>i/o error.
+
+	<hl>unreadb
+	(def (<hl>unreadb p v)
+	  ((p '<hl>unreadb) v))
+
+This key returns a function-like which accepts a
+single integer argument and puts it into the
+"readback" buffer.  Subsequent calls to the readb
+function
+
+If the port does not support reading, it should
+still return a function-like object.
+
+	<hl>writeb
+	(def (<hl>writeb p v)
+	  ((p '<hl>writeb) v))
+
+This key returns a function-like which accepts a
+single integer argument and writes a byte to the
+port; the function is not required to check the
+type and range of the argument.
+
+If the port does not support writing, it should
+stil return a function-like, which when invoked
+will throw an '<hl>i/o error.
+
+|#
+
+(defm (<hl>call* (t p <hl>port) k)
+  ((<axiom>rep p) k))
+
+(def (<hl>readb p)
+  (err '<hl>type "attempt to read from a non-port-like object"))
+(def (<hl>unreadb p b)
+  (err '<hl>type "attempt to unread into non-port-like object"))
+(def (<hl>unreadmb p bs)
+  (err '<hl>type "attempt to unread into non-port-like object"))
+(def (<hl>writeb p b)
+  (err '<hl>type "attempt to write into non-port-like object"))
+(def (<hl>writemb p bs)
+  (err '<hl>type "attempt to write into non-port-like object"))
+(def (<hl>flush p)
+  (err '<hl>type "attempt to flush non-port-like object"))
+
+(let int-in-range
+     (polymorph
+       (fn (i) ())
+       '(<hl>int)
+       (fn (i)
+         (if (is i (<axiom>rep i))
+             (if (i< -1 i)
+                 (i< i 256)
+                 nil)
+             nil)))
+  (defm (<hl>readb (t p <hl>port))
+    (let rv ((p '<hl>readb))
+      (if (int-in-range rv)
+          rv
+          (err '<hl>contract "contract violation on return value of 'readb - not a byte"))))
+  (defm (<hl>unreadb (t p <hl>port) v)
+    (if (int-in-range v)
+        ((p '<hl>unreadb) v)
+        (err '<hl>type "attempt to unread a non-byte to port"))
+    t)
+  (defm (<hl>writeb (t p <hl>port) v)
+    (if (int-in-range v)
+        ((p '<hl>writeb) v)
+        (err '<hl>type "attempt to write a non-byte to port"))
+    t))
+
+
+(withs (is-real
+        (fn (c) (is (<axiom>rep c) c))
+        real-cons-check
+        (polymorph
+          (fn (c) ())
+          '(<hl>cons)
+          is-real)
+        real-int-check
+        (polymorph
+          (fn (c) ())
+          '(<hl>int)
+          is-real)
+        over-byte-list
+        ()
+        copy-byte-list
+        (fn (l errmsg)
+          (with (hd ()
+                 tl ())
+            (over-byte-list
+              l errmsg
+              (fn (i)
+                (let nc (<axiom>cons i nil)
+                  (if hd
+                      (= tl (<axiom>scdr tl nc))
+                      (= tl (= hd nc))))))
+            hd)))
+  (= over-byte-list
+     (fn (chk errmsg f)
+        (if chk
+          (if (real-cons-check chk)
+              (let v (<axiom>car chk)
+                (if (real-int-check v)
+                    (if (if (i< -1 v)
+                            (i< v 256)
+                            nil)
+                        (do (f v)
+                            (over-byte-list
+                              (<axiom>cdr chk)
+                              errmsg
+                              f))
+                        (err '<hl>type errmsg))
+                    (err '<hl>type errmsg)))
+              (err '<hl>type errmsg))
+          ())))
+  ; for ports that support direct multi-byte writing,
+  ; for this key, their representation should return a
+  ; unary function-like which when invoked with a list
+  ; of bytes, writes that many bytes into the port.
+  ; The return value of that function is ignored.
+  ; That function-like is allowed to reuse the given
+  ; list of bytes, i.e. it is given a fresh list.  The
+  ; caller of this function can also reuse the list it
+  ; gave to this function.
+  ; For ports that do not support direct multi-byte
+  ; writing, this function emulates it by writing the
+  ; data one byte at a time.
+  (defm (<hl>writemb (t p <hl>port) bs)
+    (let f (p '<hl>writemb)
+      (if f
+          ; copy the byte list while checking, then
+          ; pass to the function
+          (let nbs (copy-byte-list bs "'writemb expects a list of bytes")
+            (f nbs))
+          ; emulate by writing each byte
+          (let f (p '<hl>writeb)
+            (over-byte-list bs "'writemb expects a list of bytes" f)))))
+  ; for ports that support direct multi-byte unreading,
+  ; for this key, their representation should return a
+  ; unary function-like which when invoked with a list
+  ; of bytes, writes that many bytes into the port.
+  ; The order is from "first to unread", so that means
+  ; it is "last to read", e.g. if unreading (a b c),
+  ; it means we read c, then b, then a.
+  ; That function-like is allowed to reuse the given
+  ; list of bytes.  The caller of this function can also
+  ; reuse the list it gave this function.
+  ; For ports that do not support direct multi-byte
+  ; unreading, this function emulates it by writing the
+  ; data one byte at a time.
+  (defm (<hl>unreadmb (t p <hl>port) bs)
+    (let f (p '<hl>unreadmb)
+      (if f
+          (let nbs (copy-byte-list bs "'unreadmb expects a list of bytes")
+            (f nbs))
+          (let f (p '<hl>unreadb)
+            (over-byte-list bs "'unreadmb expects a list of bytes" f))))))
+
+; For ports that support flushing, for this key, their
+; representation should return a nullary function-like
+; which when invoked, flushes any buffers of that port.
+; The return value of that function-like is ignored.
+; For ports that do not support flushing, this function
+; does nothing.
+(defm (<hl>flush (t p <hl>port))
+  (let f (p '<hl>flush)
+    (if f (f)
+          ())
+    t))
+
+; for ports that support closing, for this key, their
+; representation should return a nullary function-like
+; which when invoked, closes the port.  The return value
+; of that function-like is ignored.  For ports that do
+; not support closing, this function does nothing.
+; ports that support flushing will also be flushed
+; by this function before it attempts to close
+(defm (<hl>close (t p <hl>port))
+  (let f (p '<hl>flush)
+    (if f (f)
+          ()))
+  (let f (p '<hl>close)
+    (if f (f)
+          ())
+    t))
+
+; for ports that have names, for this key, their
+; representation should return a nullary function-like
+; which when invoked returns the name of the port.
+; For ports that do not support having names, this
+; function returns nil.
+(def (<hl>port-name p)
+  (err '<hl>type "attempt to get port name from non-port-like object"))
+(defm (<hl>port-name (t p <hl>port))
+  (let f (p '<hl>port-name)
+    (if f (f)
+          nil)))
+
+; for ports that have line numbers, for this key,
+; their representation should return a nullary
+; function-like which when invoked returns the
+; current line number of the port.
+; the returned line number should be a positive
+; integer
+; For ports that do not support having lines,
+; this function returns 1.
+; Line numbers are counted at 1, and are
+; considered only for reading operations.
+(def (<hl>port-line p)
+  (err '<hl>type "attempt to get port line number from non-port-like object"))
+(defm (<hl>port-line (t p <hl>port))
+  (let f (p '<hl>port-line)
+    (if f (let rv (f)
+            (if (if (is (<axiom>type rv) '<hl>int)
+                    (if (is (<axiom>rep rv) rv)
+                        (i< 0 rv)
+                        nil)
+                    nil)
+                rv
+                (err '<hl>contract "contract violation on return value of port-line - not an integer")))
+          1)))
+
+; for ports that really and honestly do
+; control an actual <hl>ioport, for this
+; key, their representation should
+; return a nullary function-like which
+; when invoked returns that actual
+; <hl>ioport.
+; for ports that do not actually control
+; an <hl>ioport, their representation may
+; still return a nullary function-like
+; which should return nil.
+; For ports that do not control an
+; <hl>ioport, this function returns nil.
+(def (<hl>ioport-of-port p)
+  (err '<hl>type "attempt to get actual ioport from non-port-like object"))
+(defm (<hl>ioport-of-port (t p <hl>port))
+  (let f (p '<hl>ioport-of-port)
+    (if f (let rv (f)
+            (if rv
+                (if (if (is (<axiom>type rv) '<hl>ioport)
+                        (is (<axiom>rep rv) rv)
+                        nil)
+                    rv
+                    (err '<hl>contract "contract violation on return value of ioport-of-port - not an <hl>ioport"))
+                nil))
+          nil)))
+
+; for ports that support fsyncing, for
+; this key, their representation should
+; return a nullary function-like which
+; when invoked blocks until while it
+; performs the fsync operation.
+; for ports that do not support
+; fsyncing, their representation may
+; stil return a nullary function-like
+; which does nothing.
+; the return value of that function-like
+; is ignored.
+(defm (<hl>fsync (t p <hl>port))
+  (let f (p '<hl>fsync)
+    (if f (f)
+          nil)
+    t))
+
+; for ports that can listen for a new
+; connection, for this key, their
+; representation should return a
+; nullary function-like which when
+; invoked blocks while it waits for
+; a new connection.
+; for ports that do not support
+; listening for new connections, their
+; representation may still return a
+; function-like which throws an error. 
+; the return value of that function-like
+; is ignored.
+(defm (<hl>accept (t p <hl>port))
+  (let f (p '<hl>accept)
+    (if f (f)
+          (err '<hl>i/o "port does not support accepting new connections"))
+    t))
+
 (def (<common>buffered-port-wrap ob name)
-  (tag '<hl>buffered-port
-       (table
-         '<hl>object                            ob
-         '<hl>name                              name
-         ; number of 10's (newlines) encountered in
-         ; input byte stream
-         '<hl>line-number                       1
-         ; number of 13's (returns) encountered in
-         ; input byte stream
-         '<hl>mac-line-number                   1
-         ; read buffer stream
-         '<hl>unread-buff                       nil
-         '<hl>read-buff                         nil
-         '<hl>read-ind                          nil
-         '<hl>read-len                          nil
-         ; write buffer stream
-         '<hl>write-head                        nil
-         '<hl>write-tail                        nil
-         '<hl>write-len                         0)))
+  (tag '<hl>port
+    (withs (line-number     1   ; line number, counting 10's
+            mac-line-number 1   ; line number, counting 13's
+            line-check
+            (fn (b)
+              (if (is b 10)
+                  (= line-number (i+ line-number 1))
+                  (if (is b 13)
+                      (= mac-line-number (i+ mac-line-number 1))
+                      ())))
+            unline-check
+            (fn (b)
+              (if (is b 10)
+                  (= line-number (i- line-number 1))
+                  (if (is b 13)
+                      (= mac-line-number (i- mac-line-number 1))
+                      ())))
+            readbuf         nil ; nil = nothing read yet, binobj otherwise
+            ri              0   ; index into readbuf
+            rln             0   ; length of readbuf
+            unreadbuf       nil ; will be a table
+            uri             0   ; 0 = nothing to unread
+            actual-unreadb
+            (fn (b)
+              (sref unreadbuf b uri)
+              (= uri (i+ uri 1)))
+            unreadb
+            (fn (b)
+              (unline-check b)
+              ; if there's no unread buffer yet,
+              ; try to check if we can get away
+              ; with just decrementing ri
+              ; otherwise pointless, because the
+              ; space for unreading is already
+              ; allocated.
+              (if unreadbuf
+                  ; something to unread, so do it
+                  (actual-unreadb b)
+                  ; nothing to unread yet - see if
+                  ; we can unread by simply decrementing
+                  ; ri
+                  (if (if readbuf
+                          (i< 0 ri)
+                          nil)
+                      (withs (i-1 (i- ri 1)
+                              nb  (bref readbuf i-1))
+                        (if (is nb b)
+                            ; decrement ri
+                            (= ri i-1)
+                            (do (= unreadbuf (<axiom>table-create))
+                                (actual-unreadb))))
+                      ; nothing to read from anyway
+                      (do (= unreadbuf (<axiom>table-create))
+                          (actual-unreadb b)))))
+            verify-binobj
+            (polymorph
+              (fn (b) nil)
+              '(<hl>binobj)
+              (fn (b)
+                (if (is b (rep b))
+                    t
+                    nil)))
+            actual-readb
+            (fn ()
+              (with (rv  (bref readbuf ri)
+                     i+1 (i+ ri 1))
+                (if (is i+1 rln)
+                    (= readbuf nil)
+                    (= ri i+1))
+                rv))
+            readb
+            (fn ()
+              (if (is uri 0)
+                  (if readbuf
+                      (actual-readb)
+                      (let nrb (<hl>i/o-get ob)
+                        (if nrb
+                            (if (verify-binobj nrb)
+                                (let l (<axiom>b-len nrb)
+                                  (if (< l 1)
+                                      nil
+                                      (do
+                                        (= readbuf nrb)
+                                        (= ri 0)
+                                        (= rln (<axiom>b-len nrb))
+                                        (actual-readb))))
+                                (err '<hl>contract "contract violation on return value of i/o-get"))
+                            nil)))
+                  ; read from the unread buffer
+                  (withs (i-1 (i- uri 1)
+                          rv  (ref unreadbuf i-1))
+                    (= uri i-1)
+                    rv)))
+            write-hd nil
+            write-tl nil
+            len      0
+            actual-flush
+            (fn ()
+              (let b (<axiom>l-to-b hd)
+                (= hd (= tl nil))
+                (= ln 0)
+                (<hl>i/o-put ob b)))
+            writeb
+            (fn (b)
+              (if write-hd
+                  (= write-tl (<axiom>scdr write-tl  (<axiom>cons b nil)))
+                  (= write-hd (= write-tl            (<axiom>cons b nil))))
+              (if (i< (= len (i+ len 1)) 64)
+                  ()
+                  (actual-flush)))
+            close
+            (fn ()
+              (<hl>close ob)))
+      (table
+        '<hl>fsync           (fn () (<hl>fsync ob))
+        '<hl>accept          (fn () (<hl>accept ob))
+        '<hl>ioport-of-port  (fn () ob)
+        '<hl>close           close
+        '<hl>flush           actual-flush
+        '<hl>writeb          writeb
+        '<hl>readb           (fn ()
+                               (let rv (readb)
+                                 (line-check rv)
+                                 rv))
+        '<hl>unreadb         unreadb
+        '<hl>port-name       (fn () name)
+        '<hl>port-line       (fn ()
+                               (let rv (if (i< mac-line-number line-number)
+                                           line-number
+                                           mac-line-number)
+                                 (if (i< rv 1)
+                                     1
+                                     rv)))))))
 
 (def (<hl>buffered-port-wrap ob . rest)
   (if rest
@@ -54,161 +504,6 @@
             (<common>buffered-port-wrap ob name)))
       ; no given name...
       (<common>buffered-port-wrap ob nil)))
-
-(def (<hl>readb p)
-  (err '<hl>type "attempt to read from a non-port-like object"))
-
-(let inner-readb nil
-  (= inner-readb
-     (fn (tb)
-       (let unr (ref tb '<hl>unreadb-buff)
-         (if unr
-             (with (rv    (car unr)
-                    unr+1 (cdr unr))
-               (sref tb unr+1 '<hl>unread-buff)
-               rv)
-             (let rb (ref tb '<hl>read-buff)
-               (if rb
-                   (withs (ind     (ref tb '<hl>read-ind)
-                           ind+1   (+ ind 1)
-                           len     (ref tb '<hl>read-len)
-                           rv      (bref rb ind))
-                     ; consumed buffer?
-                     (if (< ind+1 len)
-                         ; not yet - replace index
-                         (sref tb ind+1 '<hl>read-ind)
-                         ; yes - drop read buffer
-                         (sref tb nil '<hl>read-buff))
-                     rv)
-                   ; no read-buffer: try to read
-                   (let nrb (<hl>i/o-get (ref tb '<hl>object))
-                     (if nrb
-                         ; got something - check that it's
-                         ; a binobj
-                         (if (if (is (type nrb) '<hl>binobj)
-                                 (is (rep nrb) nrb) ; not tagged?
-                                 nil)
-                             (let len (<axiom>b-len nrb)
-                               (if (< len 1)
-                                   ; length 0 or worse... treat as eof
-                                   nil
-                                       ; load buffer, then restart!
-                                   (do (sref tb 0   '<hl>read-ind)
-                                       (sref tb len '<hl>read-len)
-                                       (sref tb nrb '<hl>read-buff)
-                                       ; restart
-                                       (inner-readb tb))))
-                             ; not really a binobj - fail!
-                             (err '<hl>type "contract violation, i/o-get returned non-binobj"))
-                         nil))))))))
-  (defm (<hl>readb (t p <hl>buffered-port))
-    (withs (tb (rep p)
-            rv (inner-readb tb))
-      (if (is rv 10)
-          (sref tb (+ 1 (ref tb '<hl>line-number)) '<hl>line-number)
-          (if (is rv 13)
-              (sref tb (+ 1 (ref tb '<hl>mac-line-number)) '<hl>mac-line-number)
-              nil))
-      rv)))
-
-(def (<hl>unreadb p b)
-  (err '<hl>type "attempt to unread into non-port-like object"))
-(def (<hl>writeb p b)
-  (err '<hl>type "attempt to write into non-port-like object"))
-(def (<hl>flush p b)
-  (err '<hl>type "attempt to flush non-port-like object"))
-(let byte-check
-     (<hl>polymorph
-       (fn (c e)
-         (err '<hl>type e))
-       '(<hl>int)
-       (fn (c e)
-         (if (< c 0)
-             (= c (+ c 256))
-             ())
-         (if (< c 0)
-             (err '<hl>value e)
-             (if (< 255 c)
-                 (err '<hl>value e)
-                 c))))
-  (defm (<hl>unreadb (t p <hl>buffered-port) b)
-    (withs (b   (byte-check b "invalid byte type or value in unread")
-            tb  (rep p)
-            unb (ref tb '<hl>unread-buff)
-            fallback
-            (fn ()
-              (sref tb (cons b unb) '<hl>unread-buff)))
-      (if (is b 10)
-          (sref tb (- (ref tb '<hl>line-number) 1) '<hl>line-number)
-          (if (is b 13)
-              (sref tb (- (ref tb '<hl>mac-line-number) 1) '<hl>mac-line-number)
-              ()))
-      (if unb
-          (fallback)
-          ; check if there's a read buffer, and the
-          ; previous byte is the same as the given b
-          ; - in such a case, we can just
-          ; decrement the index
-          ; (we do this to reduce consing)
-          (let rb (ref tb '<hl>read-buff)
-            (if rb
-                (let i   (ref tb '<hl>read-ind)
-                  (if (< i 1)
-                      ; at position zero anyway, so
-                      ; can't decrement any more
-                      (fallback)
-                      (withs (i-1 (- i 1)
-                              ob  (bref rb i-1))
-                        (if (is ob b)
-                            (sref tb i-1 '<hl>read-ind)
-                            (fallback)))))
-                (fallback)))))
-    b)
-  (let flush-core
-       (fn (tb)
-         (let b (<axiom>l-to-b (ref tb '<hl>write-head))
-           (sref tb nil '<hl>write-head)
-           (sref tb nil '<hl>write-tail)
-           (sref tb 0   '<hl>write-len)
-           (<hl>i/o-put (ref tb '<hl>object) b)))
-    (defm (<hl>writeb (t p <hl>buffered-port) b)
-      (withs (b   (byte-check b "invalid byte type or value in write")
-              tb  (rep p)
-              ln  (ref tb '<hl>write-len))
-        (if (< 128 ln)
-            (do (flush-core tb)
-                (= ln 0))
-            ())
-        ; append to list
-        (let hd (ref tb '<hl>write-head)
-          (if hd
-              (let tl (ref tb '<hl>write-tail)
-                (sref tb (<axiom>scdr tl (cons b nil)) '<hl>write-tail)
-              (sref tb (sref tb (cons b nil) '<hl>write-head) '<hl>write-tail))))
-        (sref tb (+ 1 ln) '<hl>write-len)
-        b))
-    (defm (<hl>flush (t p <hl>buffered-port))
-      (withs (tb (rep p)
-              hd (ref tb '<hl>write-head))
-        (if hd
-            (flush-core tb)
-            nil)
-        t))
-    (defm (<hl>fsync (t p <hl>buffered-port))
-      (withs (tb (rep p)
-              ob (ref tb '<hl>object)
-              hd (ref tb '<hl>write-head))
-        (if hd
-            (flush-core tb)
-            nil)
-        (<hl>fsync ob)))
-    (defm (<hl>close (t p <hl>buffered-port))
-      (withs (tb (rep p)
-              ob (ref tb '<hl>object))
-        (if hd
-            (flush-core tb)
-            nil)
-        (<hl>close ob)))))
 
 >stop-compiling
 
