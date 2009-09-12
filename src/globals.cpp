@@ -40,8 +40,8 @@ boost::shared_ptr<IOPort> port_stderr;
 void initialize_globals(void) {
 	symbols.reset(new SymbolsTable());
 	symbol_sym = symbols->lookup("<hl>sym");
-	symbol_sym = symbols->lookup("<hl>int");
-	symbol_sym = symbols->lookup("<hl>char");
+	symbol_int = symbols->lookup("<hl>int");
+	symbol_char = symbols->lookup("<hl>char");
 	symbol_cons = symbols->lookup("<hl>cons");
 	symbol_pid = symbols->lookup("<hl>pid");
 	symbol_fn = symbols->lookup("<hl>fn");
