@@ -445,7 +445,7 @@ will throw an '<hl>i/o error.
                                       (do
                                         (= readbuf nrb)
                                         (= ri 0)
-                                        (= rln (<axiom>b-len nrb))
+                                        (= rln l)
                                         (actual-readb))))
                                 (err '<hl>contract "contract violation on return value of i/o-get"))
                             nil)))
@@ -518,7 +518,8 @@ will throw an '<hl>i/o error.
            (let v (<hl>readb stdin)
              (if v
                  (do (<hl>writeb stdout v)
-                     (<hl>flush stdout))
+                     (<hl>flush stdout)
+                     (loop))
                  t))))
       (loop))))
 
