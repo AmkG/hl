@@ -44,7 +44,20 @@
          (if (< i pos) (string-sref left i (string-ref s i))
              (> i pos) (string-ref right (- i (+ pos 1)) (string-ref s i)))
          (self (+ i 1)))) 0)
-    (cons left right)))
+    (cons (s-to-sy left) (s-to-sy right))))
+
+; create a ssyntax function that splits the symbol in two and calls f
+; passing the two ssyntax-expanded sides
+(def (mk-binary-ssyntax f)
+  (fn (s pos)
+    (if (or (is pos 0) (is pos (string-length (sy-to-s s))))
+      (err:string "binary syntax must be in the middle of a symbol: " s)
+      (let sides (split-sym s pos)
+        (f (ssyntax-expand (car sides)) (ssyntax-expand (cdr sides)))))))
+
+; convenient wrapper around mk-binary-ssyntax
+(mac info (def-binary-ssyntax name (left right) . body)
+  `(= ,name (mk-binary-ssyntax (fn (,left ,right) ,@body))))
 
 ; get current context
 (def (current-ctx)
@@ -132,3 +145,21 @@
     (do 
       (readc in) ; throw away
       (comment c in nothing))))
+
+; ~a
+(def (ssyntax-complement s pos)
+  (if (is pos 0)
+    (list '<hl>complement (ssyntax-expand (cdr (split-sym s 0))))
+    (err:string "~ found in the middle of the symbol: " s)))
+
+; a:b
+(def-binary-ssyntax ssyntax-compose (l r)
+  (list '<hl>compose l r))
+
+; a.b
+(def-binary-ssyntax ssyntax-call-one-arg (l r)
+  (list l r))
+
+; a!b
+(def-binary-ssyntax ssyntax-call-quoted (l r)
+  (list l (list '<axiom>quote r)))
