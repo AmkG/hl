@@ -459,7 +459,7 @@ will throw an '<hl>i/o error.
             len      0
             actual-flush
             (fn ()
-              (let b (<axiom>l-to-b hd)
+              (let b (<axiom>l-to-b write-hd)
                 (= hd (= tl nil))
                 (= ln 0)
                 (<hl>i/o-put ob b)))
