@@ -507,10 +507,20 @@ will throw an '<hl>i/o error.
 
 (let stdout (<hl>buffered-port-wrap (<axiom>i/o-stdout) "stdout")
   (<hl>writemb stdout
-    ; "still booting" message
+    ; "^D to exit" message
     (list
-      115 116 105 108 108 32 98 111 111 116 105 110 103 10))
-  (<hl>flush stdout))
+      94 68 32 116 111 32 101 120 105 116 10))
+  (<hl>flush stdout)
+  (let stdin (<hl>buffered-port-wrap (<axiom>i/o-stdin) "stdin")
+    (let loop ()
+      (= loop
+         (fn ()
+           (let v (<hl>readb stdin)
+             (if v
+                 (do (<hl>writeb stdout v)
+                     (<hl>flush stdout))
+                 t))))
+      (loop))))
 
 >stop-compiling
 
