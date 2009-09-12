@@ -1,0 +1,87 @@
+; reader
+
+; get current context
+(def (current-ctx)
+  ; current context is stored in a process local variable
+  (table-ref (<common>proc-locals) 'current-ctx))
+
+; get the current read table
+(def (ctx-read-table)
+  (table-ref (current-ctx) 'read-table))
+
+; get current file name
+(def (ctx-file-name)
+  (table-ref (current-ctx) 'file-name))
+
+; current line count
+; get
+(def (ctx-line-num)
+  (table-ref (current-ctx) 'line-num))
+; inc
+(def (ctx-inc-line-num)
+  (let ctx (current-ctx)
+    (table-sref ctx (+ (table-ref ctx 'line-num) 1))))
+
+; many reader functions stop on some special characters
+; it's up to these functions to stop, i.e. it isn't compulsory
+; like whitespace, parenthesis, etc.
+; this special list is part of the current context
+
+; add a "blocking" character to the current list
+(def (ctx-block-on c)
+  ; use a table for faster lookups
+  (table-sref (table-sref (current-ctx) 'block-on) c t))
+
+; tells if c is a blocking character in the current context
+(def (should-block c)
+  (table-ref (table-sref (current-ctx) 'block-on) c))
+
+; get the current context and initialise it with
+; default read table
+(def (init-default-read-ctx ctx file-name)
+  (table-sref ctx 'file-name file-name)
+  (table-sref ctx 'line-num 0)
+  (table-sref ctx 'block-on (table))
+  (let read-table (table)
+    ; TODO: add entries here
+    (table-sref ctx 'read-table read-table)))
+
+; The read table maps character to read functions
+; each read function accepts the matched character,
+; the input stream and an object meaning "nothing" (a uniq symbol)
+; it returns the read object or the special object
+; "nothing"
+; the read table must have at least one entry mapping the object 't
+; to a special catch-all function, called when there is no other
+; matching function
+
+; find reader function for character c
+(def (get-read-fn c)
+  (let read-table (ctx-read-table)
+    (or (table-ref read-table c)
+        (table-ref read-table t))))
+
+; main reader loop
+(def (base-read in (o eof))
+  (let c (readc in)
+    (if (is c nil) ; eof
+      eof
+      (withs (read-fn (get-read-fn c)
+              nothing (uniq)
+              res (read-fn c in nothing))
+        (if (is res nothing)
+          ; nothing read, keep going
+          (base-read in eof)
+          res)))))
+
+; a simple read table entry: ignore the character
+(def (ignore c in nothing)
+  nothing)
+
+; skip a comment up to end of line
+(def (comment c in nothing)
+  (if (is (peekc in) #\newline)
+    nothing ; done
+    (do 
+      (readc in) ; throw away
+      (comment c in nothing))))
