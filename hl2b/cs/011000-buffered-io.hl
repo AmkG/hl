@@ -460,8 +460,8 @@ will throw an '<hl>i/o error.
             actual-flush
             (fn ()
               (let b (<axiom>l-to-b write-hd)
-                (= hd (= tl nil))
-                (= ln 0)
+                (= write-hd (= write-tl nil))
+                (= len 0)
                 (<hl>i/o-put ob b)))
             writeb
             (fn (b)
