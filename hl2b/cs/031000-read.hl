@@ -1,5 +1,37 @@
 ; reader
 
+; symbol syntax table. Maps chars to a pair holding function to be applied
+; and symbol precedence. The function accepts two params: the entire symbol
+; and the position where the matching char is. The symbol precedence is a
+; positive floating point number.
+(def (mk-ssyntax-table) (table))
+
+; add ssyntax to current context
+(def (add-ssyntax c prec f)
+  (let stb (table-ref (current-ctx) 'ssyntax-table)
+    (table-sref stb c (cons f prec)))) 
+
+; expand symbol s, if it has symbol syntax
+; it's up to the registerd ssyntax functions to recursively call
+; ssyntax-expand on generated symbols
+(def (ssyntax-expand s)
+  (withs (stb (table-ref (current-ctx) 'ssyntax-table)
+          rep (string s)
+          ln (string-length rep))
+    (let winner ((afn (pos winner max-prec)
+                   ; find the symbol syntax character with the highest
+                   ; precedence
+                   (if (is pos ln)
+                     winner
+                     (let p (table-ref stb (string-ref rep pos))
+                       (if (and p (f> (cdr p) max-prec))
+                         (self (+ pos 1) (cons (car p) pos) (cdr p))
+                         (self (+ pos 1) winner max-prec)))))
+                  0 nil -1.0)
+      (if winner
+        ((car winner) s (cdr winner))
+        s))))
+
 ; get current context
 (def (current-ctx)
   ; current context is stored in a process local variable
@@ -42,6 +74,7 @@
   (table-sref ctx 'file-name file-name)
   (table-sref ctx 'line-num 0)
   (table-sref ctx 'block-on (table))
+  (table-sref ctx 'ssyntax-table (mk-ssyntax-table))
   (let read-table (table)
     ; TODO: add entries here
     (table-sref ctx 'read-table read-table)))
