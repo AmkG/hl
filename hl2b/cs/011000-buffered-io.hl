@@ -127,8 +127,8 @@ will throw an '<hl>i/o error.
        '(<hl>int)
        (fn (i)
          (if (is i (<axiom>rep i))
-             (if (i< -1 i)
-                 (i< i 256)
+             (if (< -1 i)
+                 (< i 256)
                  nil)
              nil)))
   (defm (<hl>readb (t p <hl>port))
@@ -180,8 +180,8 @@ will throw an '<hl>i/o error.
           (if (real-cons-check chk)
               (let v (<axiom>car chk)
                 (if (real-int-check v)
-                    (if (if (i< -1 v)
-                            (i< v 256)
+                    (if (if (< -1 v)
+                            (< v 256)
                             nil)
                         (do (f v)
                             (over-byte-list
@@ -292,7 +292,7 @@ will throw an '<hl>i/o error.
     (if f (let rv (f)
             (if (if (is (<axiom>type rv) '<hl>int)
                     (if (is (<axiom>rep rv) rv)
-                        (i< 0 rv)
+                        (< 0 rv)
                         nil)
                     nil)
                 rv
@@ -367,16 +367,16 @@ will throw an '<hl>i/o error.
             line-check
             (fn (b)
               (if (is b 10)
-                  (= line-number (i+ line-number 1))
+                  (= line-number (+ line-number 1))
                   (if (is b 13)
-                      (= mac-line-number (i+ mac-line-number 1))
+                      (= mac-line-number (+ mac-line-number 1))
                       ())))
             unline-check
             (fn (b)
               (if (is b 10)
-                  (= line-number (i- line-number 1))
+                  (= line-number (- line-number 1))
                   (if (is b 13)
-                      (= mac-line-number (i- mac-line-number 1))
+                      (= mac-line-number (- mac-line-number 1))
                       ())))
             readbuf         nil ; nil = nothing read yet, binobj otherwise
             ri              0   ; index into readbuf
@@ -386,7 +386,7 @@ will throw an '<hl>i/o error.
             actual-unreadb
             (fn (b)
               (sref unreadbuf b uri)
-              (= uri (i+ uri 1)))
+              (= uri (+ uri 1)))
             unreadb
             (fn (b)
               (unline-check b)
@@ -403,9 +403,9 @@ will throw an '<hl>i/o error.
                   ; we can unread by simply decrementing
                   ; ri
                   (if (if readbuf
-                          (i< 0 ri)
+                          (< 0 ri)
                           nil)
-                      (withs (i-1 (i- ri 1)
+                      (withs (i-1 (- ri 1)
                               nb  (bref readbuf i-1))
                         (if (is nb b)
                             ; decrement ri
@@ -426,7 +426,7 @@ will throw an '<hl>i/o error.
             actual-readb
             (fn ()
               (with (rv  (bref readbuf ri)
-                     i+1 (i+ ri 1))
+                     i+1 (+ ri 1))
                 (if (is i+1 rln)
                     (= readbuf nil)
                     (= ri i+1))
@@ -450,7 +450,7 @@ will throw an '<hl>i/o error.
                                 (err '<hl>contract "contract violation on return value of i/o-get"))
                             nil)))
                   ; read from the unread buffer
-                  (withs (i-1 (i- uri 1)
+                  (withs (i-1 (- uri 1)
                           rv  (ref unreadbuf i-1))
                     (= uri i-1)
                     rv)))
@@ -468,7 +468,7 @@ will throw an '<hl>i/o error.
               (if write-hd
                   (= write-tl (<axiom>scdr write-tl  (<axiom>cons b nil)))
                   (= write-hd (= write-tl            (<axiom>cons b nil))))
-              (if (i< (= len (i+ len 1)) 64)
+              (if (< (= len (+ len 1)) 64)
                   ()
                   (actual-flush)))
             close
@@ -488,10 +488,10 @@ will throw an '<hl>i/o error.
         '<hl>unreadb         unreadb
         '<hl>port-name       (fn () name)
         '<hl>port-line       (fn ()
-                               (let rv (if (i< mac-line-number line-number)
+                               (let rv (if (< mac-line-number line-number)
                                            line-number
                                            mac-line-number)
-                                 (if (i< rv 1)
+                                 (if (< rv 1)
                                      1
                                      rv)))))))
 
