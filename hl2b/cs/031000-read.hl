@@ -72,6 +72,10 @@
 (def (ctx-file-name)
   (table-ref (current-ctx) 'file-name))
 
+; !! you don't need this - the port interface has a
+; !! <hl>port-line which keeps track of line numbers
+; !! there's also a <hl>port-name for file names;
+; !! this is easier handled by the port interface
 ; current line count
 ; get
 (def (ctx-line-num)
