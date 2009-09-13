@@ -8,14 +8,14 @@
 
 ; add ssyntax to current context
 (def (add-ssyntax c prec f)
-  (let stb (table-ref (current-ctx) 'ssyntax-table)
+  (let stb (table-ref (rep (current-ctx)) 'ssyntax-table)
     (table-sref stb c (cons f prec)))) 
 
 ; expand symbol s, if it has symbol syntax
 ; it's up to the registerd ssyntax functions to recursively call
 ; ssyntax-expand on generated symbols
 (def (ssyntax-expand s)
-  (withs (stb (table-ref (current-ctx) 'ssyntax-table)
+  (withs (stb (table-ref (rep (current-ctx)) 'ssyntax-table)
           rep (string s)
           ln (string-length rep))
     (let winner ((afn (pos winner max-prec)
@@ -80,27 +80,7 @@
 
 ; get the current read table
 (def (ctx-read-table)
-  ; !! wait a minute.  Isn't a context the object you're
-  ; !! building in 030000-pkg.hl:159?  Why is it an
-  ; !! untagged table now?
-  (table-ref (current-ctx) 'read-table))
-
-; get current file name
-(def (ctx-file-name)
-  (table-ref (current-ctx) 'file-name))
-
-; !! you don't need this - the port interface has a
-; !! <hl>port-line which keeps track of line numbers
-; !! there's also a <hl>port-name for file names;
-; !! this is easier handled by the port interface
-; current line count
-; get
-(def (ctx-line-num)
-  (table-ref (current-ctx) 'line-num))
-; inc
-(def (ctx-inc-line-num)
-  (let ctx (current-ctx)
-    (table-sref ctx (+ (table-ref ctx 'line-num) 1))))
+  (table-ref (rep (current-ctx)) 'read-table))
 
 ; many reader functions stop on some special characters
 ; it's up to these functions to stop, i.e. it isn't compulsory
@@ -110,22 +90,21 @@
 ; add a "blocking" character to the current list
 (def (ctx-block-on c)
   ; use a table for faster lookups
-  (table-sref (table-sref (current-ctx) 'block-on) c t))
+  (table-sref (table-sref (rep (current-ctx)) 'block-on) c t))
 
 ; tells if c is a blocking character in the current context
 (def (should-block c)
-  (table-ref (table-sref (current-ctx) 'block-on) c))
+  (table-ref (table-sref (rep (current-ctx)) 'block-on) c))
 
 ; get the current context and initialise it with
 ; default read table
-(def (init-default-read-ctx ctx file-name)
-  (table-sref ctx 'file-name file-name)
-  (table-sref ctx 'line-num 0)
-  (table-sref ctx 'block-on (table))
-  (table-sref ctx 'ssyntax-table (mk-ssyntax-table))
-  (let read-table (table)
-    ; TODO: add entries here
-    (table-sref ctx 'read-table read-table)))
+(def (init-default-read-ctx ctx)
+  (let ctx (rep ctx)
+    (table-sref ctx 'block-on (table))
+    (table-sref ctx 'ssyntax-table (mk-ssyntax-table))
+    (let read-table (table)
+      ; TODO: add entries here
+      (table-sref ctx 'read-table read-table))))
 
 ; !! another idea:
 ; !! each read function returns either a nil,
@@ -153,7 +132,6 @@
         (table-ref read-table t))))
 
 ; main reader loop
-;
 (def (base-read in (o eof))
   (let c (readc in)
     (if (is c nil) ; eof
@@ -188,6 +166,7 @@
   (and (>= (c-to-i c) (c-to-i #\0)) (<= (c-to-i c) (c-to-i #\9))))
 
 ; read a number (integer or floating point)
+; FIXME: add support for inf, nan, floats with exponent (e.g. 1.2e10)
 (def (read-num c in nothing)
   (with (sign (if (is c #\-) -1 1)
          n (if (or (is c #\-) (is c #\+)) 0 (- (c-to-i c) (c-to-i #\0))))
@@ -195,7 +174,6 @@
     (while (adigit c)
       (= n (+ (* n 10) (- (c-to-i c) (c-to-i #\0))))
       (= c (readc in)))
-    ; !! what about INF and NAN?
     (if (is c #\.) ; floating point
       (let p 10.0
         (= c (readc in))
@@ -207,6 +185,36 @@
     ; FIXME: if last character read isn't blocking, read up to a
     ; blocking char and return a symbol 
     (* sign n)))
+
+
+
+(let escape-table (listtab '(#\" #\") '(#\\ #\\) '(#\n #\newline) '(#\t #\tab))
+  (def (escape-char c)
+    (let res (table-ref escape-table c)
+      (if res
+        res 
+        (err:string "Don't know how to escape char " c)))))
+
+; FIXME: add support for unicode chars in the form \uNNNN
+(def (read-string c in nothing)
+  (with (escape-next nil
+         res nil)
+    (while (do (= c (readc in))
+               (no (and (is c #\") (no escape-next))))
+      (unless c (err "eof found while reading string"))
+      (if 
+        escape-next (do 
+                      (= escape-next nil) 
+                      (= res (cons (escape-char c) res)))
+       (is c #\\) (= escape-next t)
+       (no (is c #\")) (= res (cons c res))))
+    (coerce (rev res) 'string)))
+
+(def (read-sym c in nothing)
+  (let res nil
+    (while (do (= c (readc in)) (and c (no (should-block c))))
+      (= res (cons c res)))
+    (ssyntax-expand (s-to-sy (coerce (rev res) 'string)))))
 
 ; ~a
 (def (ssyntax-complement s pos)
