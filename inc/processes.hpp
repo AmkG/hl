@@ -175,15 +175,6 @@ private:
 		multipush.reset(); /*for paranoia only*/
 	}
 
-	/*
-	 * When a process suspends its execution (maybe because it consumed its
-	 * timeslice) it saves here the next instruction to run when it is 
-	 * restarted. If this is 0, then the process has yet to start running
-	 * There's no need to wrap this into a shared_array, because a 
-	 * reference is already held by the Bytecode in the stack
-	 */
-	//bytecode_t *next_instruction;
-
 	/*The real mailbox*/
 	ValueHolderRef the_mailbox;
 
