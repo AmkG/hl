@@ -34,6 +34,14 @@
 
 ; split a symbol in two parts at position pos
 ; character at position pos is left out
+; !! converting back and forth between symbols
+; !! and strings is *not* cheap.  Better to stick
+; !! with strings until you're sure the string is
+; !! just a completely plain symbol, then convert
+; !! once.
+; !! or not, since reading doesn't need to be
+; !! fast, but I suspect it's much easier to
+; !! handle strings.
 (def (split-sym s pos)
   (withs (s (string s)
           ln (string-length s)
@@ -62,10 +70,19 @@
 ; get current context
 (def (current-ctx)
   ; current context is stored in a process local variable
+  ; !! a process might want to maintain multiple
+  ; !! independent contexts.
+  ; !! how about *passing in* the current context instead?
+  ; !! we also need to fix the accepted shortcut for
+  ; !! "context": arc-f uses "cxt", much of the code
+  ; !! here uses "ctx".
   (table-ref (<common>proc-locals) 'current-ctx))
 
 ; get the current read table
 (def (ctx-read-table)
+  ; !! wait a minute.  Isn't a context the object you're
+  ; !! building in 030000-pkg.hl:159?  Why is it an
+  ; !! untagged table now?
   (table-ref (current-ctx) 'read-table))
 
 ; get current file name
@@ -110,6 +127,16 @@
     ; TODO: add entries here
     (table-sref ctx 'read-table read-table)))
 
+; !! another idea:
+; !! each read function returns either a nil,
+; !! or a cons cell containing the read object
+; !! the cons cell can be reused by the list-reading
+; !! read function (handler for left-paren), and in
+; !! the general case, an object will be read in as
+; !! part of a list anyway.
+; !! uniq symbols in hl might not be cheap: creating
+; !! one may require at least 2 interprocess messages.
+; !! throwing away cons cells might be cheaper!
 ; The read table maps character to read functions
 ; each read function accepts the matched character,
 ; the input stream and an object meaning "nothing" (a uniq symbol)
@@ -126,6 +153,7 @@
         (table-ref read-table t))))
 
 ; main reader loop
+;
 (def (base-read in (o eof))
   (let c (readc in)
     (if (is c nil) ; eof
@@ -167,6 +195,7 @@
     (while (adigit c)
       (= n (+ (* n 10) (- (c-to-i c) (c-to-i #\0))))
       (= c (readc in)))
+    ; !! what about INF and NAN?
     (if (is c #\.) ; floating point
       (let p 10.0
         (= c (readc in))
@@ -182,12 +211,16 @@
 ; ~a
 (def (ssyntax-complement s pos)
   (if (is pos 0)
-    (list '<hl>complement (ssyntax-expand (cdr (split-sym s 0))))
+          ; !! make sure that built-in ssyntax expansions are *not*
+          ; !! packaged, because an interface might redefine them.
+          ; !! this also means that ssyntax expansion must
+          ; !! occur *before* package contexting.
+    (list (unpkg 'complement) (ssyntax-expand (cdr (split-sym s 0))))
     (err:string "~ found in the middle of the symbol: " s)))
 
 ; a:b
 (def-binary-ssyntax ssyntax-compose (l r)
-  (list '<hl>compose l r))
+  (list (unpkg 'm-compose) l r))
 
 ; a.b
 (def-binary-ssyntax ssyntax-call-one-arg (l r)
@@ -195,4 +228,4 @@
 
 ; a!b
 (def-binary-ssyntax ssyntax-call-quoted (l r)
-  (list l (list '<axiom>quote r)))
+  (list l (list (unpkg 'quote) r)))
