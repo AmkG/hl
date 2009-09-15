@@ -205,7 +205,7 @@ void HlString::from_cpp_string(
 				*/
 				rv.push_back(
 					UnicodeChar(
-						((uint32_t)c) * 262144
+						((uint32_t)c - 240) * 262144
 						+ extract_utf8(s[i+1]) * 4096
 						+ extract_utf8(s[i+2]) * 64
 						+ extract_utf8(s[i+3])
@@ -219,7 +219,7 @@ void HlString::from_cpp_string(
 				/*push back and skip*/
 				rv.push_back(
 					UnicodeChar(
-						((uint32_t)c) * 4096
+						((uint32_t)c - 224) * 4096
 						+ extract_utf8(s[i+1]) * 64
 						+ extract_utf8(s[i+2])
 					)
@@ -230,7 +230,7 @@ void HlString::from_cpp_string(
 					) {
 				rv.push_back(
 					UnicodeChar(
-						((uint32_t)c) * 64
+						((uint32_t)c - 192) * 64
 						+ extract_utf8(s[i+1])
 					)
 				);
