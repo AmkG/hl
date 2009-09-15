@@ -216,6 +216,34 @@
       (= res (cons c res)))
     (ssyntax-expand (s-to-sy (coerce (rev res) 'string)))))
 
+(def (read-# c in nothing)
+  (let next (readc in)
+    ; TODO: change if with table based approach
+    (if
+      (is next #\\) (read-char next in nothing)
+      (do
+        ; default action: read as a symbol
+        (unreadc in) ; push #\\ back
+        (read-sym c in nothing)))))
+
+(let name->char (listtab '((<>newline #\newline)
+                           (<>tab #\tab)
+                           (<>null #\null)
+                           (<>space #\space)
+                           (<>\ #\\))) ; map char names to actual chars
+  (def (read-char c in nothing)
+    (= c (readc in))
+    (if (should-block (peekc in))
+      c ; straight char
+      (do
+        ; TODO: add check for unicode chars (like #\u12AF)
+        ; named char, read the name as a symbol
+        (withs (word (read-sym c in nothing)
+                res (table-ref name->char word))
+          (unless res
+            (err:string "Unknown char name: " word))
+          res)))))
+
 ; ~a
 (def (ssyntax-complement s pos)
   (if (is pos 0)
