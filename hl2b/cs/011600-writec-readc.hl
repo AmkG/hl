@@ -1,0 +1,91 @@
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>defm defm)
+(import <axiom>lambda fn)
+(import <axiom>set =)
+(import <axiom>if if)
+(import <hl>err err)
+(import <axiom>i< <)
+(import <axiom>i+ +)
+(import <axiom>i- -)
+(import <axiom>i* *)
+(import <axiom>i/ /)
+(import <axiom>imod mod)
+
+(import <hl>readb    readb)
+(import <hl>unreadb  unreadb)
+(import <hl>unreadmb unreadmb)
+(import <hl>writeb   writeb)
+(import <hl>writemb  writemb)
+
+(import <hl>readc    readc)
+(import <hl>unreadc  unreadc)
+(import <hl>unreadmc unreadmc)
+(import <hl>writec   writec)
+(import <hl>writemc  writemc)
+
+(import <hl>port port)
+
+(def (readc p)
+  (err '<hl>type "attempt to read character from non-port-like object"))
+(def (unreadc p b)
+  (err '<hl>type "attempt to unread character from non-port-like object"))
+(def (unreadmc p bs)
+  (err '<hl>type "attempt to unread multiple characters from non-port-like object"))
+(def (writec p b)
+  (err '<hl>type "attempt to write character to non-port-like object"))
+(def (writemc p bs)
+  (err '<hl>type "attempt to write multiple characters to non-port-like object"))
+
+(withs (extract-utf8
+        (fn (p b)
+          (if (< 127 b)
+              (if (< b 192)
+                  (- b 128)
+                  ; unread byte then return malformedness
+                  (do (unreadb p b)
+                      nil))
+              ; unread byte then return malformedness
+              (do (unreadb p b)
+                  nil)))
+        read-utf8s ()
+        readc-f ())
+  (= read-utf8s
+     (fn (p bytes sum)
+       (if (is bytes 0)
+           (<axiom>i-to-c sum)
+           (let b (readb p)
+             (if b
+                 (let b (extract-utf8 p b)
+                   (if b
+                       (read-utf8s
+                         p
+                         (- bytes 1)
+                         (+ (* sum 64) b))
+                       ; malformed character
+                       (readc-f p)))
+                 nil)))))
+  (= readc-f
+     (fn (p)
+       (let b0 (readb p)
+         (if b0
+             (if (< b0 128)
+                 (<axiom>i-to-c b0)
+                 (if (< 239 b0)
+                     ; 4-byte char, 3 more bytes
+                     (read-utf8s p 3 (- b0 240))
+                     ; other number of bytes
+                     (if (< 223 b0)
+                         (read-utf8s p 2 (- b0 224))
+                         (if (< 191 b0)
+                             (read-utf8s p 1 (- b0 192))
+                             ; malformed character
+                             (readc-f p)))))
+             ; eof
+             nil))))
+  (defm (readc (t p port))
+    (let f (p 'readc)
+      (if f (f)
+            (readc-f p)))))
+
