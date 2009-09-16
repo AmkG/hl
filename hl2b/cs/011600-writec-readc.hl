@@ -5,13 +5,19 @@
 (import <axiom>lambda fn)
 (import <axiom>set =)
 (import <axiom>if if)
+(import <axiom>is is)
+(import <axiom>rep rep)
 (import <hl>err err)
+(import <hl>polymorph polymorph)
 (import <axiom>i< <)
 (import <axiom>i+ +)
 (import <axiom>i- -)
 (import <axiom>i* *)
 (import <axiom>i/ /)
 (import <axiom>imod mod)
+
+(import <hl>base-each base-each)
+(import <hl>base-collect base-collect)
 
 (import <hl>readb    readb)
 (import <hl>unreadb  unreadb)
@@ -89,3 +95,79 @@
       (if f (f)
             (readc-f p)))))
 
+(with (unchar
+       (fn (c wrb)
+         (let i (<axiom>c-to-i c)
+           (if (< i 128)
+               (wrb i)
+               (if (< i 2048)
+                   (do (wrb (+ 192 (/ i 64)))
+                       (wrb (+ 128 (mod i 64))))
+                   (if (< i 65536)
+                       (do (wrb (+ 224 (/ i 4096)))
+                           (wrb (+ 128 (mod (/ i 64) 64)))
+                           (wrb (+ 128 (mod i 64))))
+                       (if (< i 2097152)
+                           (do (wrb (+ 240 (/ i 262144)))
+                               (wrb (+ 128 (mod (/ i 4096) 64)))
+                               (wrb (+ 128 (mod (/ i 64) 64)))
+                               (wrb (+ 128 (mod i 64))))
+                           nil))))))
+       real-char-base
+       (polymorph
+         (fn (c wrong faked)
+           (err '<hl>type wrong))
+         '(<hl>char)
+         (fn (c wrong faked)
+           (if (is c (rep c))
+               c
+               (err '<hl>type faked))))
+       real-char
+       (fn (c) (real-char-base "character writing to port expects character" "attempt to write fake character to port"))
+       real-char-u
+       (fn (c) (real-char-base "character unreading from port expects character" "attempt to unread fake character from port")))
+  write
+  (defm (writec (t p port) c)
+    (with (c (real-char c)
+           f (p 'writec))
+      (if f (f c)
+            (unchar c (p 'writeb)))
+      t))
+  ; unread
+  (defm (unreadc (t p port) c)
+    (with (c (real-char-u c)
+           f (p 'unreadc))
+      (if f (f c)
+            (let bs ()
+              (unchar c (fn (b) (= bs (<axiom>cons b bs))))
+              (base-each bs 0 (fn (b)
+                (unreadb b)))))))
+  (let multi-algo
+       (fn (p cs smc sc wrc real-char)
+         (let f (p smc) ; 'writemc
+           (if f (f (base-collect (fn (collect)
+                      (base-each cs 0 (fn (c)
+                        (collect (real-char c))
+                        t)))))
+                 (let f (p sc) ; 'writec
+                   (if f (do (base-each cs 0 (fn (c)
+                               (real-char c)
+                               t))
+                             (base-each cs 0 (fn (c)
+                               (f c)
+                               t)))
+                         (do (base-each cs 0 (fn (c)
+                               (real-char c)
+                               t))
+                             (base-each cs 0 (fn (c)
+                               (wrc p c)
+                               t))))))))
+    (defm (writemc (t p port) cs)
+      (multi-algo p cs 'writemc 'writec writec real-char))
+    (defm (unreadmc (t p port) cs)
+      (multi-algo p cs 'unreadmc 'unreadc unreadc real-char-u))))
+
+#|
+ |#
+
+>stop-compiling

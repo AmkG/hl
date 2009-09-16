@@ -507,6 +507,7 @@ will throw an '<hl>i/o error.
       ; no given name...
       (<common>buffered-port-wrap ob nil)))
 
+#|
 (let stdout (<hl>buffered-port-wrap (<axiom>i/o-stdout) "stdout")
   (<hl>writemb stdout
     ; "^D to exit" message
@@ -524,6 +525,5 @@ will throw an '<hl>i/o error.
                      (loop))
                  t))))
       (loop))))
-
->stop-compiling
+|#
 
