@@ -59,6 +59,13 @@
       `((<axiom>lambda () ,@rest))))
 (mac <hl>do rest
   `((<axiom>lambda () ,@rest)))
+(mac <hl>mac (spec . rest)
+  `((<axiom>symeval '<common>call-w/gvl)
+    (<axiom>lambda ()
+      (<axiom>set ,(car spec)
+                  (<axiom>tag '<hl>mac
+                    (<axiom>lambda ,(cons '<hl>macro-info (cdr spec))
+                      ,@rest))))))
 
 (def <common>call-w/gvl (f) (f))
 
