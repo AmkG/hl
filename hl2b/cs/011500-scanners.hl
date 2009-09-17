@@ -140,6 +140,16 @@
             rv (<axiom>string-build ln))
       (string-loop rv 0 scan))))
 
+(def (car s)
+  (err '<hl>type "attempt to get 'car of non-scanner"))
+(def (cdr s)
+  (err '<hl>type "attempt to get 'cdr of non-scanner"))
+; scanner
+(defm (car (t s bool)) nil)
+(defm (cdr (t s bool)) nil)
+(defm (car (t s cons)) (if (is s (rep s)) (<axiom>car s) (err '<hl>type "attempt to get 'car of fake cons cell")))
+(defm (cdr (t s cons)) (if (is s (rep s)) (<axiom>cdr s) (err '<hl>type "attempt to get 'cdr of fake cons cell")))
+
 ; redefinition of len
 (let len-loop nil
   (= len-loop
@@ -155,16 +165,6 @@
 (defm (len (t s table))
   (len (<axiom>table-keys s)))
 (defm (len (t s bool)) 0)
-
-(def (car s)
-  (err '<hl>type "attempt to get 'car of non-scanner"))
-(def (cdr s)
-  (err '<hl>type "attempt to get 'cdr of non-scanner"))
-; scanner
-(defm (car (t s bool)) nil)
-(defm (cdr (t s bool)) nil)
-(defm (car (t s cons)) (<axiom>car s))
-(defm (cdr (t s cons)) (<axiom>cdr s))
 
 ; sequence traversal
 (with (each-loop nil
