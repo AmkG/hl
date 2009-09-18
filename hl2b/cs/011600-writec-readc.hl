@@ -183,6 +183,29 @@
     (tag 'port
          (table 'writemc (fn (s) (writemc stdout s))))
     "アラン with writemc defined ok\n")
+  (flush stdout)
+  (let dummy-port
+       (tag 'port
+            (let hd ()
+              (table
+                'readb
+                (fn ()
+                  (let rv (<axiom>car hd)
+                    (= hd (<axiom>cdr hd))
+                    rv))
+                'unreadb
+                (fn (b)
+                  (= hd (<axiom>cons b hd))))))
+    (let loop ()
+      (unreadmc dummy-port "\ncbaンラア")
+      (= loop
+         (fn ()
+           (let c (readc dummy-port)
+             (if c
+                 (do (writec stdout c)
+                     (loop))
+                 nil))))
+      (loop)))
   (flush stdout))
 
 >stop-compiling
