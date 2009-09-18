@@ -142,7 +142,7 @@
             (let bs ()
               (unchar c (fn (b) (= bs (<axiom>cons b bs))))
               (base-each bs 0 (fn (b)
-                (unreadb b)))))))
+                (unreadb p b)))))))
   (let multi-algo
        (fn (p cs smc sc wrc real-char)
          (let f (p smc) ; 'writemc
