@@ -1,0 +1,13 @@
+
+(in-package impl)
+
+(import <hl>def def)
+
+; EMULATION of trap-signal
+; currently just do nothing
+(def (<hl>trap-signal) nil)
+(def (<hl>disable-trap-signal) nil)
+(def (<hl>link pid) nil)
+(def (<hl>unlink pid) nil)
+(def (<hl>signal pid sig-type . rest) nil)
+
