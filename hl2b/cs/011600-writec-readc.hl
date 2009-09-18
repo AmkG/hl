@@ -171,4 +171,18 @@
 #|
  |#
 
+(let stdout (<hl>buffered-port-wrap (<axiom>i/o-stdout) "stdout")
+  (writemc stdout "write characters - アラン\n")
+  (flush stdout)
+  (writemc
+    (tag 'port
+         (table 'writec (fn (c) (writec stdout c))))
+    "アラン with writec defined ok\n")
+  (flush stdout)
+  (writemc
+    (tag 'port
+         (table 'writemc (fn (s) (writemc stdout s))))
+    "アラン with writemc defined ok\n")
+  (flush stdout))
+
 >stop-compiling
