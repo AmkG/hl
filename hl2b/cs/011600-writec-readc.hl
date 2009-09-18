@@ -24,6 +24,7 @@
 (import <hl>unreadmb unreadmb)
 (import <hl>writeb   writeb)
 (import <hl>writemb  writemb)
+(import <hl>flush    flush)
 
 (import <hl>readc    readc)
 (import <hl>unreadc  unreadc)
@@ -95,38 +96,38 @@
       (if f (f)
             (readc-f p)))))
 
-(with (unchar
-       (fn (c wrb)
-         (let i (<axiom>c-to-i c)
-           (if (< i 128)
-               (wrb i)
-               (if (< i 2048)
-                   (do (wrb (+ 192 (/ i 64)))
-                       (wrb (+ 128 (mod i 64))))
-                   (if (< i 65536)
-                       (do (wrb (+ 224 (/ i 4096)))
-                           (wrb (+ 128 (mod (/ i 64) 64)))
-                           (wrb (+ 128 (mod i 64))))
-                       (if (< i 2097152)
-                           (do (wrb (+ 240 (/ i 262144)))
-                               (wrb (+ 128 (mod (/ i 4096) 64)))
-                               (wrb (+ 128 (mod (/ i 64) 64)))
-                               (wrb (+ 128 (mod i 64))))
-                           nil))))))
-       real-char-base
-       (polymorph
-         (fn (c wrong faked)
-           (err '<hl>type wrong))
-         '(<hl>char)
-         (fn (c wrong faked)
-           (if (is c (rep c))
-               c
-               (err '<hl>type faked))))
-       real-char
-       (fn (c) (real-char-base "character writing to port expects character" "attempt to write fake character to port"))
-       real-char-u
-       (fn (c) (real-char-base "character unreading from port expects character" "attempt to unread fake character from port")))
-  write
+(withs (unchar
+        (fn (c wrb)
+          (let i (<axiom>c-to-i c)
+            (if (< i 128)
+                (wrb i)
+                (if (< i 2048)
+                    (do (wrb (+ 192 (/ i 64)))
+                        (wrb (+ 128 (mod i 64))))
+                    (if (< i 65536)
+                        (do (wrb (+ 224 (/ i 4096)))
+                            (wrb (+ 128 (mod (/ i 64) 64)))
+                            (wrb (+ 128 (mod i 64))))
+                        (if (< i 2097152)
+                            (do (wrb (+ 240 (/ i 262144)))
+                                (wrb (+ 128 (mod (/ i 4096) 64)))
+                                (wrb (+ 128 (mod (/ i 64) 64)))
+                                (wrb (+ 128 (mod i 64))))
+                            nil))))))
+        real-char-base
+        (polymorph
+          (fn (c wrong faked)
+            (err '<hl>type wrong))
+          '(<hl>char)
+          (fn (c wrong faked)
+            (if (is c (rep c))
+                c
+                (err '<hl>type faked))))
+        real-char
+        (fn (c) (real-char-base "character writing to port expects character" "attempt to write fake character to port"))
+        real-char-u
+        (fn (c) (real-char-base "character unreading from port expects character" "attempt to unread fake character from port")))
+  ; write
   (defm (writec (t p port) c)
     (with (c (real-char c)
            f (p 'writec))
