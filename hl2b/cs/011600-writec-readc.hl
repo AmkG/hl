@@ -124,9 +124,9 @@
                 c
                 (err '<hl>type faked))))
         real-char
-        (fn (c) (real-char-base "character writing to port expects character" "attempt to write fake character to port"))
+        (fn (c) (real-char-base c "character writing to port expects character" "attempt to write fake character to port"))
         real-char-u
-        (fn (c) (real-char-base "character unreading from port expects character" "attempt to unread fake character from port")))
+        (fn (c) (real-char-base c "character unreading from port expects character" "attempt to unread fake character from port")))
   ; write
   (defm (writec (t p port) c)
     (with (c (real-char c)
