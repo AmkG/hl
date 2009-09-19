@@ -7,6 +7,7 @@
 (import <axiom>if if)
 (import <axiom>is is)
 (import <axiom>rep rep)
+(import <axiom>type type)
 (import <hl>err err)
 (import <hl>polymorph polymorph)
 (import <axiom>i< <)
@@ -20,6 +21,7 @@
 (import <hl>base-collect base-collect)
 
 (import <hl>readb    readb)
+(import <hl>peekb    peekb)
 (import <hl>unreadb  unreadb)
 (import <hl>unreadmb unreadmb)
 (import <hl>writeb   writeb)
@@ -27,6 +29,7 @@
 (import <hl>flush    flush)
 
 (import <hl>readc    readc)
+(import <hl>peekc    peekc)
 (import <hl>unreadc  unreadc)
 (import <hl>unreadmc unreadmc)
 (import <hl>writec   writec)
@@ -36,6 +39,8 @@
 
 (def (readc p)
   (err '<hl>type "attempt to read character from non-port-like object"))
+(def (peekc p)
+  (err '<hl>type "attempt to peek character from non-port-like object:"))
 (def (unreadc p b)
   (err '<hl>type "attempt to unread character from non-port-like object"))
 (def (unreadmc p bs)
@@ -56,6 +61,15 @@
               ; unread byte then return malformedness
               (do (unreadb p b)
                   nil)))
+        check-char
+        (polymorph
+          (fn (c msg)
+            (err '<hl>type msg))
+          '(<hl>char)
+          (fn (c msg)
+            (if (is c (rep c))
+                c
+                (err '<hl>type msg))))
         read-utf8s ()
         readc-f ())
   (= read-utf8s
@@ -93,8 +107,15 @@
              nil))))
   (defm (readc (t p port))
     (let f (p 'readc)
-      (if f (f)
-            (readc-f p)))))
+      (if f (check-char (f) "contract violation on return value of readc - not a character")
+            (readc-f p))))
+  (defm (peekc (t p port))
+    (let f (p 'peekc)
+      (if f (check-char (f) "contract violation on return value of peekc - not a character")
+            (let rv (readc p)
+              (unreadc p rv)
+              rv)))))
+
 
 (withs (unchar
         (fn (c wrb)
