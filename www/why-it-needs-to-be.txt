@@ -131,8 +131,8 @@ manual memory management.  Thus, an object or thing implemented
 as a process in Erlang would be less convenient than an object
 implemented in any other way.
 
-Why Not *<insert-other-Erlanglike here>*?
------------------------------------------
+Why Not *insert-other-Erlanglike here*?
+---------------------------------------
 
 All other Erlanglikes I've seen do not have garbage collection
 of unused processes.  In addition, many of them commit what I
