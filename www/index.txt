@@ -17,7 +17,9 @@ However, a draft document about `hl` is [currently
 available](book.html).  You may also be interested in the [goals for the
 project](goals.html).  Since it's being built we don't have a
 distributable package yet but you may be interested in perusing the
-[source code repository](http://github.com/AmkG/hl/commits/).
+[source code repository](http://github.com/AmkG/hl/commits/).  You may
+also be interested in the [rationale for the
+project](why-it-needs-to-be.html).
 
 <small>This project is under the dictatorship of Alan Manuel K. Gloria,
 who would like to dictate only the bit about the axioms and standard

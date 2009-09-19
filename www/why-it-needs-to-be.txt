@@ -1,0 +1,439 @@
+Why HL Needs to Be
+index
+
+Why `hl` Needs to be
+====================
+
+`hl` needs to exist: it occupies a language design space that
+has not, quite precisely, been occupied.  It sits at an
+intersection between Lisplikes and Erlanglikes.
+
+There are already many Lisplike languages, of varying levels of
+popularity and sophistication - Common Lisp, Scheme, Clojure -
+and `hl` is just a random one, created by some random,
+completely unknown hacker on the Internet.  I am almost sure
+that many people will simply say "*yawn* yeah another Lisplike
+language, oh so it's got Erlang-style concurrency, what will
+they think of next, a Lisplike with Haskell-style pure monadic
+I/O ***yawn***?"...
+
+`hl` is not Erlang; it wishes to use Lisplike syntax, and gives
+a particular semantic - specifically, garbage collection of
+processes - that Erlang, and other Erlanglikes, do not have.
+`hl` is not Common Lisp or Scheme; aside from wanting
+Erlang-style concurrency, it wants to avoid their assumptions
+that putting stuff in global state is OK.  `hl` is not Clojure,
+simply because it was developed along a different path.  And
+`hl` is not Arc, because it attacks the "brevity problem" in a
+subtly different way, via its "context" system.
+
+Why Not Erlang?
+---------------
+
+Erlang is good: the conceptual separation of processes into
+non-interfering memory areas models what I think will be the
+future of computing: mega-machines composed of multiple
+parallel processors in physically-distant locations, forced to
+communicate with each other via straws - communications links
+whose bandwidth and latency are far smaller than "local"
+memory.
+
+My main objections to Erlang are: syntax, and the fact that
+processes are not, in fact, much like objects.
+
+Syntax objections are mostly the obvious lack of macros and the
+inconsistent "`foo(), foo(), foo().`"; admittedly the second is
+a weak objection, but the first is the main dealbreaker; people
+who are dubious of Lisplike macros are referred to [my story
+about the "Stutter" language][1].
+
+[1]: http://arclanguage.com/item?id=6251
+     "Let me tell you a story about... Stutter...."
+
+Erlang claims *not* to be "object-oriented", but sadly the term
+"object-oriented" has, in my opinion, lost its meaning.  In any
+case, I tend to model my software as a bunch of "things" that
+do all sorts of "things" on other "things"; maybe I should call
+it "thing-oriented programming".  In any case, I hold that any
+language which at least *allows* some sort of strict typing
+*is* object oriented.  Or thing-oriented, anyway.
+
+<small>(please do not confuse my term "strict typing" with the
+more commonly used term "static typing"; in this sense,
+"strict" means that an entity being passed around and fooled
+around with will have a specific "type", and either the
+language refuses to allow types to be misused as other types,
+or requires that you jump through hoops to do so.  this makes
+the statically-typed C a non-strict language, since almost any
+number can be misused as another "type".</small>
+
+However, Erlang's processes are not like other "things" in the
+Erlang universe.  In particular, Erlang processes cannot be
+used as data structures, at least not as easily as other data
+structures in Erlang, because *processes are not
+garbage-collected*.
+
+Pause for a while to let this sink in.  Now let me show you
+*another* side of the so-called "Erlang-style concurrency".
+
+This "Erlang-style" concurrency was a development of the
+"actor model".  Incidentally, Erlang is not the only language
+that has some basis on the actor model; I was actually
+surprised to discover that Scheme was [originally developed as a
+language to facilitate studying the actor model][2]!
+
+[2]: http://www.brics.dk/~hosc/local/HOSC-11-4-pp399-404.pdf
+     "...to better understand Hewitt's actor model..."
+
+Basically, in the actor model, an actor can receive messages,
+which then causes it to begin processing, and can then send one
+or more messages to some other actor, or wait for further
+messages.  In Sussman and Steele's formulation, an actor would
+receive a request to perform a message, including another actor
+that would receive the result of processing.  They then decided
+to use function-call syntax for passing messages and discovered
+that in their formulation, actors worked in a
+continuation-passing style - meaning that functions were, in
+fact, actors.
+
+<small>(of course it doesn't actually mean that all actors
+*are* functions - the lambda calculus is capable of expressing
+only a subset of the concurrency of the actor model.  or [so
+wikipedia tells me][3])</small>
+
+[3]: http://en.wikipedia.org/wiki/History_of_the_Actor_model#Scheme
+     "lambda calculus is capable of expressing some..."
+
+Now, consider how functions - or rather, their *storage* - are
+implemented.  Their storage is usually as part of the garbage
+collected heap.  If a function is not running somewhere, and
+all of the running functions have lost references to that
+function, then that function will never be called anyway and
+its effect on future computations are nonexistent - and its
+storage can then be deleted from existence.
+
+Now do `s/function/process/` in the previous paragraph.
+
+Erlang, for all its strengths, does not support the automatic
+reaping of processes that are blocked waiting on messages, but
+which have been forgotten by all other processes.  `hl`
+supports this; the hope is that processes - actors! - can then
+be treated like any other data structure, with automatic
+garbage collection of unused processes.  Thus in `hl`, an
+object may usefully be implemented as a process.  This mirrors
+the way that functions - actors! - can be automatically garbage
+collected in Scheme and other similar languages.
+
+While it is *technically* possible in Erlang, you would have to
+use a message to end the process, i.e. "free" its memory - this
+loses the advantage of garbage collection, forcing us into
+manual memory management.  Thus, an object or thing implemented
+as a process in Erlang would be less convenient than an object
+implemented in any other way.
+
+Why Not *<insert-other-Erlanglike here>*?
+-----------------------------------------
+
+All other Erlanglikes I've seen do not have garbage collection
+of unused processes.  In addition, many of them commit what I
+consider a mistake with a particular feature of Erlang,
+specifically, linking of processes.
+
+In Erlang, links are bidirectional: a process may request to be
+linked to another process, and then if either process dies, the
+other process is automatically signalled.  Many other
+Erlang-likes allow monodirectional links - that is, if process
+A has a monodirectional link from B, if process B dies process
+A is signalled, but if process A dies, process B is not
+signalled.
+
+Many Erlanglikes were developed from studying Erlang's
+`gen_server` library, where a server process S mointors one or
+more processes C.  The logic here is that S is a very simple
+process, and is not going to crash even in abnormal conditions;
+whereas if the actual working processes C crash in abnormal
+conditions, they will be restarted by the (presumably reliable)
+process S.
+
+However, the main reason why links are bidirectional in Erlang
+has less to do with the documented purpose of links -
+monitoring processes - and more to do with monitoring the
+*communications line* between processes.
+
+If process S and C are on separate physical computers, with a
+specific physical communication line between both computers,
+consider what happens with a monodirectional link, where the
+loss of C is signalled to S, but the loss of S is *not*
+signalled to C.
+
+Suppose that the actual physical communication line is
+temporarily disrupted.  Then S receives a signal, and "knows"
+that child C has died, and must be restarted. <small>(of course
+it hasn't actually died, but detecting the difference between a
+downed server and a downed network, as any sysad knows, can be
+a difficult task)</small>  *But C never learns about the
+interruption*.  When the line is restored, S attempts to
+restart a new copy of C - but an existing copy of C is
+*already* running.  If C is supposed to use some resource on
+that machine, and was written to assume that it has *unique*
+access to that resource, then things have broken.
+
+Thus, in general, monodirectional links are a mistake.
+
+In any case, bidirectional links can be used to create some
+kind of "monodirectional" link.  For example, suppose that
+process A wants to know if process B dies, but itself doesn't
+want to affect process B, then it can launch a process C that
+is bidirectionally linked to B.  Presumably, the code in C is
+simple and is unlikely to crash.  Thus, any signal reaching B
+is presumably not the fault of either A or C, and when this
+signal also reaches C, C will trap the signal (via `trap_exit`
+in Erlang, `trap-signal` in `hl`) then raise a signal on A.
+
+A can choose whether or not a broken communications channel
+is "important" or not by where it starts C.  If it starts C
+locally, then the broken channel is important enough that
+B must be signalled.  Otherwise, it starts C on the remote
+computer and links to it (C is `trap_exit`, so presumably it
+will be programmed not to propagate the break from A to B).
+If A then receives a broken signal from C, it knows the
+communications line was broken, otherwise C will only send
+signals if B crashes.
+
+Why Not Common Lisp?
+--------------------
+
+Common Lisp is nice, but aside from a lack of standardized
+multithreading, it has a problem with the way it treats an
+important part of its world - the read table.
+
+In short, it uses a *global* read table.  Global state is bad;
+it makes it harder to keep separate things that should *really*
+should be kept separate, because of the inadvertent, and often
+undesired, sharing of global state.
+
+Classic Common Lisp advice is to avoid the read table like the
+compatibility-reducing plague that it is.  This is primarily
+because of the fact that, if you modify the read table, *each
+and every other file* gets affected - they now have the new
+read table!
+
+This is bad if the other file expects either the default read
+table, or worse, a *different* read table.
+
+Note that this is really a pervasive problem in Common Lisp -
+the attitude that it is OK to use global state for the entire
+machine.  It reflects a design which does not consider the
+possibility that code may come from more than one source; it
+allows spooky action at a distance.
+
+`hl` breaks from this by keeping the read table in a "context"
+object.  Put simply: a "context" object is simply an object
+used by the reader function to store the read table, as well as
+various notes about the current file it is reading - in short,
+the context object stores the reader state.  The loader is
+responsible for maintaining the context object across calls to
+the reader.
+
+Keeping the reader state in an object that can be passed around
+allows `hl`'s ability to assign different read tables between
+different files, and thus allows `hl` to provide a read table
+feature without causing problems when different pieces of code
+from different sources, each assuming different read tables,
+are used together.
+
+Why Not Scheme?
+---------------
+
+Much of `hl` has Scheme semantics - Lisp-1-ness is the major
+example.  However, `hl` does break with Scheme in a few places.
+
+For instance, it is idiomatic in Scheme to provide functions
+that operate on other functions.  Thus, you might get something
+like:
+
+    (for-each (lambda (x)
+        (write x))
+      foo)
+
+However, in `hl`, my preferred idiom is to hide a basic
+function that accepts a function, and wrap it in a macro:
+
+    (each x foo
+      (write x))
+    ; the same as:
+    ; (base-each foo 0 (fn (x)
+    ;   (write x)
+    ;   t))
+
+Partly, it may be because macros in Scheme were not required by
+the standard until R5RS; thus, the entrenched idiom is not to
+use macros to prettify syntax.  This will hopefully change in
+the future.
+
+As an aside, the only reason why `hl` macros are Common Lisp
+style, non-hygienic ones is because I haven't managed to wrap
+my head around hygienic macros.  My hope is that in the future,
+it will be possible to use hygienic macros while retaining
+compatibility with the existing macro system.  Further
+discussion about macros is in the section about Arc below.
+
+Otherwise, my objections to Scheme are the same as those
+levelled at Common Lisp: excessive use of global state in e.g.
+read tables, and lack of standardized multithreading.
+
+Why Not Clojure?
+----------------
+
+This is very simple: I hadn't heard of Clojure when I started
+this project.  This project was thus conceived and developed
+without any knowledge of Clojure; I have few (none?) ideas that
+I got from Clojure.
+
+My remaining objection why I haven't gone on to the Clojure
+route is that it is attached to the JVM.  This is admittedly
+***not a strong objection***; on the one hand, the JVM has all
+those nice JITted implementations and libraries.  On the other
+hand, the JVM is now attached to Oracle's Amusingly
+Schizophrenic Electronic Toys Division, even though it is now
+quite open, and it does not (yet) support such nice things as
+continuations and tail call optimizations.
+
+Incidentally, Rich Hickey's waffling about read tables is
+easily solvable by going the `hl` route of encapsulating the
+read table as part of a file-specific context object.
+
+Admittedly, I have no strong objections to Clojure; if things
+had been different I would not have developed `hl` at all and
+would now be hacking on Clojure.  But instead I got involved in
+Arc...
+
+Why Not Arc?
+------------
+
+`hl` is not a fork of Arc.  `hl` is a fork of a [fork of
+Arc][4].  The extra layer of indirection is important.
+
+[4]: http://arclanguage.org/item?id=8270
+     "Arc3F released: Generic functions, base functions..."
+
+The main stated purpose of Arc is to solve I call the "brevity
+problem", i.e. making the program as short as possible in order
+to leverage the load on the programmer's mind: if the
+programmer has to think fewer thoughts to get something
+running, then that is *good*.  It's the reason why having a
+one-liner that launches 4 *other* programs and opens two pipes
+doesn't bother us, in spite of the evident *machine*
+inefficiency involved: it's a one-liner, and it's easy on the
+eyes:
+
+    who | cut -c1-8 | sort | uniq
+
+Now going for brevity implies that we are searching for an
+algorithm that has the following characteristics: it compresses
+program code quite well, and it is easy for mere human minds
+to decompress the compressed program code.
+
+Anyone who has studied compression knows that there will be
+input strings to the compression algorithm which goes out
+*longer* than the input string: i.e. for some input, the output
+will be larger by at least one bit!  Also, optimally compressed
+data, if you don't know how to decompress it, is
+indistinguishable from random data (noise!) - meaning that it
+can be hard to differentiate a concise language from one built
+out of line noise.
+
+The specific compression used, of course, is the standard
+Lisp one: macros.  The accusation that Arc is just a bunch of
+macros on top of Scheme is almost, but not quite, completely
+accurate.
+
+Arc's stated goal is to give a concise language, but I think
+that Paul Graham has too little background on compression
+algorithms.  For one, the compression table used is
+centralized, i.e. there is only one namespace for symbols.  It
+completely ignores the possibility that one file might prefer
+to use a name for one thing, while another file might prefer to
+use that same name for another thing; that is, it has no
+provisions for dynamic compression table - also known as
+packages.
+
+Packages in `hl` allow different files to have different senses
+of a particular unpackaged symbol; that is, it allows a
+different compression table for each file.
+
+As an aside, macros in Arc are hit, badly, by the inadvertent
+capture of identifier references.  Common Lisp fixes this by
+being a Lisp-2 and providing gensyms:
+
+    (defun my-function (x)
+      (do-it x))
+    (defmacro do-something (&rest body)
+      (let ((var (gensym)))
+        `(let ((,var (progn ,@body)))
+           (my-function ,var))))
+    ; my-function doesn't get captured!
+    (let ((my-function
+           (lambda (x) (do-that x)))
+          (var
+           42))
+      (do-something
+        ; var doesn't get captured!
+        (funcall my-function var)))
+
+Scheme fixes this even more, so that even if it's a Lisp-1,
+hygienic macros completely prevent variable capture by
+differentiating between a variable and its symbolic source
+representation, and having hygienic macros work with the
+actual variable rather than its symbol.
+
+Arc fails this because it's a Lisp-1, and so function calls
+can get inadvertently captured:
+
+    (def my-function (x)
+      (do-it x))
+    (mac do-something body
+      (w/uniq var
+        `(let ,var (do ,@body)
+           (my-function ,var))))
+    ; oops! my-function is captured!
+    (with (my-function
+           (fn (x) (do-that x))
+           var
+           42)
+      (do-something
+        (my-function var)))
+
+`hl` solves this by presenting the `<axiom>symeval` special
+form, which overrides the current lexical scope and forces
+evaluation in the global scope:
+
+    (def (my-function x)
+      (do-it x))
+    (mac (do-something . body)
+      (w/uniq var
+        `(let ,var (do ,@body)
+           ((symeval 'my-function) ,var))))
+    ; my-function is captured, but
+    ; symeval overrides it!
+    (with (my-function
+           (fn (x) (do-that x))
+           var
+           42)
+      (do-something
+        (my-function var)))
+
+Admittedly, a full hygienic macro system may be better, but for
+now, this is OK.
+
+Conclusion
+----------
+
+While `hl` does not have much riding on it, it does present two
+innovations that are so far unique: specifically, garbage
+collection of entire processes (not just *within* a process!),
+and the localization of reader state into contexts, which
+allows different files to have slightly different syntaxes.  I
+feel that these are sufficient justifications for the existence
+of `hl`.
+
