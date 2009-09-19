@@ -31,6 +31,9 @@
   ; - pending messages are kept on the
   ;   process-local <common>mailbox
   ((fn (pl first-check check-loop try-loop)
+     ; checks the first entry in the mailbox
+     ; if the first entry does not match,
+     ; goes through check-loop
      (= first-check
         (fn ()
           ((fn (msgs)
@@ -47,11 +50,13 @@
                         ((fn (n)
                            (if n
                                (check-loop msgs n)
-                               (try-loop)))
+                               nil))
                          (cdr msgs))))
                   (<impl>check-message-find-match (car msgs) fns))
-                 (try-loop)))
+                 nil))
            (<axiom>table-ref pl '<common>mailbox))))
+     ; checks through succeeding entries in the mailbox
+     ; i.e. (cadr msgs) is checked, not (car msgs)
      (= check-loop
         (fn (msgs n)
           ((fn (match nn)
@@ -81,9 +86,12 @@
                         (try-loop)))))
                (<impl>check-message-find-match m fns)))
             (fn () nil))))
+     ; first, check the cached mailbox
      ((fn (match1)
         (if match1
             match1
+            ; then check the process's received messages
+            ; if no matches found on the cached mailbox
             (try-loop)))
       (first-check)))
    (<common>proc-locals)
