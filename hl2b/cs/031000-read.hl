@@ -91,10 +91,17 @@
 (def (ctx-block-on c)
   ; use a table for faster lookups
   (table-sref (table-sref (rep (current-ctx)) 'block-on) c t))
+; add a "separator" character to the current list
+(def (ctx-add-sep c)
+  (table-sref (table-sref (rep (current-ctx)) 'sep) c t))
 
 ; tells if c is a blocking character in the current context
 (def (should-block c)
-  (table-ref (table-sref (rep (current-ctx)) 'block-on) c))
+  (or (is-sep c)
+      (table-ref (table-ref (rep (current-ctx)) 'block-on) c)))
+; tells if c is a separator character
+(def (is-sep c)
+  (table-ref (table-ref (rep (current-ctx)) 'sep) c))
 
 ; get the current context and initialise it with
 ; default read table
@@ -243,6 +250,60 @@
           (unless res
             (err:string "Unknown char name: " word))
           res)))))
+
+; throw away separator chars
+(def (skip-separators in)
+  (let c (readc in)
+    (if (is-sep c)
+      (skip-separators in)
+      (unreadc in c))))
+
+; read a list until character ter is found
+(def (read-list-with-ter in ter)
+  (skip-separators in)
+  (let next (readc in)
+    (if (is next ter) 
+      nil
+      (do 
+        (unreadc in next)
+        (with (the-car (read in)
+               the-cdr nil
+               c nil)
+          (skip-separators s)
+          (= c (readc in))
+          (if (is c #\.)
+            (do
+              ; dotted list
+              (= the-cdr (read in)) ; read an object
+              ; make sure there are no more objects in the list
+              (skip-separators in)
+              (unless (is (readc in) ter)
+                (err "More than one object follows ."))
+              (cons the-car the-cdr))
+            (do 
+              (unreadc in c)
+              ; TODO: make tail recursive
+              (cons the-car (read-list-with-ter in ter)))))))))
+
+; simple list
+(def (read-list c in nothing)
+  (read-list-with-ter in #\)))
+
+; function abbreviation: [... _ ...]
+(def (read-fn-abbr c in nothing)
+  (list '<>fn '(<>_) (read-list-with-ter in #\])))
+
+; quasiquote
+(def (read-qq c in nothing)
+  (list '<>quasiquote (read in)))
+
+; unquote
+(def (read-unq c in nothing)
+  (list '<>unquote (read in)))
+
+; quote
+(def (read-quote c in nothing)
+  (list '<>quote (read in)))
 
 ; ~a
 (def (ssyntax-complement s pos)
