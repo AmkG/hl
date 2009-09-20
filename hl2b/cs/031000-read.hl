@@ -7,7 +7,6 @@
 (import <axiom>set =)
 (import <axiom>is is)
 (import <axiom>rep rep)
-(import <axiom>no no)
 (import <axiom>car car)
 (import <axiom>cdr cdr)
 (import <axiom>cons cons)
@@ -28,6 +27,7 @@
 (import <axiom>i< <)
 
 ; functions
+(import <hl>no no)
 (import <hl>table table)
 (import <hl>err err)
 (import <hl>string string)
