@@ -110,6 +110,8 @@ will throw an '<hl>i/o error.
 
 (def (<hl>readb p)
   (err '<hl>type "attempt to read from a non-port-like object"))
+(def (<hl>peekb p)
+  (err '<hl>type "attempt to peek from a non-port-like object"))
 (def (<hl>unreadb p b)
   (err '<hl>type "attempt to unread into non-port-like object"))
 (def (<hl>unreadmb p bs)
@@ -147,7 +149,17 @@ will throw an '<hl>i/o error.
     (if (int-in-range v)
         ((p '<hl>writeb) v)
         (err '<hl>type "attempt to write a non-byte to port"))
-    t))
+    t)
+  (defm (<hl>peekb (t p <hl>port))
+    (let f (p '<hl>peekb)
+      (if f
+          (let rv (f)
+            (if (int-in-range rv)
+                rv
+                (err '<hl>contract "contract violation on return value of 'peekb - not a byte")))
+          (let rv (<hl>readb p)
+            (<hl>unreadb p rv)
+            rv)))))
 
 
 (withs (is-real
@@ -433,29 +445,43 @@ will throw an '<hl>i/o error.
                     (= readbuf nil)
                     (= ri i+1))
                 rv))
+            fill-readbuf
+            (fn ()
+              (let nrb (<hl>i/o-get ob)
+                (if nrb
+                    (if (verify-binobj nrb)
+                        (let l (<axiom>b-len nrb)
+                          (if (< l 1)
+                              nil
+                              (do
+                                (= readbuf nrb)
+                                (= ri 0)
+                                (= rln l)
+                                t)))
+                        (err '<hl>contract "contract violation on return value of i/o-get"))
+                    nil)))
             readb
             (fn ()
               (if (is uri 0)
                   (if readbuf
                       (actual-readb)
-                      (let nrb (<hl>i/o-get ob)
-                        (if nrb
-                            (if (verify-binobj nrb)
-                                (let l (<axiom>b-len nrb)
-                                  (if (< l 1)
-                                      nil
-                                      (do
-                                        (= readbuf nrb)
-                                        (= ri 0)
-                                        (= rln l)
-                                        (actual-readb))))
-                                (err '<hl>contract "contract violation on return value of i/o-get"))
-                            nil)))
+                      (if (fill-readbuf)
+                          (actual-readb)
+                          nil))
                   ; read from the unread buffer
                   (withs (i-1 (- uri 1)
                           rv  (ref unreadbuf i-1))
                     (= uri i-1)
                     rv)))
+            peekb
+            (fn ()
+              (if (is uri 0)
+                  (if readbuf
+                      (bref readbuf ri)
+                      (if (fill-readbuf)
+                          (bref readbuf ri)
+                          nil))
+                  (ref unreadbuf (- uri 1))))
             write-hd nil
             write-tl nil
             len      0
@@ -488,6 +514,7 @@ will throw an '<hl>i/o error.
                                  (line-check rv)
                                  rv))
         '<hl>unreadb         unreadb
+        '<hl>peekb           peekb
         '<hl>port-name       (fn () name)
         '<hl>port-line       (fn ()
                                (let rv (if (< mac-line-number line-number)
