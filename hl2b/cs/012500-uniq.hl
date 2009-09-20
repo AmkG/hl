@@ -1,0 +1,11 @@
+
+(import <hl>def def)
+(import <axiom>tag tag)
+(import <common>spawn spawn)
+
+(def (<hl>uniq)
+  (<common>uniq))
+(def (<common>uniq)
+  (tag '<hl>sym
+       (spawn (fn () nil))))
+
