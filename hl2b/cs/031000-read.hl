@@ -188,7 +188,7 @@
           (= n (+ n (/ (- (c-to-i c) (c-to-i #\0)) p)))
           (= p (* p 10))
           (= c (readc in)))))
-    (unreadc in) ; last character read isn't part of the number
+    (unreadc in c) ; last character read isn't part of the number
     ; FIXME: if last character read isn't blocking, read up to a
     ; blocking char and return a symbol 
     (* sign n)))
@@ -230,7 +230,7 @@
       (is next #\\) (read-char next in nothing)
       (do
         ; default action: read as a symbol
-        (unreadc in) ; push #\\ back
+        (unreadc in next)
         (read-sym c in nothing)))))
 
 (let name->char (listtab '((<>newline #\newline)
