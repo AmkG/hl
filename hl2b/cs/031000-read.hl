@@ -108,9 +108,27 @@
 (def (init-default-read-ctx ctx)
   (let ctx (rep ctx)
     (table-sref ctx 'block-on (table))
+    (table-sref ctx 'sep (table))
+    (each c '(#\space #\return #\newline #\tab)
+      (ctx-add-sep c))
+    (each c '(#\; #\( #\) #\[ #\] #\' #\, #\`)
+      (ctx-block-on c))
     (table-sref ctx 'ssyntax-table (mk-ssyntax-table))
     (let read-table (table)
-      ; TODO: add entries here
+      ; populate read table
+      (each c '(#\space #\return #\newline #\tab)
+        (table-sref read-table c ignore))
+      (table-sref read-table #\; comment)
+      (each c '(#\+ #\- #\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
+        (table-sref read-table c read-num))
+      (table-sref read-table #\# read-#)
+      (table-sref read-table #\( read-list)
+      (table-sref read-table #\[ read-fn-abbr)
+      (table-sref read-table #\` read-qq)
+      (table-sref read-table #\, read-unq)
+      (table-sref read-table #\' read-quote)
+      ; default entry
+      (table-sref read-table t read-sym)
       (table-sref ctx 'read-table read-table))))
 
 ; !! another idea:
@@ -153,11 +171,6 @@
 
 ; a simple read table entry: ignore the character
 (def (ignore c in nothing)
-  nothing)
-
-; count lines
-(def (eol c in nothing)
-  (ctx-inc-line-num)
   nothing)
 
 ; skip a comment up to end of line
@@ -280,7 +293,7 @@
               (unless (is (readc in) ter)
                 (err "More than one object follows ."))
               (cons the-car the-cdr))
-            (do 
+            (do
               (unreadc in c)
               ; TODO: make tail recursive
               (cons the-car (read-list-with-ter in ter)))))))))
