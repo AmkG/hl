@@ -69,3 +69,53 @@
 
 (def <common>call-w/gvl (f) (f))
 
+(mac <hl>afn (args . body)
+  `(<hl>let <hl>self nil
+     (<axiom>set <hl>self (<axiom>fn ,args ,@body))))
+
+(mac <hl>when (test . body)
+  `(<axiom>if ,test (<hl>do ,@body)))
+
+(mac <hl>unless (test . body)
+  `(<axiom>if nil (<hl>do ,@body)))
+
+(mac <hl>and args
+  (if args
+      (if (cdr args)
+          `(<axiom>if ,(car args) (<hl>and ,@(cdr args)))
+          (car args))
+      't))
+
+(mac <hl>or args
+  (and args
+       (w/uniq g
+         `(<hl>let ,g ,(car args)
+            (<axiom>if ,g ,g (<hl>or ,@(cdr args)))))))
+
+(mac <hl>each (var val . body)
+  (w/uniq (f l)
+    `(<hl>let ,f nil
+       (<axiom>set ,f (<axiom>fn (,l)
+                        (<axiom>if ,l 
+                          (<hl>do 
+                            (<hl>let ,var (<axiom>car ,l) ,@body)
+                            (,f (<axiom>cdr ,l))))))
+       (,f ,val))))
+
+(mac <hl>while (test . body)
+  (w/uniq (f v)
+    `(<hl>let ,f nil
+       (<axiom>set ,f (<axiom>fn ()
+                        (<axiom>if ,test 
+                          (<hl>do 
+                            ,@body
+                            (,f)))))
+       (,f))))
+
+(mac <hl>if args
+  (if (or (no args) (is (len args) 1))
+    (car args)
+    (with (test (car args)
+           then (car (cdr args))
+           rest (cdr (cdr args)))
+      `(<axiom>if ,test ,then (<hl>if ,@rest)))))

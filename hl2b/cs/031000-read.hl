@@ -1,5 +1,64 @@
 ; reader
 
+(in-package impl)
+
+; axioms
+(import <axiom>lambda fn)
+(import <axiom>set =)
+(import <axiom>is is)
+(import <axiom>rep rep)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>cons cons)
+(import <axiom>table-sref table-sref)
+(import <axiom>table-ref table-ref)
+(import <axiom>i-to-c i-to-c)
+(import <axiom>c-to-i c-to-i)
+(import <axiom>sy-to-s sy-to-s)
+(import <axiom>s-to-sy s-to-sy)
+(import <axiom>string-build string-build)
+(import <axiom>string-length string-length)
+(import <axiom>string-ref string-ref)
+(import <axiom>string-sref string-sref)
+(import <axiom>f< f<)
+(import <axiom>i+ +)
+(import <axiom>i- -)
+(import <axiom>i* *)
+(import <axiom>i< <)
+
+; functions
+(import <hl>no no)
+(import <hl>table table)
+(import <hl>err err)
+(import <hl>string string)
+(import <hl>uniq uniq)
+(import <hl>readc readc)
+(import <hl>peekc peekc)
+(import <hl>unreadc unreadc)
+(import <hl>>= >=)
+(import <hl><= <=)
+(import <hl>listtab listtab)
+(import <hl>coerce coerce)
+(import <hl>rev rev)
+(import <hl>unpkg unpkg)
+
+; macros
+(import <hl>mac mac)
+(import <hl>def def)
+(import <hl>if if)
+(import <hl>let let)
+(import <hl>with with)
+(import <hl>withs withs)
+(import <hl>afn afn)
+(import <hl>self self)
+(import <hl>and and)
+(import <hl>or or)
+(import <hl>when when)
+(import <hl>unless unless)
+(import <hl>each each)
+(import <hl>while while)
+
+
 ; symbol syntax table. Maps chars to a pair holding function to be applied
 ; and symbol precedence. The function accepts two params: the entire symbol
 ; and the position where the matching char is. The symbol precedence is a
@@ -16,7 +75,7 @@
 ; ssyntax-expand on generated symbols
 (def (ssyntax-expand s)
   (withs (stb (table-ref (rep (current-ctx)) 'ssyntax-table)
-          rep (string s)
+          rep (sy-to-s s)
           ln (string-length rep))
     (let winner ((afn (pos winner max-prec)
                    ; find the symbol syntax character with the highest
@@ -24,7 +83,7 @@
                    (if (is pos ln)
                      winner
                      (let p (table-ref stb (string-ref rep pos))
-                       (if (and p (f> (cdr p) max-prec))
+                       (if (and p (f< max-prec (cdr p)))
                          (self (+ pos 1) (cons (car p) pos) (cdr p))
                          (self (+ pos 1) winner max-prec)))))
                   0 nil -1.0)
@@ -43,14 +102,14 @@
 ; !! fast, but I suspect it's much easier to
 ; !! handle strings.
 (def (split-sym s pos)
-  (withs (s (string s)
+  (withs (s (sy-to-s s)
           ln (string-length s)
           left (string-build pos)
           right (string-build (- ln (+ pos 1))))
     ((afn (i)
        (when (< i ln)
          (if (< i pos) (string-sref left i (string-ref s i))
-             (> i pos) (string-ref right (- i (+ pos 1)) (string-ref s i)))
+             (< pos i) (string-ref right (- i (+ pos 1)) (string-ref s i)))
          (self (+ i 1)))) 0)
     (cons (s-to-sy left) (s-to-sy right))))
 
