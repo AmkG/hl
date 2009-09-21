@@ -112,6 +112,12 @@
                             (,f)))))
        (,f))))
 
+(mac <hl>for ((var init last) . body)
+  `(<hl>let ,var ,init
+     (<hl>while (<axiom>i< ,var ,last)
+       ,@body
+       (<axiom>set ,var (<axiom>i+ ,var 1)))))
+
 (mac <hl>if args
   (if (or (no args) (is (len args) 1))
     (car args)
