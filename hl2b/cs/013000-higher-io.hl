@@ -23,14 +23,125 @@
 (import <hl>list list)
 (import <hl>polymorph polymorph)
 (import <hl>err err)
+(import <hl>err-throw err-throw)
+(import <axiom>is is)
+(import <axiom>rep rep)
+(import <axiom>type type)
+(import <hl>my-pid my-pid)
+(import <common>send send)
 
-(def (<common>port-wrap ob name)
+(import <common>apply-list apply-list)
+
+(import <hl>writemb    writemb)
+(import <hl>unreadmb   unreadmb)
+(import <hl>readc      readc)
+(import <hl>unreadc    unreadc)
+(import <hl>unreadmc   unreadmc)
+(import <hl>writec     writec)
+(import <hl>writemc    writemc)
+(import <hl>write-port write-port)
+
+(import <hl>trap-signal trap-signal)
+(import <hl>link link)
+(import <hl>unlink unlink)
+
+(import <axiom>i+ +)
+(import <axiom>i- -)
+
+(def (<common>port-wrap f)
   (tag '<hl>port
        (tag '<hl>shared-port
             (<impl>port-wrap-proc ob name))))
 
-(withs ()
-  (def (<impl>port-wrap-proc ob name)
+(withs (wait-startup-result
+        ; message handler. waits for proper
+        ; initialization of the process
+        (polymorph
+          (fn (m rv) nil)
+          '(<hl>cons)
+          (fn (m rv)
+            (if (is m (rep m))
+                (if (is (car m) rv)
+                    (fn ()
+                      (if (cdr m)
+                          ; initialization failed; throw
+                          (apply-list err-throw (cdr m))
+                          rv))
+                    nil)
+                nil)))
+        ; table of I/O capabilities we
+        ; always provide, by calling the
+        ; inner object
+        always-tb
+        (table
+          'writemb
+          (fn (ob) (fn (bs) (writemb ob bs)))
+          'unreadmb
+          (fn (ob) (fn (bs) (unreadmb ob bs)))
+          'readc
+          (fn (ob) (fn () (readc ob)))
+          'unreadc
+          (fn (ob) (fn (c) (unreadc ob c)))
+          'unreadmc
+          (fn (ob) (fn (cs) (unreadmc ob cs)))
+          'writec
+          (fn (ob) (fn (c) (writec ob c)))
+          'writemc
+          (fn (ob) (fn (cs) (writemc ob cs)))
+          'write-port
+          (fn (ob) (fn (to-write) (write-port ob to-write))))
+        ; binds the I/O capability we always provide
+        ; to the inner object ob
+        always-provide
+        (fn (ob k)
+          (let rv (always-tb k)
+            (if rv (rv ob)
+                   nil)))
+        ; utilities for message handlers
+        nilfn  (fn rest nil)
+        real   (fn (x) (is x (rep x)))
+        ; matches (item ...)
+        ; calls f with the matched item and the
+        ; rest of the list
+        match-one
+        (polymorph nilfn
+          '(<hl>cons)
+          (fn (m f)
+            (if (real m)
+                (f (car m) (cdr m))
+                nil)))
+        ; matches (item1 item2 ...)
+        match-two
+        (fn (m f)
+          (match-one m
+            (fn (item1 m)
+              (match-one m
+                (fn (item2 m)
+                  (f item1 item2 m))))))
+        ; matches (item1 item2 item3 ...)
+        match-three
+        (fn (m f)
+          (match-two m
+            (fn (item1 item2 m)
+              (match-one m
+                (fn (item3 m)
+                  (f item1 item2 item3 m))))))
+        match-four
+        (fn (m f)
+          (match-three m
+            (fn (item1 item2 item3 m)
+              (match-one m
+                (fn (item4 m)
+                  (f item1 item2 item3 item4 m))))))
+        match-five
+        (fn (m f)
+          (match-four m
+            (fn (item1 item2 item3 item4 m)
+              (match-one m
+                (fn (item5 m)
+                  (f item1 item2 item3 item4 item5 m))))))
+        )
+  (def (<impl>port-wrap-proc f)
     ; on error, all replies become (==> pid tid e h)
     ; ('<hl>check pid tid k)
     ;   (==> pid tid field-exists)
@@ -46,16 +157,324 @@
     ;   ; the requesting process
     ; ('<hl>unlock pid tid)
     ;   ; no response. decrements the lock counter
-    (spawn
-      (withs (ln   1
-              loop ())))))
+    (withs (parent (my-pid)
+            rv
+            (spawn
+              (fn ()
+                (let ob
+                     (on-err
+                       (fn (e h)
+                         (send parent (list (my-pid) e h))
+                         nil)
+                       (fn ()
+                         (trap-signal)
+                         (let ob (f)
+                           (send parent (list (my-pid)))
+                           ob)))
+                  (if ob
+                      (withs (lock-owner   nil
+                              lock-depth   0
+                              ob-provided
+                              (fn (k)
+                                (let rv (ob k)
+                                  (if rv
+                                      rv
+                                      (always-provide ob k))))
+                              cache        (table)
+                              ; looks up the given key in the ob
+                              ; together with any always-provided keys
+                              lookup
+                              (fn (k)
+                                (let cv (cache k)
+                                  (if cv (car cv)
+                                         (let rv (ob-provided k)
+                                           (<axiom>table-sref cache (<axiom>cons rv nil) k)
+                                           rv))))
+                              ; handles the <hl>check message when received
+                              check
+                              (fn (pid tid k)
+                                (on-err
+                                  (fn (e h)
+                                    (on-err
+                                      (fn (e h)
+                                        ; if it still fails, it's probably some
+                                        ; bugger not passing a decent pid.
+                                        nil)
+                                      (fn () 
+                                        (send pid (list tid e h)))))
+                                  (fn ()
+                                    (let rv (lookup k)
+                                      (send pid (list tid (if rv t nil)))))))
+                              ; performs the actual I/O operation, reporting
+                              ; the return value or any errors.
+                              base-exec
+                              (fn (pid tid k args)
+                                (let f (lookup k)
+                                  (on-err
+                                    (fn (e h)
+                                      (on-err
+                                        (fn (e h)
+                                          ; if it still fails, it's probably some
+                                          ; bugger not passing a decent pid.
+                                          nil)
+                                        (fn () 
+                                          (send pid (list tid e h)))))
+                                    (fn ()
+                                      (send pid (list tid (apply-list f args)))))))
+                              ; cache of deferred I/O operations.  I/O operations
+                              ; may get deferred if a process that does not own
+                              ; the lock has an I/O request.
+                              deferred-exec ()
+                              exec-all-deferred
+                              (fn ()
+                                (if deferred-exec
+                                    (with (first (car deferred-exec)
+                                           rest  (cdr deferred-exec))
+                                      (= deferred-exec rest)
+                                      (apply-list base-exec first)
+                                      (exec-all-deferred))
+                                    nil))
+                              exec
+                              (fn (pid tid k args)
+                                (if lock-owner
+                                    (if (is pid lock-owner)
+                                        (base-exec pid tid k args)
+                                        ; defer the request
+                                        (= deferred-exec
+                                           (cons (list pid tid k args)
+                                                 deferred-exec)))
+                                    (base-exec pid tid k args)))
+                              ; respond to a lock request
+                              ; we respond before we actually
+                              ; take action on the request,
+                              ; in case some silly bugger passed
+                              ; non-pid's to us
+                              lock-response
+                              (fn (pid tid)
+                                (on-err
+                                  (fn (e h)
+                                    nil)
+                                  (fn ()
+                                    (send pid (list tid))
+                                    t)))
+                              ; perform a definite locking
+                              ; precondition is no lock yet
+                              base-lock
+                              (fn (pid tid)
+                                (if (lock-response pid tid)
+                                    (do (link pid)
+                                        (= lock-owner pid)
+                                        (= lock-depth 1)
+                                        t)
+                                    nil))
+                              deferred-lock ()
+                              lock
+                              (fn (pid tid)
+                                (if lock-owner
+                                    (if (is lock-owner pid)
+                                        (if (lock-response pid tid)
+                                            (= lock-depth (+ 1 lock-depth))
+                                            nil))
+                                        (= deferred-lock
+                                           (cons (list pid tid)
+                                                 deferred-lock)))
+                                    (base-lock pid tid))
+                              ; actual release of the lock
+                              base-unlock
+                              (fn ()
+                                (unlink lock-owner)
+                                (= lock-owner nil)
+                                (= lock-depth 0)
+                                (exec-all-deferred)
+                                ; other lock requesters?
+                                (if deferred-lock
+                                    ; get one of them
+                                    (let lock-loop ()
+                                      (= lock-loop
+                                         (fn ()
+                                           (if deferred-lock
+                                               (with (locker (car deferred-lock)
+                                                      rest   (cdr deferred-lock))
+                                                 (= deferred-lock rest)
+                                                 (if (apply-list base-lock locker)
+                                                     nil
+                                                     (lock-loop)))
+                                               nil)))
+                                      (lock-loop))
+                                    nil))
+                              ; decrements locking depth, unless
+                              ; it drops to 0, in which case
+                              ; release the lock
+                              unlock
+                              (fn ()
+                                (if lock-owner
+                                    (let d-1 (- lock-depth 1)
+                                      (= lock-depth d-1)
+                                      (if (is d-1 0)
+                                          ; release the lock
+                                          (base-unlock)
+                                          nil))
+                                    nil))
+                              ; flag to terminate
+                              terminate? nil
+                              ; --- message handlers
+                              check-handler
+                              (fn (m)
+                                (match-four m
+                                  (fn (check-sy pid tid k rest)
+                                    (if (is check-sy '<hl>check)
+                                        (if rest
+                                            ; invalid: we expect a proper
+                                            ; cons-cell list of only (pid tid k)
+                                            nil
+                                            (fn () (check pid tid k)))
+                                        nil))))
+                              exec-handler
+                              (fn (m)
+                                (match-five m
+                                  (fn (exec-sy pid tid k args rest)
+                                    (if (is exec-sy '<hl>exec)
+                                        (if rest
+                                            nil
+                                            (fn () (exec pid tid k args)))))))
+                              lock-handler
+                              (fn (m)
+                                (match-three m
+                                  (fn (lock-sy pid tid rest)
+                                    (if (is lock-sy '<hl>lock)
+                                        (if rest
+                                            nil
+                                            (fn () (lock pid tid)))
+                                        nil))))
+                              unlock-handler
+                              (fn (m)
+                                (match-one m
+                                  (fn (unlock-sy rest)
+                                    (if (is unlock-sy '<hl>unlock)
+                                        (if rest
+                                            nil
+                                            (fn () (unlock)))
+                                        nil))))
+                              signal-handler
+                              (fn (m)
+                                (match-two m
+                                  (fn (signal-sy pid rest)
+                                    (if (is signal-sy '<hl>signal)
+                                        ; if the source of the signal
+                                        ; is the lock owner, completely
+                                        ; release the lock-owner's lock
+                                        (if (is pid lock-owner)
+                                            (fn () (base-unlock))
+                                            ; if we're the source of the
+                                            ; signal, close and halt
+                                            ; (expect this to happen
+                                            ; only for finalization
+                                            ; signal)
+                                            (if (is pid (my-pid))
+                                                (fn ()
+                                                  (close ob)
+                                                  (= terminate? t))
+                                                nil))
+                                        nil))))
+                              handlers
+                              (list check-handler
+                                    exec-handler
+                                    lock-handler
+                                    unlock-handler
+                                    signal-handler
+                                    ; ignore unhandled messages
+                                    (fn (m) (fn () nil)))
+                              loop ())
+                        (= loop
+                           (fn ()
+                             (<common>handle-message
+                               handlers)
+                             (if terminate?
+                                 nil
+                                 (loop))))
+                        (loop))
+                      ; initialization failed, end
+                      nil)))))
+      (<common>handle-message
+        (list
+          ; wait for proper initialization
+          (fn (m) (wait-startup-result m rv))))))
+  ; handles the checking for support for actual
+  ; I/O capabilities
+  (let std-wait-response
+       (fn (tid)
+         (<common>handle-message
+           (list
+             (fn (m)
+               (match-two m
+                 (fn (ntid rv rest)
+                   (if rest nil
+                       (if (is ntid tid)
+                           (fn () rv)
+                           nil)))))
+             (fn (m)
+               (match-three m
+                 (fn (ntid e h rest)
+                   (if rest nil
+                       (if (is ntid tid)
+                           (fn () (err-throw e h))))))))))
+    (defm (<hl>call* (t p <hl>shared-port) k)
+      ; first check if the key exists
+      (with (dest (rep p)
+             pid  (my-pid)
+             tid  (<hl>uniq))
+        (send dest (list '<hl>check pid tid k))
+        (let check (std-wait-response tid)
+          (if check
+              (fn args
+                (with (pid (my-pid)
+                       tid  (<hl>uniq))
+                  (send dest (list '<hl>exec pid tid k args))
+                  (std-wait-response tid)))
+              nil))))
+    (def (<hl>lock-port p)
+      nil)
+    (defm (<hl>lock-port (t p port))
+      (<hl>lock-port (rep p)))
+    (defm (<hl>lock-port (t p shared-port))
+      (with (dest (rep p)
+             pid  (my-pid)
+             tid  (uniq))
+        (send dest (list '<hl>lock pid tid))
+        (<common>handle-message
+          (list
+            (fn (m)
+              (match-one m
+                (fn (ntid rest)
+                  (if rest nil
+                      (if (is tid ntid)
+                          (fn () nil)
+                          nil)))))))
+        t))
+    (def (<hl>unlock-port p)
+      nil)
+    (defm (<hl>unlock-port (t p port))
+      (<hl>unlock-port (rep p)))
+    (defm (<hl>unlock-port (t p shared-port))
+      (send (rep p) (list '<hl>unlock)))))
 
-(def (<hl>port-wrap ob . rest)
-  ((fn (name)
-     (<common>port-wrap ob name))
-   (if rest
-       (if (cdr rest)
-           (err (tag '<hl>apply "too many arguments"))
-           (car rest))
-       nil)))
+(def (<hl>call-w/lock-port p f)
+  (<hl>dynamic-wind
+    (fn ()
+      (<hl>lock-port p))
+    f
+    (fn ()
+      (<hl>unlock-port p))))
+
+(mac (<hl>w/lock-port p . rest)
+  (list (list '<axiom>symeval ''<hl>call-w/lock-port)
+        p
+        (cons '<axiom>lambda
+              (cons '()
+                    rest))))
+
+(mac (<hl>port-wrap expr)
+  (list (list '<axiom>symeval ''<common>port-wrap)
+        (list '<axiom>lambda '() expr)))
+
 
