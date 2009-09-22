@@ -71,7 +71,7 @@
 
 (mac <hl>afn (args . body)
   `(<hl>let <hl>self nil
-     (<axiom>set <hl>self (<axiom>fn ,args ,@body))))
+     (<axiom>set <hl>self (<axiom>lambda ,args ,@body))))
 
 (mac <hl>when (test . body)
   `(<axiom>if ,test (<hl>do ,@body)))
@@ -94,13 +94,10 @@
 
 (mac <hl>each (var val . body)
   (w/uniq (f l)
-    `(<hl>let ,f nil
-       (<axiom>set ,f (<axiom>fn (,l)
-                        (<axiom>if ,l 
-                          (<hl>do 
-                            (<hl>let ,var (<axiom>car ,l) ,@body)
-                            (,f (<axiom>cdr ,l))))))
-       (,f ,val))))
+    `((<axiom>symeval '<hl>base-each) ,val 0
+      (<axiom>lambda ()
+        ,@body
+        t))))
 
 (mac <hl>while (test . body)
   (w/uniq (f v)
