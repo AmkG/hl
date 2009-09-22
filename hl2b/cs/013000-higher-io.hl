@@ -489,3 +489,8 @@
   (list (list '<axiom>symeval ''<common>port-wrap)
         (list '<axiom>lambda '() expr)))
 
+(let stdout (<common>port-wrap (fn () (<hl>buffered-port-wrap (<axiom>i/o-stdout))))
+  (<hl>writemc stdout "shared ports are (maybe?) working!\n")
+  (<hl>flush stdout))
+
+>stop-compiling

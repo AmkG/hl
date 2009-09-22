@@ -229,4 +229,3 @@
       (loop)))
   (flush stdout))
 
->stop-compiling
