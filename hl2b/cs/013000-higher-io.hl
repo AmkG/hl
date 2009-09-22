@@ -418,45 +418,56 @@
                    (if rest nil
                        (if (is ntid tid)
                            (fn () (err-throw e h))))))))))
-    (defm (<hl>call* (t p <hl>shared-port) k)
-      ; first check if the key exists
-      (with (dest (rep p)
-             pid  (my-pid)
-             tid  (<hl>uniq))
-        (send dest (list '<hl>check pid tid k))
-        (let check (std-wait-response tid)
-          (if check
-              (fn args
-                (with (pid (my-pid)
-                       tid  (<hl>uniq))
-                  (send dest (list '<hl>exec pid tid k args))
-                  (std-wait-response tid)))
-              nil))))
-    (def (<hl>lock-port p)
-      nil)
-    (defm (<hl>lock-port (t p port))
-      (<hl>lock-port (rep p)))
-    (defm (<hl>lock-port (t p shared-port))
-      (with (dest (rep p)
-             pid  (my-pid)
-             tid  (uniq))
-        (send dest (list '<hl>lock pid tid))
-        (<common>handle-message
-          (list
-            (fn (m)
-              (match-one m
-                (fn (ntid rest)
-                  (if rest nil
-                      (if (is tid ntid)
-                          (fn () nil)
-                          nil)))))))
-        t))
-    (def (<hl>unlock-port p)
-      nil)
-    (defm (<hl>unlock-port (t p port))
-      (<hl>unlock-port (rep p)))
-    (defm (<hl>unlock-port (t p shared-port))
-      (send (rep p) (list '<hl>unlock)))))
+    (let locking-keys-tb
+         (table
+           '<hl>lock-port
+           (fn (dest)
+             (fn ()
+               (with (pid (my-pid)
+                      tid (uniq))
+                 (send dest (list '<hl>lock pid tid))
+                 (<common>handle-message
+                   (list
+                     (fn (m)
+                       (match-one m
+                         (fn (ntid rest)
+                           (if rest nil
+                               (if (is tid ntid)
+                                   (fn () nil)
+                                   nil)))))))
+                 t)))
+           '<hl>unlock-port
+           (fn (dest)
+             (fn ()
+               (send dest (list '<hl>unlock-port))
+               t)))
+      (defm (<hl>call* (t p <hl>shared-port) k)
+        ; first check if the key exists
+        (with (dest (rep p)
+               pid  (my-pid)
+               tid  (<hl>uniq))
+          (send dest (list '<hl>check pid tid k))
+          (let check (std-wait-response tid)
+            (if check
+                (fn args
+                  (with (pid (my-pid)
+                         tid  (<hl>uniq))
+                    (send dest (list '<hl>exec pid tid k args))
+                    (std-wait-response tid)))
+                nil)))))))
+
+(def (<hl>lock-port p)
+  (err '<hl>type "attempt to lock non-port-like object"))
+(defm (<hl>lock-port (t p <hl>port))
+  (let f (p '<hl>lock-port)
+    (if f (f)
+          t)))
+(def (<hl>unlock-port p)
+  (err '<hl>type "attempt to unlock non-port-like object"))
+(defm (<hl>unlock-port (t p <hl>port))
+  (let f (p '<hl>unlock-port)
+    (if f (f)
+          t)))
 
 (def (<hl>call-w/lock-port p f)
   (<hl>dynamic-wind
@@ -476,5 +487,4 @@
 (mac (<hl>port-wrap expr)
   (list (list '<axiom>symeval ''<common>port-wrap)
         (list '<axiom>lambda '() expr)))
-
 
