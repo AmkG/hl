@@ -51,7 +51,7 @@
 (def (<common>port-wrap f)
   (tag '<hl>port
        (tag '<hl>shared-port
-            (<impl>port-wrap-proc ob name))))
+            (<impl>port-wrap-proc f))))
 
 (withs (wait-startup-result
         ; message handler. waits for proper
