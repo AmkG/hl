@@ -7,5 +7,5 @@
   (<common>uniq))
 (def (<common>uniq)
   (tag '<hl>sym
-       (spawn (fn () nil))))
+       (spawn (<axiom>lambda () nil))))
 
