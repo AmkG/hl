@@ -23,6 +23,7 @@
 (import <hl>list list)
 (import <hl>polymorph polymorph)
 (import <hl>err err)
+(import <hl>on-err on-err)
 (import <hl>err-throw err-throw)
 (import <axiom>is is)
 (import <axiom>rep rep)
