@@ -1,0 +1,83 @@
+
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>let let)
+(import <hl>withs withs)
+
+(import <common>port-wrap port-wrap)
+(import <hl>buffered-port-wrap buffered-port-wrap)
+(import <hl>proc-local proc-local)
+
+(import <axiom>lambda fn)
+(import <axiom>if if)
+
+; port-wrap creates an object that is safely useable across
+; processes, so it's OK to put it in a global function.
+(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>stdin) "stdin")))
+  (def (<common>vm-stdin)
+    rv))
+(def (<hl>vm-stdin)
+  (<common>vm-stdin))
+
+(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>stdout) "stdout")))
+  (def (<common>vm-stdout)
+    rv))
+(def (<hl>vm-stdout)
+  (<common>vm-stdout))
+
+(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>stderr) "stderr")))
+  (def (<common>vm-stderr)
+    rv))
+(def (<hl>vm-stderr)
+  (<common>vm-stderr))
+
+(def (<hl>stdin)
+  (let rv (proc-local '<hl>stdin)
+    (if rv rv
+           (<hl>vm-stdin))))
+
+(def (<hl>stdout)
+  (let rv (proc-local '<hl>stdout)
+    (if rv rv
+           (<hl>vm-stdout))))
+
+(def (<hl>stderr)
+  (let rv (proc-local '<hl>stderr)
+    (if rv rv
+           (<hl>vm-stderr))))
+
+; redefine spawn so that spawned processes
+; inherit stdi/o/err
+
+        ; chain them so that if the spawning parent process
+        ; has no special stdi/o/err, we don't add to the
+        ; function to execute.
+(withs (stderr-spawn
+        (fn (f)
+          (let stderr (proc-local '<hl>stderr)
+            (if stderr (<common>spawn
+                         (fn ()
+                           (sref proc-local stderr '<hl>stderr)
+                           (f)))
+                       (<common>spawn f))))
+        stdout-spawn
+        (fn (f)
+          (let stdout (proc-local '<hl>stdout)
+            (if stdout (stderr-spawn
+                         (fn ()
+                           (sref proc-local stdout '<hl>stdout)
+                           (f)))
+                       (stderr-spawn f))))
+        stdin-spawn
+        (fn (f)
+          (let stdin (proc-local '<hl>stdin)
+            (if stdin  (stdout-spawn
+                         (fn ()
+                           (sref proc-local stdin '<hl>stdin)
+                           (f)))
+                       (stdout-spawn
+                         f)))))
+  (def (<hl>spawn f)
+    (stdin-spawn f)))
+
