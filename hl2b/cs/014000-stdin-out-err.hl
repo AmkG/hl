@@ -14,19 +14,19 @@
 
 ; port-wrap creates an object that is safely useable across
 ; processes, so it's OK to put it in a global function.
-(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>stdin) "stdin")))
+(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>i/o-stdin) "stdin")))
   (def (<common>vm-stdin)
     rv))
 (def (<hl>vm-stdin)
   (<common>vm-stdin))
 
-(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>stdout) "stdout")))
+(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>i/o-stdout) "stdout")))
   (def (<common>vm-stdout)
     rv))
 (def (<hl>vm-stdout)
   (<common>vm-stdout))
 
-(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>stderr) "stderr")))
+(let rv (port-wrap (fn () (buffered-port-wrap (<axiom>i/o-stderr) "stderr")))
   (def (<common>vm-stderr)
     rv))
 (def (<hl>vm-stderr)
