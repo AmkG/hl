@@ -144,7 +144,8 @@ their own syntax.
     (if (real-type ob)
         (withs (ob
                 (if (is ob 0)
-                    (prc #\0)
+                    (do (prc #\0)
+                        0)
                     (if (<axiom>i< ob 0)
                         (do (prc #\-)
                             (<axiom>i- 0 ob))
