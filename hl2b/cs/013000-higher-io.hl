@@ -493,4 +493,3 @@
   (<hl>writemc stdout "shared ports are (maybe?) working!\n")
   (<hl>flush stdout))
 
->stop-compiling

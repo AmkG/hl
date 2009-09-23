@@ -1,0 +1,177 @@
+
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>defm defm)
+(import <hl>let let)
+(import <hl>with with)
+(import <hl>withs withs)
+(import <hl>do do)
+
+(import <axiom>if if)
+(import <axiom>lambda fn)
+(import <axiom>set =)
+(import <axiom>quote quote)
+(import <axiom>is is)
+(import <axiom>rep rep)
+(import <axiom>type type)
+
+(import <hl>polymorph polymorph)
+(import <hl>err err)
+(import <hl>port port)
+
+(def (<hl>write ob . rest)
+  (if rest
+      (if (<axiom>cdr rest)
+          (err '<hl>apply "too many arguments to 'write")
+          (<hl>write-port (<axiom>car rest) ob))
+      (<hl>write-port (<hl>stdout) ob)))
+
+(def (<hl>write-port p ob)
+  (err '<hl>type "attempt to write to non-port-like object"))
+
+(let verify-char
+     (polymorph
+       (fn (c) (err '<hl>contract "write contract violation: attempt to print non-character"))
+       '(<hl>char)
+       (fn (c)
+         (if (is c (rep c))
+             c
+             (err '<hl>contract "write contract violation: attempt to print fake character"))))
+  (defm (<hl>write-port (t p port) ob)
+    (let f (p '<hl>write-port)
+      (if f (f ob)
+            (withs (writec-base (p '<hl>writec)
+                    prc
+                    (if writec-base
+                        (fn (c)
+                          (writec-base (verify-char c)))
+                        (fn (c)
+                          (<hl>writec p c)))
+                    prs
+                    (if writec-base
+                        (fn () (writec-base #\space))
+                        (fn () (<hl>writec p #\space)))
+                    write ())
+              (= write
+                 (fn (ob)
+                   (<hl>base-write ob prc prs write)))
+              (write ob))))))
+
+#|
+base-write interface:
+
+  (base-write object prc prs write)
+
+object = object to write
+prc = a function that prints a single character:
+  (prc #\x)
+prs = a function that prints a *separator*.  This
+  is usually a space, but a pretty printer may
+  output more than a single space.
+  (prs)
+write = a function that prints an object;
+  (write another-object)
+
+RATIONALE:
+By not giving direct access to the port being
+printed to, a pretty-printer function can call
+base-write and learn where the allowable breaks
+are (via prs) and where sub-objects begin (via
+write).  Thus, a pretty-printer can then be used
+generically, even for user-defined types with
+their own syntax.
+|#
+
+(with (default-print
+       (fn (ob prc prs write)
+         (if (is ob (rep ob))
+             ; an unsupported builtin type
+             (do (prc #\#)
+                 (prc #\<)
+                 (write (type ob))
+                 (prc #\>))
+             ; a tagged type
+             (do (prc #\#)
+                 (prc #\{)
+                 (write (type ob))
+                 (prs)
+                 (write (rep ob))
+                 (prc #\}))))
+       real-type
+       (fn (ob)
+         (is ob (rep ob))))
+  (def <hl>base-write default-print)
+  (withs (lp #\(
+          rp #\)
+          improper
+          (fn (ob prc prs write)
+            (prs)
+            (prc #\.)
+            ; yes not a separator, but a literal space
+            (prc #\space)
+            (write ob)
+            (prc rp))
+          loop ())
+    (= loop
+       (polymorph
+         improper
+         '(<hl>bool)
+         (fn (ob prc prs write)
+           (if ob
+               (improper ob prc prs write)
+               (prc rp)))
+         '(<hl>cons)
+         (fn (ob prc prs write)
+           (if (real-type ob)
+               (do (prs)
+                   (write (<axiom>car ob))
+                   (loop (<axiom>cdr ob) prc prs write))
+               (improper ob prc prs write)))))
+    (defm (<hl>base-write (t ob <hl>cons) prc prs write)
+      (if (real-type ob)
+          (do (prc lp)
+              (write (<axiom>car ob))
+              (loop (<axiom>cdr ob) prc prs write))
+          (default-print ob prc prs write))))
+  (defm (<hl>base-write (t ob <hl>bool) prc prs write)
+    (if (real-type ob)
+        (if ob
+            (prc #\t)
+            (do (prc #\n) (prc #\i) (prc #\l)))
+        (default-print ob prc prs write)))
+  (defm (<hl>base-write (t ob <hl>int) prc prs write)
+    (if (real-type ob)
+        (withs (ob
+                (if (is ob 0)
+                    (prc #\0)
+                    (if (<axiom>i< ob 0)
+                        (do (prc #\-)
+                            (<axiom>i- 0 ob))
+                        ob))
+                to-print ()
+                collect
+                (fn (c)
+                  (= to-print (<axiom>cons c to-print)))
+                loop ())
+          (= loop
+             (fn ()
+               (if (is ob 0)
+                   nil
+                   (with (d   (<axiom>imod ob 10)
+                          nob (<axiom>i/ ob 10))
+                     (collect (<axiom>i-to-c
+                                (<axiom>i+ 48 d)))
+                     (= ob nob)
+                     (loop)))))
+          (loop)
+          (<hl>base-each to-print 0 (fn (c)
+            (prc c)
+            t)))
+        (default-print ob prc prs write))))
+
+(<hl>write '(1 -2 3 (4 5 . 6) 0 (t . nil) nil . t))
+(<hl>writec (<hl>stdout) #\newline)
+(<hl>flush (<hl>stdout))
+
+>stop-compiling
