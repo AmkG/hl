@@ -246,6 +246,9 @@ their own syntax.
 
 (<hl>write '(1 -2 3 (4 5 . 6) 0 (t . nil) 120 42123 nil . t))
 (<hl>writec (<hl>stdout) #\newline)
+(<hl>write (table 'a "a"
+                  'b "b"
+                  'c "c"))
 (<hl>flush (<hl>stdout))
 
 >stop-compiling
