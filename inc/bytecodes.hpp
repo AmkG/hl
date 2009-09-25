@@ -192,7 +192,7 @@ inline void bytecode_sy_to_s(Process& proc, ProcessStack& stack) {
 	if(!is_a<Symbol*>(stack.top())) {
 		throw_HlError("<bc>sy-to-s expects a symbol");
 	}
-	Symbol* sy = as_a<Symbol*>(stack.top());
+	Symbol* sy = as_a<Symbol*>(stack.top()); stack.pop();
 	std::string s = sy->getPrintName();
 	HlString::from_cpp_string(proc, stack, s);
 }
