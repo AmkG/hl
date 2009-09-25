@@ -190,8 +190,6 @@
       (multi-algo p cs 'unreadmc 'unreadc unreadc real-char-u))))
 
 #|
- |#
-
 (let stdout (<hl>buffered-port-wrap (<axiom>i/o-stdout) "stdout")
   (writemc stdout "write characters - アラン\n")
   (flush stdout)
@@ -228,4 +226,5 @@
                  nil))))
       (loop)))
   (flush stdout))
+|#
 
