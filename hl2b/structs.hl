@@ -118,7 +118,9 @@
              ; Accessors
              (<axiom>accessor 2) (<axiom>accessor-ref 1)
              ; process-locals
-             (<axiom>proc-local 0) (<axiom>proc-local-set 1))))
+             (<axiom>proc-local 0) (<axiom>proc-local-set 1)
+             ; symbol conversions
+             (<axiom>sy-to-s 1)  (<axiom>s-to-sy 1))))
 
 (def check-prim-num-args (op n)
   (let expect (axioms* op)
