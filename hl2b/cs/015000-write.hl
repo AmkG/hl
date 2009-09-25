@@ -249,6 +249,7 @@ their own syntax.
 (<hl>write (table 'a "a"
                   'b "b"
                   'c "c"))
+(<hl>writec (<hl>stdout) #\newline)
 (<hl>flush (<hl>stdout))
 
 >stop-compiling
