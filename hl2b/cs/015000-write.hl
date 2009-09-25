@@ -169,9 +169,82 @@ their own syntax.
           (<hl>base-each to-print 0 (fn (c)
             (prc c)
             t)))
-        (default-print ob prc prs write))))
+        (default-print ob prc prs write)))
+  (withs (sym-escaped
+          (table
+            #\space    t
+            #\[        t
+            #\]        t
+            #\(        t
+            #\)        t
+            #\'        t
+            #\,        t
+            #\`        t)
+          backslash-code
+          (table
+            #\\          #\\
+            #\"          #\"
+            #\newline    #\n
+            #\return     #\r
+            #\backspace  #\b
+            #\tab        #\t
+            #\page       #\f
+            #\u007       #\a
+            #\vtab       #\v)
+          pr-fn
+          (fn (prc sym-type)
+            (fn (c)
+              (let bc (backslash-code c)
+                (if bc
+                    (do (prc #\\)
+                        (prc bc))
+                    (let i (<axiom>c-to-i c)
+                      (if (<axiom>i< i 32)
+                          ; print \0xx for control characters
+                          (with (d8 (<axiom>i/ i 8)
+                                 d1 (<axiom>imod i 8))
+                            (prc #\\)
+                            (prc #\0)
+                            (prc (<axiom>i-to-c (<axiom>i+ i 48)))
+                            (prc (<axiom>i-to-c (<axiom>i+ i 48))))
+                          (if (if (sym-escaped c) sym-type nil)
+                              ; for symbols, some chars should be backslashed
+                              ; (sym "foo bar") => foo\ bar
+                              (do (prc #\\)
+                                  (prc c))
+                              (prc c))))))
+              t)))
+    (defm (<hl>base-write (t s <hl>string) prc prs write)
+      (if (real-type s)
+          (do (prc #\")
+              (<hl>base-each s 0 (pr-fn prc nil))
+              (prc #\"))
+          (default-print s prc prs write)))
+    (defm (<hl>base-write (t s <hl>sym) prc prs write)
+      (if (real-type s)
+          (let s (<axiom>sy-to-s s)
+            (if (is s "nil")
+                (<hl>base-each "<>nil" 0 (fn (c) (prc c) t))
+                (if (is s "t")
+                  (<hl>base-each "<>t" 0 (fn (c) (prc c) t))
+                  (<hl>base-each s 0 (pr-fn prc t)))))
+          (default-print s prc prs write))))
+  (defm (<hl>base-write (t tb <hl>table) prc prs write)
+    (if (real-type tb)
+        (do (prc #\#)
+            (prc #\{)
+            (let first t
+              (<hl>base-each tb 0
+                (fn (kv)
+                  (if first
+                      (= first nil)
+                      (prs))
+                  (write kv)
+                  t)))
+            (prc #\}))
+        (default-print tb prc prs write))))
 
-(<hl>write '(1 -2 3 (4 5 . 6) 0 (t . nil) nil . t))
+(<hl>write '(1 -2 3 (4 5 . 6) 0 (t . nil) 120 42123 nil . t))
 (<hl>writec (<hl>stdout) #\newline)
 (<hl>flush (<hl>stdout))
 
