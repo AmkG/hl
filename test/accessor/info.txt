@@ -3,7 +3,7 @@ concept.
 
 To run the tests, execute
 
-$ ./dotest.pl '../src/hl --bc' accessor
+$ ./dotest.pl '../src/hlvma --bc' accessor
 
 from the test directory (this directory's parent).
 

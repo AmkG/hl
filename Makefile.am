@@ -6,4 +6,4 @@ endif
 SUBDIRS = src test
 
 test_vm:
-	perl test/dotest.pl 'src/hl --bc ' test/executors/tests
+	perl test/dotest.pl 'src/hlvma --bc ' test/executors/tests

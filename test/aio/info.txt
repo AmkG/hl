@@ -29,10 +29,10 @@ POSIX I/O and signal system.
 
 The `hello.hlbc` test just prints "hello" terminated by a cr-lf
 pair on stdout.  It's supposed to work with the (at the time of
-this writing) current version of the `hl` program, which supports
-a `--bc` flag:
+this writing) current version of the `hlvma` program, which
+supports a `--bc` flag:
 
-	../../src/hl --bc hello.hlbc
+	../../src/hlvma --bc hello.hlbc
 
 
 

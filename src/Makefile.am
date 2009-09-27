@@ -3,7 +3,8 @@ if BOOST_PATH_SPECIFIED
 OTHER_INCLUDES += -I@BOOST_PATH@
 endif
 
-AM_CPPFLAGS = $(OTHER_INCLUDES) -I@srcdir@/../inc -I@srcdir@/../os -I@srcdir@/..
+AM_CPPFLAGS = $(OTHER_INCLUDES) -I@srcdir@/../inc -I@srcdir@/../os -I@srcdir@/..\
+	-DLIBEXECDIR=\"@libexecdir@\" -DEXE_EXT=\"$(EXEEXT)\" -DDATADIR=\"@datadir@\"
 LDFLAGS = @PTHREAD_LIB@
 
 noinst_LIBRARIES = libhlvm.a
@@ -48,5 +49,9 @@ libhlvm_a_SOURCES = \
 	../os/thread.hpp
 
 bin_PROGRAMS = hl
-hl_SOURCES = main.cpp
-hl_LDADD = libhlvm.a
+hl_SOURCES = hl.cpp
+
+libexec_PROGRAMS = hlvma
+hlvma_SOURCES = main.cpp
+hlvma_LDADD = libhlvm.a
+
