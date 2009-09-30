@@ -1,6 +1,8 @@
 
 (in-package impl)
 (import <hl>def def)
+(import <hl>defm defm)
+(import <hl>mac mac)
 (import <hl>let let)
 (import <hl>with with)
 (import <hl>withs withs)
