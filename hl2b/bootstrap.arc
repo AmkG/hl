@@ -79,13 +79,10 @@
 
 (using <read-cs-dir>v1)
 
-(if (> (len <arc>argv) 1)
-    ; called from the command line
-    ; compile and run the program
-    (<arc>w/infile in (<arc>argv 1)
-      (= exprs* (<arc>readall in)))
-    (do (= exprs* (read-cs-dir))
-        (= stop-host-eval* t)))
+(= exprs* (if (> (len <arc>argv) 1)
+            (read-cs-dir (cdr <arc>argv))
+            (read-cs-dir)))
+(= stop-host-eval* t)
 
 (do
   (do
@@ -119,7 +116,4 @@
         (prn "compile")
         (each bc (compile-to-bytecode prog)
           (<arc>write bc tmp)
-          (<arc>writec #\newline tmp)))))
-  (prn "run")
-  ; run the bytecode (only for testing, will be removed in the future)
-  (<arc>system:string "../src/hl --bc /tmp/hl-tmp"))
+          (<arc>writec #\newline tmp))))))

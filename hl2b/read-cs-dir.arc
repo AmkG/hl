@@ -36,8 +36,8 @@
         (unless stop? (restart))))))
 
 ; returns a list of all expressions
-(def read-cs-dir ()
-  (w/collect:breakable:each f (sort < (list-cs-files))
+(def read-cs-dir ((o files (sort < (list-cs-files))))
+  (w/collect:breakable:each f files
     (with (context (cxt)
            eof     (uniq)
            e       ())
