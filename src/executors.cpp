@@ -386,6 +386,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
   Object::ref& bytecode = proc.bytecode_slot;
   // ?? could this approach be used for clos too?
  call_current_closure:
+#ifdef BYTECODE_DEBUG
+  std::cerr << "---function call, " << reductions << " remaining" << std::endl;
+#endif
   if(--reductions == 0) {
     return process_running;
   }
