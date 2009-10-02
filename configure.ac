@@ -11,7 +11,7 @@ AC_LANG([C++])
 # basic conf
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADERS([inc/config.h])
-AC_CONFIG_FILES([Makefile src/Makefile test/Makefile test/executors/Makefile test/disassembler/Makefile test/reader/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile test/executors/Makefile test/disassembler/Makefile test/reader/Makefile hl2b/Makefile])
 
 # user options
 AC_ARG_WITH([boost-include], [AS_HELP_STRING([--with-boost-include], [path where boost headers are installed])],
