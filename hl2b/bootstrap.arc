@@ -79,23 +79,51 @@
 
 (using <read-cs-dir>v1)
 
+; usage:
+;  arc bootstrap.arc
+;    - compiles the entire cs/ directory as a
+;      single file in /tmp/hl-tmp
+;    - provides a halting continuation
+;  arc bootstrap.arc file
+;    - compiles the specified file into
+;      /tmp/hl-tmp
+;    - provides a halting continuation
+;  arc bootstrap.arc file --next
+;    - compiles the specified file into
+;      /tmp/hl-tmp
+;    - provides a next-boot-file continuation
+
 (= exprs* (if (> (len <arc>argv) 1)
-            (read-cs-dir (cdr <arc>argv))
+            (read-cs-dir (list (cadr <arc>argv)))
             (read-cs-dir)))
+(= use-next-boot-cont*
+   (is (cadr:cdr <arc>argv) "--next"))
 (= stop-host-eval* t)
 
-(do
-  (do
+; if --next flag is given, trap errors
+;   so that makefile aborts
+; maintainer has to hack stuff just to
+;   find out what the error is.
+; stupid misdesign of error trapping in
+;   arc >.<
+((if use-next-boot-cont*
+     <arc>on-err
+     (fn (_ f) (f)))
+  (fn (e)
+    (<arc>quit 1))
+  (fn ()
     (withs (exprs exprs*
             prog `((<axiom>lambda () ,@exprs)))
       (<arc>w/outfile tmp "/tmp/hl-tmp"
         ; not the best thing to do, pipe-to would be better if we had it
         ; put the default continuation
-        (<arc>write '(<bc>k-closure 0
+        (<arc>write `(<bc>k-closure 0
                        (<bc>debug-name final-return)
                        (<bc>check-vars 2) 
                        (<bc>local 1) 
-                       (<bc>halt))
+                       ,(if use-next-boot-cont*
+                            '(<bc>do-executor <impl>go-next-boot)
+                            '(<bc>halt)))
                     tmp)
         (prn "pre-eval")
         (each expr exprs

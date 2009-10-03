@@ -14,7 +14,7 @@ HLVMA = ../src/hlvma
 # %.hlbc : %.hl is non-portable
 SUFFIXES = .hlbc .hl
 .hl.hlbc :
-	\$(HL2B) \$< && mv \$(OUTFILE) \$@
+	\$(HL2B) \$< --next && mv \$(OUTFILE) \$@
 
 PREFIX
 
