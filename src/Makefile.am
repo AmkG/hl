@@ -46,7 +46,8 @@ libhlvm_a_SOURCES = \
 	../inc/unichars.hpp \
 	../inc/workarounds.hpp \
 	../inc/workers.hpp \
-	../os/thread.hpp
+	../os/thread.hpp \
+	../os/read_directory.hpp
 
 bin_PROGRAMS = hl
 hl_SOURCES = hl.cpp

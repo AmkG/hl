@@ -15,6 +15,7 @@
 #include "workers.hpp"
 #include "assembler.hpp"
 #include "mutexes.hpp"
+#include "read_directory.hpp"
 
 using namespace std;
 
@@ -111,6 +112,8 @@ public:
 	}
 
 	virtual void usage();
+
+	friend class BootdirOption;
 };
 
 bool BytecodeOption::parse_option(char **argv, int argc, int & i) {
@@ -150,6 +153,70 @@ public:
 void HelpOption::usage() {
 	cout << "--help\n\tthis help\n";
 }
+
+#include<algorithm>
+
+/* --bootdir */
+class BootdirOption : public Option {
+private:
+	std::vector<std::string>& files;
+
+	BootdirOption(void); // disallowed!
+
+	/*determine if a file does not end in .hlbc*/
+	static bool if_not_hlbc(std::string const& file) {
+		/*if file is shorter than 5 chars, not .hlbc*/
+		if(file.size() < 5) return true;
+		std::string::const_iterator end = file.end();
+		std::string::const_iterator begin = end - 5;
+		return !equal(begin, end, ".hlbc");
+	}
+
+public:
+	BootdirOption(BytecodeOption& bco) : files(bco.files) { }
+
+	virtual bool parse_option(char* argv[], int argc, int& i) {
+		if(i + 1 < argc) {
+			++i;
+			/*read directory*/
+			files = read_directory(std::string(argv[i]));
+			/*filter out non-hlbc files*/
+			files.erase(
+				remove_if(
+					files.begin(),
+					files.end(),
+					if_not_hlbc
+				),
+				files.end()
+			);
+			if(files.empty()) {
+				cout << "Specified boot directory has nothing to run" << endl;
+				return false;
+			}
+			/*now sort them*/
+			sort(files.begin(), files.end());
+			{
+				for(unsigned int i = 0; i < files.size(); ++i) {
+					cout << files[i] << endl;
+				}
+				exit(1);
+			}
+			return true;
+		} else {
+			cerr
+				<< "--bootdir requires exactly one option"
+				<< endl;
+			return false;
+		}
+	}
+	virtual const char* name(void) {
+		return "--bootdir";
+	}
+	virtual void usage(void) {
+		cout << "--bootdir path\n\t specifies the path of"
+			"the bootstrap directory.\n";
+	}
+};
 
 /*--------------------------------------------------------------------------
 Multifile bootstrap
