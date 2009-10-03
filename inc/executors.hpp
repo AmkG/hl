@@ -383,4 +383,10 @@ public:
 // Execute a given process
 ProcessStatus execute(Process & proc, size_t& reductions, Process*& Q, bool init = 0);
 
+// Specifies extra boot files
+class GoNextBoot : public Executor {
+public:
+	bool run(Process & proc, size_t & reductions);
+};
+
 #endif // EXECUTORS_H

@@ -341,6 +341,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<impl>is-symbol-packaged",	THE_EXECUTOR<IsSymbolPackaged>())
       ("<impl>assemble",		THE_EXECUTOR<AssemblerExecutor>())
       ("<impl>disassemble",		THE_EXECUTOR<DisassemblerExecutor>())
+      ("<impl>go-next-boot",		THE_EXECUTOR<GoNextBoot>())
       /*assign bultin global*/
       ;/*end initializer*/
 

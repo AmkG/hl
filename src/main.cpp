@@ -9,10 +9,12 @@
 
 #include "reader.hpp"
 #include "executors.hpp"
+#include "assembler.hpp"
 #include "symbols.hpp"
 #include "types.hpp"
 #include "workers.hpp"
 #include "assembler.hpp"
+#include "mutexes.hpp"
 
 using namespace std;
 
@@ -104,7 +106,7 @@ public:
 		return "--bc";
 	}
 
-	std::vector<std::string>& get_files() {
+	std::vector<std::string> const& get_files() {
 		return files;
 	}
 
@@ -149,6 +151,56 @@ void HelpOption::usage() {
 	cout << "--help\n\tthis help\n";
 }
 
+/*--------------------------------------------------------------------------
+Multifile bootstrap
+--------------------------------------------------------------------------*/
+
+void load_into_process(Process& proc, std::string const& file) {
+	{
+		ifstream in(file.c_str());
+		if (!in) {
+			cerr << "Can't open file: " << file << endl;
+			exit(2);
+		}
+		read_sequence(proc, in);
+	}
+	assembler.go(proc);
+	Closure *k = Closure::NewClosure(proc, 0);
+	k->codereset(proc.stack.top());
+	proc.stack.top() = Object::to_ref(k);
+	proc.stack.restack(1);
+}
+
+/*mutex is not strictly necessary except to shut helgrind up*/
+AppMutex boot_next_mtx;
+std::vector<std::string>::const_iterator boot_next;
+std::vector<std::string>::const_iterator boot_end;
+
+bool GoNextBoot::run(Process& proc, size_t& reductions) {
+	std::vector<std::string>::const_iterator it;
+	{AppLock l(boot_next_mtx);
+		it = boot_next;
+		if(it == boot_end) {
+			goto construct_halting;
+		}
+		++boot_next;
+	}
+	load_into_process(proc, *it);
+	return true;
+construct_halting:
+	proc.stack.push(Assembler::inline_assemble(proc, "(<bc>halt)"));
+	Closure* k = Closure::NewClosure(proc, 0);
+	k->codereset(proc.stack.top());
+	proc.stack.top() = Object::to_ref(k);
+	proc.stack.push(proc.stack.top(2));
+	proc.stack.restack(2);
+	return true;
+}
+
+/*--------------------------------------------------------------------------
+Main
+--------------------------------------------------------------------------*/
+
 int main(int argc, char **argv) {
 	OptionParser opt;
 	HelpOption help;
@@ -179,30 +231,23 @@ int main(int argc, char **argv) {
 		single_threaded = 0;
 	#endif
 
-	std::vector<std::string> files = bytecodes.get_files();	
-	for (std::vector<std::string>::iterator it = files.begin(); 
-	     it !=files.end(); ++it) {
-		ifstream in(it->c_str());
-		if (!in) {
-			cerr << "Can't open file: " << *it << endl;
-			return 2;
-		}
+	std::vector<std::string> const& files = bytecodes.get_files();	
+	std::vector<std::string>::const_iterator it = files.begin();
+	{AppLock l(boot_next_mtx);
+		boot_next = it; ++boot_next;
+		boot_end = files.end();
+	}
 
-		try {
-			p = new Process();
-			read_sequence(*p, in);
-			assembler.go(*p);
-			Closure *k = Closure::NewClosure(*p, 0);
-			k->codereset(p->stack.top()); p->stack.pop();
-			p->stack.push(Object::to_ref(k)); // entry point
-			// process will be deleted by workers
-			AllWorkers &w = AllWorkers::getInstance();
-			ValueHolderRef rv;
-			w.initiate(3, p, rv);
-			cout << rv.value() << endl; // print return value
-		} catch(HlError& h) {
-			cerr << "Error: " << h.err_str() << endl;
-		}
+	try {
+		p = new Process();
+		load_into_process(*p, *it);
+		// process will be deleted by workers
+		AllWorkers &w = AllWorkers::getInstance();
+		ValueHolderRef rv;
+		w.initiate(3, p, rv);
+		cout << rv.value() << endl; // print return value
+	} catch(HlError& h) {
+		cerr << "Error: " << h.err_str() << endl;
 	}
 
 	return 0;
