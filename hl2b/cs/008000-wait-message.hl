@@ -10,6 +10,7 @@
 (import <axiom>car car)
 (import <axiom>cdr cdr)
 (import <axiom>cons cons)
+(import <axiom>set =)
 
 (def (<common>check-messages fns)
   ; <common>check-messages
