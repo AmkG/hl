@@ -24,7 +24,7 @@
 (import <axiom>string-build string-build)
 (import <axiom>string-length string-length)
 
-(import <hl>apply)
+(import <hl>apply apply)
 (import <hl>no no)
 
 (import <hl>def def)
