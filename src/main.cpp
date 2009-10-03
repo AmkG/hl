@@ -232,6 +232,11 @@ int main(int argc, char **argv) {
 	#endif
 
 	std::vector<std::string> const& files = bytecodes.get_files();	
+	if(files.empty()) {
+		cerr << "Nothing to do; please try `hlvma --help' for how to execute hlvma" << endl;
+		exit(1);
+	}
+
 	std::vector<std::string>::const_iterator it = files.begin();
 	{AppLock l(boot_next_mtx);
 		boot_next = it; ++boot_next;
