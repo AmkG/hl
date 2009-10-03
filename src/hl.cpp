@@ -97,12 +97,13 @@ std::string find_hlvma(std::string const& argv0) {
  * searches for the hlvma boot files, hlvma?.hlbc
  * returns the directory where they are found
  */
+char const* boot_file_to_find = "000500-default-error-handler.hlbc";
 std::string find_bootdir(std::string const& argv0) {
 	/*find it at ../hl2b/ from the directory we are in*/
 	std::string argv0_path = get_argv0_path(argv0);
 	if(argv0_path != "" && argv0_path != "/") {
-		std::string path = argv0_path + "../hl2b/";
-		std::string file = path + "hlvma0.hlbc";
+		std::string path = argv0_path + "../hl2b/cs/";
+		std::string file = path + boot_file_to_find;
 		if(find_file(file)) {
 			return path;
 		}
@@ -111,7 +112,7 @@ std::string find_bootdir(std::string const& argv0) {
 	char const* c_hlvma_bootdir = getenv("HLVMA_BOOTDIR");
 	if(c_hlvma_bootdir) {
 		std::string hlvma_bootdir = c_hlvma_bootdir;
-		std::string file = hlvma_bootdir + "/hlvma0.hlbc";
+		std::string file = hlvma_bootdir + "/" + boot_file_to_find;
 		if(find_file(file)) {
 			return hlvma_bootdir;
 		}
@@ -120,7 +121,7 @@ std::string find_bootdir(std::string const& argv0) {
 	#ifdef DATADIR
 	{
 		std::string path = (DATADIR "/hlvmaboot/");
-		std::string file = path + "hlvma0.hlbc";
+		std::string file = path + boot_file_to_find;
 		if(find_file(file)) {
 			return path;
 		}
