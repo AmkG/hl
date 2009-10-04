@@ -50,7 +50,7 @@ std::vector<std::string> read_directory(std::string const& path) {
 		throw ReadDirectoryError(path, error);
 	}
 	struct dirent* dp;
-	while(!(dp = readdir(d))) {
+	while(dp = readdir(d)) {
 		rv.push_back(std::string(dp->d_name));
 	}
 	closedir(d);
