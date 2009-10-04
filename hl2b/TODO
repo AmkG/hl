@@ -3,26 +3,40 @@ bootstrap hl2b. They're shown together with their dependencies on the
 right. The type (function or macro) is shown on the left together
 with its current status (implemented/not implemented).
 
-- [m][ ] def -- fn do
-- [m][ ] do
-- [m][ ] mac -- fn do
+codes:
+  a - implemented in the Arc-F bootstrap as part of the <hl> package,
+      and correctly targets peculiarities of the hl virtual machine
+      that are absent in Arc-F, but potentially with limitations.
+  A - implemented in the Arc-F bootstrap as part of the <hl> package,
+      correctly targets differences in hl and Arc-F, but works *enough*
+      as expected for compiling the compiler.
+  * - A above, plus implemented in the cs/ bootstrap as well, as part
+      of <hl>.
+
+The minimum to bootstrap hl is to fill this with A's for macros, and
+*'s for functions.
+
+- [m][a] def -- fn do
+- [m][A] do
+- [m][a] mac -- fn do
 - [m][ ] if
 - [m][ ] and -- if
 - [m][ ] or -- if
-- [f][ ] no
-- [m][ ] each -- w/uniq let maptable afn alist when isa for
+- [f][*] no
+- [m][A] each -- w/uniq let maptable afn alist when isa for
 - [f][ ] load -- w/infile w/uniq whiler read eval
 - [f][ ] string
 - [f][ ] unpkg
-- [m][ ] = -- ; depends if it has to be supported completely
+- [m][a] = -- ; depends if it has to be supported completely
 - [m][ ] w/infile -- infile after close
-- [m][ ] let -- fn
-- [m][ ] with -- fn map
-- [m][ ] withs -- fn let
-- [m][ ] fn
+- [m][a] let -- fn
+- [m][a] with -- fn map
+- [m][a] withs -- fn let
+- [m][a] fn -- sort of; we just use <axiom>lambda
 - [m][ ] afn -- fn
 - [f][ ] require -- load
 - [m][ ] w/uniq -- uniq
+- [f][*] uniq -- but we use tagged objects instead of true symbols in hl
 - [f][ ] coerce
 - [f][ ] +
 - [m][ ] push -- w/uniq let atwiths setforms
@@ -38,12 +52,12 @@ with its current status (implemented/not implemented).
 - [f][ ] type
 - [f][ ] isa -- is type
 - [f][ ] alist -- type
-- [f][ ] err - builtin?
+- [f][*] err - builtin?
 - [f][ ] is
 - [f][ ] car
 - [f][ ] cons
 - [f][ ] cdr
-- [f][ ] map -- map1
+- [f][*] map -- map1
 - [f][ ] orf -- some
 - [m][ ] awhen -- when
 - [m][ ] do
