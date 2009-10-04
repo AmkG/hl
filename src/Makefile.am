@@ -15,7 +15,6 @@ libhlvm_a_SOURCES = \
 	symbols.cpp \
 	heaps.cpp \
 	symtable.cpp \
-	main.cpp \
 	processes.cpp \
 	types.cpp \
 	executors.cpp \
