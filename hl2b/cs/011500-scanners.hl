@@ -37,6 +37,8 @@
 (import <axiom>i- -)
 (import <axiom>is is)
 
+(import <axiom>rep rep)
+
 (import <hl>err err)
 
 (def (cons a b) (<axiom>cons a b))
