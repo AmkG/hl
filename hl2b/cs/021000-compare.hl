@@ -1,0 +1,168 @@
+
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>defm defm)
+(import <hl>let let)
+(import <hl>with with)
+(import <hl>withs withs)
+
+(import <axiom>set =)
+(import <axiom>lambda fn)
+
+(import <hl>t-reductor t-reductor)
+(import <hl>err err)
+(import <hl>polymorph polymorph)
+
+(import <axiom>i< i<)
+(import <axiom>i+ i+)
+(import <axiom>f< f<)
+(import <axiom>i-to-f i-to-f)
+(import <axiom>c-to-i c-to-i)
+(import <axiom>is is)
+(import <axiom>rep rep)
+
+(def <hl><
+  (let <hl>< ()
+    (t-reductor
+      (= <hl>< (fn (a b) nil))
+      (= <hl>< (fn (a b) nil))
+      (= <hl><
+         (fn (a b)
+           (<hl>base< a b))))))
+(def <hl>>
+  (let <hl>> ()
+    (t-reductor
+      (= <hl>> (fn (a b) nil))
+      (= <hl>> (fn (a b) nil))
+      (= <hl>>
+         (fn (a b)
+           (<hl>base< b a))))))
+(def <hl>>=
+  (let <hl>>= ()
+    (t-reductor
+      (= <hl>>= (fn (a b) nil))
+      (= <hl>>= (fn (a b) nil))
+      (= <hl>>=
+         (fn (a b)
+           (if (<hl>base< a b) nil t))))))
+(def <hl><=
+  (let <hl>> ()
+    (t-reductor
+      (= <hl><= (fn (a b) nil))
+      (= <hl><= (fn (a b) nil))
+      (= <hl><=
+         (fn (a b)
+           (if (<hl>base< b a) nil t))))))
+(def <hl>==
+  (let <hl>== ()
+    (t-reductor
+      (= <hl>== (fn (a b) nil))
+      (= <hl>== (fn (a b) nil))
+      (= <hl>==
+         (fn (a b)
+           (<hl>base== a b))))))
+(def <hl>!=
+  (let <hl>!= ()
+    (t-reductor
+      (= <hl>!= (fn (a b) nil))
+      (= <hl>!= (fn (a b) nil))
+      (= <hl>!=
+         (fn (a b)
+           (if (<hl>base== a b) nil t))))))
+
+#|
+TODO: when proper multimethods have been built
+replace with multimethods instead of double-dispatch!
+|#
+(def <hl>base<
+     (fn (a b)
+       (err '<hl>type "'%1 cannot be compared to '%2" a b)))
+(withs (fail <hl>base<
+        rfail
+        (fn (b a) (fail a b))
+        check
+        (fn (x a b)
+          (if (is x (rep x)) x (fail a b))))
+  (let <ba
+       (polymorph rfail
+         '(<hl>char)
+         (fn (b a)
+           (i<
+             (c-to-i a)
+             (c-to-i (check b a b)))))
+    (defm (<hl>base< (t a <hl>char) b)
+      (<ba b (check a a b))))
+  (withs (string-compare-loop ()
+          <ba
+          (polymorph rfail
+            '(<hl>string)
+            (fn (b a)
+              (string-compare-loop
+                a                        (check b a b)
+                0                        0
+                (<axiom>string-length a) (<axiom>string-length b)))))
+    (= string-compare-loop
+       (fn (a b ia ib la lb)
+         (if (i< ia la)
+             (if (i< ib lb)
+                 (with (ca (<axiom>string-ref a ia)
+                        cb (<axiom>string-ref b ib))
+                   (if (is ca cb)
+                       (string-compare-loop
+                         a         b
+                         (i+ ia 1) (i+ ib 1)
+                         la        lb)
+                       (i< (c-to-i ca) (c-to-i cb))))
+                 ; b is shorter
+                 nil)
+             ; a is shorter or equal
+             (if (i< ib lb)
+                 ; b is longer
+                 t
+                 ; equal
+                 nil))))
+    (defm (<hl>base< (t a <hl>string) b)
+      (<ba b (check a a b))))
+  (let <ba
+       (polymorph rfail
+         '(<hl>int)
+         (fn (b a)
+           (i< a (check b a b)))
+         '(<hl>float)
+         (fn (b a)
+           (f< (i-to-f a) (check b a b))))
+    (defm (<hl>base< (t a <hl>int) b)
+      (<ba b (check a a b))))
+  (let <ba
+       (polymorph rfail
+         '(<hl>int)
+         (fn (b a)
+           (f< a (i-to-f (check b a b))))
+         '(<hl>float)
+         (fn (b a)
+           (f< a (check b a b))))
+    (defm (<hl>base< (t a <hl>float) b)
+      (<ba b (check a a b))))
+  ; check for equality
+  (def (<hl>base== a b)
+    (if (<hl>base< a b)
+        nil
+        (if (<hl>base< b a)
+            nil
+            t)))
+  ; optimizations on equality checks
+  (let pattern
+       (fn (typ)
+         (let ==ba
+              (polymorph rfail
+                (<axiom>cons typ nil)
+                (fn (b a)
+                  (is a (check b a b))))
+           (fn (a b)
+             (==ba b (check a a b)))))
+    (def <hl>base==
+      (polymorph <hl>base==
+        '(<hl>string) (pattern '<hl>string)
+        '(<hl>char)   (pattern '<hl>char)))))
+
