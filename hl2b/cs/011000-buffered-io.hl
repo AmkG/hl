@@ -18,6 +18,7 @@
 (import <hl>polymorph polymorph)
 (import <axiom>is is)
 (import <axiom>lambda fn)
+(import <axiom>set =)
 
 (import <axiom>table-ref ref)
 (import <axiom>table-sref sref)
