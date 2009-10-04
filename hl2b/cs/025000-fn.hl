@@ -96,13 +96,13 @@
                       (self (cdr args) a-rest)))))
                     (self (cdr args) a-rest))
             opt (let a-rest (or a-rest (uniq))
-                  (list (cons 'let (arg-name a) (cons (list 'if a-rest
+                  (list (cons 'let (cons (arg-name a) (cons (list 'if a-rest
                                          ; rest arg specified
                                          (list '<axiom>car a-rest)
                                          ; not specified, use default
                                          (arg-expr a))
                       ; advance auxiliary rest arg by one
-                      (self (cdr args) (list '<axiom>cdr a-rest))))))
+                      (self (cdr args) (list '<axiom>cdr a-rest)))))))
             dest (list (cons 'withs (cons (mappend (fn (loc) 
                                       (list (arg-name loc) (arg-expr loc)))
                                     (arg-expr a))
@@ -131,8 +131,8 @@
 (def (expand-fn arglist body)
   (withs (args (collect-args arglist)
           rest-name (find-rest-arg-name args))
-    `(<axiom>lambda ,(args->lambda-list args rest-name)
-       ,@(expand-args args body rest-name))))
+    (cons '<axiom>lambda (cons (args->lambda-list args rest-name)
+       (expand-args args body rest-name)))))
 
-(mac info (<hl>fn args . body)
+(<hl>mac (<hl>fn args . body)
   (expand-fn args body))
