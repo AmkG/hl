@@ -8,6 +8,8 @@
 (import <hl>withs withs)
 (import <hl>do do)
 
+(import <hl>table table)
+
 (import <axiom>if if)
 (import <axiom>lambda fn)
 (import <axiom>set =)

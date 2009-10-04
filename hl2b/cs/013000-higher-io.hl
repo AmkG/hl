@@ -33,6 +33,8 @@
 (import <hl>my-pid my-pid)
 (import <common>send send)
 
+(import <hl>table table)
+
 (import <common>apply-list apply-list)
 
 (import <hl>writemb    writemb)
