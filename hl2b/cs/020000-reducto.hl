@@ -1,0 +1,125 @@
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>defm defm)
+(import <hl>let let)
+(import <hl>with with)
+(import <hl>withs withs)
+
+(import <axiom>set =)
+(import <axiom>lambda fn)
+(import <axiom>if if)
+
+#|
+(def f (l-reductor f0 f1 f2))
+(f) == (f0)
+(f a) = (f1 a)
+(f a b) = (f2 a b)
+(f a b c) = (f2 (f2 a b) c)
+(f a b c d) = (f2 (f2 (f2 a b) c) d)
+|#
+(with (asm
+       (<common>assemble
+         '((<bc>debug-name l-reductor)
+           (<bc>arg-dispatch 6)))
+       l-reductor-loop ())
+  (= l-reductor-loop
+     (fn (f2 rv a rest)
+       (let rv (f2 rv a)
+         (if rest rv
+                  (l-reductor-loop rv (<axiom>car rest) (<axiom>cdr rest))))))
+  (def (<hl>l-reductor f0 f1 f2)
+    (<common>enclose
+      asm
+      f0
+      f1
+      f2
+      (fn (a b c)
+        (f2 (f2 a b) c))
+      (fn (a b c d)
+        (f2 (f2 (f2 a b) c) d))
+      (fn (a b c d e . rest)
+        (l-reductor-loop f2
+          (f2 (f2 (f2 a b) c) d)
+          e rest)))))
+
+#|
+(def f (r-reductor f0 f1 f2))
+(f) == (f0)
+(f a) == (f1 a)
+(f a b) == (f2 a b)
+(f a b c) == (f2 a (f2 b c))
+(f a b c d) == (f2 a (f2 b (f2 c d)))
+|#
+(with (asm
+       (<common>assemble
+         '((<bc>debug-name r-reductor)
+           (<bc>arg-dispatch 7)))
+       r-reductor-loop ())
+  (= r-reductor-loop
+     (fn (f2 a rest)
+       (if rest
+           (f2 a (r-reductor-loop f2 (<axiom>car rest) (<axiom>cdr rest)))
+           a)))
+  (def (<hl>r-reductor f0 f1 f2)
+    (<common>enclose
+      asm
+      f0
+      f1
+      f2
+      (fn (a b c)
+        (f2 a (f2 b c)))
+      (fn (a b c d)
+        (f2 a (f2 b (f2 c d))))
+      (fn (a b c d e)
+        (f2 a (f2 b (f2 c (f2 d e)))))
+      (fn (a b c d e f . rest)
+        (f2 a (f2 b (f2 c (f2 d (f2 e (r-reductor-loop f2 f rest))))))))))
+
+#|
+(def f (t-reductor f0 f1 f2))
+(f) == (f0)
+(f a) == (f1 a)
+(f a b) == (f2 a b)
+(f a b c) == (if (f2 a b) (f2 b c) nil)
+(f a b c d) == (if (f2 a b) (if (f2 b c) (f2 c d) nil) nil)
+|#
+(with (asm
+       (<common>assemble
+         '((<bc>debug-name t-reductor)
+           (<bc>arg-dispatch 6)))
+       t-reductor-loop ())
+  (= t-reductor-loop
+     (fn (f2 a b rest)
+       (if rest
+           (if (f2 a b)
+               (t-reductor-loop f2 b
+                 (<axiom>car rest)
+                 (<axiom>cdr rest))
+               nil)
+           (f2 a b))))
+  (def (t-reductor f0 f1 f2)
+    (<common>enclose
+      asm
+      f0
+      f1
+      f2
+      (fn (a b c)
+        (if (f2 a b)
+            (f2 b c)
+            nil))
+      (fn (a b c d)
+        (if (f2 a b)
+            (if (f2 b c)
+                (f2 c d)
+                nil)
+            nil))
+      (fn (a b c d e . rest)
+        (if (f2 a b)
+            (if (f2 b c)
+                (if (f2 c d)
+                    (t-reductor-loop f2 d e rest)
+                    nil)
+                nil)
+            nil)))))
+
