@@ -2,6 +2,7 @@
 (in-package impl)
 (import <hl>def def)
 (import <hl>let let)
+(import <hl>with with)
 (import <axiom>set =)
 (import <axiom>if if)
 (import <hl>with with)
