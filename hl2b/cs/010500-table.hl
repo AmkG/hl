@@ -5,6 +5,7 @@
 (import <hl>with with)
 (import <axiom>set =)
 (import <axiom>if if)
+(import <axiom>lambda fn)
 (import <hl>with with)
 (import <axiom>car car)
 (import <axiom>cdr cdr)
