@@ -171,6 +171,7 @@ private:
 		std::string::const_iterator begin = end - 5;
 		return !equal(begin, end, ".hlbc");
 	}
+	/*appends two strings together*/
 
 public:
 	BootdirOption(BytecodeOption& bco) : files(bco.files) { }
@@ -178,9 +179,10 @@ public:
 	virtual bool parse_option(char* argv[], int argc, int& i) {
 		if(i + 1 < argc) {
 			++i;
+			std::string path = argv[i];
 			/*read directory*/
 			try {
-				files = read_directory(std::string(argv[i]));
+				files = read_directory(path);
 			} catch(ReadDirectoryError& e) {
 				cerr << e.error << endl;
 				exit(1);
@@ -200,6 +202,8 @@ public:
 			}
 			/*now sort them*/
 			sort(files.begin(), files.end());
+			/*prepend with path*/
+			transform(files.begin(), files.end(), files.begin(), bind1st(std::plus<std::string>(), path));
 			return true;
 		} else {
 			cerr
