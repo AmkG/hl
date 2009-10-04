@@ -179,7 +179,12 @@ public:
 		if(i + 1 < argc) {
 			++i;
 			/*read directory*/
-			files = read_directory(std::string(argv[i]));
+			try {
+				files = read_directory(std::string(argv[i]));
+			} catch(ReadDirectoryError& e) {
+				cerr << e.error << endl;
+				exit(1);
+			}
 			/*filter out non-hlbc files*/
 			files.erase(
 				remove_if(
@@ -272,8 +277,10 @@ int main(int argc, char **argv) {
 	OptionParser opt;
 	HelpOption help;
 	BytecodeOption bytecodes;
+	BootdirOption bootdir(bytecodes);
 	opt.add_option(&help);
 	opt.add_option(&bytecodes);
+	opt.add_option(&bootdir);
 
 	if (!opt.parse(argv, argc)) {
 		return 1;
