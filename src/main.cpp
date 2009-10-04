@@ -200,12 +200,6 @@ public:
 			}
 			/*now sort them*/
 			sort(files.begin(), files.end());
-			{
-				for(unsigned int i = 0; i < files.size(); ++i) {
-					cout << files[i] << endl;
-				}
-				exit(1);
-			}
 			return true;
 		} else {
 			cerr
