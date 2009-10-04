@@ -92,21 +92,21 @@
          (case (arg-type a)
             simple (self (cdr args) a-rest)
             rest (if (and a-rest (no (is a-rest (arg-name a)))) 
-                   `((let ,(arg-name a) ,a-rest
-                      ,@(self (cdr args) a-rest)))
+                   (list (cons 'let (cons (arg-name a) (cons a-rest
+                      (self (cdr args) a-rest)))))
                     (self (cdr args) a-rest))
             opt (let a-rest (or a-rest (uniq))
-                  `((let ,(arg-name a) (if ,a-rest
+                  (list (cons 'let (arg-name a) (cons (list 'if a-rest
                                          ; rest arg specified
-                                         (<axiom>car ,a-rest)
+                                         (list '<axiom>car a-rest)
                                          ; not specified, use default
-                                         ,(arg-expr a))
+                                         (arg-expr a))
                       ; advance auxiliary rest arg by one
-                      ,@(self (cdr args) `(<axiom>cdr ,a-rest)))))
-            dest `((withs ,(mappend (fn (loc) 
-                                      `(,(arg-name loc) ,(arg-expr loc)))
+                      (self (cdr args) (list '<axiom>cdr a-rest))))))
+            dest (list (cons 'withs (cons (mappend (fn (loc) 
+                                      (list (arg-name loc) (arg-expr loc)))
                                     (arg-expr a))
-                     ,@(self (cdr args) a-rest)))
+                     (self (cdr args) a-rest))))
             (err:string "Unknown arg: " a)))
        body))
    args rest-arg))
