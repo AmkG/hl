@@ -5,6 +5,7 @@
 (import <hl>let let)
 (import <hl>with with)
 (import <hl>withs withs)
+(import <hl>do do)
 (import <axiom>lambda fn)
 (import <axiom>set =)
 (import <axiom>if if)

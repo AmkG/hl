@@ -6,6 +6,7 @@
 (import <hl>let let)
 (import <hl>with with)
 (import <hl>withs withs)
+(import <hl>do do)
 ; three-arg-form only
 (import <axiom>if if)
 ; single symbol assigment form only
