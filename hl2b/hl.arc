@@ -37,7 +37,9 @@
 ; use it.
 (mac <hl>let (var val . rest)
   (if (isnt (type var) 'sym)
-      (err "bootstrapping 'let does not support destructuring")
+      (do (write `(<hl>let ,var ,val ,@rest))
+          (prn)
+          (err "bootstrapping 'let does not support destructuring"))
       `((<axiom>lambda (,var)
           ,@rest)
         ,val)))
