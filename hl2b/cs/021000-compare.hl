@@ -62,12 +62,12 @@
       (= <hl>==
          (fn (a b)
            (<hl>base== a b))))))
-(def <hl>!=
-  (let <hl>!= ()
+(def <hl>/=
+  (let <hl>/= ()
     (t-reductor
-      (= <hl>!= (fn (a b) nil))
-      (= <hl>!= (fn (a b) nil))
-      (= <hl>!=
+      (= <hl>/= (fn (a b) nil))
+      (= <hl>/= (fn (a b) nil))
+      (= <hl>/=
          (fn (a b)
            (if (<hl>base== a b) nil t))))))
 
