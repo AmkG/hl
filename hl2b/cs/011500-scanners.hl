@@ -22,6 +22,8 @@
 (import <hl>unscan unscan)
 (import <hl>car car)
 (import <hl>cdr cdr)
+(import <hl>scar scar)
+(import <hl>scdr scdr)
 
 (import <hl>cons cons)
 (import <hl>string string)
@@ -142,10 +144,14 @@
             rv (<axiom>string-build ln))
       (string-loop rv 0 scan))))
 
-(def (car s)
-  (err '<hl>type "attempt to get 'car of non-scanner"))
-(def (cdr s)
-  (err '<hl>type "attempt to get 'cdr of non-scanner"))
+(def car
+  (<axiom>accessor
+    (fn (s)   (err '<hl>type "attempt to get 'car of non-scanner"))
+    (fn (v s) (scar s v))))
+(def cdr
+  (<axiom>accessor
+    (fn (s)   (err '<hl>type "attempt to get 'cdr of non-scanner"))
+    (fn (v s) (scdr s v))))
 ; scanner
 (defm (car (t s bool)) nil)
 (defm (cdr (t s bool)) nil)
@@ -273,4 +279,17 @@
             (<axiom>table-sref rv (<axiom>car c) (<axiom>cdr c)))
           c))
       rv)))
+
+(def (scar s v)
+  (err '<hl>type "Unable to set car of " s))
+(def (scdr s v)
+  (err '<hl>type "Unable to set cdr of " s))
+(defm (scar (t s cons) v)
+  (if (is s (rep s))
+      (<axiom>scar s v)
+      (err '<hl>type "Attempt to set car of fake cons cell")))
+(defm (scdr (t s cons) v)
+  (if (is s (rep s))
+      (<axiom>scdr s v)
+      (err '<hl>type "Attempt to set cdr of fake cons cell")))
 
