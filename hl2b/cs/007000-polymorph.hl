@@ -35,7 +35,7 @@
                      tb
                      m
                      (car sig))
-                   (<impl>monomorph tb))
+                   (<impl>monomorph tb f))
                  (<impl>polymorph-monomorphic-table f))
                 ; create new table
                 ((fn (tb)
@@ -47,23 +47,35 @@
                      tb
                      m
                      (car sig))
-                   (<impl>monomorph tb))
+                   (<impl>monomorph tb f))
                  (table)))))
          ; replace generic method
          (if (<impl>polymorph-is-monomorphic f)
              ((fn (tb)
                 (table-sref tb m nil)
-                (<impl>monomorph tb))
+                (<impl>monomorph tb f))
               (<impl>polymorph-monomorphic-table f))
              ; already a generic function, so
              ; return m
-             m)))
+             (<impl>polymorph-infect-accessor m f))))
    (<impl>polymorph-normalize-sig sig)))
 
 ((fn (bc)
-  (def (<impl>monomorph tb)
-    (<common>enclose bc tb)))
+  (def (<impl>monomorph tb f)
+    ((fn (new-f old-accessor)
+       (if old-accessor
+           (<axiom>accessor new-f old-accessor)
+           new-f))
+     (<common>enclose bc tb)
+     (<axiom>accessor-ref f)))
  (<common>assemble '((<bc>monomethod))))
+
+(def (<impl>polymorph-infect-accessor m f)
+  ((fn (old-accessor)
+     (if old-accessor
+         (<axiom>accessor new-f old-accessor)
+         m))
+   (<axiom>accessor-ref f)))
 
 (def (<impl>polymorph-is-monomorphic f)
   ((fn (bc)
