@@ -75,10 +75,10 @@
             (if (is b (rep b))
                 (if (is b 0) (err '<hl>value "Divide '%1 by 0" a) (<axiom>imod a b))
                 (fail a b)))))
-(defm (<hl>base-mod (t a <hl>int) b)
-  (if (is a (rep a))
-      (modba b a)
-      (fail a b)))
+  (defm (<hl>base-mod (t a <hl>int) b)
+    (if (is a (rep a))
+        (modba b a)
+        (fail a b))))
 
 ; singleton maths
 (def (<hl>base-neg a)
