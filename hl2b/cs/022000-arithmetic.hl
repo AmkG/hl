@@ -1,0 +1,105 @@
+
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>defm defm)
+(import <hl>let let)
+(import <hl>with with)
+(import <hl>withs withs)
+(import <hl>do do)
+
+(import <axiom>lambda fn)
+(import <axiom>if if)
+(import <axiom>is is)
+(import <axiom>rep rep)
+
+(import <axiom>i-to-f i-to-f)
+
+(import <hl>l-reductor l-reductor)
+(import <hl>err err)
+(import <hl>polymorph polymorph)
+
+(def (<hl>base+ a b)
+  (err '<hl>type "Unable to add '%1 and '%2" a b))
+(def (<hl>base- a b)
+  (err '<hl>type "Unable to subtract '%2 from '%1" a b))
+(def (<hl>base* a b)
+  (err '<hl>type "Unable to multiply '%1 and '%2" a b))
+(def (<hl>base/ a b)
+  (err '<hl>type "Unable to divide '%1 by '%2" a b))
+(def (<hl>base-mod a b)
+  (err '<hl>type "Unable to get remainder of division of '%1 by '%2" a b))
+
+(let pattern
+     (fn (orig i_ f_)
+       (withs (fail  orig
+               rfail (fn (b a) (fail a b))
+               check (fn (x a b) (if (is x (rep x)) x (fail a b)))
+               _ba-i
+               (polymorph rfail
+                 '(<hl>int)
+                 (fn (b a)
+                   (i_ a (check b a b)))
+                 '(<hl>float)
+                 (fn (b a)
+                   (f_ (i-to-f a) (check b a b))))
+               _ba-f
+               (polymorph rfail
+                 '(<hl>int)
+                 (fn (b a)
+                   (f_ a (i-to-f (check b a b))))
+                 '(<hl>float)
+                 (fn (b a)
+                   (f_ a (check b a b)))))
+         (polymorph orig
+           '(<hl>int)
+           (fn (a b)
+             (_ba-i b (check a a b)))
+           '(<hl>float)
+           (fn (a b)
+             (_ba-f b (check a a b))))))
+  (def <hl>base+ (pattern <hl>base+ (fn (a b) (<axiom>i+ a b))
+                                    (fn (a b) (<axiom>f+ a b))))
+  (def <hl>base- (pattern <hl>base- (fn (a b) (<axiom>i- a b))
+                                    (fn (a b) (<axiom>f- a b))))
+  (def <hl>base* (pattern <hl>base* (fn (a b) (<axiom>i* a b))
+                                    (fn (a b) (<axiom>f* a b))))
+  (def <hl>base/ (pattern <hl>base/ (fn (a b) (if (is 0 b)   (err '<hl>value "Divide '%1 by 0" a) (<axiom>i/ a b)))
+                                    (fn (a b) (if (is 0.0 b) (err '<hl>value "Divide '%1 by 0" a) (<axiom>f/ a b))))))
+
+(withs (fail <hl>basemod
+        modba
+        (polymorph (fn (b a) (fail a b))
+          '(<hl>int)
+          (fn (b a)
+            (if (is b (rep b))
+                (if (is b 0) (err '<hl>value "Divide '%1 by 0" a) (<axiom>imod a b))
+                (fail a b)))))
+(defm (<hl>base-mod (t a <hl>int) b)
+  (if (is a (rep a))
+      (modba b a)
+      (fail a b)))
+
+; singleton maths
+(def (<hl>base-neg a)
+  (<hl>base- 0 a))
+(def (<hl>base-reciprocal a)
+  (<hl>base/ 1 a))
+
+(def <hl>+
+     (l-reductor (fn (a) nil)
+                 (fn (a) a)
+                 (fn (a b) (<hl>base+ a b))))
+(def <hl>-
+     (l-reductor (fn (a) nil)
+                 (fn (a) (<hl>base-neg a))
+                 (fn (a b) (<hl>base- a b))))
+(def <hl>*
+     (l-reductor (fn (a b) nil)
+                 (fn (a b) nil)
+                 (fn (a b) (<hl>base* a b))))
+(def <hl>/
+     (l-reductor (fn (a) nil)
+                 (fn (a) a)
+                 (fn (a b) (<hl>base/ a b))))
+
