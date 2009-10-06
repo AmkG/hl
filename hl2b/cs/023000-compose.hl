@@ -1,0 +1,72 @@
+
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>defm defm)
+(import <hl>let let)
+(import <hl>with with)
+(import <hl>withs withs)
+
+(import <hl>macro-info macro-info)
+(import <hl>head head)
+
+(import <hl>l-reductor l-reductor)
+
+(import <axiom>quote quote)
+(import <axiom>if if)
+(import <axiom>is is)
+(import <axiom>rep rep)
+(import <axiom>set =)
+
+(import <common>assemble assemble)
+(import <common>enclose enclose)
+(import <common>apply-list apply-list)
+
+(import <hl>compose compose)
+(import <hl>base-compose base-compose)
+(import <hl>sref sref)
+
+(withs (asm (assemble '((<bc>debug-name compose) (<bc>composeo)))
+        basemost-compose
+        (fn (a b)
+          (enclose asm a b)))
+   (def (base-compose a b)
+     (<axiom>accessor
+       (basemost-compose a b)
+       (fn (v . rest)
+         (sref a v (apply-list b rest)))))
+   (withs (asm (assemble '((<bc>debug-name compose) (<bc>arg-dispatch 4)))
+           assignable-compose
+           (fn (av b)
+             (enclose asm
+               (fn (v) nil)
+               (fn (v) (av v (b)))
+               (fn (v x) (av v (b x)))
+               (fn (v . xs) (av v (apply-list b xs))))))
+     ; optimization for functions, which
+     ; we can know if they support being
+     ; assigned to
+     (defm (base-compose (t a <hl>fn) b)
+       (if (is a (rep a))
+           ; check if a supports being assigned to
+           (let av (<axiom>accessor-ref av)
+             (if av
+                 (<axiom>accessor
+                   (basemost-compose a b)
+                   (assignable-compose av b))
+                 (basemost-compose a b)))
+           ; user is bugging around with fake functions
+           (<axiom>accessor
+             (basemost-compose a b)
+             (fn (v . rest)
+               (sref a v (apply-list b rest)))))))
+
+; l-reductor to reduce continuation space required, since
+; functions are executed right-to-left.
+(def compose
+  (let compose ()
+    (l-reductor
+      (= compose (fn (a) nil))
+      (= compose (fn (a) a))
+      (= compose (fn (a b) (base-compose a b))))))
+
