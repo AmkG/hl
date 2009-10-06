@@ -1,0 +1,161 @@
+#|
+Contains functions that traverse and otherwise
+use scanners and sequences.
+|#
+
+(in-package impl)
+
+; defined elsewhere
+(import <hl>def def)
+(import <hl>mac mac)
+(import <hl>let let)
+(import <hl>with with)
+(import <hl>withs withs)
+(import <hl>do do)
+(import <hl>each each)
+(import <hl>base-collect-on base-collect-on)
+(import <hl>base-each base-each)
+(import <hl>scanner scanner)
+(import <hl>unscan unscan)
+(import <hl>car car)
+(import <hl>cdr cdr)
+(import <hl>list list)
+(import <hl>cons cons)
+(import <hl>scar scar)
+(import <hl>scdr scdr)
+(import <hl>compose compose)
+
+; axioms
+(import <axiom>set =)
+(import <axiom>lambda fn)
+(import <axiom>if if)
+(import <axiom>quote quote)
+
+; defined here
+(import <hl>all all)
+(import <hl>forall forall)
+(import <hl>some some)
+(import <hl>exists exists)
+(import <hl>map1 map1)
+(import <hl>mapeach mapeach)
+(import <hl>join join)
+(import <hl>keep keep)
+(import <hl>setof setof)
+(import <hl>rem rem)
+(import <hl>find find)
+
+(def (all test seq)
+  (let rv t
+    (base-each seq 0
+      (fn (i)
+        (if (test i)
+            t
+            (= rv nil))))
+    rv))
+; for all `i` in `seq` such that `exp` is true...
+(mac (forall i seq . exp)
+  ; `((symeval (quote all))
+  ;   (lambda (,i) ,@exp)
+  ;   ,seq)
+  (list
+    (list '<axiom>symeval (list 'quote 'all))
+    (cons '<axiom>lambda (cons (list i) exp))
+    seq))
+(def (some test seq)
+  (let rv nil
+    (base-each seq 0
+      (fn (i)
+        (if (= rv (test i))
+            nil
+            t)))
+    rv))
+; if there exists an `i` in `seq` such that `exp` is true...
+(mac (exists i seq . exp)
+  ; `((symeval (quote some))
+  ;   (lambda (,i) ,@exp)
+  ;   ,seq)
+  (list
+    (list '<axiom>symeval (list 'quote 'some))
+    (cons '<axiom>lambda (cons (list i) exp))
+    seq))
+
+(def (map1 f seq)
+  (base-collect-on seq
+    (fn (collect)
+      (each i seq
+        (collect (f i))))))
+(mac (mapeach i seq . exp)
+  ; `((symeval (quote map1))
+  ;   (lambda (,i) ,@exp)
+  ;   ,seq)
+  (list
+    (list '<axiom>symeval (list 'quote 'map1))
+    (cons '<axiom>lambda (cons (list i) exp))
+    seq))
+
+(def (join seq . seqs)
+  (base-collect-on seq
+    (fn (collect)
+      (each i seq (collect i))
+      (each seq seqs
+        (each i seq (collect i))))))
+
+(def (keep f seq)
+  (base-collect-on seq
+    (fn (collect)
+      (each i seq
+        (if (f i) (collect i) nil)))))
+; set of `i` in `seq` where `exp` is true...
+(mac (setof i seq . exp)
+  ; `((symeval (quote keep))
+  ;   (lambda (,i) ,@exp)
+  ;   ,seq)
+  (list
+    (list '<axiom>symeval (list 'quote 'keep))
+    (cons '<axiom>lambda (cons (list i) exp))
+    seq))
+(def (rem f seq)
+  (base-collect-on seq
+    (fn (collect)
+      (each i seq
+        (if (f i) nil (collect i))))))
+
+; returns the found element
+(def (find f seq)
+  (let rv nil
+    (base-each seq 0
+      (fn (i)
+        (if (f i)
+            (do (= rv i)
+                nil)
+            t)))
+    rv))
+
+; returns a scanner whose first element is the
+; found element
+(let mem-loop ()
+  (= mem-loop (fn (f s)
+                (if s
+                    (if (f (car s))
+                        s
+                        (mem-loop f (scanner (cdr s))))
+                    nil)))
+  (def (mem f seq)
+    (mem-loop f (scanner seq))))
+
+(with (car () cdr ())
+  (= car
+     (<axiom>accessor
+       (= car
+          (fn (a) ((<axiom>symeval 'car) a)))
+       (fn (v a) (scar a v))))
+  (= cdr
+     (<axiom>accessor
+       (= cdr
+          (fn (a) ((<axiom>symeval 'cdr) a)))
+       (fn (v a) (scdr a v))))
+  (def caar (compose car car))
+  (def cadr (compose car cdr))
+  (def cddr (compose cdr cdr))
+  (def cdar (compose cdr car)))
+
