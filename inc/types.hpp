@@ -257,12 +257,6 @@ public:
 
 	UnicodeChar ref(size_t i) const;
 	size_t size(void) const;
-	/*modifies a string:
-		stack.top(3) = string
-		stack.top(2) = UnicodeChar
-		stack.top(1) = offset to modify
-	*/
-	static void sref(Heap& hp, ProcessStack& stack);
 
 	/*creates a string from the characters on stack.top(N) to stack.top(1)*/
 	static void stack_create(Heap& hp, ProcessStack& stack, size_t N);

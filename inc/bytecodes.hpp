@@ -417,9 +417,6 @@ inline void bytecode_string_build(Heap& hp, ProcessStack& stack, int N) {
 inline void bytecode_string_create(Heap& hp, ProcessStack& stack, int N) {
 	HlString::stack_create( hp, stack, N );
 }
-inline void bytecode_string_sref( Heap& hp, ProcessStack& stack ) {
-	HlString::sref(hp, stack );
-}
 
 inline void bytecode_char(ProcessStack& stack, int N) {
 	stack.push( Object::to_ref(UnicodeChar((uint32_t)N)) );

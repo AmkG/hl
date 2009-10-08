@@ -137,16 +137,9 @@ int main(void) {
 			assert(T.lookup(stack[2]) == Object::to_ref(UnicodeChar('X')));
 		}
 
-		/*modify the first string (the one we used as key)
-		and see if the second string still succeeds and
-		the first key does not
+		/*
+		see if the second string succeeds indexing the table
 		*/
-		stack.push(stack[1]);
-		stack.push(Object::to_ref(UnicodeChar('S')));
-		stack.push(Object::to_ref(0));
-		HlString::sref(hp, stack);
-		assert(stack.top() == Object::to_ref(UnicodeChar('S')));
-		stack.pop();
 		{HlTable& T = *known_type<HlTable>(stack[0]);
 			assert(!T.lookup(stack[1]));
 			assert(T.lookup(stack[2]) == Object::to_ref(UnicodeChar('X')));
@@ -154,7 +147,7 @@ int main(void) {
 		/*now check that the strings have all their parts in order*/
 		{HlString& S1 = *known_type<HlString>(stack[1]);
 		HlString& S2 = *known_type<HlString>(stack[2]);
-			assert(S1.ref(0) == UnicodeChar('S'));
+			assert(S1.ref(0) == UnicodeChar('A'));
 			assert(S1.ref(1) == UnicodeChar('m'));
 			assert(S1.ref(2) == UnicodeChar('k'));
 			assert(S1.ref(3) == UnicodeChar('G'));

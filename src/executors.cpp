@@ -302,7 +302,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>string-create",	THE_BYTECODE_LABEL(string_create), ARG_INT)
       ("<bc>string-length",		THE_BYTECODE_LABEL(string_length))
       ("<bc>string-ref",		THE_BYTECODE_LABEL(string_ref))
-      ("<bc>string-sref",		THE_BYTECODE_LABEL(string_sref))
       ("<bc>sv",			THE_BYTECODE_LABEL(sv))
       ("<bc>sv-local-push",	THE_BYTECODE_LABEL(sv_local_push), ARG_INT)
       ("<bc>sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push), ARG_INT)
@@ -1243,10 +1242,6 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(string_ref): {
       bytecode2_<&HlString::string_ref>( stack );
-    } NEXT_BYTECODE;
-    BYTECODE(string_sref): {
-      bytecode_string_sref( proc, stack );
-      // sref *can* allocate, if string is used as key in table...
     } NEXT_BYTECODE;
     BYTECODE(sv): {
       bytecode_<&make_sv>(proc, stack);
