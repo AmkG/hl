@@ -7,6 +7,7 @@ Defines a set of types for use on the hl-side.
 #include<cstring>
 #include<string>
 #include<boost/shared_ptr.hpp>
+#include<boost/shared_array.hpp>
 #include<boost/scoped_ptr.hpp>
 
 #include"objects.hpp"
