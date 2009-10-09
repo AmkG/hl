@@ -236,6 +236,7 @@ Strings
 /*abstract base for HlString implementations*/
 class HlStringBufferPointer;
 class HlStringPath;
+class HlStringIter;
 class HlStringImpl {
 public:
 	virtual ~HlStringImpl() { }
@@ -284,7 +285,7 @@ public:
 		);
 	}
 	static Object::ref string_ref(Object::ref o, Object::ref i) {
-		HlString* sp = expect_Type<HlString>(o,
+		HlString* sp = expect_type<HlString>(o,
 			"'string-ref expects a string as first argument"
 		);
 		if(!is_a<int>(i)) {
@@ -329,7 +330,7 @@ public:
 	UnicodeChar operator*(void) const {
 		unsigned char rv = *start;
 		if(rv < 128) {
-			 return UnicodeChar(rv);
+			 return UnicodeChar((char)rv);
 		} else if(rv >= 240) {
 			return UnicodeChar(
 				((uint32_t)rv - 240) * 262144
