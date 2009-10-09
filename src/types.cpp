@@ -310,22 +310,6 @@ find_loop:
 
 
 void HlTable::insert(Heap& hp, ProcessStack& stack) {
-	/*creates a copy of the key in stack.top(1) if it's
-	a string key
-	*/
-	HlString* sp = maybe_type<HlString>(stack.top(1));
-	if(sp) {
-		/*create a new string*/
-		HlString& NS = *hp.create<HlString>();
-		/*re-read old string*/
-		HlString& S = *known_type<HlString>(stack.top(1));
-		NS.impl = S.impl;
-		if(S.impl) {
-			HlStringImpl& I = *known_type<HlStringImpl>(S.impl);
-			I.shared = true;
-		}
-		stack.top(1) = Object::to_ref(&NS);
-	}
 
 	HlTable& T = *known_type<HlTable>(stack.top(3));
 	if(T.tbtype == hl_table_empty) {
@@ -591,43 +575,6 @@ clean_up:
 	return;
 }
 
-/*copies a string key*/
-/*sub-function of HlTable::keys*/
-static void maybe_copy_string_key(Heap& hp, ProcessStack& stack) {
-	/*stack top is:
-		stack.top( 1 ) =
-			(tb . ks)
-	where ks is the list of keys
-	what we want to do is to check if
-	the first key (which is the most
-	recently acquired key) is a string,
-	and clone its pimpl (sharing the
-	implementation) if so.
-	*/
-	Cons& ks = *known_type<Cons>(
-		cdr(stack.top())
-	);
-	/*is it a string?*/
-	if(maybe_type<HlString>(ks.car())) {
-		/*create a copy of that string*/
-		HlString& NS = *hp.create<HlString>();
-		/*re-read old string*/
-		Cons& ks = *known_type<Cons>(
-			cdr(stack.top())
-		);
-		HlString& S = *known_type<HlString>(
-			ks.car()
-		);
-		NS.impl = S.impl;
-		/*the implementation is already
-		shared at this point
-		*/
-		ks.car() = Object::to_ref<Generic*>(
-			&NS
-		);
-	}
-}
-
 /*returns the keys of a table in a list*/
 void HlTable::keys(Heap& hp, ProcessStack& stack) {
 	/*determine the table type*/
@@ -707,7 +654,6 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 						t.impl
 					);
 					c.car() = a[i * 2];
-					maybe_copy_string_key(hp, stack);
 				}
 			}
 		}
@@ -734,7 +680,6 @@ void HlTable::keys(Heap& hp, ProcessStack& stack) {
 				HlArray& a = *known_type<HlArray>(t.impl);
 				/*add the key to list of keys*/
 				c.car() = car(a[i]);
-				maybe_copy_string_key(hp, stack);
 			}
 		}
 		stack.top() = cdr(stack.top());
