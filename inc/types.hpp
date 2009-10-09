@@ -270,6 +270,15 @@ public:
 
 	HlStringIter at(size_t i) const;
 
+	/*
+	precondition:
+		stack.top(2) = left string
+		stack.top(1) = right string
+	postcondition:
+		stack.top(1) = concatenated strings
+	*/
+	static void append(Heap& hp, ProcessStack& stack);
+
 	/*creates a string from the characters on stack.top(N) to stack.top(1)*/
 	static void stack_create(Heap& hp, ProcessStack& stack, size_t N);
 	Object::ref type(void) const {
@@ -421,7 +430,7 @@ public:
 	UnicodeChar operator*(void) const { return *b; }
 	HlStringIter& operator++(void) {
 		++b;
-		if(b.at_end() && p) {
+		while(b.at_end() && p) {
 			boost::shared_ptr<HlStringImpl> tmp;
 			HlStringPath::pop(tmp, p);
 			tmp->point_at(b, p, 0);
