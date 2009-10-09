@@ -232,42 +232,69 @@ public:
 Strings
 -----------------------------------------------------------------------------*/
 
-/*
-hl strings are really PImpl, where the implementation is a
-variadic array of UnicodeChar's.  Note however that the
-implementation my be shared by several hl strings.
-
-An implementation gets shared when a string is used as a key
-to a table.  The table creates a new HlString with the same
-implementation, then sets the "shared" flag of the
-implementation.  When a string-modifying operation is
-performed on the string, the string-modify detects the
-"shared" flag and copies the implementation.
-*/
+/*abstract base for HlString implementations*/
+class HlStringBufferPointer;
+class HlStringPath;
+class HlStringImpl {
+public:
+	virtual ~HlStringImpl() { }
+	virtual void point_at(
+		HlStringBufferPointer&,
+		boost::shared_ptr<HlStringPath>&,
+		size_t) const =0;
+	virtual size_t length(void) const =0;
+	virtual UnicodeChar ref(size_t i) const =0;
+	virtual void cut(
+		boost::shared_ptr<HlStringImpl>& into,
+		size_t start,
+		size_t len) const =0;
+};
 class HlString : public GenericDerived<HlString> {
 public:
-	Object::ref impl;
+	boost::shared_ptr<HlStringImpl> pimpl;
+	mutable uint32_t hash_cache;
 
-	void traverse_references(GenericTraverser* gt) {
-		gt->traverse(impl);
-	}
+	HlString(void) : pimpl(), hash_cache(0) { }
 
 	bool is(Object::ref) const;
 	void enhash(HashingClass*) const;
 
-	UnicodeChar ref(size_t i) const;
-	size_t size(void) const;
+	UnicodeChar ref(size_t i) const {
+		return pimpl->ref(i);
+	}
+	size_t size(void) const {
+		return pimpl->length();
+	}
+
+	HlStringIter at(size_t i) const;
 
 	/*creates a string from the characters on stack.top(N) to stack.top(1)*/
 	static void stack_create(Heap& hp, ProcessStack& stack, size_t N);
-	/*creates a string of size N with null characters*/
-	static void length_create(Heap& hp, ProcessStack& stack, size_t N);
 	Object::ref type(void) const {
 		return Object::to_ref(symbol_string);
 	}
 
-	static Object::ref length(Object::ref);
-	static Object::ref string_ref(Object::ref, Object::ref);
+	static Object::ref length(Object::ref o) {
+		HlString* sp = expect_type<HlString>(o,
+			"'string-length expects a string"
+		);
+		return Object::to_ref<int>(
+			sp->pimpl->length()
+		);
+	}
+	static Object::ref string_ref(Object::ref o, Object::ref i) {
+		HlString* sp = expect_Type<HlString>(o,
+			"'string-ref expects a string as first argument"
+		);
+		if(!is_a<int>(i)) {
+			throw_HlError(
+				"'string-ref expects an integer as "
+				"second argument"
+			);
+		}
+		int ii = as_a<int>(i);
+		return Object::to_ref(sp->pimpl->ref(ii));
+	}
 
 	/*conversion to and from C++ std::strings
 	std::string's are assumed to be UTF-8
@@ -281,51 +308,132 @@ public:
 	);
 };
 
-class HlStringImpl : public GenericDerivedVariadic<HlStringImpl> {
+/*HlStringBufferPointer, which is the core of HlStringIter*/
+class HlStringBufferPointer {
+private:
+	boost::shared_array<unsigned char> buffer;
+	unsigned char const* start;
+	unsigned char const* end;
+	static inline uint32_t extract_utf8(unsigned char c) { /*Pure*/
+		return c & 63;
+	}
 public:
-	bool shared;
-	inline Object::ref& operator[](size_t i) {
-		return index(i);
+	void swap(HlStringBufferPointer& o) {
+		buffer.swap(o.buffer);
+		unsigned char const* tmp = start;
+		start = o.start; o.start = tmp;
+		tmp = end;
+		end = o.end; o.end = tmp;
 	}
-	inline Object::ref const& operator[](size_t i) const {
-		return index(i);
+	UnicodeChar operator*(void) const {
+		unsigned char rv = *start;
+		if(rv < 128) {
+			 return UnicodeChar(rv);
+		} else if(rv >= 240) {
+			return UnicodeChar(
+				((uint32_t)rv - 240) * 262144
+				+ extract_utf8(*(start + 1)) * 4096
+				+ extract_utf8(*(start + 2)) * 64
+				+ extract_utf8(*(start + 3))
+			);
+		} else if(rv >= 224) {
+			return UnicodeChar(
+				((uint32_t)rv - 224) * 4096
+				+ extract_utf8(*(start + 1)) * 64
+				+ extract_utf8(*(start + 2))
+			);
+		} else if(rv >= 192) {
+			return UnicodeChar(
+				((uint32_t)rv - 192) * 64
+				+ extract_utf8(*(start + 1))
+			);
+		}
+		throw_HlError("Invalid character in string buffer");
 	}
-	inline size_t size(void) const { return sz; };
-	HlStringImpl(size_t sz)
-		: GenericDerivedVariadic<HlStringImpl>(sz),
-		shared(0) { }
-	Object::ref type(void) const {
-		return Object::to_ref(symbol_unspecified);
+	HlStringBufferPointer& operator++(void) {
+		unsigned char c = *start;
+		if(c < 128) { ++start; }
+		else if(c >= 240) { start += 4; }
+		else if(c >= 224) { start += 3; }
+		else if(c >= 192) { start += 2; }
+		else throw_HlError("Invalid character in string buffer");
+		return *this;
+	}
+	bool at_end(void) const {
+		return start == end;
+	}
+	friend class AsciiImpl;
+	friend class Utf8Impl;
+	friend class HlStringIter;
+};
+
+/*linked-list of HlString's*/
+class HlStringPath {
+private:
+	boost::shared_ptr<HlStringImpl> const sp;
+	boost::shared_ptr<HlStringPath> next;
+	HlStringPath(void); // disallowed
+	explicit HlStringPath(boost::shared_ptr<HlStringImpl> const& nsp)
+		: sp(nsp), next() { }
+public:
+	static void push(
+			boost::shared_ptr<HlStringImpl> const& sp,
+			boost::shared_ptr<HlStringPath>& cur) {
+		boost::shared_ptr<HlStringPath> rv(
+			new HlStringPath(sp)
+		);
+		rv->next.swap(cur);
+		cur.swap(rv);
+	}
+	static void pop(
+			boost::shared_ptr<HlStringImpl>& sp,
+			boost::shared_ptr<HlStringPath>& cur) {
+		sp = cur->sp;
+		cur = cur->next;
 	}
 };
 
-inline UnicodeChar HlString::ref(size_t i) const {
-	HlStringImpl& S = *known_type<HlStringImpl>(impl);
-	if(i > S.size()) {
-		throw_HlError("'string-ref index out of bounds");
+/*HlStringIter, which eventually forms HlStringPointer*/
+/*
+how it works: we use a rope implementation, so if an
+iterator for a rope node is taken, the rope node pushes
+its right string onto the HlStringPath list, then takes
+the iterator for the left string.  The left string, if
+it is also a rope node, also pushes its own right string
+to the list and takes the iterator for its own left
+string.  This goes on until the left string is a plain
+buffer.
+*/
+class HlStringIter {
+private:
+	HlStringBufferPointer b;
+	boost::shared_ptr<HlStringPath> p;
+public:
+	void swap(HlStringIter& o) {
+		o.b.swap(b);
+		o.p.swap(p);
 	}
-	return as_a<UnicodeChar>(S[i]);
-}
-
-inline size_t HlString::size(void) const {
-	HlStringImpl& S = *known_type<HlStringImpl>(impl);
-	return S.size();
-}
-
-inline Object::ref HlString::length(Object::ref o) {
-	HlString& S = *expect_type<HlString>(o,
-			"'string-length expects a string");
-	return Object::to_ref((int) S.size());
-}
-
-inline Object::ref HlString::string_ref(Object::ref s, Object::ref i) {
-	HlString& S = *expect_type<HlString>(s,
-			"'string-ref expects a string for first argument");
-	if(!is_a<int>(i)) {
-		throw_HlError("'string-ref expects a number for second argument");
+	explicit HlStringIter(HlStringImpl& s, size_t at = 0) {
+		s.point_at(b, p, at);
 	}
-	int I = as_a<int>(i);
-	return Object::to_ref(S.ref(I));
+	UnicodeChar operator*(void) const { return *b; }
+	HlStringIter& operator++(void) {
+		++b;
+		if(b.at_end() && p) {
+			boost::shared_ptr<HlStringImpl> tmp;
+			HlStringPath::pop(tmp, p);
+			tmp->point_at(b, p, 0);
+		}
+		return *this;
+	}
+	bool at_end(void) const {
+		return b.at_end() && !p;
+	}
+	void destruct(boost::shared_ptr<HlStringImpl>&, size_t&) const;
+};
+
+inline HlStringIter HlString::at(size_t i) const {
+	return HlStringIter(*pimpl, i);
 }
 
 /*-----------------------------------------------------------------------------
