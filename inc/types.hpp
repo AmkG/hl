@@ -453,6 +453,29 @@ inline HlStringIter HlString::at(size_t i) const {
 	return HlStringIter(*pimpl, i);
 }
 
+/*core for HlStringBuilder*/
+class HlStringBuilderCore {
+private:
+	boost::shared_ptr<HlStringImpl> prefix;
+	std::vector<unsigned char> building;
+	size_t building_unichars; // number of unicode characters, not bytes!
+	bool utf8_mode;
+
+	void build_prefix(void);
+
+public:
+	void add(UnicodeChar);
+	void add_s(boost::shared_ptr<HlStringImpl> const&);
+	void inner(boost::shared_ptr<HlStringImpl>&);
+	HlStringBuilderCore(void)
+		: prefix(), building(),
+		  building_unichars(0), utf8_mode(false) { }
+	explicit HlStringBuilderCore(boost::shared_ptr<HlStringImpl> const& o)
+		: prefix(o), building(),
+		  building_unichars(0), utf8_mode(false) { }
+};
+
+
 /*-----------------------------------------------------------------------------
 Floating point numbers
 -----------------------------------------------------------------------------*/
