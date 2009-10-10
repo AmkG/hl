@@ -362,11 +362,11 @@ void HlStringBuilderCore::build_prefix(void) {
 	/*create a new string for the buffer*/
 	if(utf8_mode) {
 		t.prefix = Utf8Impl::create_from_buffer(
-			building.begin(), building.end(), building_unichars
+			&*building.begin(), &*building.end(), building_unichars
 		);
 	} else {
 		t.prefix = AsciiImpl::create_from_buffer(
-			building.begin(), building.end()
+			&*building.begin(), &*building.end()
 		);
 	}
 	/*prepend our prefix to the new one*/
@@ -382,7 +382,7 @@ void HlStringBuilderCore::build_prefix(void) {
 #define UTF8_BUFFER_LEVEL 16
 
 void HlStringBuilderCore::add(UnicodeChar uc) {
-	uint32_t cval = uc.val;
+	uint32_t cval = uc.dat;
 	if(likely(!utf8_mode)) {
 		if(likely(cval < 128)) {
 			/*pure ASCII so far...*/
@@ -454,7 +454,7 @@ void HlStringBuilderCore::add_s(string_ptr const& s) {
 	append_string_impl(tmp, prefix, s);
 	tmp.swap(prefix);
 }
-void HlStringBuilderCore::destruct(string_ptr& s) {
+void HlStringBuilderCore::inner(string_ptr& s) {
 	build_prefix();
 	if(unlikely(!prefix)) {
 		/*empty string!*/
