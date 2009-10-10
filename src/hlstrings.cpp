@@ -335,7 +335,7 @@ void RopeImpl::append_string_impl(
 		if(d1_2 <= d2 + 1) {
 			string_ptr tmp;
 			base_append_string_impl(tmp, r1.two, two, d1_2, d2);
-			append_string_impl(into, r1.one, tmp);
+			append_string_impl(dest, r1.one, tmp);
 			return;
 		}
 	}
