@@ -245,6 +245,7 @@ protected:
 	size_t const len;
 public:
 	virtual ~HlStringImpl() { }
+	virtual size_t rope_depth(void) const { return 0; }
 	virtual void point_at(
 		HlStringBufferPointer&,
 		boost::shared_ptr<HlStringPath>&,

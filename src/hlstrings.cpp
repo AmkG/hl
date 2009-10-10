@@ -211,13 +211,16 @@ class RopeImpl : public HlStringImpl {
 private:
 	string_ptr const one;
 	string_ptr const two;
-	/*length of one*/
+	/*length of the string in one*/
 	size_t const l1;
+	/*depth of this rope*/
+	size_t const depth;
 
 	RopeImpl(void); // disallowed!
 
 public:
 	~RopeImpl() { }
+	size_t rope_depth(void) const { return depth; }
 	void point_at(
 			HlStringBufferPointer& b,
 			boost::shared_ptr<HlStringPath>& p,
@@ -279,8 +282,10 @@ public:
 	RopeImpl(
 			string_ptr const& n1,
 			string_ptr const& n2,
+			size_t nd,
 			size_t nl1,
 			size_t nl2)
-		: one(n1), two(n2), l1(nl1), HlStringImpl(nl1 + nl2) { }
+		: one(n1), two(n2), depth(nd), l1(nl1),
+		  HlStringImpl(nl1 + nl2) { }
 };
 
