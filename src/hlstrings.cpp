@@ -78,7 +78,6 @@ class AsciiImpl : public HlStringImpl {
 private:
 	boost::shared_array<BYTE> const buffer;
 	BYTE const* const start;
-	size_t const len;
 
 public:
 	~AsciiImpl() { }
@@ -90,7 +89,6 @@ public:
 		b.start = start + i;
 		b.end = start + len;
 	}
-	size_t length(void) const { return len; }
 	UnicodeChar ref(size_t i) const {
 		return UnicodeChar(
 			(char) start[i]
@@ -106,9 +104,9 @@ public:
 			boost::shared_array<BYTE> const& nb,
 			BYTE const* ns,
 			size_t nl)
-		: buffer(nb), start(ns), len(nl) { }
+		: buffer(nb), start(ns), HlStringImpl(nl) { }
 	/*empty construction*/
-	AsciiImpl(void) : buffer(), start(0), len(0) { }
+	AsciiImpl(void) : buffer(), start(0), HlStringImpl(0) { }
 	/*typical construction*/
 	static string_ptr create_from_buffer(BYTE const* b, BYTE const* e) {
 		size_t nsz = e - b;
@@ -127,7 +125,6 @@ private:
 	boost::shared_array<BYTE> const buffer;
 	BYTE const* const start;
 	BYTE const* const end;
-	size_t const len;
 
 	Utf8Impl(void); // empty construction is disallowed!
 
@@ -149,7 +146,6 @@ public:
 		b.start = nstart;
 		b.end = end;
 	}
-	size_t length(void) const { return len; }
 	UnicodeChar ref(size_t i) const {
 		BYTE const* nstart = start;
 		repeat(i) utf8_adv(nstart);
@@ -194,7 +190,7 @@ public:
 			BYTE const* ns,
 			BYTE const* ne,
 			size_t nl)
-		: buffer(nb), start(ns), end(ne), len(nl) { }
+		: buffer(nb), start(ns), end(ne), HlStringImpl(nl) { }
 	/*typical construction*/
 	static string_ptr create_from_buffer(
 			BYTE const* b,
@@ -209,7 +205,7 @@ public:
 	}
 };
 
-void append_string_impl(string_ptr& dest, string_ptr const& one, string_ptr& two);
+void append_string_impl(string_ptr& dest, string_ptr const& one, string_ptr const& two);
 
 class RopeImpl : public HlStringImpl {
 private:
@@ -217,8 +213,6 @@ private:
 	string_ptr const two;
 	/*length of one*/
 	size_t const l1;
-	/*total length*/
-	size_t const len;
 
 	RopeImpl(void); // disallowed!
 
@@ -242,7 +236,6 @@ public:
 			two->point_at(b, p, i - l1);
 		}
 	}
-	size_t length(void) const { return len; }
 	UnicodeChar ref(size_t i) const {
 		if(i < l1) {
 			return one->ref(i);
@@ -272,15 +265,22 @@ public:
 			string_ptr cut_one;
 			one->cut(cut_one, i, l1 - i);
 			append_string_impl(into, cut_one, two);
-			return
+			return;
 		} else {
 			/*both are cut*/
 			string_ptr cut_one;
 			one->cut(cut_one, i, l1 - i);
 			string_ptr cut_two;
-			two->cut(cut_two, 0, il_extent - l1)
+			two->cut(cut_two, 0, il_extent - l1);
 			append_string_impl(into, cut_one, cut_two);
+			return;
 		}
 	}
+	RopeImpl(
+			string_ptr const& n1,
+			string_ptr const& n2,
+			size_t nl1,
+			size_t nl2)
+		: one(n1), two(n2), l1(nl1), HlStringImpl(nl1 + nl2) { }
 };
 

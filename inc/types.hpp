@@ -238,13 +238,18 @@ class HlStringBufferPointer;
 class HlStringPath;
 class HlStringIter;
 class HlStringImpl {
+private:
+	HlStringImpl(void); // disallowed!
+protected:
+	explicit HlStringImpl(size_t nl) : len(nl) { }
+	size_t const len;
 public:
 	virtual ~HlStringImpl() { }
 	virtual void point_at(
 		HlStringBufferPointer&,
 		boost::shared_ptr<HlStringPath>&,
 		size_t) const =0;
-	virtual size_t length(void) const =0;
+	size_t length(void) const { return len; }
 	virtual UnicodeChar ref(size_t i) const =0;
 	virtual void cut(
 		boost::shared_ptr<HlStringImpl>& into,
