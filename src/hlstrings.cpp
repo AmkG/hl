@@ -442,7 +442,7 @@ void HlStringBuilderCore::add(UnicodeChar uc) {
 		++building_unichars;
 	}
 	/*if we hit the level, push it into the prefix*/
-	if(likely(building_unichars > UTF8_BUFFER_LEVEL)) {
+	if(unlikely(building_unichars > UTF8_BUFFER_LEVEL)) {
 		build_prefix();
 	}
 }
