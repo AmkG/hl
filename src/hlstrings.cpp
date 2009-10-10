@@ -342,3 +342,125 @@ void RopeImpl::append_string_impl(
 	base_append_string_impl(dest, one, two, d1, d2);
 }
 
+/*aliase for the RopeImpl static*/
+static inline void append_string_impl(
+		string_ptr& dest,
+		string_ptr const& one,
+		string_ptr const& two) {
+	RopeImpl::append_string_impl(dest, one, two);
+}
+
+/*----------------------------------------------------------------------------
+HlStringBuilder
+----------------------------------------------------------------------------*/
+
+void HlStringBuilderCore::build_prefix(void) {
+	/*if there's nothing to build, there's nothing to build*/
+	if(building_unichars == 0) return;
+	/*construct temporary, then swap*/
+	HlStringBuilderCore t;
+	/*create a new string for the buffer*/
+	if(utf8_mode) {
+		t.prefix = Utf8Impl::create_from_buffer(
+			building.begin(), building.end(), building_unichars
+		);
+	} else {
+		t.prefix = AsciiImpl::create_from_buffer(
+			building.begin(), building.end()
+		);
+	}
+	/*prepend our prefix to the new one*/
+	if(prefix) {
+		append_string_impl(t.prefix, prefix, t.prefix);
+	}
+	/*now swap*/
+	swap(t);
+}
+
+#define ASCII_BUFFER_LEVEL 128
+#define ASCII_SWITCH_LEVEL (sizeof(RopeImpl) * 2)
+#define UTF8_BUFFER_LEVEL 16
+
+void HlStringBuilderCore::add(UnicodeChar uc) {
+	uint32_t cval = uc.val;
+	if(likely(!utf8_mode)) {
+		if(likely(cval < 128)) {
+			/*pure ASCII so far...*/
+			building.push_back((BYTE) cval);
+			++building_unichars;
+			if(unlikely(building_unichars > ASCII_BUFFER_LEVEL)) {
+				build_prefix();
+			}
+			return;
+		} else {
+			/*oh noes, we've found a non-ASCII character!
+			fine fine fine, switch to utf8-mode
+			*/
+			/*if we already have a bunch of ASCII
+			characters pre-built, push them to the
+			current prefix.
+			*/
+			if(building_unichars > ASCII_SWITCH_LEVEL) {
+				build_prefix();
+			}
+			utf8_mode = 1;
+		}
+	}
+	/*builder should be UTF-8 mode by now*/
+	if(likely(cval < 128)) {
+		building.push_back((BYTE) cval);
+		++building_unichars;
+	} else {
+		/*first create into a temporary array before
+		inserting into the building vector.  This is
+		to atomize the insertion into the vector, at
+		least in terms of exceptions - if an
+		exception gets thrown while allocating
+		storage, building_unichars doesn't get
+		updated and we don't have partial utf8
+		characters in the building vector.
+		*/
+		BYTE bs[4];
+		if(cval < 0x800) {
+			bs[0] = 0xC0 + (cval >> 6);
+			bs[1] = 0x80 + (cval & 0x3F);
+			building.insert(building.end(), &bs[0], &bs[2]);
+		} else if(cval < 0x10000) {
+			bs[0] = 0xE0 + (cval >> 12);
+			bs[1] = 0x80 + ((cval >> 6) & 0x3F);
+			bs[2] = 0x80 + (cval & 0x3F);
+			building.insert(building.end(), &bs[0], &bs[3]);
+		} else if(cval < 0x110000) {
+			bs[0] = 0xF0 + (cval >> 18);
+			bs[1] = 0x80 + ((cval >> 12) & 0x3F);
+			bs[2] = 0x80 + ((cval >> 6) & 0x3F);
+			bs[3] = 0x80 + (cval & 0x3F);
+			building.insert(building.end(), &bs[0], &bs[4]);
+		} else {
+			throw_HlError("attempt to add invalid unicode character!");
+		}
+		++building_unichars;
+	}
+	/*if we hit the level, push it into the prefix*/
+	if(likely(building_unichars > UTF8_BUFFER_LEVEL)) {
+		build_prefix();
+	}
+}
+
+void HlStringBuilderCore::add_s(string_ptr const& s) {
+	build_prefix();
+	/*concatenate and swap*/
+	string_ptr tmp;
+	append_string_impl(tmp, prefix, s);
+	tmp.swap(prefix);
+}
+void HlStringBuilderCore::destruct(string_ptr& s) {
+	build_prefix();
+	if(unlikely(!prefix)) {
+		/*empty string!*/
+		s.reset(new AsciiImpl);
+	} else {
+		s = prefix;
+	}
+}
+

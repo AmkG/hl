@@ -461,9 +461,24 @@ private:
 	size_t building_unichars; // number of unicode characters, not bytes!
 	bool utf8_mode;
 
+	/*creates a HlStringImpl out of the current
+	building and building_unichars, then appends
+	it to the end of the prefix
+	*/
 	void build_prefix(void);
 
 public:
+	void swap(HlStringBuilderCore& o) {
+		prefix.swap(o.prefix);
+		building.swap(o.building);
+		size_t ts = building_unichars;
+		building_unichars = o.building_unichars;
+		building_unichars = ts;
+		bool tmp = utf8_mode;
+		utf8_mode = o.utf8_mode;
+		o.utf8_mode = tmp;
+	}
+
 	void add(UnicodeChar);
 	void add_s(boost::shared_ptr<HlStringImpl> const&);
 	void inner(boost::shared_ptr<HlStringImpl>&);
