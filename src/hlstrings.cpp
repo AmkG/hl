@@ -205,8 +205,6 @@ public:
 	}
 };
 
-void append_string_impl(string_ptr& dest, string_ptr const& one, string_ptr const& two);
-
 class RopeImpl : public HlStringImpl {
 private:
 	string_ptr const one;
@@ -217,6 +215,15 @@ private:
 	size_t const depth;
 
 	RopeImpl(void); // disallowed!
+
+	/*direct construction, only allowed for friends*/
+	RopeImpl(
+			string_ptr const& n1,
+			string_ptr const& n2,
+			size_t nd,
+			size_t nl1)
+		: one(n1), two(n2), depth(nd), l1(nl1),
+		  HlStringImpl(nl1 + n2->length()) { }
 
 public:
 	~RopeImpl() { }
@@ -279,13 +286,59 @@ public:
 			return;
 		}
 	}
-	RopeImpl(
-			string_ptr const& n1,
-			string_ptr const& n2,
-			size_t nd,
-			size_t nl1,
-			size_t nl2)
-		: one(n1), two(n2), depth(nd), l1(nl1),
-		  HlStringImpl(nl1 + nl2) { }
+	static void append_string_impl(string_ptr& dest, string_ptr const& one, string_ptr const& two);
+	static void base_append_string_impl( string_ptr& dest, string_ptr const& one, string_ptr const& two, size_t d1, size_t d2);
 };
+
+void RopeImpl::base_append_string_impl(
+		string_ptr& dest,
+		string_ptr const& one,
+		string_ptr const& two,
+		size_t d1,
+		size_t d2) {
+	size_t nd =
+		d1 > d2 ?		d1 + 1 :
+		/*otherwise*/		d2 + 1 ;
+	dest.reset(
+		new RopeImpl(one, two, nd, one->length())
+	);
+}
+
+void RopeImpl::append_string_impl(
+		string_ptr& dest,
+		string_ptr const& one,
+		string_ptr const& two) {
+	/*trivial cases where one string is empty*/
+	if(one->length() == 0) {
+		dest = two;
+		return;
+	} else if(two->length() == 0){
+		dest = one;
+		return;
+	}
+	size_t d1 = one->rope_depth();
+	size_t d2 = two->rope_depth();
+	if(d1 > d2 + 1) {
+		/*first subtree is pretty heavy, check if:
+		  one    two
+		   /\     |
+		  /\ c    d
+		 a  b
+		If so, do this:
+		    /\
+		   /  \
+		  /\  /\
+		 a b  c d
+		*/
+		RopeImpl& r1 = static_cast<RopeImpl&>(*one);
+		size_t d1_2 = r1.two->rope_depth();
+		if(d1_2 <= d2 + 1) {
+			string_ptr tmp;
+			base_append_string_impl(tmp, r1.two, two, d1_2, d2);
+			append_string_impl(into, r1.one, tmp);
+			return;
+		}
+	}
+	base_append_string_impl(dest, one, two, d1, d2);
+}
 
