@@ -292,7 +292,7 @@ public:
 			return;
 		}
 	}
-	void to_cpp_string(std::string& into) {
+	void to_cpp_string(std::string& into) const {
 		one->to_cpp_string(into);
 		two->to_cpp_string(into);
 	}
