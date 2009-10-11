@@ -378,8 +378,8 @@ void HlStringBuilderCore::build_prefix(void) {
 }
 
 #define ASCII_BUFFER_LEVEL 128
-#define ASCII_SWITCH_LEVEL (sizeof(RopeImpl) * 2)
 #define UTF8_BUFFER_LEVEL 16
+#define ASCII_SWITCH_LEVEL UTF8_BUFFER_LEVEL
 
 void HlStringBuilderCore::add(UnicodeChar uc) {
 	uint32_t cval = uc.dat;
@@ -400,7 +400,7 @@ void HlStringBuilderCore::add(UnicodeChar uc) {
 			characters pre-built, push them to the
 			current prefix.
 			*/
-			if(building_unichars > ASCII_SWITCH_LEVEL) {
+			if(building_unichars + 1 > ASCII_SWITCH_LEVEL) {
 				build_prefix();
 			}
 			utf8_mode = 1;
