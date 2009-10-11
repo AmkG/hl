@@ -109,7 +109,7 @@
     ((afn (i)
        (when (< i ln)
          (if (< i pos) (string-sref left i (string-ref s i))
-             (< pos i) (string-ref right (- i (+ pos 1)) (string-ref s i)))
+             (< pos i) (string-sref right (- i (+ pos 1)) (string-ref s i)))
          (self (+ i 1)))) 0)
     (cons (s-to-sy left) (s-to-sy right))))
 
@@ -123,8 +123,9 @@
         (f (ssyntax-expand (car sides)) (ssyntax-expand (cdr sides)))))))
 
 ; convenient wrapper around mk-binary-ssyntax
-(mac info (def-binary-ssyntax name (left right) . body)
-  `(= ,name (mk-binary-ssyntax (fn (,left ,right) ,@body))))
+(mac (def-binary-ssyntax name args . body)
+  (list '= name (list 'mk-binary-ssyntax 
+                      (cons 'fn (cons (list (car args) (cadr args)) body)))))
 
 ; get current context
 (def (current-ctx)
@@ -149,10 +150,10 @@
 ; add a "blocking" character to the current list
 (def (ctx-block-on c)
   ; use a table for faster lookups
-  (table-sref (table-sref (rep (current-ctx)) 'block-on) c t))
+  (table-sref (table-ref (rep (current-ctx)) 'block-on) c t))
 ; add a "separator" character to the current list
 (def (ctx-add-sep c)
-  (table-sref (table-sref (rep (current-ctx)) 'sep) c t))
+  (table-sref (table-ref (rep (current-ctx)) 'sep) c t))
 
 ; tells if c is a blocking character in the current context
 (def (should-block c)
@@ -216,7 +217,7 @@
         (table-ref read-table t))))
 
 ; main reader loop
-(def (base-read in (o eof))
+(def (base-read in eof)
   (let c (readc in)
     (if (is c nil) ; eof
       eof
