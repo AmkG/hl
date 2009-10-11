@@ -99,6 +99,9 @@ public:
 			new AsciiImpl(buffer, start + i, l)
 		);
 	}
+	void to_cpp_string(std::string& into) const {
+		into.insert(into.end(), start, &start[len]);
+	}
 	/*direct construction*/
 	AsciiImpl(
 			boost::shared_array<BYTE> const& nb,
@@ -183,6 +186,9 @@ public:
 			);
 			return;
 		}
+	}
+	void to_cpp_string(std::string& into) const {
+		into.insert(into.end(), start, end);
 	}
 	/*direct construction*/
 	Utf8Impl(
@@ -285,6 +291,10 @@ public:
 			append_string_impl(into, cut_one, cut_two);
 			return;
 		}
+	}
+	void to_cpp_string(std::string& into) {
+		one->to_cpp_string(into);
+		two->to_cpp_string(into);
 	}
 	static void append_string_impl(string_ptr& dest, string_ptr const& one, string_ptr const& two);
 	static void base_append_string_impl( string_ptr& dest, string_ptr const& one, string_ptr const& two, size_t d1, size_t d2);

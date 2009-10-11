@@ -256,6 +256,7 @@ public:
 		boost::shared_ptr<HlStringImpl>& into,
 		size_t start,
 		size_t len) const =0;
+	virtual void to_cpp_string(std::string&) const =0;
 };
 class HlString : public GenericDerived<HlString> {
 public:
@@ -316,7 +317,11 @@ public:
 	/*conversion to and from C++ std::strings
 	std::string's are assumed to be UTF-8
 	*/
-	std::string to_cpp_string(void) const;
+	std::string to_cpp_string(void) const {
+		std::string rv;
+		pimpl->to_cpp_string(rv);
+		return rv;
+	}
 	/*return on stack top*/
 	static void from_cpp_string(
 		Heap& hp,
