@@ -1,7 +1,5 @@
 ; implementation of packages, ported from the scheme version in hl-arc-f
 
-;; some definitions to be able to test on hl-arc-f
-
 (in-package impl)
 
 (import <hl>ssyntax ssyntax)
@@ -17,6 +15,11 @@
 (import <hl>with with)
 (import <hl>withs withs)
 (import <hl>afn afn)
+(import <hl>do do)
+(import <hl>mac mac)
+(import <hl>when when)
+(import <hl>each each)
+
 (import <hl>no no)
 (import <hl>cadr cadr)
 (import <hl>list list)
@@ -27,12 +30,24 @@
 (import <hl>string string)
 (import <hl>uniq uniq)
 (import <hl>list list)
+(import <hl>table table)
+(import <hl>len len)
+(import <hl>find find)
+(import <hl>cut cut)
+(import <hl>> >)
+(import <hl>pos pos)
+(import <hl>sym sym)
+(import <hl>acons acons)
+(import <hl>map map)
+
 (import <axiom>tag tag)
 (import <axiom>car car)
 (import <axiom>cdr cdr)
+(import <axiom>scar scar)
+(import <axiom>scdr scdr)
 (import <axiom>cons cons)
 (import <axiom>is is)
-(import <axiom>table table)
+(import <axiom>set =)
 
 (def (is-no-pkg x y)
   (is x (unpkg y)))
@@ -146,7 +161,7 @@
       nil
       (or (pkgs* (sym s))
           (let pak (pkg-new s)
-            (= (pkgs* (sym s)) pak))))
+            (table-sref pkgs* (sym s) pak))))
     nil))
 
 (def (pkg-ref pak s)
@@ -155,11 +170,11 @@
       s
       (let tb ((rep pak) 1)
         (or (tb s)
-            (= (tb s) (sym (string #\< (pkg-name pak) #\> s))))))
+            (table-sref tb s (sym (string #\< (pkg-name pak) #\> s))))))
     s))
 
 (def (pkg-sref pak packaged unpackaged)
-  (= (((rep pak) 1) unpackaged) packaged))
+  (table-sref ((rep pak) 1) unpackaged packaged))
 
 (def (iface-of-pkg pak s)
   ((iface-tbl-of-pkg pak) s))
@@ -191,15 +206,15 @@
   ((rep ctx) '<hl>cur-pkg))
 
 (def (pkg-of-ctx-set ctx pkg)
-  (= ((rep ctx) '<hl>cur-pkg) pkg))
+  (table-sref (rep ctx) '<hl>cur-pkg pkg))
 
 (def (ctx-ref-reuse ctx ex)
   (if (acons ex)
     (if (ctx-meta (car ex))
       (ctx-ref ctx ex)
       (do 
-        (= (car ex) (ctx-ref-reuse-inner ctx (car ex)))
-        (= (cdr ex) (ctx-ref-reuse-inner ctx (cdr ex)))
+        (scar ex (ctx-ref-reuse-inner ctx (car ex)))
+        (scdr ex (ctx-ref-reuse-inner ctx (cdr ex)))
         ex))
     (ctx-ref-reuse-inner ctx ex)))
 
@@ -211,8 +226,8 @@
         (pkg-ref (pkf-of-ctx ctx) ex))
     (acons ex)
       (do 
-        (= (car ex) (ctx-ref-reuse-inner ctx (car ex)))
-        (= (cdr ex) (ctx-ref-reuse-inner ctx (cdr ex)))
+        (scar ex (ctx-ref-reuse-inner ctx (car ex)))
+        (scdr ex (ctx-ref-reuse-inner ctx (cdr ex)))
         ex)
     ex))
 
@@ -236,7 +251,7 @@
                      (ctx-ref ctx ,@parms)))
       import `(pkg-sref (the-pkg ,(pkg-name (pkg-of-ctx ctx))) ,(cdr expr)))))
 
-(mac (no-pkg-case x . args)
+(mac info (no-pkg-case x . args)
   (w/uniq tst
     `(let ,tst ,x
        (if
@@ -307,7 +322,7 @@
                     add-int (fn (np)
                               (if (no iface)
                                 (= iface (list np) int-tl iface)
-                                (= (cdr int-tl) (list np) int-tl (cdr int-tl))))
+                                (scdr int-tl (list np) int-tl (cdr int-tl))))
                     remove (fn (np)
                              (let tmp iface
                                (= iface nil int-tl nil)
