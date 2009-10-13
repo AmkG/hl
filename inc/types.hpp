@@ -326,7 +326,7 @@ public:
 	static void from_cpp_string(
 		Heap& hp,
 		ProcessStack& stack,
-		std::string
+		std::string const&
 	);
 };
 

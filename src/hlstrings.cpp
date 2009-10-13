@@ -360,6 +360,49 @@ static inline void append_string_impl(
 	RopeImpl::append_string_impl(dest, one, two);
 }
 
+/*
+Construction of a HlString from a std::string
+*/
+void HlString::from_cpp_string(
+		Heap& hp,
+		ProcessStack& stack,
+		std::string const& s) {
+	/*create a new buffer to contain the string*/
+	boost::shared_array<BYTE> buffer( new BYTE[s.size()] );
+	BYTE* start = &buffer[0];
+	BYTE* dest = start;
+	/*get the string contents*/
+	BYTE const* src = (BYTE const*) &*s.begin();
+	/*keep track of the length of the string in unichars*/
+	size_t len = 0;
+	bool nonascii = false;
+	/*copy into buffer*/
+	while(src != (BYTE const*) &*s.end()) {
+		BYTE const* p = src;
+		utf8_adv_check(p, nonascii);
+		std::copy(src, p, dest);
+		size_t diff = p - src;
+		dest += diff;
+		src = p;
+		++len;
+	}
+	string_ptr rv;
+	/*were we ASCII or UTF-8?*/
+	if(nonascii) {
+		rv.reset(
+			new Utf8Impl(buffer, start, dest, len)
+		);
+	} else {
+		rv.reset(
+			new AsciiImpl(buffer, start, len)
+		);
+	}
+	/*now allocate on the given Heap*/
+	HlString* sp = hp.create<HlString>();
+	sp->pimpl = rv;
+	stack.push(Object::to_ref<Generic*>(sp));
+}
+
 /*----------------------------------------------------------------------------
 HlStringBuilder
 ----------------------------------------------------------------------------*/
