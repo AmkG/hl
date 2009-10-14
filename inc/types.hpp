@@ -275,6 +275,7 @@ public:
 		return pimpl->length();
 	}
 
+	/*defined in this header*/
 	HlStringIter at(size_t i) const;
 
 	/*

@@ -10,6 +10,10 @@
 typedef unsigned char BYTE;
 typedef boost::shared_ptr<HlStringImpl> string_ptr;
 
+/*-----------------------------------------------------------------------------
+Implementations
+-----------------------------------------------------------------------------*/
+
 /*advances the specified BYTE* */
 static inline void utf8_adv(BYTE const*& p) {
 	BYTE b = *p;
@@ -50,7 +54,7 @@ static inline uint32_t extract_utf8(unsigned char c) { /*Pure*/
 /*reads the specified utf8 character*/
 UnicodeChar utf8_read(BYTE const* start) {
 	BYTE rv = *start;
-	if(rv < 128) {
+	if(likely(rv < 128)) {
 		 return UnicodeChar((char)rv);
 	} else if(rv >= 240) {
 		return UnicodeChar(
@@ -352,12 +356,35 @@ void RopeImpl::append_string_impl(
 	base_append_string_impl(dest, one, two, d1, d2);
 }
 
-/*aliase for the RopeImpl static*/
+/*alias for the RopeImpl static*/
 static inline void append_string_impl(
 		string_ptr& dest,
 		string_ptr const& one,
 		string_ptr const& two) {
 	RopeImpl::append_string_impl(dest, one, two);
+}
+
+/*-----------------------------------------------------------------------------
+Construction
+-----------------------------------------------------------------------------*/
+
+void HlString::stack_create(Heap& hp, ProcessStack& stack, size_t N) {
+	HlStringBuilderCore sb;
+	/*iterate over the stack top, frop top(N) to top(1)*/
+	for(size_t i = 0; i < N; ++i) {
+		Object::ref cc = stack.top(N - i);
+		if(!is_a<UnicodeChar>(cc)) {
+			throw_HlError(
+				"attempt to create string from non-character"
+			);
+		}
+		sb.add(as_a<UnicodeChar>(cc));
+	}
+	/*pop*/
+	stack.pop(N);
+	HlString* sp = hp.create<HlString>();
+	sb.inner(sp->pimpl);
+	stack.push(Object::to_ref<Generic*>(sp));
 }
 
 /*
