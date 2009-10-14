@@ -49,6 +49,7 @@
 (def-const-expander sym s (make-lit '() s))
 (def-const-expander int i (make-lit '() i))
 (def-const-expander bool b (make-lit '() b))
+(def-const-expander char c (make-lit '() c))
 
 ; complex types
 (def-const-expander cons val

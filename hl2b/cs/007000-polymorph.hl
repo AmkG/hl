@@ -67,7 +67,7 @@
            (<axiom>accessor new-f old-accessor)
            new-f))
      (<common>enclose bc tb)
-     (<axiom>accessor-ref f)))
+     (<axiom>accessor-ref f))))
  (<common>assemble '((<bc>monomethod))))
 
 (def (<impl>polymorph-infect-accessor m f)
