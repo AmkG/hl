@@ -27,6 +27,21 @@ void HlString::enhash(HashingClass* hcp) const {
 	hcp->enhash(hash_cache);
 }
 
+bool HlString::is(Object::ref o) const {
+	HlString* op = maybe_type<HlString>(o);
+	if(!op) return false;
+	HlString const& os = *op;
+	if(pimpl->length() != os.pimpl->length()) return false;
+	/*compare each character*/
+	HlStringIter it1(*pimpl);
+	HlStringIter it2(*pimpl);
+	while(!it1.at_end()) {
+		if(!(*it1 == *it2)) return false;
+		++it1; ++it2;
+	}
+	return true;
+}
+
 /*-----------------------------------------------------------------------------
 Implementations
 -----------------------------------------------------------------------------*/
