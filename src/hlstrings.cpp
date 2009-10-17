@@ -400,6 +400,9 @@ static inline void append_string_impl(
 Construction
 -----------------------------------------------------------------------------*/
 
+/*
+On-stack creation
+*/
 void HlString::stack_create(Heap& hp, ProcessStack& stack, size_t N) {
 	HlStringBuilderCore sb;
 	/*iterate over the stack top, frop top(N) to top(1)*/
@@ -417,6 +420,27 @@ void HlString::stack_create(Heap& hp, ProcessStack& stack, size_t N) {
 	HlString* sp = hp.create<HlString>();
 	sb.inner(sp->pimpl);
 	stack.push(Object::to_ref<Generic*>(sp));
+}
+
+/*
+by appending two strings together
+precondition:
+	stack.top(2) = left string
+	stack.top(1) = right string
+postcondition:
+	stack.top(1) = concatenated strings
+*/
+void HlString::append(Heap& hp, ProcessStack& stack) {
+	HlString* psl = expect_type<HlString>(stack.top(2),
+		"'string-join expects two strings, first argument is not a string"
+	);
+	HlString* psr = expect_type<HlString>(stack.top(1),
+		"'string-join expects two strings, first argument is not a string"
+	);
+	HlString* pa = hp.create<HlString>();
+	append_string_impl(pa->pimpl, psl->pimpl, psr->pimpl);
+	stack.pop(1);
+	stack.top(1) = Object::to_ref<Generic*>(pa);
 }
 
 /*

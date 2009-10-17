@@ -436,7 +436,7 @@ public:
 		o.b.swap(b);
 		o.p.swap(p);
 	}
-	explicit HlStringIter(HlStringImpl& s, size_t at = 0) {
+	explicit HlStringIter(HlStringImpl const& s, size_t at = 0) {
 		s.point_at(b, p, at);
 	}
 	UnicodeChar operator*(void) const { return *b; }
