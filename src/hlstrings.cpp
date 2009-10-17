@@ -11,6 +11,23 @@ typedef unsigned char BYTE;
 typedef boost::shared_ptr<HlStringImpl> string_ptr;
 
 /*-----------------------------------------------------------------------------
+HlString algorithms
+-----------------------------------------------------------------------------*/
+
+void HlString::enhash(HashingClass* hcp) const {
+	if(hash_cache == 0) {
+		HashingClass my_hasher;
+		HlStringIter it(*pimpl);
+		while(!it.at_end()) {
+			my_hasher.enhash((*it).dat);
+			++it;
+		}
+		hash_cache = my_hasher.c;
+	}
+	hcp->enhash(hash_cache);
+}
+
+/*-----------------------------------------------------------------------------
 Implementations
 -----------------------------------------------------------------------------*/
 
