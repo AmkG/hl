@@ -42,6 +42,8 @@ extern Symbol* symbol_cons;
 extern Symbol* symbol_pid;
 extern Symbol* symbol_fn;
 extern Symbol* symbol_string;
+extern Symbol* symbol_string_builder;
+extern Symbol* symbol_string_pointer;
 extern Symbol* symbol_unspecified;
 extern Symbol* symbol_float;
 extern Symbol* symbol_array;

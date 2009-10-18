@@ -496,6 +496,51 @@ public:
 		  building_unichars(0), utf8_mode(false) { }
 };
 
+/*-----------------------------------------------------------------------------
+HlStringBuilder
+-----------------------------------------------------------------------------*/
+
+class HlStringBuilder : public GenericDerived<HlStringBuilder> {
+public:
+	HlStringBuilderCore core;
+
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_string_builder);
+	}
+
+	static Object::ref add(Object::ref sb, Object::ref c) {
+		HlStringBuilder* sbp = expect_type<HlStringBuilder>(sb,
+			"'sb-add expects a string-builder as first argument"
+		);
+		if(!is_a<UnicodeChar>(c)) {
+			throw_HlError("'sb-add expects a character as second argument");
+		}
+		sbp->core.add(as_a<UnicodeChar>(c));
+	}
+	static Object::ref add_s(Object::ref sb, Object::ref s) {
+		HlStringBuilder* sbp = expect_type<HlStringBuilder>(sb,
+			"'sb-add-s expects a string-builder as first argument"
+		);
+		HlString* sp = expect_type<HlString>(s,
+			"'sb-add-s expects a string as second argument"
+		);
+		sbp->core.add_s(sp->pimpl);
+	}
+	static Object::ref inner(Process& proc, Object::ref const& sb) {
+		/*extract the inner of the sb first, then construct*/
+		HlStringBuilder* sbp = expect_type<HlStringBuilder>(sb,
+			"'sb-inner expects a string-builder"
+		);
+		boost::shared_ptr<HlStringImpl> sip;
+		sbp->core.inner(sip);
+		/*construct a new HlString on the process. after
+		construction, treat sbp as invalid!
+		*/
+		HlString* sp = proc.create<HlString>();
+		sp->pimpl.swap(sip);
+		return Object::to_ref<Generic*>(sp);
+	}
+};
 
 /*-----------------------------------------------------------------------------
 Floating point numbers
