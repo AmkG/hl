@@ -439,6 +439,7 @@ public:
 	explicit HlStringIter(HlStringImpl const& s, size_t at = 0) {
 		s.point_at(b, p, at);
 	}
+	HlStringIter(void) : b(), p() { }
 	UnicodeChar operator*(void) const { return *b; }
 	HlStringIter& operator++(void) {
 		++b;
@@ -544,6 +545,61 @@ public:
 		HlString* sp = proc.create<HlString>();
 		sp->pimpl.swap(sip);
 		return Object::to_ref<Generic*>(sp);
+	}
+};
+
+/*-----------------------------------------------------------------------------
+HlStringPointer
+-----------------------------------------------------------------------------*/
+
+class HlStringPointer : public GenericDerived<HlStringPointer> {
+public:
+	HlStringIter core;
+
+	Object::ref type(void) const {
+		return Object::to_ref(symbol_string_pointer);
+	}
+
+	static Object::ref create(
+			Process&proc, Object::ref s, Object::ref i) {
+		/*extract and check types*/
+		HlString* sp = expect_type<HlString>(s,
+			"'string-pointer expects a string as first argument"
+		);
+		if(!is_a<int>(i)) {
+			throw_HlError(
+				"'string-pointer expects an integer as second argument."
+			);
+		}
+		int ii = as_a<int>(i);
+		/*first, create a temporary HlStringIter*/
+		HlStringIter it = sp->at(ii);
+		/*now allocate - treat sp as invalid afterwards*/
+		HlStringPointer* spp = proc.create<HlStringPointer>();
+		spp->core.swap(it);
+		return Object::to_ref<Generic*>(spp);
+	}
+	static Object::ref ref(Object::ref sp) {
+		HlStringPointer* spp = expect_type<HlStringPointer>(sp,
+			"'sp-ref expects a string-pointer"
+		);
+		return Object::to_ref(*spp->core);
+	}
+	static Object::ref at_end(Object::ref sp) {
+		HlStringPointer* spp = expect_type<HlStringPointer>(sp,
+			"'sp-at-end expects a string-pointer"
+		);
+		return
+			spp->core.at_end() ?		Object::t() :
+			/*otherwise*/			Object::nil()
+		;
+	}
+	static Object::ref adv(Object::ref sp) {
+		HlStringPointer* spp = expect_type<HlStringPointer>(sp,
+			"'sp-ref expects a string-pointer"
+		);
+		++spp->core;
+		return sp;
 	}
 };
 
