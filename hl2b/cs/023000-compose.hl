@@ -59,7 +59,7 @@
            (<axiom>accessor
              (basemost-compose a b)
              (fn (v . rest)
-               (sref a v (apply-list b rest)))))))
+               (sref a v (apply-list b rest))))))))
 
 ; l-reductor to reduce continuation space required, since
 ; functions are executed right-to-left.
