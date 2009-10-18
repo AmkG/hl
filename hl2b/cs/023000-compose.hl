@@ -12,6 +12,7 @@
 
 (import <hl>l-reductor l-reductor)
 
+(import <axiom>lambda fn)
 (import <axiom>quote quote)
 (import <axiom>if if)
 (import <axiom>is is)
