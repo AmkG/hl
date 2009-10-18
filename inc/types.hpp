@@ -508,6 +508,9 @@ public:
 		return Object::to_ref(symbol_string_builder);
 	}
 
+	static Object::ref create(Process& proc) {
+		return Object::to_ref<Generic*>(proc.create<HlStringBuilder>());
+	}
 	static Object::ref add(Object::ref sb, Object::ref c) {
 		HlStringBuilder* sbp = expect_type<HlStringBuilder>(sb,
 			"'sb-add expects a string-builder as first argument"
@@ -516,6 +519,7 @@ public:
 			throw_HlError("'sb-add expects a character as second argument");
 		}
 		sbp->core.add(as_a<UnicodeChar>(c));
+		return c;
 	}
 	static Object::ref add_s(Object::ref sb, Object::ref s) {
 		HlStringBuilder* sbp = expect_type<HlStringBuilder>(sb,
@@ -525,6 +529,7 @@ public:
 			"'sb-add-s expects a string as second argument"
 		);
 		sbp->core.add_s(sp->pimpl);
+		return s;
 	}
 	static Object::ref inner(Process& proc, Object::ref const& sb) {
 		/*extract the inner of the sb first, then construct*/
