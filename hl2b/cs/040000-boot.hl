@@ -2,6 +2,7 @@
 
 (in-package impl)
 (import <axiom>if if)
+(import <axiom>lambda fn)
 (import <axiom>is is)
 (import <axiom>set =)
 (import <axiom>tag tag)
