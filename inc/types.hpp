@@ -532,7 +532,7 @@ public:
 		sbp->core.add_s(sp->pimpl);
 		return s;
 	}
-	static Object::ref inner(Process& proc, Object::ref const& sb) {
+	static Object::ref inner(Process& proc, Object::ref sb) {
 		/*extract the inner of the sb first, then construct*/
 		HlStringBuilder* sbp = expect_type<HlStringBuilder>(sb,
 			"'sb-inner expects a string-builder"

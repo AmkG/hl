@@ -294,14 +294,23 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>rep-local-push",	THE_BYTECODE_LABEL(rep_local_push))
       ("<bc>rep-clos-push",	THE_BYTECODE_LABEL(rep_clos_push))
       ("<bc>s-to-sy",		THE_BYTECODE_LABEL(s_to_sy))
+      ("<bc>sb-add",		THE_BYTECODE_LABEL(sb_add))
+      ("<bc>sb-add-s",		THE_BYTECODE_LABEL(sb_add_s))
+      ("<bc>sb-inner",		THE_BYTECODE_LABEL(sb_inner))
       ("<bc>self-pid", THE_BYTECODE_LABEL(self_pid))
       ("<bc>send",		THE_BYTECODE_LABEL(send))
       ("<bc>sleep",		THE_BYTECODE_LABEL(sleep))
+      ("<bc>sp-adv",		THE_BYTECODE_LABEL(sp_adv))
+      ("<bc>sp-at-end",		THE_BYTECODE_LABEL(sp_at_end))
+      ("<bc>sp-destruct",	THE_BYTECODE_LABEL(sp_destruct))
+      ("<bc>sp-ref",		THE_BYTECODE_LABEL(sp_ref))
       ("<bc>spawn",		THE_BYTECODE_LABEL(spawn))
+      ("<bc>string-builder",	THE_BYTECODE_LABEL(string_builder))
       ("<bc>string-create",	THE_BYTECODE_LABEL(string_create), ARG_INT)
-      ("<bc>string-length",		THE_BYTECODE_LABEL(string_length))
-      ("<bc>string-ref",		THE_BYTECODE_LABEL(string_ref))
-      ("<bc>sv",			THE_BYTECODE_LABEL(sv))
+      ("<bc>string-length",	THE_BYTECODE_LABEL(string_length))
+      ("<bc>string-pointer",	THE_BYTECODE_LABEL(string_pointer))
+      ("<bc>string-ref",	THE_BYTECODE_LABEL(string_ref))
+      ("<bc>sv",		THE_BYTECODE_LABEL(sv))
       ("<bc>sv-local-push",	THE_BYTECODE_LABEL(sv_local_push), ARG_INT)
       ("<bc>sv-clos-push",	THE_BYTECODE_LABEL(sv_clos_push), ARG_INT)
       ("<bc>sv-ref",		THE_BYTECODE_LABEL(sv_ref))
@@ -1160,6 +1169,15 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(s_to_sy): {
       bytecode_s_to_sy(proc, stack);
     } NEXT_BYTECODE;
+    BYTECODE(sb_add): {
+      bytecode2_<&HlStringBuilder::add>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sb_add_s): {
+      bytecode2_<&HlStringBuilder::add_s>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sb_inner): {
+      bytecode_<&HlStringBuilder::inner>(proc, stack);
+    } NEXT_BYTECODE;
     BYTECODE(tag): {
       bytecode_tag(proc,stack);
     } NEXT_BYTECODE;
@@ -1209,6 +1227,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     BYTECODE(sleep): {
       bytecode2_<&create_sleep_event>(proc, stack);
     } NEXT_BYTECODE;
+    BYTECODE(sp_adv): {
+      bytecode_<&HlStringPointer::adv>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sp_at_end): {
+      bytecode_<&HlStringPointer::at_end>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sp_destruct): {
+      HlStringPointer::destruct(proc, stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sp_ref): {
+      bytecode_<&HlStringPointer::ref>(stack);
+    } NEXT_BYTECODE;
     // call current continuation, passing the pid of created process
     // !! WARNING: <bc>spawn MUST be called WITHIN a closure NOT a
     // !! continuation, since it expects current continuation in
@@ -1228,12 +1258,18 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       Q = spawned->process; // next to run
       return process_change;
     } NEXT_BYTECODE;
+    BYTECODE(string_builder): {
+      bytecode_<&HlStringBuilder::create>( proc, stack );
+    } NEXT_BYTECODE;
     BYTECODE(string_create): {
       INTPARAM(N); // length of string to create from stack
       bytecode_string_create( proc, stack, N );
     } NEXT_BYTECODE;
     BYTECODE(string_length): {
       bytecode_<&HlString::length>( stack );
+    } NEXT_BYTECODE;
+    BYTECODE(string_pointer): {
+      bytecode2_<&HlStringPointer::create>( proc, stack );
     } NEXT_BYTECODE;
     BYTECODE(string_ref): {
       bytecode2_<&HlString::string_ref>( stack );
