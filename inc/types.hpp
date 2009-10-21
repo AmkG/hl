@@ -596,10 +596,38 @@ public:
 	}
 	static Object::ref adv(Object::ref sp) {
 		HlStringPointer* spp = expect_type<HlStringPointer>(sp,
-			"'sp-ref expects a string-pointer"
+			"'sp-adv expects a string-pointer"
 		);
 		++spp->core;
 		return sp;
+	}
+	/*
+	precondition:
+		stack.top() = string-pointer to destruct
+	postcondition:
+		stack.top() = cons-cell
+			car = string
+			cdr = number
+	*/
+	static Object::ref destruct(Heap& hp, ProcessStack& stack) {
+		HlStringPointer* spp = expect_type<HlStringPointer>(stack.top(),
+			"'sp-destruct expects a string-pointer"
+		);
+		boost::shared_ptr<HlStringImpl> sip;
+		size_t i;
+		spp->core.destruct(sip, i);
+		/*now alloc a cons cell and put it on stack*/
+		{ Cons* cp = hp.create<Cons>();
+			stack.top() = Object::to_ref<Generic*>(cp);
+		}
+		/*alloc a string*/
+		{ HlString* sp = hp.create<HlString>();
+			sp->pimpl.swap(sip);
+			/*assign them*/
+			Cons* cp = known_type<Cons>(stack.top());
+			cp->car() = Object::to_ref<Generic*>(sp);
+			cp->cdr() = Object::to_ref<int>(i);
+		}
 	}
 };
 
