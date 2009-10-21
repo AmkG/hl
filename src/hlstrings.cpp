@@ -600,3 +600,26 @@ void HlStringBuilderCore::inner(string_ptr& s) {
 	}
 }
 
+/*-----------------------------------------------------------------------------
+HlStringIter
+-----------------------------------------------------------------------------*/
+
+void HlStringIter::destruct(string_ptr& s, size_t& i) const {
+	HlStringBufferPointer tmp_b = b;
+	boost::shared_ptr<HlStringPath> tmp_p = p;
+	HlStringBuilderCore sb;
+	/*construct the prefix string*/
+	while(!tmp_b.at_end()) {
+		sb.add(*tmp_b);
+		++tmp_b;
+	}
+	/*construct the concatenation of the strings*/
+	while(tmp_p) {
+		string_ptr tmp_s;
+		HlStringPath::pop(tmp_s, tmp_p);
+		sb.add_s(tmp_s);
+	}
+	sb.inner(s);
+	i = 0;
+}
+
