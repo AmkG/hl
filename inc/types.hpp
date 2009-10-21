@@ -599,7 +599,10 @@ public:
 			"'sp-adv expects a string-pointer"
 		);
 		++spp->core;
-		return sp;
+		return
+			spp->core.at_end() ?		Object::nil() :
+			/*otherwise*/			Object::t()
+		;
 	}
 	/*
 	precondition:
