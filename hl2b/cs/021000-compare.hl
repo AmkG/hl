@@ -3,6 +3,7 @@
 
 (import <hl>def def)
 (import <hl>defm defm)
+(import <hl>do do)
 (import <hl>let let)
 (import <hl>with with)
 (import <hl>withs withs)
@@ -99,29 +100,28 @@ replace with multimethods instead of double-dispatch!
             '(<hl>string)
             (fn (b a)
               (string-compare-loop
-                a                        (check b a b)
-                0                        0
-                (<axiom>string-length a) (<axiom>string-length b)))))
+                (<axiom>string-pointer a)
+                (<axiom>string-pointer (check b a b))))))
     (= string-compare-loop
-       (fn (a b ia ib la lb)
-         (if (i< ia la)
-             (if (i< ib lb)
-                 (with (ca (<axiom>string-ref a ia)
-                        cb (<axiom>string-ref b ib))
-                   (if (is ca cb)
-                       (string-compare-loop
-                         a         b
-                         (i+ ia 1) (i+ ib 1)
-                         la        lb)
-                       (i< (c-to-i ca) (c-to-i cb))))
-                 ; b is shorter
-                 nil)
-             ; a is shorter or equal
-             (if (i< ib lb)
-                 ; b is longer
-                 t
+       (fn (asp bsp)
+         (if (<axiom>sp-at-end asp)
+             (if (<axiom>sp-at-end bsp)
                  ; equal
-                 nil))))
+                 nil
+                 ; a is shorter
+                 t)
+             (if (<axiom>sp-at-end bsp)
+                 ; b is shorter
+                 nil
+                 (with (ca  (<axiom>sp-ref asp)
+                        cb  (<axiom>sp-ref bsp))
+                   (if (is ca cb)
+                       (do (<axiom>sp-adv asp)
+                           (<axiom>sp-adv bsp)
+                           (string-compare-loop asp bsp))
+                       (with (ica (<axiom>c-to-i ca)
+                              icb (<axiom>c-to-i cb))
+                         (i< ica icb))))))))
     (defm (<hl>base< (t a <hl>string) b)
       (<ba b (check a a b))))
   (let <ba
