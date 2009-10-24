@@ -193,19 +193,23 @@
     (skip-loop (scanner seq) skip bf)))
 ; sequences
 (let string-loop nil
-  ; CHANGE-ON-STRING-POINTER
-  ; in the future, we might want to implement
-  ; string pointers, so that we won't have
-  ; an index here.
   (= string-loop
-     (fn (s i ln bf)
-       (if (< i ln)
-           (if (bf (<axiom>string-ref s i))
-               (string-loop s (+ i 1) ln bf)
-               ())
-           ())))
+     (fn (sp bf)
+       (if (bf (<axiom>sp-ref sp))
+           (if (<axiom>sp-adv sp)
+               (string-loop sp bf)
+               nil)
+           nil)))
   (defm (base-each (t seq string) skip bf)
-    (string-loop seq skip (<axiom>string-length seq) bf)))
+    (if (is (rep seq) seq)
+        t
+        (err '<hl>type "attempt to traverse fake string"))
+    (let ln (<axiom>string-length seq)
+      (if (is ln 0)
+          nil
+          (if (< skip ln)
+              (string-loop (<axiom>string-pointer seq skip) bf)
+              nil)))))
 (with (table-loop nil
        skip-loop  nil)
   (= table-loop
@@ -229,48 +233,23 @@
 (def (base-collect-on seq bf)
   (unscan seq (base-collect bf)))
 ; sequence
-(with (char-check
-       (polymorph
-           (fn (c)
-             (err '<hl>type "can't collect non-characters into string"))
-           '(char)
-           (fn (c) c))
-       ; CHANGE-ON-STRING-BUILDER
-       string-reload
-       (fn (dst src i ln)
-         (if (is i ln)
-             dst
-             (do ()))))
-  ; CHANGE-ON-STRING-BUILDER
+(let char-check
+     (polymorph
+       (fn (c)
+         (err '<hl>type "can't collect non-characters into string"))
+       '(char)
+       (fn (c) (if (is (rep c) c) c (err '<hl>type "attempt to collect fake character into string"))))
   (defm (base-collect-on (t seq string) bf)
-    (withs (lno (<axiom>string-length seq)
-            ln  (if (< lno 1) 42 lno)
-            rv  (<axiom>string-build ln)
-            i   0)
-      (bf
-        (fn (c)
-          (let c (char-check c)
-            (if (is i ln)
-                (withs (nln (+ ln ln)
-                        nrv (<axiom>string-build nln))
-                  (string-reload nrv rv 0 ln)
-                  (= ln nln)
-                  (= rv nrv)
-                  (= i 0))
-                ())
-            (<axiom>string-sref rv c i)
-            (= i (+ i 1)))
-          c))
-      (if (is i ln)
-          rv
-          (let nrv (<axiom>string-build i)
-            (string-reload nrv rv 0 i))))))
+    (let sb (<axiom>string-builder)
+      (bf (fn (c)
+            (<axiom>sb-add sb (char-check c))))
+      (<axiom>sb-inner))))
 (let cons-check
      (polymorph
        (fn (c)
          (err '<hl>type "can't collect non-cons-cell into table"))
        '(<hl>cons)
-       (fn (c) c))
+       (fn (c) (if (is (rep c) c) c (err '<hl>type "attempt to collect fake cons cell into table")))
   (defm (base-collect-on (t seq table) bf)
     (let rv (<axiom>table-create)
       (bf
