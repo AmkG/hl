@@ -25,7 +25,7 @@
               (list '<axiom>set name (list 'tag 'mac
                                            (cons 'fn (cons args body)))))))
 
-(mac info (def name-and-args . body)
+(mac (info def name-and-args . body)
   ; TODO: use gvl
   (if (is (type name-and-args) '<hl>cons)
     (list '<axiom>set (car name-and-args)
