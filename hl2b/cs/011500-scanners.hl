@@ -243,7 +243,7 @@
     (let sb (<axiom>string-builder)
       (bf (fn (c)
             (<axiom>sb-add sb (char-check c))))
-      (<axiom>sb-inner))))
+      (<axiom>sb-inner sb))))
 (let cons-check
      (polymorph
        (fn (c)
