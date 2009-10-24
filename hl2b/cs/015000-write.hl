@@ -175,7 +175,7 @@ their own syntax.
   (with (dec-part-loop ()
          near-zero
          (fn (f)
-           (<axiom>f< 0.000001)))
+           (<axiom>f< f 0.000001)))
     (= dec-part-loop
        (fn (dec-part digits prc prs write)
          (if (if (is digits 0) t (near-zero dec-part))
