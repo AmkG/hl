@@ -70,16 +70,6 @@
                           "Attempt to use fake integer in string call"
                           "String call index out of bounds"
                           (<axiom>string-length s)))))
-  (defm (<hl>sref (t ob <hl>string) v n)
-    (let s (check-fake ob "Attempt to set reference in fake string")
-      (<axiom>string-sref
-        s
-        (is-genuine-type v '<hl>char "String set reference expects a character"
-                                     "Attempt to use fake character in string set reference")
-        (int-check-fake n "String set reference expects integer for index"
-                          "Attempt to use fake integer in string set reference"
-                          "String set reference index out of bounds"
-                          (<axiom>string-length s)))))
 
   ; ---- binobj
   (defm (<hl>call* (t ob <hl>binobj) n)
