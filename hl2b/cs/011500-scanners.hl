@@ -249,7 +249,7 @@
        (fn (c)
          (err '<hl>type "can't collect non-cons-cell into table"))
        '(<hl>cons)
-       (fn (c) (if (is (rep c) c) c (err '<hl>type "attempt to collect fake cons cell into table")))
+       (fn (c) (if (is (rep c) c) c (err '<hl>type "attempt to collect fake cons cell into table"))))
   (defm (base-collect-on (t seq table) bf)
     (let rv (<axiom>table-create)
       (bf
