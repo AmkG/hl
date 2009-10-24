@@ -21,11 +21,12 @@
 
 ; mac
 (= mac (tag 'mac
-            (fn (macro-info (name . args) . body)
-              (list '<axiom>set name (list 'tag 'mac
-                                           (cons 'fn (cons args body)))))))
+            (fn (name-and-args . body)
+              (list '<axiom>set (car name-and-args)
+                                (list 'tag 'mac
+                                      (cons 'fn (cons (cons '<hl>macro-info (cdr name-and-args)) body)))))))
 
-(mac (info def name-and-args . body)
+(mac (def name-and-args . body)
   ; TODO: use gvl
   (if (is (type name-and-args) '<hl>cons)
     (list '<axiom>set (car name-and-args)
