@@ -604,6 +604,16 @@ public:
 			/*otherwise*/			Object::t()
 		;
 	}
+	static Object::ref copy(Process& proc, Object::ref sp) {
+		HlStringPointer* spp = expect_type<HlStringPointer>(sp,
+			"'sp-copy expects a string-pointer"
+		);
+		HlStringIter tmp = spp->core;
+		spp = proc.create<HlStringPointer>();
+		/*sp is now invalid*/
+		spp->core.swap(tmp);
+		return Object::to_ref<Generic*>(spp);
+	}
 	/*
 	precondition:
 		stack.top() = string-pointer to destruct

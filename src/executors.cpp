@@ -302,6 +302,7 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
       ("<bc>sleep",		THE_BYTECODE_LABEL(sleep))
       ("<bc>sp-adv",		THE_BYTECODE_LABEL(sp_adv))
       ("<bc>sp-at-end",		THE_BYTECODE_LABEL(sp_at_end))
+      ("<bc>sp-copy",		THE_BYTECODE_LABEL(sp_copy))
       ("<bc>sp-destruct",	THE_BYTECODE_LABEL(sp_destruct))
       ("<bc>sp-ref",		THE_BYTECODE_LABEL(sp_ref))
       ("<bc>spawn",		THE_BYTECODE_LABEL(spawn))
@@ -1232,6 +1233,9 @@ ProcessStatus execute(Process& proc, size_t& reductions, Process*& Q, bool init)
     } NEXT_BYTECODE;
     BYTECODE(sp_at_end): {
       bytecode_<&HlStringPointer::at_end>(stack);
+    } NEXT_BYTECODE;
+    BYTECODE(sp_copy): {
+      bytecode_<&HlStringPointer::copy>(proc, stack);
     } NEXT_BYTECODE;
     BYTECODE(sp_destruct): {
       HlStringPointer::destruct(proc, stack);

@@ -151,6 +151,7 @@ DECLARE_BYTECODES
         A_BYTECODE(sleep)
 	A_BYTECODE(sp_adv)
 	A_BYTECODE(sp_at_end)
+	A_BYTECODE(sp_copy)
 	A_BYTECODE(sp_destruct)
 	A_BYTECODE(sp_ref)
         A_BYTECODE(spawn)
