@@ -4,33 +4,18 @@
 
 (import <axiom>if if)
 (import <axiom>is is)
-(import <axiom>set =)
-(import <axiom>car car)
-(import <axiom>cdr cdr)
-(import <axiom>cons cons)
-(import <axiom>i+ +)
-(import <axiom>i/ /)
-(import <axiom>i- -)
-(import <axiom>i* *)
-(import <axiom>imod imod)
-(import <axiom>i< <)
-(import <axiom>i-to-f i-to-f)
-(import <axiom>f-to-i f-to-i)
-(import <axiom>i-to-c i-to-c)
-(import <axiom>f< f<)
-(import <axiom>f- f-)
-(import <axiom>string-ref string-ref)
-(import <axiom>string-sref string-sref)
-(import <axiom>string-build string-build)
-(import <axiom>string-length string-length)
+(import <axiom>rep rep)
 
 (import <hl>apply apply)
 (import <hl>no no)
+
+(import <hl>polymorph polymorph)
 
 (import <hl>def def)
 (import <hl>defm defm)
 (import <hl>do do)
 (import <hl>let let)
+(import <hl>with with)
 (import <hl>withs withs)
 (import <hl>if if)
 (import <hl>afn afn)
@@ -38,105 +23,51 @@
 (import <hl>for for)
 (import <hl>self self)
 
-(defm (base-string (t x <hl>string)) x)
+(import <hl>base-string base-string)
+(import <hl>base-write base-write)
+(import <hl>string string)
 
-; count number of digits in a number
-; suppose (> i 0)
-; TODO: change to (+ 1 (f-to-i (/ (log i) (log 10)))) when we have logarithms
-(def (count-digits i)
-  (if (is i 0)
-    0
-    (+ 1 (count-digits (/ i 10)))))
+(def (base-string obj add-c add-s)
+  ; use base-write
+  (base-write obj add-c (fn () (add-c #\space)) (fn (ob) (base-string ob add-c add-s))))
 
-; fill a string with the digits of a number
-; proceed from end to start
-(def (digit-fill-string str i index)
-  (if (is i 0)
-    str
-    (do
-      (string-sref str index (i-to-c (+ (c-to-i #\0) (imod i 10))))
-      (digit-fill-string str (/ i 10) (- index 1)))))
+(let old-base-string base-string
+  (defm (base-string (t obj string) add-c add-s)
+    (if (is obj (rep obj))
+        (add-s obj)
+        (old-base-string obj add-c add-s)))
+  (defm (base-string (t obj <hl>char) add-c add-s)
+    (if (is obj (rep obj))
+        (add-c obj)
+        (old-base-string obj add-c add-s)))
+  (defm (base-string (t obj <hl>sym) add-c add-s)
+    (if (is obj (rep obj))
+        (add-s (<axiom>sy-to-s obj))
+        (old-base-string obj add-c add-s))))
 
-(defm (base-string (t x <hl>int))
-  (if (is x 0)
-      "0"
-      (withs (n (count-digits (if (< x 0) (- 0 x) x)) 
-              str (string-build (if (< x 0) (+ n 1) n)))
-         (if (< x 0)
-           (do
-             ; if number is negative we have an extra blank char in the 
-             ; beginning left for the sign
-             (string-sref str 0 #\-)
-             (digit-fill-string str (- 0 x) (- n 1)))
-           (digit-fill-string str x (- n 1)))
-        str)))
+(with (add-c-sb
+       (polymorph
+         (fn (c sb)
+           (err '<hl>contract "base-string attempted to add a non-character to string being built"))
+         '(<hl>char)
+         (fn (c sb)
+           (if (is c (rep c))
+               (<axiom>sb-add sb c)
+               (err '<hl>contract "base-string attempted to add a fake character to string being built"))))
+       add-s-sb
+       (polymorph
+         (fn (s sb)
+           (err '<hl>contract "base-string attempt to add a non-string to string being built"))
+         '(string)
+         (fn (s sb)
+           (if (is s (rep s))
+               (<axiom>sb-add sb s)
+               (err '<hl>contract "base-string attempted to add a fake string to string being built")))))
+  (def (string . rest)
+    (withs (sb    (<axiom>string-builder)
+            add-c (fn (c) (add-c-sb c sb))
+            add-s (fn (s) (add-s-sb s sb)))
+      (each obj rest
+        (base-string obj add-c add-s))
+      (<axiom>sb-inner sb))))
 
-(def (trunc x)
-  (i-to-f (f-to-i x)))
-
-(def (decimal-part x) (f- x (trunc x)))
-
-(def (fill-float-str x str i)
-  (if (is i (string-length str))
-    str
-    (let x (* x 10.0)
-      (string-sref str i (i-to-c (+ (trunc x) (c-to-i #\0))))
-      (fill-float-str (decimal-part x) str (+ i 1)))))
-
-; turn a *positive* float number into a string
-; insert n-digits decimal digits
-(def (f-to-str x n-digits)
-  (let str (string-build n-digits)
-    (<hl>string (trunc x) "." (fill-float-str (decimal-part x) str 0))))
-
-(defm (base-string (t x <hl>num))
-  (if (f< x 0.0)
-    (<hl>string "-" (fl-to-str (f- 0.0 x) 16))
-    (fl-to-str x 16)))
-
-(defm (base-string (t x <hl>char))
-  (let str (string-build 3)
-    (string-sref str 0 #\#)
-    (string-sref str 0 #\\)
-    (string-sref str 0 x)
-    str))
-
-(defm (base-string (t x <hl>sym))
-  (<axiom>sy-to-s x))
-
-(defm (base-string (t x <hl>cons))
-  ; FIXME: SLOW, lot of allocations
-  (<hl>string "("
-          ((afn (x)
-            (if
-              (no x)
-                ")"
-              (no (cdr x))
-                (<hl>string (car x) ")") 
-              (no (acons (cdr x)))
-                (<hl>string (car x) " . " (cdr x) ")")
-              (<hl>string (car x) " " (self (cdr x)))))
-           x)))
-
-(defm (base-string (t x <hl>table))
-  (<hl>string "#table" (map1 (fn (k) (cons k (table-ref x k))) (table-keys x))))
-
-(def (my-reduce f lst init-val)
-  ((afn (lst acc)
-      (if lst
-        (self (cdr lst) (f (car lst) acc))
-        acc))
-   lst init-val))
-
-(def (strings-append . strs)
-  (withs (n (my-reduce (fn (s acc) (+ (string-length s) acc)) strs 0)
-          s (string-build n)
-          i 0)
-    (each str strs
-      (for (j 0 (- (string-length str) 1))
-        (string-sref s i (string-ref str j))
-        (= i (+ i 1))))
-    s))
-
-(def (<hl>string . args)
-  (apply strings-append (map1 base-string args)))
