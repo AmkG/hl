@@ -172,6 +172,31 @@ their own syntax.
             (prc c)
             t)))
         (default-print ob prc prs write)))
+  (with (dec-part-loop ()
+         near-zero
+         (fn (f)
+           (<axiom>f< 0.000001)))
+    (= dec-part-loop
+       (fn (dec-part digits prc prs write)
+         (if (if (is digits 0) t (near-zero dec-part))
+             t
+             (withs (dec-part*10 (<axiom>f* 10 dec-part)
+                     digit       (<axiom>f-to-i dec-part*10)
+                     n-dec-part  (<axiom>f- dec-part*10 (<axiom>i-to-f digit)))
+               (<hl>base-write digit prc prs write)
+               (dec-part-loop n-dec-part (<axiom>i- digits 1) prc prs write)))))
+    (defm (<hl>base-write (t ob <hl>num) prc prs write)
+      (if (real-type ob)
+          (withs (int-part (<axiom>f-to-i ob)
+                           ; works even if ob is negative
+                           ; ob = -1.1, int-part = -1, ob - int-part = -1.1 - -1 = -1.1 + 1 = .1
+                  dec-part (<axiom>f- ob (<axiom>i-to-f int-part)))
+            (<hl>base-write int-part prc prs write)
+            (prc #\.)
+            (if (near-zero dec-part)
+                (prc #\0)
+                (dec-part-loop dec-part 6 prc prs write)))
+          (default-print ob prc prs write))))
   (withs (sym-escaped
           (table
             #\space    t
@@ -245,6 +270,7 @@ their own syntax.
                   t)))
             (prc #\}))
         (default-print tb prc prs write))))
+
 
 #|
 (<hl>write '(1 -2 3 (4 5 . 6) 0 (t . nil) 120 42123 nil . t))
