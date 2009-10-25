@@ -5,6 +5,7 @@
 (import <axiom>if if)
 (import <axiom>is is)
 (import <axiom>rep rep)
+(import <axiom>lambda fn)
 
 (import <hl>apply apply)
 (import <hl>no no)
