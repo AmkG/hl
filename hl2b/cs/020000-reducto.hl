@@ -6,6 +6,10 @@
 (import <hl>with with)
 (import <hl>withs withs)
 
+(import <hl>l-reductor l-reductor)
+(import <hl>r-reductor r-reductor)
+(import <hl>t-reductor t-reductor)
+
 (import <axiom>set =)
 (import <axiom>lambda fn)
 (import <axiom>if if)
