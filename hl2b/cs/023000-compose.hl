@@ -50,7 +50,7 @@
      (defm (base-compose (t a <hl>fn) b)
        (if (is a (rep a))
            ; check if a supports being assigned to
-           (let av (<axiom>accessor-ref av)
+           (let av (<axiom>accessor-ref a)
              (if av
                  (<axiom>accessor
                    (basemost-compose a b)
