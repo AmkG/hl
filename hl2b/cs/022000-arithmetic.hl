@@ -64,8 +64,9 @@
                                     (fn (a b) (<axiom>f- a b))))
   (def <hl>base* (pattern <hl>base* (fn (a b) (<axiom>i* a b))
                                     (fn (a b) (<axiom>f* a b))))
-  (def <hl>base/ (pattern <hl>base/ (fn (a b) (if (is 0 b)   (err '<hl>value "Divide '%1 by 0" a) (<axiom>i/ a b)))
-                                    (fn (a b) (if (is 0.0 b) (err '<hl>value "Divide '%1 by 0" a) (<axiom>f/ a b))))))
+  (let f0 (<axiom>i-to-f 0)
+    (def <hl>base/ (pattern <hl>base/ (fn (a b) (if (is 0 b)   (err '<hl>value "Divide '%1 by 0" a) (<axiom>i/ a b)))
+                                      (fn (a b) (if (is f0 b) (err '<hl>value "Divide '%1 by 0" a) (<axiom>f/ a b)))))))
 
 (withs (fail <hl>basemod
         modba
