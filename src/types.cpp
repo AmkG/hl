@@ -102,7 +102,7 @@ loop:
 	if(::is(k, car(A[I]))) {
 		return &known_type<Cons>(A[I])->cdr();
 	}
-	++I; if(I > A.size()) I = 0;
+	++I; if(I >= A.size()) I = 0;
 	if(J == I) return NULL; //wrapped already
 	goto loop;
 }
