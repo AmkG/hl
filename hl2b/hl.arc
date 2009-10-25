@@ -97,7 +97,7 @@
 (mac <hl>each (var val . body)
   (w/uniq (f l)
     `((<axiom>symeval '<hl>base-each) ,val 0
-      (<axiom>lambda ()
+      (<axiom>lambda (,var)
         ,@body
         t))))
 
