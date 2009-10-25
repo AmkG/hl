@@ -68,7 +68,7 @@
     (def <hl>base/ (pattern <hl>base/ (fn (a b) (if (is 0 b)   (err '<hl>value "Divide '%1 by 0" a) (<axiom>i/ a b)))
                                       (fn (a b) (if (is f0 b) (err '<hl>value "Divide '%1 by 0" a) (<axiom>f/ a b)))))))
 
-(withs (fail <hl>basemod
+(withs (fail <hl>base-mod
         modba
         (polymorph (fn (b a) (fail a b))
           '(<hl>int)
