@@ -100,8 +100,8 @@ replace with multimethods instead of double-dispatch!
             '(<hl>string)
             (fn (b a)
               (string-compare-loop
-                (<axiom>string-pointer a)
-                (<axiom>string-pointer (check b a b))))))
+                (<axiom>string-pointer a 0)
+                (<axiom>string-pointer (check b a b) 0)))))
     (= string-compare-loop
        (fn (asp bsp)
          (if (<axiom>sp-at-end asp)
