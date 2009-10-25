@@ -172,10 +172,13 @@ their own syntax.
             (prc c)
             t)))
         (default-print ob prc prs write)))
-  (with (dec-part-loop ()
-         near-zero
-         (fn (f)
-           (<axiom>f< f 0.000001)))
+  (withs (dec-part-loop ()
+          ; workaround due to differences in how Arc prints out floats
+          ; and how the C++ reader reads them.
+          small-num (<axiom>f/ (<axiom>i-to-f 1) (<axiom>i-to-f 1000000))
+          near-zero
+          (fn (f)
+            (<axiom>f< f small-num)))
     (= dec-part-loop
        (fn (dec-part digits prc prs write)
          (if (if (is digits 0) t (near-zero dec-part))
