@@ -11,6 +11,7 @@ index book
 * [Global Variables](legit-global-vars.html)
     * [Global Variable Lock](legit-gvl.html)
 * [Mathematics](legit-numbers.html)
+* [Strings and Characters](legit-string.html)
 * [Event System](legit-event.html)
     * [I/O](legit-io.html)
 

@@ -1,0 +1,420 @@
+Strings and Characters - Legal - HL Book
+index book legit
+
+`HL` Legal Specifications - Strings and Characters
+==================================================
+
+A sequence of characters is a common datatype among computer
+languages.  Although the `hl` virtual machine supports a
+general pair type, the `cons` cell, that is traditionally used
+for sequences, the `hl` virtual machine also supports a
+specific, immutable sequence type that holds character objects.
+
+This section primarily details the Axiomatic layer special
+forms that interact with string and character objects.
+
+The String and Character Types
+------------------------------
+
+A string is a builtin object of type `<hl>string`.  Strings are
+composed of 0 or more character objects.  There are no special
+character objects; in particular, a NULL character has no
+special meaning (as it would have in languages such as C) and
+can be stored in a string.
+
+A character is a builtin object of type `<hl>char`.  Characters
+are a type with conversions to and from integers, and have the
+range of a Unicode code point.  Note that the Unicode character
+set defines a Unicode character as being composed of one or
+more code points; thus, an `hl` character may be only a part of
+a Unicode character.  However, a Unicode character that is
+representable using only a single Unicode point is also
+representable as a single `hl` character.
+
+The representation of strings is left up to the implementor of
+the `hl` virtual machine.  Programmers should treat strings as
+an immutable ordered sequence of character objects (each
+character being mapped to a Unicode code point), with amortized
+O(N) time and amortized O(log N) space requirements when
+traversed from start to finish, and amortized O(N) time and
+amortized O(N) space requirements when built.
+
+> ### String Storage Implementation Details
+>
+> The main detail most programmers want to know is: UTF-8 or
+> UTF-32?  However, as mentioned above, the storage is
+> considered an implementation detail in these specifications.
+> In particular, it does not preclude the use of alternative
+> storage methods; thus, performance requirements are
+> relatively loose, with many requirements being amortized.
+>
+> Programmers aiming for portability across different `hl`
+> virtual machines should assume the worst case: UTF-8 indexing
+> performance coupled with UTF-32 storage performance.
+>
+> As an aside, the `hl` Virtual Machine A uses ASCII for
+> "medium" strings composed completely of code points from 0 to
+> 127.  It uses UTF-8 for "short" strings with code points
+> beyond ASCII, and uses a [rope structure][1] for longer
+> strings, with support for a mix of ASCII and UTF-8
+> implementations for substring sections.  It expects the
+> common case to be that a majority of most strings are
+> composed of strings in the ASCII range, with a few sections
+> composed of non-ASCII Unicode code points, and optimizes
+> storage for that case.  When used with primarily non-ASCII
+> strings, the machine creates several short UTF-8 substring
+> sections in a rope structure; the expected performance for
+> indexing would be O(log N + M), where N is the length of the
+> string and M is the average length of substring sections.
+> Traversal from start to end is still amortized O(N) on the
+> length of the string, with an amortized O(1) storage.
+
+[1]: http://en.wikipedia.org/wiki/Rope_(computer_science)
+
+Character Conversions
+---------------------
+
+The character type may be converted to and from integers via
+the following pair of axioms:
+
+    (<axiom>c-to-i c)
+    (<axiom>i-to-c i)
+
+If an integer exceeding the range of a Unicode code point is
+converted into a character (e.g. `(<axiom>i-to-c -1)`), the
+result is undefined behavior, with the preferred behavior being
+an error of type `<hl>value`.
+
+String Immutability
+-------------------
+
+Strings in `hl` are not modifiable once created.  However, a
+mutable object type, the `string-builder`, *is* defined, and
+can be used to build strings in an imperative manner.  When a
+string is sent as a message to another process in the same
+machine, it need not be copied by the implementation.
+
+Strings in the `hl` virtual machine are immutable for the
+following implementation reasons:
+
+* In order to avoid having to specify the behavior when a
+  string stored in a table string key is modified.  The
+  expectation is that a table object would be implemented as a
+  hash table or ordered associative table, both of which
+  require as their invariants that the key is not modifiable.
+* To allow implementations to have the implementation detail
+  that strings are shared or shareable across processes within
+  the same machine.
+
+It is expected that string modification would be rare in most
+programs anyway, and that any string modification necessary
+could conceptually be done as building a new string from an
+old one.  Sections of programs which require significant
+rewriting of sequences of characters may use `cons` cell
+sequences, tables, or other mutable objects.
+
+String Construction
+-------------------
+
+Strings may be constructed with a constant length by the
+`string-create` axiom:
+
+    (<axiom>string-create . cs)
+
+This axiom accepts a variable number of arguments.  Each
+argument should evaluate to a true character argument.   If a
+an object other than a true character object is given as an
+argument, this will result in undefined behavior, with the
+preferred behavior being an error of type `<hl>type`.
+
+This axiom creates a new string.  Since strings are immutable,
+the implementation is free to share the string implementation
+with an existing string.
+
+String construction is expected to require at most an amortized
+O(N) time and amortized O(N) space.
+
+To construct a string with a dynamically-known length, use a
+`string-builder` object, as described below.
+
+String Building Via `<hl>string-builder` Objects
+------------------------------------------------
+
+An built-in object of type `<hl>string-builder` is a mutable,
+non-shareable object.  Sending a `<hl>string-builder` will
+create a copy of that object.
+
+A `<hl>string-builder` object can be created, appended to with
+a character or an existing string, and deconstructed into a
+string containing the characters that have been fed into the
+`<hl>string-builder`.
+
+    (<axiom>string-builder)
+
+This axiom creates a new `<hl>string-builder` object into which
+characters and strings can be fed.  This operation is expected
+to require at most an amortized O(1) time and amortized O(1)
+space.
+
+    (<axiom>sb-add sb c)
+
+This axiom adds a character to the string being built by the
+given `<hl>string-builder` object.  This operation is expected
+to require at most an amortized O(1) time and amortized O(1)
+space; constructing a string by looping N times and using this
+axiom is expected to require at most an amortized O(N) time and
+space.
+
+Passing any objects other than a true `<hl>string-builder` as
+first argument, and any objects other than a true character as
+the second argument, will result in undefined behavior, with
+the preferred behavior being an error of type `<hl>type`.
+
+    (<axiom>sb-add-s sb s)
+
+This axiom adds a string to the string being built by the
+given `<hl>string-builder` object.  This operation is expected
+to require at most an amortized O(N) time and amortized O(N)
+space when adding a string of length N.
+
+Passing any objects other than a true `<hl>string-builder` as
+first argument, and any objects other than a true string as the
+second argument, will result in undefined behavior, with the
+preferred behavior being an error of type `<hl>type`.
+
+> ### `hl` Virtual Machine A Implementation Detail
+>
+> This axiom requires only an amortized O(1) time and space in
+> the `hl` Virtual Machine A implementation.
+
+    (<axiom>sb-inner sb)
+
+This axiom creates a new string, containing the characters that
+have been fed via `<axiom>sb-add` and `<axiom>sb-add-s` to the
+given `<hl>string-builder` object.  This operation is expected
+to require at most an amortized O(N) time and space, where N is
+the total number of characters that have been collected by the
+given string builder.
+
+If a string was extracted from the string builder, and
+additional characters or strings are fed into that string
+builder, the string that was extracted before does *not* get
+modified.  Each invocation of this operation conceptually
+"creates" a *new* string, conceptually independent of all other
+strings, and conceptually independent of the string builder
+object that created it.
+
+Passing any objects other than a true `<hl>string-builder` as
+argument will result in undefined behavior, with the preferred
+behavior being an error of type `<hl>type`.
+
+> ### `hl` Virtual Machine A Implementation Detail
+>
+> This axiom requires only an amortized O(1) time and space in
+> the `hl` Virtual Machine A implementation for long strings,
+> and O(N) for short strings.
+
+String builders may be serialized by serializing its contained
+string, as returned by `<axiom>sb-inner`; they can be
+deserialized by creating a new string builder, then passing the
+contained string to `<axiom>sb-add-s`.
+
+String Accessors
+----------------
+
+Parts and characteristics of an `hl` string may be accessed by
+the program.
+
+    (<axiom>string-length s)
+
+This axiom returns the length of the given string.  This
+operation is expected to require O(1) time and no extra space.
+
+> ### String Length Overflow
+>
+> It is currently unspecified what is the return value if a
+> given string's length would overflow the implementation's
+> integer type.  It is expected that the implementation's
+> integer type would be large enough to define the length of
+> any string that could conceivably be stored in current
+> physical machines.
+
+Passing any objects other than a true string as argument will
+result in undefined behavior, with the preferred behavior being
+an error of type `<hl>type`.
+
+    (<axiom>string-ref s i)
+
+This axiom returns the character object at a specific index `i`
+in the ordered sequence of the given string object `s`.  This
+operation is expected to require at most O(N) time, where N is
+propotional to the given index `i`.
+
+> ### Non-constant Indexing Time
+>
+> A non-constant index time allows the implementor to use UTF-8
+> for string storage.  This is useful for implementations
+> targeted at physical machines with limited memory.  However,
+> it is expected that most programmers will want an O(1)
+> indexing time, or at least near enough to that time, and thus
+> implementors should support as fast an indexing time as they
+> can.
+
+Passing any objects other than a true string as first argument,
+and any objects other than a true integer as second argument,
+will result in undefined behavior, with the preferred behavior
+being an error of type `<hl>type`.
+
+Since string indexing is expected to be slow, a facility to
+iterate over the entirety of a string is provided.  This is
+represented by a mutable type, `string-pointer`, that
+represents a pointer within the string, as described below.
+
+String Iteration Via `<hl>string-pointer` Objects
+-------------------------------------------------
+
+A built-in object of type `<hl>string-pointer` is a mutable,
+non-shareable object.  It represents a position within a string
+to be traversed one character at a time.  Sending a
+`<hl>string-pointer` object will create a copy of that object.
+
+Getting the I'th character in a string is not expected to be a
+fast operation.  However, traversing the same string using a
+string pointer is expected to require only amortized O(N) time.
+String pointers are not comparable to each other, even if they
+point to "the same" position in "the same" string.  String
+pointers cannot be used to portably keep track of the integer
+index within the string; if an integer index is necessary for
+comparison purposes, the programmer must implement a separate
+type (possibly composed of a string pointer and an index) to
+handle the index.
+
+String pointer objects are forward only: once they have
+"skipped" a character, they cannot be "rewound".
+
+To create a string pointer, it is necessary to provide the
+string to index and an initial offset within that string:
+
+    (<axiom>string-pointer s i)
+
+This axiom creates a new `<hl>string-pointer` object which will
+then point to the code point at the specified index within the
+given string.  If given an index of 0, this operation is
+expected to take at most an amortized O(log N) time, where N is
+the length of the string.  If given a non-zero index, this
+operation is expected to take at most an amortized O(M + log N)
+time, where M is the index.  In either case, a string pointer
+object is expected to take at most O(log N) space when created.
+
+Passing any objects other than a true string as the first
+argument, and passing any objects other than a true integer as
+the second argument, will result in undefined behavior, with
+the preferred behavior being an error of type `<hl>type`.
+
+Attempting to initialize a string pointer where the given index
+is larger than the string length, or a negative index, results
+in undefined behavior.  Initializing a string pointer where the
+given index is exactly equal to the string length will return a
+string pointer that points to the end of a string.
+
+    (<axiom>sp-at-end sp)
+
+This axiom determines if the given `<hl>string-pointer` object
+is at the end of the string it is pointing into.  If so, it
+return `t`, otherwise it returns `nil`.  This operation is
+expected to take at most O(1) time and no extra space.
+
+Passing any objects other than a true `<hl>string-pointer`
+object will result in undefined behavior, with the preferred
+behavior being an error of type `<hl>type`.  Attempting to
+advance or dereference a string pointer that is at the end of
+the string being pointed to will result in undefined behavior.
+
+    (<axiom>sp-ref sp)
+
+This axiom dereferences the given `<hl>string-pointer` object,
+returning the character in the string being pointed to.  This
+operation is expected to take at most O(1) time and no extra
+space.
+
+Passing any objects other than a true `<hl>string-pointer`
+object will result in undefined behavior, with the preferred
+behavior being an error of type `<hl>type`.  Attempting to
+dereference a string pointer that is at the end of the string
+being pointed to will result in undefined behavior.
+
+    (<axiom>sp-adv sp)
+
+This axiom advances the given `<hl>string-pointer` object to
+the next character in the string being pointed to.  If the
+string pointer reaches the end of the string *after* being
+advanced, this returns `nil`, otherwise, it returns `t`.  This
+operation is *required* to take at most amortized O(1) time and
+at most amortized O(0) space.
+
+Passing any objects other than a true `<hl>string-pointer`
+object will result in undefined behavior, with the preferred
+behavior being an error of type `<hl>type`.  Attempting to
+advance a string pointer that is at the end of the string being
+pointed to will result in undefined behavior.
+
+    (<axiom>sp-copy sp)
+
+This axiom creates a new `<hl>string-pointer` object which
+acts similarly to the given `<hl>string-pointer` object.  The
+copy and the original will not be considered "equal" in the
+sense of `is`, and cannot be usefully compared.  This operation
+is *required* to take at most O(1) time and at most O(1) space
+(non-amortized!).
+
+The copy and the original are independent string pointers and
+will advance independently.  As mentioned before, the two
+pointers cannot be usefully compared.  `is` comparison will
+show that both pointers are unequal:
+
+    (let foo (<axiom>string-pointer "abcd" 0)
+      (is foo (<axiom>sp-copy foo)))
+    => nil
+
+Passing any objects other than a true `<hl>string-pointer`
+object will result in undefined behavior, with the preferred
+behavior being an error of type `<hl>type`.
+
+    (<axiom>sp-destruct sp)
+
+This axiom decomposes the given `<hl>string-pointer` object
+into a `cons` pair composed of a string and an index.
+**Important:** The resulting string and index is *not* required
+to match the original string and index given during
+construction.  For example, the following expression may return
+different values depending on the `hl` virtual machine
+implementation:
+
+    (<axiom>sp-destruct (<axiom>string-pointer "abcd" 2))
+    => ("abcd" . 2), or
+    => ("bcd" . 1), or
+    => ("cd" . 0), or
+    => ("life imitates xkcd" . 16), or many more possibilities
+
+Since string pointers are forward only, it does not make sense
+to require the implementation to deconstruct the string pointer
+such that characters before the pointer index can be read.
+
+Deconstructing a string pointer is expected to require at most
+O(N) time, where N is the total length of the indexed string.
+
+Passing any objects other than a true `<hl>string-pointer`
+object will result in undefined behavior, with the preferred
+behavior being an error of type `<hl>type`.
+
+A string pointer may be serialized by destructuring it, then
+serializing the resulting `cons` cell; they can be deserialized
+by extracting the string and index, then passing it to the
+`<axiom>string-pointer` axiom.
+
+See Also
+--------
+
+* [`HL` Legal Specifications](legit.html)
+
+
