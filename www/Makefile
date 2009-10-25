@@ -27,7 +27,7 @@ all : $(targets)
 upload : htdocs/site-tag
 
 htdocs/site-tag: htdocs/site $(targets)
-	touch htdocs/site-tag
 	cd htdocs ; ./site
+	touch htdocs/site-tag
 
 

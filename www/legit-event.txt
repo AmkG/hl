@@ -87,7 +87,9 @@ Layer](legit-axioms.html).
     (<axiom>add-event event)
 
 `<axiom>add-event` adds the given `event` to The Event Set.
-The event may trigger as soon as it is added to The Event Set.
+The event can only be triggered after it is added to The Event
+Set, and the state of events is queried via `<axiom>event-poll`
+or `<axiom>event-wait`.
 
 Adding an event multiple times results in undefined behavior.
 Executing this special form in multiple processes results in
