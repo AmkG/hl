@@ -86,7 +86,7 @@
                        (if (and p (f< max-prec (cdr p)))
                          (self (+ pos 1) (cons (car p) pos) (cdr p))
                          (self (+ pos 1) winner max-prec)))))
-                  0 nil -1.0)
+                  0 nil (<axiom>i-to-f -1))
       (if winner
         ((car winner) s (cdr winner))
         s))))
