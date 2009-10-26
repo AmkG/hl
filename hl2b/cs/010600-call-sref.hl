@@ -42,7 +42,7 @@
           (fn (i non-msg fake-msg)
             (check-fake i fake-msg)))
         int-check-fake
-        (fn (i non-msg fake-msg oob-msg)
+        (fn (i non-msg fake-msg oob-msg l)
           (let i (simple-int-check-fake i non-msg fake-msg)
             (if (<axiom>i< i 0)
                 (err '<hl>value oob-msg)
@@ -129,9 +129,9 @@
 
   ; ---- function sref
   #|
-   | (defm (<hl>sref (t ob <hl>fn) . rest)
+   | (defm (<hl>sref (t ob <hl>fn) v . rest)
    |   (let sf (<axiom>accessor-ref (check-fake ob "Attempt to set reference in fake function"))
-   |     (if sf (<common>apply-list sf rest)
+   |     (if sf (<common>apply-list sf (<axiom>cons v rest))
    |            (err '<hl>type "Attempt to set reference in function without an accessor"))))
    |#
   (<common>call-w/gvl
