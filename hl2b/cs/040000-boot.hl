@@ -112,12 +112,6 @@
 
 ; TODO: missing def-coerce for string -> int and string -> num
 
-(def (listtab al)
-  (let tb (table)
-    (each pair al
-      (table-sref tb (car al) (cadr al)))
-    tb))
-
 (def (maptable f tb)
   (map (fn (k) (f k (table-ref tb k))) (table-keys tb)))
 
