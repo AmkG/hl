@@ -306,11 +306,11 @@
         (unreadc in next)
         (read-sym c in nothing)))))
 
-(let name->char (listtab '((<>newline #\newline)
-                           (<>tab #\tab)
-                           (<>null #\null)
-                           (<>space #\space)
-                           (<>\ #\\))) ; map char names to actual chars
+(let name->char (table (<axiom>s-to-sy "newline")  #\newline
+                       (<axiom>s-to-sy "tab")      #\tab
+                       (<axiom>s-to-sy "null")     #\null
+                       (<axiom>s-to-sy "space")    #\space
+                       (<axiom>s-to-sy "\\")       #\\ ) ; map char names to actual chars
   (def (read-char c in nothing)
     (= c (readc in))
     (if (should-block (peekc in))
