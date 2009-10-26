@@ -268,7 +268,7 @@
 
 
 
-(let escape-table (listtab '(#\" #\") '(#\\ #\\) '(#\n #\newline) '(#\t #\tab))
+(let escape-table (listtab '((#\" #\") (#\\ #\\) (#\n #\newline) (#\t #\tab)))
   (def (escape-char c)
     (let res (table-ref escape-table c)
       (if res
