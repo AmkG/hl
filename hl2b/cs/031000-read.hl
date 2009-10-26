@@ -123,6 +123,9 @@
         (f (ssyntax-expand (car sides)) (ssyntax-expand (cdr sides)))))))
 
 ; convenient wrapper around mk-binary-ssyntax
+     ; !! note that we cannot, in fact, use this macro here.
+     ; !! for various reasons, this macro is inaccessible to
+     ; !! the compiler, which is hosted on another system.
 (mac (def-binary-ssyntax name args . body)
   (list '= name (list 'mk-binary-ssyntax 
                       (cons 'fn (cons (list (car args) (cadr args)) body)))))
