@@ -29,3 +29,23 @@
           (table-loop rv rest)
           rv))))
 
+(import <axiom>is is)
+(import <hl>err err)
+(import <hl>do do)
+(import <hl>each each)
+
+(def (<hl>listtab l)
+  (let rv (<axiom>table-create)
+    (each k-v l
+      (with (k () v () k-or-v 'k)
+        (each i k-v
+          (if (is k-or-v 'k)
+              (do (= k i)
+                  (= k-or-v 'v))
+              (if (is k-or-v 'v)
+                  (do (= v i)
+                      (= k-or-v nil))
+                  (err '<hl>value "listtab expects an association list"))))
+        (<axiom>table-sref rv v k)))
+    rv))
+
