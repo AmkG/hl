@@ -255,7 +255,7 @@
       (= n (+ (* n 10) (- (c-to-i c) (c-to-i #\0))))
       (= c (readc in)))
     (if (is c #\.) ; floating point
-      (let p 10.0
+      (let p (<axiom>i-to-f 10)
         (= c (readc in))
         (while (adigit c)
           (= n (+ n (/ (- (c-to-i c) (c-to-i #\0)) p)))
