@@ -19,13 +19,13 @@ The minimum to bootstrap hl is to fill this with A's for macros, and
 - [m][a] def -- fn do
 - [m][A] do
 - [m][a] mac -- fn do
-- [m][ ] if
+- [m][A] if
 - [m][ ] and -- if
 - [m][ ] or -- if
 - [f][*] no
 - [m][A] each -- w/uniq let maptable afn alist when isa for
 - [f][ ] load -- w/infile w/uniq whiler read eval
-- [f][ ] string
+- [f][*] string
 - [f][ ] unpkg
 - [m][a] = -- ; depends if it has to be supported completely
 - [m][ ] w/infile -- infile after close
@@ -54,9 +54,10 @@ The minimum to bootstrap hl is to fill this with A's for macros, and
 - [f][ ] alist -- type
 - [f][*] err - builtin?
 - [f][ ] is
-- [f][ ] car
+- [f][*] car
 - [f][ ] cons
-- [f][ ] cdr
+- [f][*] cdr
+- [f][*] map1
 - [f][*] map -- map1
 - [f][ ] orf -- some
 - [m][ ] awhen -- when
