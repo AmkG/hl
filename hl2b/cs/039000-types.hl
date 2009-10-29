@@ -1,0 +1,7 @@
+(in-package impl)
+(import <hl>def def)
+
+(def (<hl>type x) (<axiom>type x))
+(def (<hl>rep x) (<axiom>rep x))
+(def (<hl>tag x) (<axiom>tag x))
+

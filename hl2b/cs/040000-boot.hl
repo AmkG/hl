@@ -15,6 +15,7 @@
 (import <axiom>i- -)
 (import <axiom>imod imod)
 (import <axiom>i< <)
+(import <axiom>type type)
 
 (= list (fn args args))
 (= cadr (fn (x) (car (cdr x))))
@@ -33,10 +34,6 @@
                       (cons 'fn (cons (cdr name-and-args) body)))
     (list '<axiom>set name-and-args body)))
 
-(def (cddr x) (cdr (cdr x)))
-
-(def (no x) (if x nil t))
-
 (def (isa x tp) (is (type x) tp))
 
 (def (acons x) (isa x '<hl>cons))
@@ -48,18 +45,6 @@
 (def (caris lst x) (is (car lst) x))
 
 (def (alist x) (or (isa x 'nil) (isa x '<hl>cons)))
-
-(def (mem x lst)
-  (if lst
-    (if (is x (car lst)) t (mem c (cdr lst)))))
-
-; AmkG: this will be moved, probably to a "scanners.hl"
-(defm (len (t x cons))
-  ((afn (lst acc)
-     (if lst
-       (self (cdr lst) (+ acc 1))
-       acc))
-   x 0))
 
 ; coerce
 ; TODO: maybe use polymorphic 'defm instead of table based approach
@@ -79,36 +64,32 @@
   (def (def-coerce a b f)
     (table-sref coerce-table (cons a b) f)))
 
-(def-coerce 'char 'int [c-to-i _])
-(def-coerce 'int 'char [i-to-c _])
+(def-coerce 'char 'int [<axiom>c-to-i _])
+(def-coerce 'int 'char [<axiom>i-to-c _])
 (def-coerce 'char 'string string)
-(def-coerce 'char 'sym [s-to-sy (string _)])
+(def-coerce 'char 'sym [<axiom>s-to-sy (string _)])
 (def-coerce 'int 'string string)
 (def-coerce 'num 'string string)
-(def-coerce 'string 'sym [s-to-sy _])
-(def-coerce 'string 'cons [str-to-lst _ 0])
-(def-coerce 'cons 'string lst-to-str)
+(def-coerce 'string 'sym [<axiom>s-to-sy _])
 (def-coerce 'nil 'string (fn (x) ""))
 (def-coerce 'symbol 'string string)
 
-(def (str-to-lst s pos)
-  (if (< pos (string-length s))
-    (cons (string-ref s pos) (str-to-lst s (+ pos 1)))
-    nil))
+(let str-to-lst
+     (fn (s)
+       (<hl>base-collect-on ()
+         (fn (collect)
+           (<hl>each c s
+             (collect c)))))
+  (def-coerce 'string 'cons str-to-lst))
 
-; convert a list of chars into a string
-(def (lst-to-str lst)
-  (withs (n (len lst)
-          s (string-build n))
-    ((afn (i lst)
-       (if lst
-         (let x (car lst)
-           (if (isa x 'char)
-             (string-sref s i x)
-             (err (string "Can't coerce a list containing " x " to a string")))
-           (self (+ i 1) (cdr lst)))))
-     0 lst)
-    s))
+(let lst-to-str
+     (fn (lst)
+       (<common>apply-list
+         string
+         ; verifies that the lst is indeed a list
+         (do (<hl>each i lst ())
+             lst)))
+  (def-coerce 'cons 'string lst-to-str))
 
 ; TODO: missing def-coerce for string -> int and string -> num
 
@@ -123,4 +104,4 @@
    0 lst))
 
 (def (complement f)
-  (fn args (no (apply f args))))
+  (compose no f))

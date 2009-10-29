@@ -159,3 +159,7 @@ use scanners and sequences.
   (def cddr (compose cdr cdr))
   (def cdar (compose cdr car)))
 
+; not exactly a scanner algo
+(def (no x)
+  (if x nil t))
+
