@@ -10,6 +10,10 @@
 typedef unsigned char BYTE;
 typedef boost::shared_ptr<HlStringImpl> string_ptr;
 
+#define ASCII_BUFFER_LEVEL 256
+#define UTF8_BUFFER_LEVEL 32
+#define ASCII_SWITCH_LEVEL UTF8_BUFFER_LEVEL
+
 /*-----------------------------------------------------------------------------
 HlString algorithms
 -----------------------------------------------------------------------------*/
@@ -155,6 +159,7 @@ public:
 			new AsciiImpl(buffer, &buffer[0], nsz)
 		);
 	}
+	friend class RopeImpl;
 };
 
 #define repeat(i) for(size_t repeat_macro_variable = (i); repeat_macro_variable != 0; --repeat_macro_variable)
@@ -362,6 +367,24 @@ void RopeImpl::append_string_impl(
 		dest = one;
 		return;
 	}
+	/*check for catting two short Ascii strings.*/
+	AsciiImpl* as1 = dynamic_cast<AsciiImpl*>(one.get());
+	if(as1 && as1->length() < (ASCII_BUFFER_LEVEL / 2)) {
+		AsciiImpl* as2 = dynamic_cast<AsciiImpl*>(two.get());
+		if(as2 && as2->length() < (ASCII_BUFFER_LEVEL / 2)) {
+			size_t l1 = as1->length();
+			size_t l2 = as2->length();
+			/*create a single buffer and concat them*/
+			boost::shared_array<BYTE> nbp(new BYTE(l1 + l2));
+			std::copy(as2->start, &as2->start[l2],
+				std::copy(as1->start, &as1->start[l1],
+					&nbp[0]
+				)
+			);
+			dest.reset(new AsciiImpl(nbp, &nbp[0], l1 + l2));
+			return;
+		}
+	}
 	size_t d1 = one->rope_depth();
 	size_t d2 = two->rope_depth();
 	if(d1 > d2 + 1) {
@@ -512,10 +535,6 @@ void HlStringBuilderCore::build_prefix(void) {
 	/*now swap*/
 	swap(t);
 }
-
-#define ASCII_BUFFER_LEVEL 128
-#define UTF8_BUFFER_LEVEL 16
-#define ASCII_SWITCH_LEVEL UTF8_BUFFER_LEVEL
 
 void HlStringBuilderCore::add(UnicodeChar uc) {
 	uint32_t cval = uc.dat;
