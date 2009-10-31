@@ -299,10 +299,13 @@ void AllWorkers::initiate(size_t nworkers, Process* begin, ValueHolderRef& rv) {
 
 /*
  * constructor/destructor
- * default_timeslice 2 until workers are fully tested
  */
-
-AllWorkers::AllWorkers(void) : default_timeslice(2), soft_stop_condition(0), total_workers(0), return_value() {
+AllWorkers::AllWorkers(void)
+	/*set default_timeslice to a much smaller number when testing!*/
+	: default_timeslice(1024),
+	  soft_stop_condition(0),
+	  total_workers(0),
+	  return_value() {
 }
 
 AllWorkers::~AllWorkers() {
@@ -368,7 +371,8 @@ public:
 void Worker::operator()(bool is_main) {
 	WorkerInitTeardown wit(is_main);
 	if(is_main) {
-		T = 4; // for testing, set to 4: future should be 16384
+		// T = 4; // for testing, set to 4: future should be 16384
+		T = 16384;
 	} else {
 		T = 0;
 	}
@@ -780,7 +784,7 @@ Sweep:
 		T += 1;
 		T *= 4;
 		// for testing, set to 4
-		T = 4;
+		// T = 4;
 	}
 	goto WorkerLoop;
 }
