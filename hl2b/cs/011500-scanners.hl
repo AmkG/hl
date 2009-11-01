@@ -126,23 +126,19 @@
            rv)))
   (defm (unscan (t s table))
     (table-loop (<axiom>table-create) s)))
-(with (string-loop nil
-       char-check
+(with (char-check
        (polymorph
          (fn (c)
            (err '<hl>type "can't unscan non-characters into string"))
          '(char)
          (fn (c) c)))
-  (= string-loop
-     (fn (rv i cs)
-       (if cs
-           (do (<axiom>string-sref rv (char-check (car cs)) i)
-               (string-loop rv (+ i 1) (cdr cs)))
-           rv)))
   (defm (unscan (t s string) scan)
-    (withs (ln (len scan)
-            rv (<axiom>string-build ln))
-      (string-loop rv 0 scan))))
+    (let sb (<axiom>string-builder)
+      (base-each scan 0
+        (fn (c)
+          (<axiom>sb-add sb (char-check c))
+          t))
+      (<axiom>sb-inner sb))))
 
 (def car
   (<axiom>accessor
