@@ -37,6 +37,7 @@
 (import <hl>> >)
 (import <hl>pos pos)
 (import <hl>sym sym)
+(import <hl>asym asym)
 (import <hl>acons acons)
 (import <hl>map map)
 
@@ -50,11 +51,15 @@
 (import <axiom>set =)
 (import <axiom>table-sref table-sref)
 
+; defined here
+(import <hl>caddr caddr)
+(import <hl>isk   isk)
+
 (def (is-no-pkg x y)
   (is x (unpkg y)))
 
 (def (caddr x)
-  (car (cdr (cdr x))))
+  (<hl>compose car cdr cdr))
 
 ; NOTES:
 ; be very careful of the separation between
@@ -101,9 +106,6 @@
                       ;          list of interface members
               name)))
 
-(def (apkg x)
-  (isa x 'pkg))
-
 (def (pkg-name pkg)
   ((rep pkg) 2))
 
@@ -114,9 +116,17 @@
 (= pkgs* (table))
 
 ; t if s is a symbol with explicit package name
-(def (pkg-sym s)
-  (and (asym s)
-       (pkg-str (string s))))
+(IDEAL
+  (def (pkg-sym s)
+    (and (asym s)
+         (pkg-str (string s))))
+ REAL
+  (def pkg-sym
+       (<common>enclose
+         (<common>assemble
+           '((<bc>debug-name pkg-sym)
+             (<bc>check-vars 3)
+             (<bc>do-executor <impl>is-symbol-packaged))))))
 
 (def (pkg-str s)
   (and (> (len s) 2)
@@ -252,24 +262,12 @@
                      (cons 'ctx-ref (cons 'ctx parms))))
       import (list 'pkg-sref (list 'the-pkg (pkg-name (pkg-of-ctx ctx))) (cdr expr)))))
 
-(mac (no-pkg-case x . args)
-  (w/uniq tst
-    (list 'let tst x
-       (cons 'if
-         ((afn (args)
-              (if args
-                (if (is (car args) t)
-                  (list (cadr args))
-                  (cons (list 'is-no-pkg tst (list 'quote (car args))) (cons (cadr args)
-                    (self (cddr args)))))))
-             args)))))
-
 (def (ctx-ref ctx ex)
   (if
     (acons ex)
       (let head (car ex)
-        (no-pkg-case head
-          in-package
+        (<hl>if
+          (isk head 'in-package)
             (do
               ; syntax check
               (when (no (acons (cdr ex)))
@@ -282,7 +280,7 @@
               (let pkg-str (string (cadr ex))
                 (pkg-of-ctx-set ctx (the-pkg pkg-str))
                 t))
-          using
+          (isk head 'using)
             (do
               (when (no (is (len ex) 2))
                 (err "'using expects one argument"))
@@ -306,7 +304,7 @@
                   (each i int-list
                     (pkg-sref dest-pkg i (unpkg i))))
                 (list '<hl>require pak-file)))
-          import
+          (isk head 'import)
             (do
               (if (no (is (len ex) 3))
                 (err "'import expects two parameters"))
@@ -316,7 +314,7 @@
                 (err "second parameter to 'import should be unpackaged symbol"))
               (pkg-sref (pkg-of-ctx ctx) (cadr ex) (caddr ex))
               t)
-          interface
+          (isk head 'interface)
             (withs (dest-pkg (pkg-of-ctx ctx)
                     iface nil
                     int-tl nil
@@ -359,7 +357,7 @@
               (list '<hl>add-interface (pkg-name dest-pkg) 
                                   (string (unpkg int-name))
                                   (cons '<hl>list (map (fn (p) (list 'quote p)) params))))
-          t ;; default
+          ; else
             (map [ctx-ref-inner ctx _] ex)))
     (ctx-ref-inner ctx ex)))
 
