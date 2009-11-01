@@ -124,3 +124,9 @@
            then (car (cdr args))
            rest (cdr (cdr args)))
       `(<axiom>if ,test ,then (<hl>if ,@rest)))))
+
+; simplified form
+; real form sould verify (isk (args 1) 'REAL)
+(mac <hl>IDEAL args
+  (args 2))
+
