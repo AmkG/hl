@@ -12,6 +12,7 @@ use scanners and sequences.
 (import <hl>with with)
 (import <hl>withs withs)
 (import <hl>do do)
+(import <hl>if if)
 (import <hl>each each)
 (import <hl>base-collect-on base-collect-on)
 (import <hl>base-each base-each)
@@ -24,11 +25,14 @@ use scanners and sequences.
 (import <hl>scar scar)
 (import <hl>scdr scdr)
 (import <hl>compose compose)
+(import <hl>< <)
+(import <hl>> >)
+(import <hl>+ +)
+(import <hl>- -)
 
 ; axioms
 (import <axiom>set =)
 (import <axiom>lambda fn)
-(import <axiom>if if)
 (import <axiom>quote quote)
 
 ; defined here
@@ -43,6 +47,13 @@ use scanners and sequences.
 (import <hl>setof setof)
 (import <hl>rem rem)
 (import <hl>find find)
+(import <hl>mem mem)
+(import <hl>caar caar)
+(import <hl>cadr cadr)
+(import <hl>cddr cddr)
+(import <hl>cdar cdar)
+(import <hl>cut cut)
+(import <hl>no no)
 
 (def (all test seq)
   (let rv t
@@ -158,6 +169,25 @@ use scanners and sequences.
   (def cadr (compose car cdr))
   (def cddr (compose cdr cdr))
   (def cdar (compose cdr car)))
+
+; returns a sequence that is cut from the given
+; sequence
+(def (cut seq start . maybe-end)
+  (base-collect-on seq
+    (fn (collect)
+      (if maybe-end
+          (withs (given-end (<axiom>car maybe-end)
+                  end       (if (< given-end 0) (+ (len seq) given-end)
+                                                given-end)
+                  count     (- end start))
+            (if (> count 0)
+                (base-each seq start
+                  (fn (i)
+                    (collect i)
+                    (> (= count (- count 1)) 0)))
+                nil))
+          (base-each seq start
+            (fn (i) (collect i) t))))))
 
 ; not exactly a scanner algo
 (def (no x)
