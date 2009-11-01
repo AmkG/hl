@@ -19,6 +19,7 @@
 (import <hl>mac mac)
 (import <hl>when when)
 (import <hl>each each)
+(import <hl>IDEAL)
 
 (import <hl>no no)
 (import <hl>cadr cadr)
