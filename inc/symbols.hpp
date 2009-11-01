@@ -55,6 +55,13 @@ public:
 
 class SymbolsTable {
 private:
+	/*
+	!! profiling shows that looking up symbols in the table is
+	!! a significant portion of the startup time.  Consider using
+	!! a structure with faster lookup - nested arrays, hash
+	!! tables.  Using a larger structure should be OK since there
+	!! is only one symbol table in the VM.
+	*/
 	std::map<std::string, Symbol*> tb;
 	AppMutex m;
 
