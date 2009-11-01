@@ -59,7 +59,7 @@
 (def (is-no-pkg x y)
   (is x (unpkg y)))
 
-(def (caddr x)
+(def caddr
   (<hl>compose car cdr cdr))
 
 ; NOTES:
