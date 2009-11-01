@@ -49,8 +49,10 @@ The minimum to bootstrap hl is to fill this with A's for macros, and
 - [f][ ] isnt -- no is
 - [f][ ] caris -- and acons is
 - [m][ ] in -- let or w/uniq
-- [f][ ] type
-- [f][ ] isa -- is type
+- [f][*] type
+- [f][*] tag
+- [f][*] rep
+- [f][*] isa -- is type
 - [f][ ] alist -- type
 - [f][*] err - builtin?
 - [f][ ] is
@@ -93,4 +95,3 @@ The minimum to bootstrap hl is to fill this with A's for macros, and
 - [m][ ] mapeach -- map1
 - [f][ ] atom
 - [f][ ] bound
-- [f][ ] rep
