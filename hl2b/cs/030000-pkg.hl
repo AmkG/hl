@@ -23,6 +23,7 @@
 
 (import <hl>no no)
 (import <hl>cadr cadr)
+(import <hl>caddr caddr)
 (import <hl>list list)
 (import <hl>find find)
 (import <hl>isa isa)
@@ -53,14 +54,10 @@
 (import <axiom>table-sref table-sref)
 
 ; defined here
-(import <hl>caddr caddr)
 (import <hl>isk   isk)
 
-(def (is-no-pkg x y)
+(def (isk x y)
   (is x (unpkg y)))
-
-(def caddr
-  (<hl>compose car cdr cdr))
 
 ; NOTES:
 ; be very careful of the separation between

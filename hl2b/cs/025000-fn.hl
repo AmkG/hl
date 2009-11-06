@@ -16,6 +16,7 @@
 (import <hl>afn afn)
 (import <hl>no no)
 (import <hl>cadr cadr)
+(import <hl>caddr caddr)
 (import <hl>list list)
 (import <hl>listtab listtab)
 (import <hl>mappend mappend)
@@ -34,8 +35,6 @@
 (def (arg-name a) a!name)
 (def (arg-type a) a!type)
 (def (arg-expr a) a!expr)
-
-(def (caddr x) (car (cdr (cdr x))))
 
 (def (mk-arg name expr type)
   (listtab (list (list 'name name) (list 'expr expr) (list 'type type))))

@@ -52,6 +52,7 @@ use scanners and sequences.
 (import <hl>cadr cadr)
 (import <hl>cddr cddr)
 (import <hl>cdar cdar)
+(import <hl>caddr caddr)
 (import <hl>cut cut)
 (import <hl>no no)
 
@@ -168,7 +169,8 @@ use scanners and sequences.
   (def caar (compose car car))
   (def cadr (compose car cdr))
   (def cddr (compose cdr cdr))
-  (def cdar (compose cdr car)))
+  (def cdar (compose cdr car))
+  (def caddr (compose car cdr cdr )))
 
 ; returns a sequence that is cut from the given
 ; sequence
