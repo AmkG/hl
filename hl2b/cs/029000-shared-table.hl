@@ -1,0 +1,110 @@
+(in-package impl)
+
+(import <hl>let let)
+(import <hl>let withs)
+(import <hl>def def)
+(import <hl>defm defm)
+(import <hl>each each)
+
+(import <hl>spawn spawn)
+(import <hl>list list)
+(import <common>handle-message handle-message)
+(import <hl>polymorph polymorph)
+(import <hl>cons cons)
+(import <hl>table table)
+(import <hl>call* call*)
+(import <hl>sref sref)
+(import <hl>keys keys)
+(import <hl>scanner scanner)
+(import <hl>unscan unscan)
+(import <hl>send send)
+(import <hl>uniq uniq)
+(import <hl>my-pid my-pid)
+
+(import <axiom>quote quote)
+(import <axiom>tag tag)
+(import <axiom>is is)
+(import <axiom>rep rep)
+(import <axiom>tag tag)
+(import <axiom>if if)
+(import <axiom>lambda fn)
+
+(import <hl>make-shared make-shared)
+(import <hl>shared-table shared-table)
+
+(withs (check-cons
+        (polymorph
+          (fn (c f) nil)
+          '(cons)
+          (fn (c f)
+            (if (is c (rep c))
+                (f (<axiom>car c) (<axiom>cdr c))
+                nil)))
+        cmd-tb
+        (table
+          'call*    (fn (tb k)     (tb k))
+          'sref     (fn (tb v k)   (sref tb v k))
+          'keys     (fn (tb)       (keys tb))
+          'scanner  (fn (tb)       (scanner tb))
+          'unscan   (fn (tb s)     (make-shared (unscan tb s))))
+        msg-handler
+        (fn (tb)
+          (fn (m)
+            (check-cons m
+              (fn (cmd md)
+                (check-cons md
+                  (fn (src mdd)
+                    (check-cons mdd
+                      (fn (tid args)
+                        (let f (cmd-tb cmd)
+                          (if f
+                              (fn ()
+                                (on-err (fn (e h)
+                                          (on-err (fn (e h) nil)
+                                            (fn ()
+                                              (send src (cons tid
+                                                              (cons e h))))))
+                                  (fn ()
+                                    (send src
+                                      (cons tid
+                                            (apply-list f (cons tb args)))))))
+                              nil))))))))))
+        wait-response
+        (fn (tid)
+          (handle-message
+            (list
+              (fn (m)
+                (cons-check m
+                  (fn (c-tid c-v)
+                    (if (is c-tid tid)
+                        (fn () c-v)
+                        nil)))))))
+        s-tb-call
+        (fn (s-tb cmd . args)
+          (let tid (uniq)
+            (send (rep s-tb) (cons cmd (cons (my-pid) (cons tid args))))
+            (wait-response tid))))
+  (def (make-shared tb)
+    (tag 'shared-table
+      (<hl>spawn
+        (with (loop  ()
+               msgh  (list (msg-handler tb)
+                           ; filter unhandled messages
+                           (fn (m) (fn () ()))))
+          (= loop
+             (fn ()
+               (handle-message msgh)
+               (loop)))))))
+  ; table concept
+  (defm (call* (t tb shared-table) k)
+    (s-tb-call tb 'call* k))
+  (defm (sref (t tb shared-table) v k)
+    (s-tb-call tb 'sref v k))
+  (defm (keys (t tb shared-table))
+    (s-tb-call tb 'keys))
+  ; scanner concept
+  (defm (scanner (t tb shared-table))
+    (s-tb-call tb 'scanner))
+  (defm (unscan (t tb shared-table) s)
+    (s-tb-call tb 'unscan s)))
+
