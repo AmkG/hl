@@ -1,7 +1,8 @@
 (in-package impl)
 
 (import <hl>let let)
-(import <hl>let withs)
+(import <hl>withs withs)
+(import <hl>with with)
 (import <hl>def def)
 (import <hl>defm defm)
 (import <hl>each each)
