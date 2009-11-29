@@ -24,6 +24,7 @@
 (import <hl>table table)
 (import <hl>compose compose)
 (import <hl>on-err on-err)
+(import <hl>err-throw err-throw)
 
 (import <common>apply-list apply-list)
 
@@ -70,11 +71,13 @@
                                           (on-err (fn (e h) nil)
                                             (fn ()
                                               (send src (cons tid
-                                                              (cons e h))))))
+                                                              (list e h))))))
                                   (fn ()
                                     (send src
-                                      (cons tid
-                                            (apply-list f (cons tb args)))))))
+                                      (cons
+                                        tid
+                                        (list
+                                          (apply-list f (cons tb args))))))))
                               nil))))))))))
         wait-response
         (fn (tid)
@@ -82,9 +85,16 @@
             (list
               (fn (m)
                 (check-cons m
-                  (fn (c-tid c-v)
+                  (fn (c-tid md)
                     (if (is c-tid tid)
-                        (fn () c-v)
+                        (check-cons md
+                          (fn (v mdd)
+                            (if mdd
+                                (let e v
+                                  (check-cons mdd
+                                    (fn (h mddd)
+                                      (fn () (err-throw e h)))))
+                                (fn () v))))
                         nil)))))))
         s-tb-call
         (fn (s-tb cmd . args)
