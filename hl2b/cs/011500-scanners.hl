@@ -124,7 +124,7 @@
              (<axiom>table-sref rv v k)
              (table-loop rv (cdr ps)))
            rv)))
-  (defm (unscan (t s table))
+  (defm (unscan (t tb table) s)
     (table-loop (<axiom>table-create) s)))
 (with (char-check
        (polymorph
