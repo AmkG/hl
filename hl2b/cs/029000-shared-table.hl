@@ -21,6 +21,11 @@
 (import <hl>send send)
 (import <hl>uniq uniq)
 (import <hl>my-pid my-pid)
+(import <hl>table table)
+(import <hl>compose compose)
+(import <hl>on-err on-err)
+
+(import <common>apply-list apply-list)
 
 (import <axiom>quote quote)
 (import <axiom>tag tag)
@@ -29,6 +34,7 @@
 (import <axiom>tag tag)
 (import <axiom>if if)
 (import <axiom>lambda fn)
+(import <axiom>set =)
 
 (import <hl>make-shared make-shared)
 (import <hl>shared-table shared-table)
@@ -75,7 +81,7 @@
           (handle-message
             (list
               (fn (m)
-                (cons-check m
+                (check-cons m
                   (fn (c-tid c-v)
                     (if (is c-tid tid)
                         (fn () c-v)
@@ -108,4 +114,34 @@
     (s-tb-call tb 'scanner))
   (defm (unscan (t tb shared-table) s)
     (s-tb-call tb 'unscan s)))
+
+(def shared-table (compose make-shared table))
+
+; test
+
+(import <hl>write write)
+(import <hl>writec writec)
+(import <hl>stdout stdout)
+
+(let tmp (shared-table 'x 1)
+  ; 1
+  (write (tmp 'x))
+  (writec (stdout) #\newline)
+  ; nil
+  (write (tmp 'y))
+  (writec (stdout) #\newline)
+  ; (<impl>x)
+  (write (keys tmp))
+  (writec (stdout) #\newline)
+  ; ((<impl>x . 1))
+  (write (scanner tmp))
+  (writec (stdout) #\newline)
+  ; test of unscan
+  (let tmp2 (unscan tmp '((y . 2) (z . 3)))
+    ; ((<impl>y . 2) (<impl>z . 3))
+    (write (scanner tmp2))
+    (writec (stdout) #\newline)))
+(write "shared-table test ends")
+(writec (stdout) #\newline)
+(<hl>flush (stdout))
 
