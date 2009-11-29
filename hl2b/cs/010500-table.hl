@@ -49,3 +49,10 @@
         (<axiom>table-sref rv v k)))
     rv))
 
+(def (<hl>keys tb)
+  (err '<hl>type "type does not support getting keys"))
+(defm (<hl>keys (t tb <hl>table))
+  (if (is (<axiom>rep tb) tb)
+      (<axiom>table-keys tb)
+      (err '<hl>value "attempt to spoof table in 'keys")))
+
