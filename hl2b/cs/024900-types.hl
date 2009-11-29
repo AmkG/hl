@@ -3,6 +3,6 @@
 
 (def (<hl>type x) (<axiom>type x))
 (def (<hl>rep x) (<axiom>rep x))
-(def (<hl>tag x) (<axiom>tag x))
+(def (<hl>tag x y) (<axiom>tag x y))
 (def (<hl>isa x y) (<axiom>is (<axiom>type x) y))
 
