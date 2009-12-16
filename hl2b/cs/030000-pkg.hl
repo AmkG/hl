@@ -382,7 +382,7 @@
 ; TODO: more testing
 (def (test-pkg)
   (map 
-    [check (iso (process-in-new-ctx (read (instring (car _)))) (cadr _))
+    [check (iso (process-in-new-ctx (<hl>read (instring (car _)))) (cadr _))
            (car _)]
     '(("((in-package k) l)" (t <k>l))
       ("((in-package k) l (in-package jk) (+ (p l)))" 
