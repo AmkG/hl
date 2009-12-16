@@ -95,24 +95,17 @@
 
 ; create a new empty package
 (def (pkg-new name)
-  ; UNRELIABLE.  Each process gets
-  ; its own copy of the package.
-  ; I suggest using a process instead
-  ; of a plain tagged data structure.
   (tag 'pkg (list 
-              (table) ; mapping: unpackaged symbol -> symbol 
-              (table) ; mapping: packaged interface symbol -> 
-                      ;          list of interface members
+              (shared-table) ; mapping: unpackaged symbol -> symbol
+              (shared-table) ; mapping: packaged interface symbol ->
+                             ;          list of interface members
               name)))
 
 (def (pkg-name pkg)
   ((rep pkg) 2))
 
-; mapping: package name symbol -> package object
-; UNRELIABLE.  Each process gets its own copy
-; of the table.  I suggest using a process
-; instead of a global variable.
-(= pkgs* (table))
+; mapping: package name string -> package object
+(= pkgs* (shared-table))
 
 ; t if s is a symbol with explicit package name
 (IDEAL
@@ -169,9 +162,9 @@
   (if (isa s 'string)
     (if (or (pkg-str s) (find #\> s))
       nil
-      (or (pkgs* (sym s))
+      (or (pkgs* s)
           (let pak (pkg-new s)
-            (table-sref pkgs* (sym s) pak))))
+            (table-sref pkgs* s pak))))
     nil))
 
 (def (pkg-ref pak s)
