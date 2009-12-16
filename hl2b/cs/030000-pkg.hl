@@ -43,6 +43,7 @@
 (import <hl>asym asym)
 (import <hl>acons acons)
 (import <hl>map map)
+(import <common>call-w/gvl call-w/gvl)
 
 (import <axiom>tag tag)
 (import <axiom>car car)
@@ -162,9 +163,11 @@
   (if (isa s 'string)
     (if (or (pkg-str s) (find #\> s))
       nil
-      (or (pkgs* s)
-          (let pak (pkg-new s)
-            (table-sref pkgs* s pak))))
+      (call-w/gvl
+        (fn ()
+          (or (pkgs* s)
+              (let pak (pkg-new s)
+                (table-sref pkgs* s pak))))))
     nil))
 
 (def (pkg-ref pak s)
