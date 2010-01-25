@@ -1,0 +1,34 @@
+
+#|
+As of this writing, the <common>assemble builtin
+modifies the input.  However, it is intended that
+the specc'ed version will not modify the input
+(largely because that is probably what the
+user will expect).
+|#
+
+(in-package impl)
+
+(import <hl>let let)
+(import <hl>def def)
+
+(import <axiom>set =)
+(import <axiom>lambda fn)
+
+(import <hl>copy copy)
+
+(let old <common>assemble
+  (= <common>assemble
+     (fn (x)
+       (old (copy x)))))
+
+; bounces for assemble, enclose, disclose, and disassemble
+(def (<hl>assemble x)
+  (<common>assemble x))
+(def (<hl>enclose b . vs)
+  (<common>apply-list <common>enclose (<axiom>cons b vs)))
+(def (<hl>disclose f)
+  (<common>disclose f))
+(def (<hl>disassemble b)
+  (<common>disassemble b))
+

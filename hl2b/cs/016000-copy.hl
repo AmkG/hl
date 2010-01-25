@@ -1,0 +1,42 @@
+
+(in-package impl)
+
+(import <hl>def def)
+(import <hl>let let)
+
+(import <hl>send send)
+(import <hl>my-pid my-pid)
+(import <common>handle-message handle-message)
+
+(import <axiom>lambda fn)
+(import <axiom>quote quote)
+(import <axiom>cons cons)
+(import <axiom>car car)
+(import <axiom>cdr cdr)
+(import <axiom>is is)
+(import <axiom>rep rep)
+(import <axiom>if if)
+
+(import <hl>list list)
+(import <hl>copy copy)
+(import <hl>uniq uniq)
+(import <hl>polymorph polymorph)
+
+(let check-msg
+     (polymorph
+       (fn (m tid) nil)
+       '(<hl>cons)
+       (fn (m tid)
+         (if (is (rep m) m)
+             (if (is tid (car m))
+                 (let rv (cdr m)
+                   (fn () rv))
+                 nil)
+             nil)))
+  (def (copy o)
+    (let tid (uniq)
+      (send (my-pid) (cons tid o))
+      (handle-messages
+        (list
+          (fn (m) (check-msg m tid)))))))
+
