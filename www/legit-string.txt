@@ -141,8 +141,8 @@ String Building Via `<hl>string-builder` Objects
 ------------------------------------------------
 
 An built-in object of type `<hl>string-builder` is a mutable,
-non-shareable object.  Sending a `<hl>string-builder` will
-create a copy of that object.
+non-shareable, process-local object.  Sending a
+`<hl>string-builder` will create a copy of that object.
 
 A `<hl>string-builder` object can be created, appended to with
 a character or an existing string, and deconstructed into a

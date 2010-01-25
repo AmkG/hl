@@ -244,8 +244,8 @@ it has handled the removal of the event, where `retval` is `t`
 if the event was removed, or `nil` if it was not removed (for
 example if the event has already triggered).
 
-Attempting to add an event that has already triggered or has
-already been removed will result in undefined behavior.
+Attempting to add an event that has already been removed will
+result in undefined behavior.
 
 Sending any other message will result in undefined behavior for
 the virtual machine.

@@ -41,17 +41,21 @@ compile them to their equivalent bytecodes.  In particular,
 macros that are assigned to these symbols's global variable slot
 will be ignored by the compiler.
 
-Symbols in `<common>` are all global variables with function
-contents.  The users of `hl` cannot rely on certain functions in
-`<common>` to be serializable or portable; the result of
-`(<common>disassemble (<common>code-of _))` may be `nil`, if `_`
-is one of the non-serializable function from `<common>`.  In
-other words, a function in `<common>` might not be implemented
-using `hl` bytecode.
+Symbols in `<common>` are primarily global variables with
+function contents; some are global variables with process
+identifier contents.  The users of `hl` cannot rely on **any**
+functions in `<common>` to be serializable or portable; i.e.
+the result of `(<common>disassemble (<common>code-of _))` may
+be `nil`, if `_` is a function from `<common>`.  In other
+words, a function in `<common>` might not be implemented using
+`hl` bytecode.
 
-Symbols in `<hl>` are all global variables with function or macro
-contents.  All contents of `<hl>` are specified as being
-serializable and portable.
+Symbols in `<hl>` are all global variables with function,
+macro, or process identifier contents.  All contents of `<hl>`
+that are not process identifiers are specified as being
+serializable and portable.  In particular, many `<hl>`
+functions may simply end up being very thin wrappers around
+calls to `<common>` functions.
 
 Coupling of Axiomatic and Common
 --------------------------------

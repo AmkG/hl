@@ -209,7 +209,7 @@ important part of its world - the read table.
 
 In short, it uses a *global* read table.  Global state is bad;
 it makes it harder to keep separate things that should *really*
-should be kept separate, because of the inadvertent, and often
+be kept separate, because of the inadvertent, and often
 undesired, sharing of global state.
 
 Classic Common Lisp advice is to avoid the read table like the
@@ -301,12 +301,14 @@ continuations and tail call optimizations.
 
 Incidentally, Rich Hickey's waffling about read tables is
 easily solvable by going the `hl` route of encapsulating the
-read table as part of a file-specific context object.
+read table as part of a file-specific context object.  By my
+understanding, however, Rich Hickey has already considered this
+and rejected it.
 
 Admittedly, I have no strong objections to Clojure; if things
 had been different I would not have developed `hl` at all and
-would now be hacking on Clojure.  But instead I got involved in
-Arc...
+would now be happily hacking on Clojure.  But instead I got
+involved in Arc...
 
 Why Not Arc?
 ------------
@@ -322,8 +324,8 @@ problem", i.e. making the program as short as possible in order
 to leverage the load on the programmer's mind: if the
 programmer has to think fewer thoughts to get something
 running, then that is *good*.  It's the reason why having a
-one-liner that launches 4 *other* programs and opens two pipes
-doesn't bother us, in spite of the evident *machine*
+one-liner that launches 4 *other* programs and opens three
+pipes doesn't bother us, in spite of the evident *machine*
 inefficiency involved: it's a one-liner, and it's easy on the
 eyes:
 
