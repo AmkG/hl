@@ -44,6 +44,8 @@
 (import <hl>acons acons)
 (import <hl>map map)
 (import <common>call-w/gvl call-w/gvl)
+(import <hl>join join)
+(import <hl>sref sref)
 
 (import <axiom>tag tag)
 (import <axiom>car car)
@@ -86,7 +88,7 @@
 ;  input                     arc-f output                        hl output
 ; (in-package foo)                t                                  t
 ; (using <foo>foo)                t                        (<hl>require "foo.hl")
-; (interface <foo>bar nitz)       t           (<hl>add-interface "foo" "bar" (list <foo>nitz))
+; (interface <foo>bar nitz)       t           (<hl>add-interface "foo" (<axiom>quote <foo>bar) (list <foo>nitz))
 ; (import <foo>bar nitz)          t                                  t
 ;
 ; in order to improve arc-compatibility in cs/ files, should probably
@@ -107,6 +109,13 @@
 
 ; mapping: package name string -> package object
 (= pkgs* (shared-table))
+
+; handles interfaces
+(def (<hl>add-interface pkg-name int-name symbols)
+  (withs (pkg-obj (pkgs* pkg-name)
+          int-tb  (cadr pkg-obj))
+    (sref int-tb symbols int-name)
+    t))
 
 ; t if s is a symbol with explicit package name
 (IDEAL
@@ -146,8 +155,8 @@
       ; check package
       (with (pak (pkg-of s)
              no-pkg (unpkg s))
-        (if (in no-pkg t nil) s
-            (is pak (sym "")) no-pkg ; <>x == x, except for <>t and <>nil
+        (if (in no-pkg t nil)  s
+            (is pak "")        no-pkg ; <>x == x, except for <>t and <>nil
             s))
       ; no special markings
       s)))
@@ -285,7 +294,7 @@
               (withs (sym (cadr ex)
                       ss (string sym)
                       pak (pkg-of sym)
-                      pak-file (string pak ".hl")
+                      pak-file (join pak ".hl")
                       pkg (the-pkg pak)
                       int-list (iface-of-pkg pkg sym))
                 ; if package interface doesn't exist, try
@@ -309,6 +318,7 @@
                 (err "second parameter to 'import should be unpackaged symbol"))
               (pkg-sref (pkg-of-ctx ctx) (cadr ex) (caddr ex))
               t)
+          ; TODO: remove code that is to be executed by '<hl>add-interface
           (isk head 'interface)
             (withs (dest-pkg (pkg-of-ctx ctx)
                     iface nil
@@ -350,7 +360,7 @@
                       (add-int sym)))))
               (table-sref int-table int-name iface)
               (list '<hl>add-interface (pkg-name dest-pkg) 
-                                  (string (unpkg int-name))
+                                  (list '<axiom>quote int-name)
                                   (cons '<hl>list (map (fn (p) (list 'quote p)) params))))
           ; else
             (map [ctx-ref-inner ctx _] ex)))
