@@ -88,7 +88,7 @@
 ;  input                     arc-f output                        hl output
 ; (in-package foo)                t                                  t
 ; (using <foo>foo)                t                        (<hl>require "foo.hl")
-; (interface <foo>bar nitz)       t           (<hl>add-interface "foo" (<axiom>quote <foo>bar) (list <foo>nitz))
+; (interface <foo>bar nitz)       t           (<hl>add-interface "foo" (<axiom>quote <foo>bar) (<axiom>quote (<foo>nitz)))
 ; (import <foo>bar nitz)          t                                  t
 ;
 ; in order to improve arc-compatibility in cs/ files, should probably
@@ -361,7 +361,7 @@
               (table-sref int-table int-name iface)
               (list '<hl>add-interface (pkg-name dest-pkg) 
                                   (list '<axiom>quote int-name)
-                                  (cons '<hl>list (map (fn (p) (list 'quote p)) params))))
+                                  (list '<axiom>quote (map (fn (p) (list 'quote p)) params))))
           ; else
             (map [ctx-ref-inner ctx _] ex)))
     (ctx-ref-inner ctx ex)))
