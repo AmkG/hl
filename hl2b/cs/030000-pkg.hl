@@ -174,7 +174,7 @@
         (fn ()
           (or (pkgs* s)
               (let pak (pkg-new s)
-                (table-sref pkgs* s pak))))))
+                (sref pkgs* s pak))))))
     nil))
 
 (def (pkg-ref pak s)
@@ -183,11 +183,11 @@
       s
       (let tb ((rep pak) 1)
         (or (tb s)
-            (table-sref tb s (sym (string #\< (pkg-name pak) #\> s))))))
+            (sref tb s (sym (string #\< (pkg-name pak) #\> s))))))
     s))
 
 (def (pkg-sref pak packaged unpackaged)
-  (table-sref ((rep pak) 1) unpackaged packaged))
+  (sref ((rep pak) 1) unpackaged packaged))
 
 (def (iface-of-pkg pak s)
   ((iface-tbl-of-pkg pak) s))
@@ -246,23 +246,6 @@
 
 (def (ctx-meta head)
   (in head 'in-package 'using 'import 'interface))
-
-(def (ctx-meta-compile ctx expr)
-  (let head (car expr)
-    (case head
-      in-package t
-      using (list 'let 'ctx (list 'mk-ctx)
-               (list 'ctx-ref 'ctx (list 'quote (list 'in-package (sym (pkg-name (pkg-of-ctx ctx))))))
-               (list 'ctx-ref 'ctx (list 'quote (list 'using (cadr expr))))
-               t)
-      interface (withs (pak (pkg-of-ctx ctx)
-                        parms (map [if (acons _) 
-                                     (map [pkg-ref pak _] _)
-                                     (pkg-ref pkg a)]
-                                   (cdr expr)))
-                  (list 'let 'ctx (list 'mk-ctx)
-                     (cons 'ctx-ref (cons 'ctx parms))))
-      import (list 'pkg-sref (list 'the-pkg (pkg-name (pkg-of-ctx ctx))) (cdr expr)))))
 
 (def (ctx-ref ctx ex)
   (if
@@ -356,7 +339,7 @@
                     (if int
                       (each e int (add-int e))
                       (add-int sym)))))
-              (table-sref int-table int-name iface)
+              (sref int-table iface int-name)
               (list '<hl>add-interface (pkg-name dest-pkg) 
                                   (list '<axiom>quote int-name)
                                   (list '<axiom>quote (map (fn (p) (list 'quote p)) params))))
