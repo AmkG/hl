@@ -94,8 +94,6 @@
 ; in order to improve arc-compatibility in cs/ files, should probably
 ; just use (in-package) and (import)
 
-(def (asym x) (isa x 'sym))
-
 ; create a new empty package
 (def (pkg-new name)
   (tag 'pkg (list 

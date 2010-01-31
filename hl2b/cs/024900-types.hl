@@ -6,3 +6,5 @@
 (def (<hl>tag x y) (<axiom>tag x y))
 (def (<hl>isa x y) (<axiom>is (<axiom>type x) y))
 
+(def (<hl>asym x) (<hl>isa x 'sym))
+
