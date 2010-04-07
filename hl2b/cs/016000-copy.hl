@@ -36,7 +36,7 @@
   (def (copy o)
     (let tid (uniq)
       (send (my-pid) (cons tid o))
-      (handle-messages
+      (handle-message
         (list
           (fn (m) (check-msg m tid)))))))
 

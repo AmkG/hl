@@ -15,6 +15,7 @@
 (import <hl>with with)
 (import <hl>withs withs)
 (import <hl>afn afn)
+(import <axiom>lambda fn)
 (import <hl>do do)
 (import <hl>mac mac)
 (import <hl>when when)
@@ -42,10 +43,11 @@
 (import <hl>sym sym)
 (import <hl>asym asym)
 (import <hl>acons acons)
-(import <hl>map map)
+(import <hl>map1 map)
 (import <common>call-w/gvl call-w/gvl)
 (import <hl>join join)
 (import <hl>sref sref)
+(import <hl>shared-table shared-table)
 
 (import <axiom>tag tag)
 (import <axiom>car car)
@@ -258,9 +260,10 @@
                (list 'ctx-ref 'ctx (list 'quote (list 'using (cadr expr))))
                t)
       interface (withs (pak (pkg-of-ctx ctx)
-                        parms (map [if (acons _) 
-                                     (map [pkg-ref pak _] _)
-                                     (pkg-ref pkg a)]
+                        parms (map (fn (_)
+                                     (if (acons _) 
+                                       (map (fn (_) (pkg-ref pak _)) _)
+                                       (pkg-ref pkg a)))
                                    (cdr expr)))
                   (list 'let 'ctx (list 'mk-ctx)
                      (cons 'ctx-ref (cons 'ctx parms))))
@@ -363,7 +366,7 @@
                                   (list '<axiom>quote int-name)
                                   (list '<axiom>quote (map (fn (p) (list 'quote p)) params))))
           ; else
-            (map [ctx-ref-inner ctx _] ex)))
+            (map (fn (_) (ctx-ref-inner ctx _)) ex)))
     (ctx-ref-inner ctx ex)))
 
 (def (ctx-ref-inner ctx x)
@@ -382,7 +385,7 @@
 ; warning: modifies lst
 (def (process-in-new-ctx lst)
   (let ctx (mk-ctx)
-    (map [ctx-ref ctx _] lst)))
+    (map (fn (_) (ctx-ref ctx _)) lst)))
 
 ; testing
 
@@ -392,8 +395,9 @@
 ; TODO: more testing
 (def (test-pkg)
   (map 
-    [check (iso (process-in-new-ctx (<hl>read (instring (car _)))) (cadr _))
-           (car _)]
+    (fn (_)
+      (check (iso (process-in-new-ctx (<hl>read (instring (car _)))) (cadr _))
+             (car _)))
     '(("((in-package k) l)" (t <k>l))
       ("((in-package k) l (in-package jk) (+ (p l)))" 
        (t <k>l t (<jk>+ (<jk>p <jk>l))))
@@ -406,3 +410,7 @@
        (t (<hl>add-interface "m" "i1" (<hl>list '<m>a))
         (<hl>add-interface "m" "i2" (<hl>list '<m>b)) t <k>a <k>b 
         (<hl>require "m.hl") <m>a <k>b (<hl>require "m.hl") ((<m>a . <m>b)))))))
+
+(<hl>write "pkg.hl ends") ; can't test without 'read
+(<hl>writec (<hl>stdout) #\newline)
+(<hl>flush (<hl>stdout))

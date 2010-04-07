@@ -392,13 +392,23 @@
     (err:string "~ found in the middle of the symbol: " s)))
 
 ; a:b
-(def-binary-ssyntax ssyntax-compose (l r)
-  (list (unpkg 'm-compose) l r))
+(= ssyntax-compose 
+   (mk-binary-ssyntax
+     (fn (l r)
+       (list (unpkg 'm-compose) l r))))
 
 ; a.b
-(def-binary-ssyntax ssyntax-call-one-arg (l r)
-  (list l r))
+(= ssyntax-call-one-arg 
+   (mk-binary-ssyntax
+     (fn (l r)
+       (list l r))))
 
 ; a!b
-(def-binary-ssyntax ssyntax-call-quoted (l r)
-  (list l (list (unpkg 'quote) r)))
+(= ssyntax-call-quoted 
+   (mk-binary-ssyntax
+     (fn (l r)
+       (list l (list (unpkg 'quote) r)))))
+
+(<hl>write "read.hl ends")
+(<hl>writec (<hl>stdout) #\newline)
+(<hl>flush (<hl>stdout))

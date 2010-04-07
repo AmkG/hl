@@ -21,7 +21,7 @@ AC_SUBST(BOOST_PATH, $boost_path)
 AM_CONDITIONAL(BOOST_PATH_SPECIFIED, test x$boost_path_specified = xtrue)
 
 # check for random libraries
-AC_CHECK_HEADERS([fcntl.h malloc.h stdint.h stdlib.h unistd.h errno.h signal.h stddef.h],[],[AC_MSG_ERROR([Your system is not as POSIX-compliant as we expected])])
+AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h unistd.h errno.h signal.h stddef.h],[],[AC_MSG_ERROR([Your system is not as POSIX-compliant as we expected])])
 
 # check for pthreads
 AC_CHECK_HEADERS([pthread.h])
