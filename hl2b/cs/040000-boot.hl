@@ -6,7 +6,6 @@
 (import <axiom>is is)
 (import <axiom>set =)
 (import <axiom>tag tag)
-(import <hl>mac mac)
 (import <axiom>car car)
 (import <axiom>cdr cdr)
 (import <axiom>cons cons)
@@ -16,6 +15,12 @@
 (import <axiom>imod imod)
 (import <axiom>i< <)
 (import <axiom>type type)
+(import <axiom>table-sref table-sref)
+(import <hl>mac mac)
+(import <hl>def def)
+(import <hl>table table)
+(import <hl>let let)
+(import <hl>string string)
 
 (= list (fn args args))
 (= cadr (fn (x) (car (cdr x))))
@@ -64,13 +69,13 @@
   (def (def-coerce a b f)
     (table-sref coerce-table (cons a b) f)))
 
-(def-coerce 'char 'int [<axiom>c-to-i _])
-(def-coerce 'int 'char [<axiom>i-to-c _])
+(def-coerce 'char 'int (fn (_) (<axiom>c-to-i _)))
+(def-coerce 'int 'char (fn (_) (<axiom>i-to-c _)))
 (def-coerce 'char 'string string)
-(def-coerce 'char 'sym [<axiom>s-to-sy (string _)])
+(def-coerce 'char 'sym (fn (_) (<axiom>s-to-sy (string _))))
 (def-coerce 'int 'string string)
 (def-coerce 'num 'string string)
-(def-coerce 'string 'sym [<axiom>s-to-sy _])
+(def-coerce 'string 'sym (fn (_) (<axiom>s-to-sy _)))
 (def-coerce 'nil 'string (fn (x) ""))
 (def-coerce 'symbol 'string string)
 
@@ -105,3 +110,7 @@
 
 (def (complement f)
   (compose no f))
+
+(<hl>write "boot.hl ends")
+(<hl>writec (<hl>stdout) #\newline)
+(<hl>flush (<hl>stdout))

@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 HLBC_FILES=`ls cs/*.hl | sort`
 COMPILER_FILES=`ls *.hl *.arc`
